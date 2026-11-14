@@ -10,6 +10,7 @@ import { logMailer, smtpMailer } from './mailer.ts';
 import { migrateApp } from './migrations.ts';
 import type { Log } from './schema.ts';
 import { createSync } from './sync.ts';
+import { pruneSnapshots } from './history.ts';
 
 const required = (env: NodeJS.ProcessEnv, name: string) => {
     if (!env[name]) {
@@ -26,7 +27,7 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
  * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. With `AI_PROVIDER`, the API's `/ai` gateway is on (`providerFromEnv`). Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
-/** How often images no document uses are looked for and deleted, the first time soon after start. */
+/** How often unused images, expired links and old snapshots are deleted, the first time soon after start. */
 const ASSET_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const FIRST_ASSET_CLEANUP_MS = 60 * 1000;
 
@@ -70,7 +71,8 @@ export async function startAccounts(
     const cleanUp = () =>
         Promise.all([
             deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)),
-            deleteExpiredLinks(db, new Date())
+            deleteExpiredLinks(db, new Date()),
+            pruneSnapshots(db, new Date())
         ]).catch((error: unknown) => log.error(error));
     // Soon after start as well, so a server restarted within the hour still cleans up.
     const firstCleanup = setTimeout(cleanUp, FIRST_ASSET_CLEANUP_MS);
@@ -88,6 +90,7 @@ export async function startAccounts(
             origin,
             onDeleted: sync.closeDocument,
             onAccessChanged: sync.closeMember,
+            history: sync,
             log,
             blobs,
             ai,

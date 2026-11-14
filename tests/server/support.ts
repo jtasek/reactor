@@ -151,6 +151,8 @@ export interface ServeOptions {
     sessionCheck?: number;
     /** The document format of the editor the sync server serves, or how to read it. */
     editorVersion?: number | (() => number);
+    /** The server's clock, for snapshots, saves and deletions. */
+    now?: () => Date;
     assetQuota?: number;
     /** Where AI requests go, and their limits; without it, AI is off. */
     ai?: { provider: AiProvider; limits?: AiLimits };
@@ -174,6 +176,7 @@ export async function startServer({
     previewOrigin,
     sessionCheck,
     editorVersion,
+    now,
     assetQuota,
     ai,
     databasePlugins
@@ -187,7 +190,8 @@ export async function startServer({
         origin: ORIGIN,
         log,
         sessionCheck,
-        editorVersion
+        editorVersion,
+        now
     });
 
     app.all('/api/auth/*splat', authHandler(accounts.auth));
@@ -199,6 +203,8 @@ export async function startServer({
             origin: ORIGIN,
             onDeleted: sync.closeDocument,
             onAccessChanged: sync.closeMember,
+            history: sync,
+            now,
             log,
             assetQuota,
             previewOrigin,

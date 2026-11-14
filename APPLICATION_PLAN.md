@@ -1163,6 +1163,15 @@ suggest. Do these in order; each is a separate change.
 2. **Document history and backups (M).** Server snapshots with Restore, a backup routine and
    one restore drill recorded in the README. Acceptance: `tests/server/history.test.ts`
    (snapshot schedule, restore as a new change, deleted documents, permissions).
+   Implementation status (2026-11-14): the server half is built. Saving a document whose last
+   snapshot is an hour old keeps the content saved before as a snapshot (`document_snapshots`);
+   the hourly cleanup keeps every snapshot for a day and each day's last for 30 days. Restore
+   applies as one change through the sync server, keeps what it replaced as a snapshot and
+   leaves the `versions` marks; deleting keeps the last content and images for 30 days, and an
+   admin restores it as a new document. `scripts/backup-database.sh` and
+   `scripts/restore-drill.sh`, with the first drill recorded in the README. Covered by
+   `tests/server/history.test.ts`. Still owed: the History panel in the editor (list, preview,
+   Restore) and restoring deleted documents from Documents → Recently Deleted.
 3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
    sync connection. Acceptance: `tests/browser/presence.spec.ts`.
 4. **Workspace AI switch (S).** Admins turn AI off for a workspace; the gateway refuses and the

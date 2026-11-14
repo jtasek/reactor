@@ -678,6 +678,64 @@ Without `SMTP_URL`, the development server writes email to its log instead.
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
 tests run against PGlite, PostgreSQL built to run inside the test process.
 
+## History and backups
+
+Signed in, the server keeps earlier states of each document as snapshots. When a
+document is saved and its last snapshot is an hour old or more, the content saved
+before is kept as a snapshot first, so each one holds the document as it was before
+a stretch of changes. Snapshots from the last day are all kept; older ones only as each
+document's last of the day (UTC), for 30 days. The hourly cleanup prunes them.
+
+Restoring a snapshot brings the document back to it as a new change that everyone
+with the document open receives; entries that already match are left alone, so
+others' edits elsewhere merge. The content it replaced is kept as a snapshot first,
+so a restore can be undone by restoring that one. Restore leaves the record of which
+editor formats wrote to the document, so older editors stay view only, and a snapshot
+written by a newer format than the server serves (as after a rollback) cannot be
+restored. Shared undo stays per person and per session.
+
+Deleting a document keeps its last content, including changes not saved yet, as a
+snapshot, with the images it used, for 30 days. A workspace admin can restore it as
+a new document in the same workspace, with its images and history; the cleanup spares
+those images until then.
+
+| Request | Body / result |
+|---|---|
+| `GET /documents/:documentId/history` | Viewer: snapshots newest first, with `id`, `createdAt`, `reason` (`scheduled`, `before-restore` or `deleted`), `version`, `size` and `restorable` |
+| `GET /documents/:documentId/history/:snapshotId` | Viewer: the snapshot's content as one Yjs update (`application/octet-stream`) |
+| `POST /documents/:documentId/history/:snapshotId/restore` | Editor: restores it, returns 204; 409 `NEWER_FORMAT` for a snapshot the server cannot restore |
+| `GET /workspaces/:workspaceId/deleted-documents` | Admin: deleted documents that can be restored, with `id`, `name` and `deletedAt` |
+| `POST /workspaces/:workspaceId/deleted-documents/:documentId/restore` | Admin: restores one as a new document, returns it with 201 |
+
+Snapshots live in the same PostgreSQL database, so they do not replace backups.
+`scripts/backup-database.sh` writes a `pg_dump` custom-format file of `DATABASE_URL`
+into `BACKUP_DIR` (default `./backups`), checks that `pg_restore` can read it, and
+deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). Run it daily, and copy
+`BACKUP_DIR` off the machine, for example:
+
+```sh
+# crontab: every day at 03:15
+15 3 * * * cd /srv/reactor && DATABASE_URL=postgres://... scripts/backup-database.sh
+```
+
+With Docker Compose, back up from the database container:
+`docker compose exec -T db pg_dump -U reactor --format=custom reactor > reactor.dump`.
+To restore, stop the app, create an empty database and run
+`pg_restore --no-owner --no-privileges --exit-on-error --dbname=<empty database URL> reactor.dump`,
+then point `DATABASE_URL` at it and start the app, which migrates it if needed.
+
+`scripts/restore-drill.sh` is the restore drill: it backs up `DATABASE_URL`, restores
+the dump into the empty database at `DRILL_DATABASE_URL`, and compares every table's
+row count and a checksum of all document content and snapshots. It refuses a drill
+database that already has tables.
+
+| Date | Where | Result |
+|---|---|---|
+| 2026-11-14 | Local PostgreSQL 16.15, seeded with 5 accounts, 35 documents (7,000 shapes), 5 deleted documents, 45 snapshots and 40 images | Passed: 716 KB dump restored in 1 s; all 18 tables and both checksums matched, the restored database migrated on start and every document read back |
+
+Run the drill against the beta's database before the beta opens, then monthly, and
+add a row here each time.
+
 ## Variables
 
 The Variables panel creates named colors, numbers, text and booleans. Inspector fields can
@@ -811,7 +869,7 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 - Moving documents made signed out into an account
 - Inviting someone to a single document (sharing is per workspace)
 - Seeing other people's pointers and selections, and comments
-- Document version history
+- Browsing and restoring document history in the editor (the server keeps it; see History and backups)
 - Exporting a prototype as a standalone web package
 
 [APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;

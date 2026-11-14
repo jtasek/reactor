@@ -228,6 +228,55 @@ const migrations: Record<string, Migration> = {
                 .column('document_id')
                 .execute();
         }
+    },
+    '0008_document_snapshots': {
+        async up(db) {
+            // Earlier states of a document, kept past its deletion, until pruned.
+            await db.schema
+                .createTable('document_snapshots')
+                .addColumn('id', 'text', (c) => c.primaryKey())
+                // Not a reference: a deleted document's snapshots are how it is restored.
+                .addColumn('document_id', 'text', (c) => c.notNull())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('name', 'text', (c) => c.notNull())
+                .addColumn('state', 'bytea', (c) => c.notNull())
+                .addColumn('size', 'integer', (c) => c.notNull())
+                .addColumn('version', 'integer', (c) => c.notNull())
+                .addColumn('reason', 'text', (c) =>
+                    c.notNull().check(sql`reason in ('scheduled', 'before-restore', 'deleted')`)
+                )
+                .addColumn('created_by', 'text', (c) =>
+                    c.references('auth.user.id').onDelete('set null')
+                )
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .execute();
+            await db.schema
+                .createIndex('document_snapshots_document_time')
+                .on('document_snapshots')
+                .columns(['document_id', 'created_at'])
+                .execute();
+            await db.schema
+                .createIndex('document_snapshots_workspace')
+                .on('document_snapshots')
+                .column('workspace_id')
+                .execute();
+            // The images a deleted document used, spared by the cleanup until it is restored or pruned.
+            await db.schema
+                .createTable('snapshot_assets')
+                .addColumn('snapshot_id', 'text', (c) =>
+                    c.notNull().references('document_snapshots.id').onDelete('cascade')
+                )
+                .addColumn('hash', 'text', (c) => c.notNull().references('assets.hash'))
+                .addPrimaryKeyConstraint('snapshot_assets_pkey', ['snapshot_id', 'hash'])
+                .execute();
+            await db.schema
+                .createIndex('snapshot_assets_hash')
+                .on('snapshot_assets')
+                .column('hash')
+                .execute();
+        }
     }
 };
 
