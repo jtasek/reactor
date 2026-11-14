@@ -22,7 +22,7 @@ import {
     Trash2,
     X
 } from 'lucide-react';
-import { useActions } from 'src/app/hooks';
+import { useActions, useAppState } from 'src/app/hooks';
 import {
     DocumentDateFilter,
     RECENTLY_DELETED_DAYS,
@@ -39,6 +39,9 @@ import styles from './styles.css';
 
 const TemplatePicker = lazy(
     () => import(/* webpackChunkName: "starter-templates" */ './TemplatePicker')
+);
+const ServerDeleted = lazy(
+    () => import(/* webpackChunkName: "document-history" */ './ServerDeleted')
 );
 
 interface Props {
@@ -77,6 +80,8 @@ const SORTS: Record<DocumentSort, (first: Listed, second: Listed) => number> = {
 
 /** How long the offer to undo moving a document to Recently Deleted stays. */
 const UNDO_DELETE_MS = 8000;
+/** How long the notice that a document came back from the server stays. */
+const RESTORED_NOTICE_MS = 5000;
 
 const DATE_OPTIONS: { value: DocumentDateFilter; label: string }[] = [
     { value: 'all', label: 'Any time' },
@@ -97,6 +102,8 @@ export const DocumentList: FC<Props> = ({
     const [templatesOpen, setTemplatesOpen] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
     const [trashed, setTrashed] = useState<{ id: string; name: string } | null>(null);
+    const [restored, setRestored] = useState<string | null>(null);
+    const signedIn = useAppState((state) => state.account.kind === 'signedIn');
     const undoButton = useRef<HTMLButtonElement>(null);
     const [query, setQuery] = useState('');
     const [date, setDate] = useState<DocumentDateFilter>('all');
@@ -139,6 +146,16 @@ export const DocumentList: FC<Props> = ({
 
         return () => window.clearTimeout(timer);
     }, [trashed]);
+
+    useEffect(() => {
+        if (!restored) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => setRestored(null), RESTORED_NOTICE_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [restored]);
 
     const undoDelete = () => {
         if (trashed && documents.some(({ id }) => id === trashed.id)) {
@@ -248,7 +265,8 @@ export const DocumentList: FC<Props> = ({
                         <Tag size={18} strokeWidth={1.5} aria-hidden="true" />
                         Tags{tags.length > 0 && ` (${tags.length})`}
                     </button>
-                    {(deletedCount > 0 || showDeleted) && (
+                    {/* Signed in, the server may keep documents deleted for good. */}
+                    {(deletedCount > 0 || showDeleted || signedIn) && (
                         <button
                             className={styles.tagFilter}
                             type="button"
@@ -360,7 +378,17 @@ export const DocumentList: FC<Props> = ({
                         )}
                     </div>
                 )}
+                {showDeleted && signedIn && (
+                    <Suspense fallback={null}>
+                        <ServerDeleted onRestored={setRestored} />
+                    </Suspense>
+                )}
                 <div className={styles.toastRegion} role="status">
+                    {restored && (
+                        <div className={styles.toast}>
+                            <span>Restored “{restored}” to Documents</span>
+                        </div>
+                    )}
                     {trashed && (
                         <div className={styles.toast}>
                             <span>Moved “{trashed.name}” to Recently Deleted</span>

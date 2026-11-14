@@ -9,9 +9,19 @@ export interface Props {
     onClose: () => void;
     actions?: ReactNode;
     children?: ReactNode;
+    /** Wide, for a dialog that shows a list beside a preview. */
+    wide?: boolean;
 }
 
-export const Dialog: FC<Props> = ({ title, description, visible, onClose, actions, children }) => {
+export const Dialog: FC<Props> = ({
+    title,
+    description,
+    visible,
+    onClose,
+    actions,
+    children,
+    wide = false
+}) => {
     const ref = useRef<HTMLDialogElement>(null);
     const titleId = useId();
     const descriptionId = useId();
@@ -36,6 +46,7 @@ export const Dialog: FC<Props> = ({ title, description, visible, onClose, action
         <dialog
             ref={ref}
             className={styles.dialog}
+            data-wide={wide || undefined}
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
             onCancel={(event) => {

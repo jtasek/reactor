@@ -131,6 +131,8 @@ const MEMBERS = 'shapesIds';
  * format has a key of its own, so an older copy writing at the same time never hides it.
  */
 const VERSIONS = 'versions';
+/** Where the server marks a restore of the document (see server/restoreContent.ts). */
+const RESTORES = 'restores';
 const isLocalOnly = (field: string) =>
     RUNTIME_FIELDS.has(field) || field === 'camera' || field === 'shapesIds';
 /** Document fields whose changes are shared and saved but do not date the document. */
@@ -866,6 +868,10 @@ export class Collaboration {
             });
         }
 
+        // Restored on the server, the content this copy's undo steps were made over is gone.
+        binding.doc.getMap(RESTORES).observe((_event, transaction) => {
+            if (transaction.origin !== LOCAL) binding.history?.clear();
+        });
         binding.doc.on('afterTransaction', () => this.applyRemote(documentId, binding));
         binding.doc.on('update', (update: Uint8Array, origin: unknown) => {
             // An undo's origin is the history that made it; other copies' changes have their own.
