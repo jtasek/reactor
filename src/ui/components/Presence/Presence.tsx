@@ -15,37 +15,54 @@ const LABEL_PADDING = 6;
 const LABEL_CHARACTER = 6.6;
 const SELECTION_OUTSET = 3;
 
-/** The boxes of the shapes `peer` selected that this copy still has, as drawn. */
-function selectedBoxes(document: Document, peer: Peer): Box[] {
-    return peer.selection
+/** The boxes of the shapes in `selection` that this copy still has, as drawn. */
+function selectedBoxes(document: Document, selection: string[]): Box[] {
+    return selection
         .filter((id) => Object.hasOwn(document.shapes, id))
         .map((id) => drawnBox(renderedShape(document, id)));
 }
 
-const PeerSelection: FC<{ peer: Peer; document: Document; scale: number }> = ({
-    peer,
-    document,
-    scale
-}) => {
-    const outset = SELECTION_OUTSET / scale;
+interface SelectionProps {
+    name: string;
+    color: string;
+    selection: string[];
+    /** The selection's ids as one string, so a pointer moving does not draw it again. */
+    selectionKey: string;
+    scale: number;
+}
 
-    return (
-        <g data-presence-selection={peer.name} stroke={peer.color}>
-            {selectedBoxes(document, peer).map(({ topLeft, width, height }, index) => (
-                <rect
-                    key={index}
-                    fill="none"
-                    strokeWidth={2}
-                    vectorEffect="non-scaling-stroke"
-                    x={topLeft.x - outset}
-                    y={topLeft.y - outset}
-                    width={width + outset * 2}
-                    height={height + outset * 2}
-                />
-            ))}
-        </g>
-    );
-};
+/**
+ * Outlines a peer's selected shapes. It reads the document itself, so it draws
+ * again when those shapes change, but not each time the peer's pointer moves.
+ */
+const PeerSelection: FC<SelectionProps> = memo(
+    function PeerSelection({ name, color, selection, scale }) {
+        const document = useAppState((state) => state.currentDocument);
+        const outset = SELECTION_OUTSET / scale;
+
+        return (
+            <g data-presence-selection={name} stroke={color}>
+                {selectedBoxes(document, selection).map(({ topLeft, width, height }, index) => (
+                    <rect
+                        key={index}
+                        fill="none"
+                        strokeWidth={2}
+                        vectorEffect="non-scaling-stroke"
+                        x={topLeft.x - outset}
+                        y={topLeft.y - outset}
+                        width={width + outset * 2}
+                        height={height + outset * 2}
+                    />
+                ))}
+            </g>
+        );
+    },
+    (before, after) =>
+        before.name === after.name &&
+        before.color === after.color &&
+        before.selectionKey === after.selectionKey &&
+        before.scale === after.scale
+);
 
 const PeerPointer: FC<{ peer: Peer; scale: number }> = memo(function PeerPointer({ peer, scale }) {
     if (!peer.pointer) {
@@ -93,9 +110,9 @@ const usePeers = (documentId: string) =>
  * coordinates, inside the camera, at a constant size on screen; it takes no input.
  */
 export const Presence: FC = () => {
-    const document = useAppState((state) => state.currentDocument);
+    const documentId = useAppState((state) => state.currentDocumentId);
     const scale = useAppState((state) => state.currentDocument.camera.scale);
-    const peers = usePeers(document.id);
+    const peers = usePeers(documentId);
 
     if (peers.length === 0) {
         return null;
@@ -103,9 +120,18 @@ export const Presence: FC = () => {
 
     return (
         <g pointerEvents="none" aria-hidden="true" data-presence="">
-            {peers.map((peer) => (
-                <PeerSelection key={peer.clientId} peer={peer} document={document} scale={scale} />
-            ))}
+            {peers.map(({ clientId, name, color, selection }) =>
+                selection.length > 0 ? (
+                    <PeerSelection
+                        key={clientId}
+                        name={name}
+                        color={color}
+                        selection={selection}
+                        selectionKey={selection.join('\n')}
+                        scale={scale}
+                    />
+                ) : null
+            )}
             {peers.map((peer) => (
                 <PeerPointer key={peer.clientId} peer={peer} scale={scale} />
             ))}

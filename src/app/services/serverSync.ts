@@ -244,9 +244,10 @@ export class ServerSync {
 
     /**
      * Shares where this copy's pointer is and what it has selected in `documentId`,
-     * the document it shows, and nothing in the others it syncs. A state is never
-     * taken back by clearing it, as the server passes on no cleared states: an empty
-     * one says the copy is elsewhere, and the server clears it once the copy leaves.
+     * the document it shows, and nothing in the others it syncs. The server passes on
+     * no cleared states, so leaving a document first shares an empty state, which
+     * shows nothing; clearing it then stops this copy renewing it every 15 seconds,
+     * and the others drop it once it is 30 seconds old.
      */
     present(documentId: string | undefined, local: LocalPresence): void {
         const previous = this.shown.documentId;
@@ -254,7 +255,10 @@ export class ServerSync {
         this.shown = { documentId, local };
 
         if (previous !== documentId && previous !== undefined) {
-            this.links.get(previous)?.provider.awareness?.setLocalState({});
+            const awareness = this.links.get(previous)?.provider.awareness;
+
+            awareness?.setLocalState({});
+            awareness?.setLocalState(null);
         }
 
         if (documentId !== undefined) {
@@ -491,8 +495,9 @@ export class ServerSync {
             const { awareness } = provider;
 
             if (awareness) {
+                // Documents this copy does not show share nothing, and are not renewed.
                 awareness.setLocalState(
-                    this.shown.documentId === documentId ? this.shown.local : {}
+                    this.shown.documentId === documentId ? this.shown.local : null
                 );
                 awareness.on('change', (changes: Record<string, number[]>) => {
                     const others = Object.values(changes)

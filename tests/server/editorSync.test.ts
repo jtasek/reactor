@@ -706,6 +706,9 @@ it('downgrades an active editor, discards rejected offline edits from memory and
 
 it('shows each person the pointers and selections of others with the document open', async () => {
     const shown = vi.spyOn(presence, 'set');
+    onTestFinished(() => {
+        shown.mockRestore();
+    });
     const served = await serve();
     const owner = await served.user('owner@example.com');
     const recipient = await served.user('recipient@example.com');

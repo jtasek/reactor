@@ -151,6 +151,11 @@ export function localPresence({ state }: Pick<Instance, 'state'>): LocalPresence
     const { inside, current } = state.events.pointer;
     const local: LocalPresence = {};
 
+    // Elsewhere, as on the Documents page, the canvas and its selection are not shown.
+    if (state.currentPage !== 'designer') {
+        return local;
+    }
+
     if (inside && Number.isFinite(current.x) && Number.isFinite(current.y)) {
         local.pointer = { x: current.x, y: current.y };
     }
@@ -164,6 +169,7 @@ export function localPresence({ state }: Pick<Instance, 'state'>): LocalPresence
 
 const sharesPresence = (path: string[]) =>
     path[0] === 'currentDocumentId' ||
+    path[0] === 'currentPage' ||
     (path[0] === 'events' &&
         path[1] === 'pointer' &&
         (path[2] === 'current' || path[2] === 'inside')) ||

@@ -1179,10 +1179,10 @@ suggest. Do these in order; each is a separate change.
 3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
    sync connection. Acceptance: `tests/browser/presence.spec.ts`.
    Implementation status (2026-11-14): each synced document's connection carries Yjs awareness.
-   The copy showing a document shares its pointer (canvas coordinates, while over the canvas
-   and the page is visible) and its selected shapes, at most every 50 ms
-   (`src/app/services/presence.ts`); in the documents it does not show it shares an empty
-   state, as the server passes on no cleared ones. The server rewrites every state before
+   The copy showing a document in the editor shares its pointer (canvas coordinates, while
+   over the canvas and the page is visible) and its selected shapes, at most every 50 ms
+   (`src/app/services/presence.ts`); other pages and documents share nothing. As the server
+   passes on no cleared states, leaving a document first shares an empty one. The server rewrites every state before
    passing it on (`server/presence.ts`): who it is comes from the session, only a pointer of
    numbers and up to 500 shape ids are kept, and client ids another connection holds are
    refused, so nobody can show up as, or move, someone else. Viewers are present too. Signed

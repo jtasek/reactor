@@ -80,9 +80,15 @@ describe('presence', () => {
         vi.advanceTimersByTime(PRESENCE_INTERVAL);
         expect(shared.at(-1)).toEqual([documentId, { selection: [shapeId] }]);
 
+        // On another page, as Documents, nothing of the canvas is shared.
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 2, y: 2 } });
+        store.actions.showDocuments();
+        vi.advanceTimersByTime(PRESENCE_INTERVAL);
+        expect(shared.at(-1)).toEqual([documentId, {}]);
+
         stop();
         store.actions.events.movePointer({ pointerId: 1, position: { x: 1, y: 1 } });
         vi.advanceTimersByTime(PRESENCE_INTERVAL);
-        expect(shared).toHaveLength(3);
+        expect(shared).toHaveLength(4);
     });
 });
