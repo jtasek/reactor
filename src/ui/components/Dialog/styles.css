@@ -25,6 +25,12 @@
     padding: var(--dialog-padding);
 }
 
+.dialog[data-wide] {
+    --dialog-max-width: 44rem;
+
+    width: 100%;
+}
+
 .dialog * {
     font-family: inherit;
 }
@@ -59,12 +65,17 @@
     padding: var(--dialog-button-padding);
 }
 
+.actions button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
 .actions button[data-variant='primary'] {
     background: var(--dialog-primary-background);
     color: var(--dialog-primary-text);
 }
 
-.actions button[data-variant='primary']:hover {
+.actions button[data-variant='primary']:hover:enabled {
     background: var(--dialog-primary-hover-background);
 }
 

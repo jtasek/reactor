@@ -120,6 +120,15 @@ export const requestDocumentReset: Action = ({ state }) => {
     }
 };
 
+/** Shows the current document's history; the Document history command checks it may. */
+export const openDocumentHistory: Action = ({ state }) => {
+    state.historyDocumentId = state.currentDocumentId;
+};
+
+export const closeDocumentHistory: Action = ({ state }) => {
+    state.historyDocumentId = null;
+};
+
 export const cancelDocumentReset: Action = ({ state }) => {
     state.resetDocumentId = null;
 };
@@ -256,6 +265,7 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     state.currentDocumentId = documentId;
     state.enteredComponentId = null;
     state.resetDocumentId = null;
+    state.historyDocumentId = null;
 };
 
 export const editDocument: ActionWithParam<string> = ({ actions, effects }, documentId) => {

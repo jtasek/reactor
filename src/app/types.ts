@@ -716,6 +716,8 @@ export type Application = {
         componentOrigin?: { componentId: string; instanceId: string; position: Point; size: Size };
     } | null;
     resetDocumentId: string | null;
+    /** The document whose server history is shown, while it is. */
+    historyDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
     guideDragActive: boolean;

@@ -694,10 +694,17 @@ editor formats wrote to the document, so older editors stay view only, and a sna
 written by a newer format than the server serves (as after a rollback) cannot be
 restored. Shared undo stays per person and per session.
 
+In the editor, **Document history** in the command bar (signed in, as an editor or
+admin of the document) lists the versions the server keeps, newest first, and draws the
+one chosen. **Restore this version** restores it; each copy of the editor with the
+document open then clears its undo history, so undo cannot reach past the restore.
+A version made by a newer release is listed but cannot be restored.
+
 Deleting a document keeps its last content, including changes not saved yet, as a
 snapshot, with the images it used, for 30 days. A workspace admin can restore it as
 a new document in the same workspace, with its images and history; the cleanup spares
-those images until then.
+those images until then. Signed in, Documents → **Recently Deleted** lists them under
+**Kept on the server** with **Restore**, below the documents this browser keeps there.
 
 | Request | Body / result |
 |---|---|
@@ -871,7 +878,6 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 - Moving documents made signed out into an account
 - Inviting someone to a single document (sharing is per workspace)
 - Seeing other people's pointers and selections, and comments
-- Browsing and restoring document history in the editor (the server keeps it; see History and backups)
 - Exporting a prototype as a standalone web package
 
 [APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;
