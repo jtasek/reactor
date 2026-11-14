@@ -6,6 +6,7 @@ import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
 import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
+import { presence, type Peer } from 'src/app/services/presence';
 import { createTestStore } from '../support/store';
 import { ORIGIN, serve, type DocumentSummary } from './support';
 
@@ -701,4 +702,49 @@ it('downgrades an active editor, discards rejected offline edits from memory and
     expect((await served.call('DELETE', path, { cookie: owner.cookie })).status).toBe(204);
     await vi.waitFor(() => expect(documentIds(reconnected)).not.toContain(id));
     expect(documentIds(editor)).toContain(id);
+});
+
+it('shows each person the pointers and selections of others with the document open', async () => {
+    const shown = vi.spyOn(presence, 'set');
+    const served = await serve();
+    const owner = await served.user('owner@example.com');
+    const recipient = await served.user('recipient@example.com');
+    const editor = await device(served, owner.cookie);
+    const [id] = documentIds(editor);
+    editor.store.actions.addShape(rectangle);
+    await vi.waitFor(async () =>
+        expect(await serverDocuments(served, owner.cookie, owner.personal.id)).toHaveLength(1)
+    );
+    const invitation = await served.json<{ token: string }>(
+        served.call('POST', `/workspaces/${owner.personal.id}/invitations`, {
+            cookie: owner.cookie,
+            body: { email: 'recipient@example.com', role: 'viewer' }
+        })
+    );
+    await served.call('POST', '/invitations/accept', {
+        cookie: recipient.cookie,
+        body: { token: invitation.token }
+    });
+    const viewer = await device(served, recipient.cookie);
+    await vi.waitFor(() => expect(shapeCount(viewer, id)).toBe(1));
+    viewer.store.actions.openDocument(id);
+
+    const [shapeId] = editor.store.state.documents[id].shapesIds;
+    editor.store.actions.selectShape(shapeId);
+    editor.store.actions.events.movePointer({ pointerId: 1, position: { x: 40, y: 50 } });
+
+    /** The last people shown in the document with someone's pointer at `position`. */
+    const seenAt = (position: { x: number; y: number }) =>
+        shown.mock.calls
+            .filter(([documentId]) => documentId === id)
+            .flatMap(([, peers]: [string, Peer[]]) => peers)
+            .findLast(({ pointer }) => pointer?.x === position.x && pointer.y === position.y);
+
+    await vi.waitFor(() =>
+        expect(seenAt({ x: 40, y: 50 })).toMatchObject({ selection: [shapeId] })
+    );
+    // Viewers cannot change the document, but they are there too.
+    viewer.store.actions.events.movePointer({ pointerId: 1, position: { x: 7, y: 8 } });
+    await vi.waitFor(() => expect(seenAt({ x: 7, y: 8 })).toMatchObject({ selection: [] }));
+    expect(seenAt({ x: 40, y: 50 })!.userId).not.toBe(seenAt({ x: 7, y: 8 })!.userId);
 });

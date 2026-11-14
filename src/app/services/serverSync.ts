@@ -6,6 +6,9 @@ import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
 import { SCHEMA_VERSION } from './schemaVersion';
+import { readPeers, type LocalPresence, type Peer } from './presence';
+
+export { followPresence, presence } from './presence';
 
 /** The close code and query parameter of the server's check of the editor's format. */
 const EDITOR_OUTDATED = 4426;
@@ -30,6 +33,8 @@ export interface ServerEvents {
      * copy: it stops syncing until reloaded.
      */
     outdated?(version: number): void;
+    /** Who else has a document open changed: their pointers and selections. */
+    presence?(documentId: string, peers: Peer[]): void;
 }
 
 export interface ServerSyncOptions {
@@ -46,6 +51,8 @@ export interface ServerSyncOptions {
     signedIn(): Promise<boolean>;
     /** The documents' images, shared with the server as each document changes or links. */
     images?: Omit<AssetSyncSource, 'document'>;
+    /** The signed-in account, whose other copies are not shown as other people. */
+    self?: string;
 }
 
 const union = (ids: string[], more: string[]) => [...new Set([...ids, ...more])];
@@ -105,6 +112,8 @@ export class ServerSync {
     private outdated = false;
 
     private readonly images?: AssetSync;
+    /** What this copy shares of the document it shows, through that document's awareness. */
+    private shown: { documentId?: string; local: LocalPresence } = { local: {} };
 
     constructor(private readonly options: ServerSyncOptions) {
         if (options.images) {
@@ -230,6 +239,26 @@ export class ServerSync {
         }
         if (link?.held) {
             Yjs.applyUpdate(link.doc, update, OUTGOING);
+        }
+    }
+
+    /**
+     * Shares where this copy's pointer is and what it has selected in `documentId`,
+     * the document it shows, and nothing in the others it syncs. A state is never
+     * taken back by clearing it, as the server passes on no cleared states: an empty
+     * one says the copy is elsewhere, and the server clears it once the copy leaves.
+     */
+    present(documentId: string | undefined, local: LocalPresence): void {
+        const previous = this.shown.documentId;
+
+        this.shown = { documentId, local };
+
+        if (previous !== documentId && previous !== undefined) {
+            this.links.get(previous)?.provider.awareness?.setLocalState({});
+        }
+
+        if (documentId !== undefined) {
+            this.links.get(documentId)?.provider.awareness?.setLocalState(local);
         }
     }
 
@@ -435,7 +464,6 @@ export class ServerSync {
                 websocketProvider: this.connect(),
                 name: documentId,
                 document: doc,
-                awareness: null,
                 onSynced: () => {
                     this.refused.delete(documentId);
                     this.images?.changed(documentId);
@@ -460,6 +488,25 @@ export class ServerSync {
                 onAuthenticationFailed: () => this.leave(documentId)
             });
             const link: Link = { doc, provider, held, replace, settle };
+            const { awareness } = provider;
+
+            if (awareness) {
+                awareness.setLocalState(
+                    this.shown.documentId === documentId ? this.shown.local : {}
+                );
+                awareness.on('change', (changes: Record<string, number[]>) => {
+                    const others = Object.values(changes)
+                        .flat()
+                        .some((clientId) => clientId !== doc.clientID);
+
+                    if (others && this.links.get(documentId) === link) {
+                        events.presence?.(
+                            documentId,
+                            readPeers(awareness.getStates(), doc.clientID, this.options.self ?? '')
+                        );
+                    }
+                });
+            }
 
             doc.on('update', (update: Uint8Array, origin: unknown) => {
                 if (origin !== OUTGOING && link.held) {
@@ -505,6 +552,7 @@ export class ServerSync {
 
         this.links.delete(documentId);
         link.settle();
+        this.options.events.presence?.(documentId, []);
 
         if (closed) {
             this.socket?.configuration.providerMap.delete(documentId);
