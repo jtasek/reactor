@@ -325,7 +325,7 @@ export class ServerSync {
                 workspaces.flatMap((workspace, index) =>
                     lists[index].map(({ id }) => [
                         id,
-                        { workspaceId: workspace.id, role: workspace.role }
+                        { workspaceId: workspace.id, role: workspace.role, aiOff: !workspace.ai }
                     ])
                 )
             );

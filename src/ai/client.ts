@@ -46,7 +46,8 @@ const PROBLEMS: Record<string, string> = {
     AI_REFUSED: 'The model declined this request.',
     AI_INCOMPLETE: 'The answer was too long. Ask for a smaller change.',
     NOT_FOUND: 'This document is not on the server yet. Try again in a moment.',
-    FORBIDDEN: 'You may not change this document.'
+    FORBIDDEN: 'You may not change this document.',
+    AI_OFF: 'An admin turned AI off for this workspace.'
 };
 
 const FAILED = 'The model could not be reached. Try again.';

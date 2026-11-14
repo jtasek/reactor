@@ -1,4 +1,5 @@
 import { WorkspaceMembers } from './WorkspaceMembers';
+import { WorkspaceAi } from './WorkspaceAi';
 import React, { FC, SubmitEvent, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { useAccount, useAppState, useEffects } from 'src/app/hooks';
@@ -15,6 +16,7 @@ import styles from './Sharing.css';
 export const Sharing: FC = () => {
     const account = useAccount();
     const { api, reloadPage } = useEffects();
+    const serverAi = useAppState((state) => state.ai === 'available');
     const currentWorkspace = useAppState(
         (state) => state.documentAccess[state.currentDocumentId]?.workspaceId
     );
@@ -28,6 +30,7 @@ export const Sharing: FC = () => {
     const [problem, setProblem] = useState<string>();
     const [created, setCreated] = useState<{ id: string; email: string; link: string }>();
     const link = created?.link ?? '';
+    const selected = workspaces?.find(({ id }) => id === workspaceId);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -237,6 +240,21 @@ export const Sharing: FC = () => {
                                         );
                                     }}
                                 />
+                                {serverAi && selected && (
+                                    <WorkspaceAi
+                                        key={workspaceId}
+                                        workspace={selected}
+                                        onChanged={(ai) =>
+                                            setWorkspaces((current) =>
+                                                current?.map((workspace) =>
+                                                    workspace.id === workspaceId
+                                                        ? { ...workspace, ai }
+                                                        : workspace
+                                                )
+                                            )
+                                        }
+                                    />
+                                )}
                                 <section className={styles.card} aria-labelledby="pending-heading">
                                     <h2 id="pending-heading">Pending invitations</h2>
                                     <p className={styles.secondary}>

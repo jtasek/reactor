@@ -166,6 +166,59 @@ describe('the AI gateway', () => {
         expect(await server.requests()).toEqual([]);
     });
 
+    it('lets admins turn AI off for a workspace, and refuses its requests and repairs', async () => {
+        const server = await setup([answer({ calls: [rectangle] }), answer({ calls: [label] })]);
+        const { ada, ask, repair, call, replayed } = server;
+        const bob = await server.user('bob@example.com');
+        const turn = (enabled: unknown, cookie = ada.cookie, workspaceId = ada.personal.id) =>
+            call('PUT', `/workspaces/${workspaceId}/ai`, { cookie, body: { enabled } });
+        const listed = async (cookie = ada.cookie) =>
+            (await (await call('GET', '/workspaces', { cookie })).json()) as Array<{
+                id: string;
+                ai: boolean;
+            }>;
+
+        expect((await listed()).find(({ id }) => id === ada.personal.id)?.ai).toBe(true);
+
+        const [{ requestId }] = await readEvents(await ask(EDIT));
+
+        expect((await turn(false, bob.cookie)).status).toBe(404);
+        await server.db
+            .insertInto('workspace_members')
+            .values({
+                workspace_id: ada.personal.id,
+                user_id: await server.userId(bob.personal),
+                role: 'editor'
+            })
+            .execute();
+        expect(await (await turn(false, bob.cookie)).json()).toEqual({ code: 'FORBIDDEN' });
+        expect(await (await turn('no')).json()).toEqual({ code: 'INVALID_BODY' });
+        expect(
+            (
+                await call('PUT', `/workspaces/${ada.personal.id}/ai`, {
+                    cookie: ada.cookie,
+                    body: { enabled: false },
+                    headers: { origin: 'https://evil.example' }
+                })
+            ).status
+        ).toBe(403);
+
+        expect((await turn(false)).status).toBe(204);
+        expect((await listed(bob.cookie)).find(({ id }) => id === ada.personal.id)?.ai).toBe(false);
+        // Bob's own workspace keeps AI on.
+        expect((await listed(bob.cookie)).find(({ id }) => id === bob.personal.id)?.ai).toBe(true);
+        expect(await (await ask(EDIT)).json()).toEqual({ code: 'AI_OFF' });
+        expect(await (await ask(EDIT, bob.cookie)).json()).toEqual({ code: 'AI_OFF' });
+        expect(await (await repair(String(requestId), { problem: 'Try again.' })).json()).toEqual({
+            code: 'AI_OFF'
+        });
+        expect(replayed.sent).toHaveLength(1);
+        expect(await server.requests()).toHaveLength(1);
+
+        expect((await turn(true)).status).toBe(204);
+        expect((await ask(EDIT)).status).toBe(200);
+    });
+
     it('sends an image checked by its content', async () => {
         const { ask, replayed } = await setup([answer({ calls: [rectangle] })]);
 

@@ -191,6 +191,31 @@ export function createApi({
         res.json(await listWorkspaces(db, req.userId));
     });
 
+    // Admins turn AI on or off for everyone in the workspace; the gateway checks it on every request.
+    api.put('/workspaces/:workspaceId/ai', async (req, res) => {
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
+        const enabled: unknown = req.body?.enabled;
+
+        if (!allows(role, 'viewer')) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        if (!allows(role, 'admin')) {
+            return refuse(res, 403, 'FORBIDDEN');
+        }
+
+        if (typeof enabled !== 'boolean') {
+            return refuse(res, 400, 'INVALID_BODY');
+        }
+
+        await db
+            .updateTable('workspaces')
+            .set({ ai_enabled: enabled })
+            .where('id', '=', req.params.workspaceId)
+            .execute();
+        res.status(204).end();
+    });
+
     api.get('/workspaces/:workspaceId/documents', async (req, res) => {
         const role = await workspaceRole(db, req.userId, req.params.workspaceId);
 

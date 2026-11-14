@@ -276,7 +276,10 @@ re-renders.** Components never mutate state directly.
   `propose` (`src/ai/client.ts`) returns the proposal, nothing applied, and aborting it stops
   the model. Each request is a row of `ai_requests` with its tokens, counted against a day's
   limits per person and per workspace (`AI_LIMITS`), one request of a person at a time.
-  `state.ai` is `available` only signed in on a server with AI. `src/ai/` loads only with
+  Admins turn AI off per workspace (`workspaces.ai_enabled`, `PUT /api/workspaces/:id/ai`,
+  the AI card on Sharing); the gateway then refuses with `AI_OFF`. `state.ai` is `available`
+  only signed in on a server with AI; AI entries also check the document's workspace through
+  `aiOffered` (`src/app/aiAccess.ts`, which reads `documentAccess[id].aiOff`). `src/ai/` loads only with
   what uses it, never at startup. Edit with words (`EditWithWordsCommand`, `w`, and a button
   on the application bar only where AI is available) opens a non-modal chat for the current
   document (`state.aiEditDocumentId`) that loads with the AI client

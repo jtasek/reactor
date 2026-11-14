@@ -19,6 +19,8 @@ export interface Database {
         name: string;
         owner_id: string | null;
         default_role: Role;
+        /** Whether its members may use AI; admins turn it off. */
+        ai_enabled: Generated<boolean>;
         created_at: Generated<Date>;
     };
     workspace_members: {

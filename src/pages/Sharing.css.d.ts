@@ -1,6 +1,7 @@
 declare namespace SharingCssNamespace {
   export interface ISharingCss {
     card: string;
+    check: string;
     content: string;
     list: string;
     member: string;

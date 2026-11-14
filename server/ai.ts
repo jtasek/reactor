@@ -128,12 +128,16 @@ function readProblem(body: unknown): Problem {
     return { operation: operation as number | undefined, problem };
 }
 
-/** The workspace of a document the person may edit; refuses others as missing or forbidden. */
+/**
+ * The workspace of a document the person may edit with AI; refuses others as
+ * missing or forbidden, and documents whose workspace has AI turned off.
+ */
 async function editableDocument(db: Db, userId: string, documentId: string) {
     const document = await db
         .selectFrom('documents')
-        .select('workspace_id')
-        .where('id', '=', documentId)
+        .innerJoin('workspaces', 'workspaces.id', 'documents.workspace_id')
+        .select(['documents.workspace_id', 'workspaces.ai_enabled'])
+        .where('documents.id', '=', documentId)
         .executeTakeFirst();
     const role = document && (await workspaceRole(db, userId, document.workspace_id));
 
@@ -143,6 +147,10 @@ async function editableDocument(db: Db, userId: string, documentId: string) {
 
     if (!allows(role, 'editor')) {
         throw new Refusal(403, 'FORBIDDEN');
+    }
+
+    if (!document.ai_enabled) {
+        throw new Refusal(403, 'AI_OFF');
     }
 
     return document.workspace_id;
@@ -351,14 +359,18 @@ export function createAi({
                     );
                     const workspace = await trx
                         .selectFrom('workspaces')
-                        .select('id')
+                        .select('ai_enabled')
                         .where('id', '=', workspaceId)
                         .forUpdate()
                         .executeTakeFirst();
 
-                    // The workspace may have been deleted since the document was checked.
+                    // The workspace may have been deleted, or AI turned off, since the document was checked.
                     if (!workspace) {
                         throw new Refusal(404, 'NOT_FOUND');
+                    }
+
+                    if (!workspace.ai_enabled) {
+                        throw new Refusal(403, 'AI_OFF');
                     }
 
                     if (await reachedLimits(trx, limits, req.userId, workspaceId)) {
