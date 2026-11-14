@@ -199,6 +199,31 @@ describe('editor sync', () => {
         expect(isReadOnly(older.store.state, documentId)).toBe(true);
     });
 
+    it('keeps a document made after the server turned it away, for the build that reloads', async () => {
+        let served = SCHEMA_VERSION + 1;
+        const server = await serve({ editorVersion: () => served });
+        const { cookie, personal } = await server.user('ada@example.com');
+        const older = await device(server, cookie);
+        const [refused] = documentIds(older);
+
+        await vi.waitFor(() => expect(isReadOnly(older.store.state, refused)).toBe(true));
+        older.store.actions.addDocument({ name: 'Made after' });
+        const madeAfter = documentIds(older).find((id) => id !== refused)!;
+        older.effects.collaboration.flush();
+
+        // A release this build can edit is deployed again, and the browser reloads.
+        served = SCHEMA_VERSION;
+        older.effects.collaboration.dispose();
+        const reloaded = await restart(server, cookie, older);
+
+        await vi.waitFor(async () =>
+            expect(
+                (await serverDocuments(server, cookie, personal.id)).map(({ id }) => id)
+            ).toContain(madeAfter)
+        );
+        expect(documentIds(reloaded)).toContain(madeAfter);
+    });
+
     it('shows an account’s documents on each device and syncs changes both ways', async () => {
         const served = await serve();
         const { cookie, personal } = await served.user('ada@example.com');
