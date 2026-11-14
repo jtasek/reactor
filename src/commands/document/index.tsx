@@ -16,3 +16,4 @@ export const ResetDocumentCommand: Command = {
     canExecute: ({ state }) => takesEditorInput(state) && !state.currentDocument.locked,
     execute: ({ actions }) => actions.requestDocumentReset()
 };
+export { DocumentHistoryCommand } from './history';

@@ -1,8 +1,17 @@
 import { isDeepStrictEqual } from 'node:util';
 import * as Y from 'yjs';
 
-/** Kept as the live document has it: a restore never hides which editors wrote to it. */
-const KEPT_ROOTS = new Set(['versions']);
+/**
+ * Where a restore leaves its mark, so every copy of the editor clears its undo
+ * history: the steps in it were made over content the restore replaced.
+ */
+export const RESTORES = 'restores';
+
+/**
+ * Kept as the live document has it: a restore never hides which editors wrote to it,
+ * nor that an earlier restore happened.
+ */
+const KEPT_ROOTS = new Set(['versions', RESTORES]);
 
 type Kind = 'map' | 'array' | 'text';
 
@@ -96,9 +105,10 @@ function clear(type: Y.Map<unknown> | Y.Array<unknown> | Y.Text) {
  * Brings `live` in line with the content `snapshot` holds, as one change that every
  * copy receives like any other, so nothing is rewritten in place and the result can
  * itself be restored over. Entries that already match are left alone. The `versions`
- * marks are kept, so editors older than one that wrote to the document stay view only.
+ * marks are kept, so editors older than one that wrote to the document stay view only,
+ * and the time of the restore is marked under `RESTORES`.
  */
-export function restoreContent(live: Y.Doc, snapshot: Y.Doc) {
+export function restoreContent(live: Y.Doc, snapshot: Y.Doc, at = new Date()) {
     const names = new Set([...live.share.keys(), ...snapshot.share.keys()]);
 
     live.transact(() => {
@@ -127,6 +137,8 @@ export function restoreContent(live: Y.Doc, snapshot: Y.Doc) {
             }
             if (kind === 'text') restoreText(target as Y.Text, source as Y.Text);
         }
+
+        live.getMap(RESTORES).set('at', at.toISOString());
     });
 }
 

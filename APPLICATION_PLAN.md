@@ -1170,8 +1170,12 @@ suggest. Do these in order; each is a separate change.
    leaves the `versions` marks; deleting keeps the last content and images for 30 days, and an
    admin restores it as a new document. `scripts/backup-database.sh` and
    `scripts/restore-drill.sh`, with the first drill recorded in the README. Covered by
-   `tests/server/history.test.ts`. Still owed: the History panel in the editor (list, preview,
-   Restore) and restoring deleted documents from Documents → Recently Deleted.
+   `tests/server/history.test.ts`. The editor's **Document history** command lists, draws and
+   restores versions; a restore marks the shared `restores` map, and every copy clears its undo
+   history when it arrives. Documents → Recently Deleted lists the deleted documents the server
+   keeps, for admins to restore. Covered by `tests/restoreUndo.test.ts`,
+   `tests/documentHistory.test.ts` and `tests/browser/documentHistory.spec.ts`. Step 2 is complete
+   but for the restore drill on the beta's database, which runs before the beta.
 3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
    sync connection. Acceptance: `tests/browser/presence.spec.ts`.
 4. **Workspace AI switch (S).** Admins turn AI off for a workspace; the gateway refuses and the
