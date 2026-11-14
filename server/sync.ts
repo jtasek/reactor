@@ -334,6 +334,9 @@ export function createSync({
                     createdBy: userId,
                     now: now()
                 });
+                // A snapshot from before a deleted document was restored names its old id.
+                const id = document.getMap('document').get('id');
+                if (id !== undefined) restored.getMap('document').set('id', id);
                 await connection.transact((live) => restoreContent(live, restored));
 
                 return true;

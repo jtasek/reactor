@@ -710,8 +710,10 @@ those images until then.
 Snapshots live in the same PostgreSQL database, so they do not replace backups.
 `scripts/backup-database.sh` writes a `pg_dump` custom-format file of `DATABASE_URL`
 into `BACKUP_DIR` (default `./backups`), checks that `pg_restore` can read it, and
-deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). Run it daily, and copy
-`BACKUP_DIR` off the machine, for example:
+deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). The URL goes on `pg_dump`'s
+command line, so on a shared machine leave the password out of it and keep it in
+`~/.pgpass` (or `PGPASSFILE`) instead. Run it daily, and copy `BACKUP_DIR` off the
+machine, for example:
 
 ```sh
 # crontab: every day at 03:15

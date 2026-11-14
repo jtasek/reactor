@@ -326,7 +326,13 @@ describe('document history', () => {
         ).toBe(201);
 
         const copy = await open(served, ada.cookie, plan.id);
-        copy.getText('notes').insert(0, 'Not saved yet');
+        copy.transact(() => {
+            copy.getText('notes').insert(0, 'Not saved yet');
+            // As the editor keeps its fields, moved to Recently Deleted before it was deleted.
+            copy.getMap('document').set('id', plan.id);
+            copy.getMap('document').set('name', 'Plan');
+            copy.getMap('document').set('deleted', '2026-10-01T00:00:00.000Z');
+        });
         await vi.waitFor(async () =>
             expect(notes(fromState(await served.sync.currentState(plan.id)))).toBe('Not saved yet')
         );
@@ -361,7 +367,10 @@ describe('document history', () => {
         const restored = (await response.json()) as DocumentSummary;
         expect(restored.id).not.toBe(plan.id);
         expect(restored.name).toBe('Plan');
-        expect(notes((await started.saved(restored.id))!)).toBe('Not saved yet');
+        const content = (await started.saved(restored.id))!;
+        expect(notes(content)).toBe('Not saved yet');
+        // The editor reads only fields naming its document, and it is out of Recently Deleted.
+        expect(content.getMap('document').toJSON()).toEqual({ id: restored.id, name: 'Plan' });
         expect(
             (
                 await served.call('GET', `/documents/${restored.id}/assets/${hash}`, {
@@ -378,6 +387,19 @@ describe('document history', () => {
             ).map(({ reason }) => reason)
         ).toEqual(['deleted']);
         expect(await deleted()).toEqual([]);
+
+        // Restoring a snapshot from before, which names the old id, keeps the new one.
+        const [{ id: before }] = await served.json<Snapshot[]>(
+            served.call('GET', `/documents/${restored.id}/history`, { cookie: ada.cookie })
+        );
+        expect(
+            (
+                await served.call('POST', `/documents/${restored.id}/history/${before}/restore`, {
+                    cookie: ada.cookie
+                })
+            ).status
+        ).toBe(204);
+        expect((await started.saved(restored.id))!.getMap('document').get('id')).toBe(restored.id);
         expect((await restoring()).status).toBe(404);
 
         // Restored documents are listed like any other.

@@ -195,6 +195,24 @@ export async function listDeletedDocuments(
 }
 
 /**
+ * A deleted document's content, made the content of the document `id`: the editor
+ * reads the shared fields only when they name its own document, and the date it
+ * entered Recently Deleted would see it deleted again.
+ */
+function asRestored(state: Uint8Array, id: string) {
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, state);
+    const fields = doc.getMap('document');
+
+    doc.transact(() => {
+        if (fields.has('id')) fields.set('id', id);
+        fields.delete('deleted');
+    });
+
+    return Y.encodeStateAsUpdate(doc);
+}
+
+/**
  * Restores a deleted document from its last content, as a new document in the
  * same workspace with the images it used and its history. The deleted id is not
  * reused, so copies of the editor that deleted it cannot delete it again. Returns
@@ -236,7 +254,7 @@ export const restoreDeletedDocument = (
 
         await trx
             .insertInto('document_states')
-            .values({ document_id: id, state: deleted.state })
+            .values({ document_id: id, state: Buffer.from(asRestored(deleted.state, id)) })
             .execute();
         await trx
             .insertInto('document_assets')

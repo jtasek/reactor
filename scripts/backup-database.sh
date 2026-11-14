@@ -2,6 +2,8 @@
 # Backs up the database at DATABASE_URL into BACKUP_DIR (default ./backups) as a
 # pg_dump custom-format file named by its UTC time, checks that pg_restore can read
 # it, then deletes dumps older than BACKUP_KEEP_DAYS (default 14). Prints the file.
+# The URL is passed to pg_dump, so on a shared machine leave the password out of it
+# and keep it in ~/.pgpass (or PGPASSFILE), where other users' process lists cannot see it.
 # Run it daily, for example from cron:
 #   15 3 * * * cd /srv/reactor && DATABASE_URL=... scripts/backup-database.sh
 set -euo pipefail
