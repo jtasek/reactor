@@ -169,6 +169,31 @@ describe('document sync', () => {
         expect([...copy.document.getMap('versions').keys()]).toEqual(['31']);
     });
 
+    it('turns away an editor older than the one it serves, saying which format it needs', async () => {
+        const { served, ada } = await start({ editorVersion: 32 });
+        const closed = (url: string) =>
+            new Promise<[number, string]>((resolve) => {
+                const socket = new WebSocket(url, {
+                    headers: { origin: ORIGIN, cookie: ada.cookie }
+                });
+
+                socket.on('close', (code, reason) => resolve([code, reason.toString()]));
+            });
+        const base = served.syncURL.replace(/\?.*/, '');
+
+        expect(await closed(`${base}?editor=31`)).toEqual([4426, '32']);
+        // Builds from before the check name no format.
+        expect(await closed(base)).toEqual([4426, '32']);
+
+        const current = new WebSocket(`${base}?editor=32`, {
+            headers: { origin: ORIGIN, cookie: ada.cookie }
+        });
+        onTestFinished(() => current.close());
+        await new Promise((resolve) => current.on('open', resolve));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(current.readyState).toBe(WebSocket.OPEN);
+    });
+
     it('refuses a document to someone who may not read it', async () => {
         const { served, grace, plan } = await start();
 

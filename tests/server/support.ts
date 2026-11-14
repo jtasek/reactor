@@ -10,6 +10,7 @@ import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
 import type { Database } from '../../server/schema';
 import { createSync } from '../../server/sync';
+import { SCHEMA_VERSION } from '../../src/app/services/schemaVersion';
 
 export const ORIGIN = 'http://localhost:4000';
 
@@ -279,7 +280,7 @@ export async function startServer({
         json,
         user,
         sync,
-        syncURL: `ws://127.0.0.1:${port}/sync`,
+        syncURL: `ws://127.0.0.1:${port}/sync?editor=${SCHEMA_VERSION}`,
         close: async () => {
             await sync.close();
             server.close();

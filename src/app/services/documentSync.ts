@@ -462,6 +462,10 @@ export async function startDocumentSync(
                         /* Permissions are checked again when the server is reached. */
                     }
                 },
+                outdated: (editableFrom) =>
+                    Object.keys(instance.state.documents).forEach((documentId) =>
+                        instance.actions.markDocumentOutdated({ documentId, editableFrom })
+                    ),
                 changed: report
             }
         });

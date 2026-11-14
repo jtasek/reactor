@@ -4,6 +4,8 @@ import type { AccountUser, Accounts } from 'src/app/services/accounts';
 import type { Api } from 'src/app/services/api';
 import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
+import { isReadOnly } from 'src/app/documentAccess';
+import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
 import { createTestStore } from '../support/store';
 import { ORIGIN, serve, type DocumentSummary } from './support';
 
@@ -183,6 +185,20 @@ const serverDocuments = ({ call }: Served, cookie: string, workspaceId: string) 
     );
 
 describe('editor sync', () => {
+    it('goes view only with Reload when the server serves a newer editor', async () => {
+        const served = await serve({ editorVersion: SCHEMA_VERSION + 1 });
+        const { cookie } = await served.user('ada@example.com');
+        const older = await device(served, cookie);
+        const [documentId] = documentIds(older);
+
+        await vi.waitFor(() =>
+            expect(older.store.state.outdatedDocuments).toEqual({
+                [documentId]: SCHEMA_VERSION + 1
+            })
+        );
+        expect(isReadOnly(older.store.state, documentId)).toBe(true);
+    });
+
     it('shows an account’s documents on each device and syncs changes both ways', async () => {
         const served = await serve();
         const { cookie, personal } = await served.user('ada@example.com');

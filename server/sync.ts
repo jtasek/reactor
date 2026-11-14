@@ -6,6 +6,7 @@ import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
 import { dropNewerVersions } from './documentVersions.ts';
+import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';
 
@@ -17,6 +18,13 @@ const MAX_MESSAGE = 4 * 1024 * 1024;
 
 /** How many sockets one user may have open at once, across tabs and devices. */
 const MAX_SOCKETS_PER_USER = 16;
+
+/**
+ * Closes a socket from an editor older than the one served here, with the format it
+ * needs as the reason, so the editor offers Reload rather than writing what it may
+ * misread. The editor names its format in the `editor` query parameter.
+ */
+export const EDITOR_OUTDATED = 4426;
 
 /** How often an open socket's session is checked again, in milliseconds. */
 const SESSION_CHECK = 60 * 1000;
@@ -165,6 +173,17 @@ export function createSync({
         }
 
         const userId = session.user.id;
+        const editor = Number(url.searchParams.get('editor'));
+        const served = editorVersion ?? SCHEMA_VERSION;
+
+        // Builds from before the parameter send none, and are older than any that check.
+        if (!(editor >= served)) {
+            server.handleUpgrade(req, socket, head, (websocket) =>
+                websocket.close(EDITOR_OUTDATED, `${served}`)
+            );
+
+            return;
+        }
 
         if ((sockets.get(userId) ?? 0) >= MAX_SOCKETS_PER_USER) {
             refuseUpgrade(socket, 429, 'Too Many Requests');
