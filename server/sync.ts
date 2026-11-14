@@ -6,6 +6,8 @@ import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
 import { dropNewerVersions } from './documentVersions.ts';
+import { insertSnapshot, snapshotDue } from './history.ts';
+import { restoreContent } from './restoreContent.ts';
 import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';
@@ -46,26 +48,50 @@ async function loadState(db: Db, documentId: string, document: Y.Doc) {
     }
 }
 
-/** Saves a document's whole content, unless it was deleted meanwhile. */
-async function saveState(db: Db, documentId: string, document: Y.Doc) {
+/**
+ * Saves a document's whole content, unless it was deleted meanwhile. When the
+ * document is due a snapshot, the content saved before is kept as one first, so
+ * each snapshot holds the document as it was before a stretch of changes.
+ */
+async function saveState(db: Db, documentId: string, document: Y.Doc, now: Date) {
     const state = Buffer.from(Y.encodeStateAsUpdate(document));
 
     await db.transaction().execute(async (trx) => {
         const updated = await trx
             .updateTable('documents')
-            .set({ updated_at: new Date() })
+            .set({ updated_at: now })
             .where('id', '=', documentId)
+            .returning(['workspace_id', 'name'])
             .executeTakeFirst();
 
-        if (updated.numUpdatedRows === 0n) {
+        if (!updated) {
             return;
+        }
+
+        if (await snapshotDue(trx, documentId, now)) {
+            const previous = await trx
+                .selectFrom('document_states')
+                .select('state')
+                .where('document_id', '=', documentId)
+                .executeTakeFirst();
+
+            if (previous) {
+                await insertSnapshot(trx, {
+                    documentId,
+                    workspaceId: updated.workspace_id,
+                    name: updated.name,
+                    state: new Uint8Array(previous.state),
+                    reason: 'scheduled',
+                    now
+                });
+            }
         }
 
         await trx
             .insertInto('document_states')
-            .values({ document_id: documentId, state, updated_at: new Date() })
+            .values({ document_id: documentId, state, updated_at: now })
             .onConflict((conflict) =>
-                conflict.column('document_id').doUpdateSet({ state, updated_at: new Date() })
+                conflict.column('document_id').doUpdateSet({ state, updated_at: now })
             )
             .execute();
     });
@@ -87,7 +113,8 @@ export function createSync({
     origin,
     log,
     sessionCheck = SESSION_CHECK,
-    editorVersion
+    editorVersion,
+    now = () => new Date()
 }: {
     db: Db;
     auth: Auth;
@@ -99,6 +126,8 @@ export function createSync({
      * build's own unless a test sets it, as to deploy a newer release.
      */
     editorVersion?: number | (() => number);
+    /** The time snapshots and saves are dated with; a test may move it on. */
+    now?: () => Date;
 }) {
     const sockets = new Map<string, number>();
     const served = () =>
@@ -134,7 +163,7 @@ export function createSync({
         },
         async onStoreDocument({ documentName, document }) {
             try {
-                await saveState(db, documentName, document);
+                await saveState(db, documentName, document, now());
             } catch (error) {
                 log.error(error, `Document ${documentName} could not be saved`);
                 throw error;
@@ -258,6 +287,63 @@ export function createSync({
                 });
             });
         },
+        /** The document format of the editor served here. */
+        version: served,
+        /** A document's whole content: as open here, or else as saved. */
+        async currentState(documentId: string): Promise<Uint8Array> {
+            const open = hocuspocus.documents.get(documentId);
+
+            if (open) {
+                return Y.encodeStateAsUpdate(open);
+            }
+
+            const document = new Y.Doc();
+            await loadState(db, documentId, document);
+
+            return Y.encodeStateAsUpdate(document);
+        },
+        /**
+         * Restores a document's content to `snapshot`, a whole Yjs state, as a change
+         * everyone with it open receives. The content it replaces is kept as a
+         * snapshot first, so the restore can itself be undone by restoring that one.
+         */
+        async restore(documentId: string, snapshot: Uint8Array, userId: string) {
+            const restored = new Y.Doc();
+            Y.applyUpdate(restored, snapshot);
+
+            const connection = await hocuspocus.openDirectConnection(documentId, { userId });
+
+            try {
+                const document = connection.document;
+                const owner = await db
+                    .selectFrom('documents')
+                    .select(['workspace_id', 'name'])
+                    .where('id', '=', documentId)
+                    .executeTakeFirst();
+
+                if (!document || !owner) {
+                    return false;
+                }
+
+                await insertSnapshot(db, {
+                    documentId,
+                    workspaceId: owner.workspace_id,
+                    name: owner.name,
+                    state: Y.encodeStateAsUpdate(document),
+                    reason: 'before-restore',
+                    createdBy: userId,
+                    now: now()
+                });
+                // A snapshot from before a deleted document was restored names its old id.
+                const id = document.getMap('document').get('id');
+                if (id !== undefined) restored.getMap('document').set('id', id);
+                await connection.transact((live) => restoreContent(live, restored));
+
+                return true;
+            } finally {
+                await connection.disconnect();
+            }
+        },
         /** Disconnects everyone from a document, as when it is deleted. */
         closeDocument(documentId: string) {
             hocuspocus.closeConnections(documentId);
@@ -283,7 +369,7 @@ export function createSync({
             server.close();
             await Promise.all(
                 [...hocuspocus.documents.values()].map((document) =>
-                    saveState(db, document.name, document)
+                    saveState(db, document.name, document, now())
                 )
             );
         }
