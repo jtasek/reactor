@@ -131,9 +131,9 @@ function registerCommands() {
     registerCommand(ZoomOutCommand);
     registerCommand(ZoomResetCommand);
     registerCommand(ResetDocumentCommand);
-    registerCommand(DocumentHistoryCommand);
     // Registered after Reset document, so the document group keeps its place in the bar.
     registerCommand(ExportSvgCommand);
+    registerCommand(DocumentHistoryCommand);
     registerCommand(EditWithWordsCommand);
 }
 
