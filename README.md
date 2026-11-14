@@ -550,7 +550,7 @@ API takes as `PUT /api/workspaces/:workspaceId/ai` with `{ "enabled": false }`. 
 then refuses that workspace's requests with `AI_OFF`, and the editor hides Edit with words in
 its documents. A request sends the person's words and the selected part of the document, or
 the whole document, to the configured provider. Reactor keeps only the `ai_requests` row (who,
-when, which document, the model and the tokens), not the words, the document or the answer;
+when, which document, the model and the tokens), not the words, what was sent or the answer (which reaches the document only when accepted);
 the conversation stays in the server's memory for 5 minutes, for one repair.
 
 Edit with words (`W`, or its application-bar button) opens a movable, dockable chat

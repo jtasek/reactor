@@ -165,4 +165,12 @@ test('lets an admin turn AI off for a workspace on the Sharing page', async ({ p
     await toggle.click();
     await expect(toggle).toBeChecked();
     expect(changes).toEqual([{ enabled: false }, { enabled: true }]);
+
+    // The editor in this tab follows at once.
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
+    await page.getByRole('link', { name: 'Documents', exact: true }).click();
+    await page.getByRole('button', { name: 'Open Plan', exact: true }).click();
+    await expect(page.getByRole('navigation', { name: 'Application' })).toBeVisible();
+    await expect(editWithWords(page)).toHaveCount(0);
 });

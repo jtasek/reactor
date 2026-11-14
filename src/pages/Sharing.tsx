@@ -2,7 +2,7 @@ import { WorkspaceMembers } from './WorkspaceMembers';
 import { WorkspaceAi } from './WorkspaceAi';
 import React, { FC, SubmitEvent, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
-import { useAccount, useAppState, useEffects } from 'src/app/hooks';
+import { useAccount, useActions, useAppState, useEffects } from 'src/app/hooks';
 import type { Workspace } from 'src/app/services/api';
 import {
     invitations,
@@ -17,6 +17,8 @@ export const Sharing: FC = () => {
     const account = useAccount();
     const { api, reloadPage } = useEffects();
     const serverAi = useAppState((state) => state.ai === 'available');
+    const documentAccess = useAppState((state) => state.documentAccess);
+    const { setDocumentAccess } = useActions();
     const currentWorkspace = useAppState(
         (state) => state.documentAccess[state.currentDocumentId]?.workspaceId
     );
@@ -244,15 +246,29 @@ export const Sharing: FC = () => {
                                     <WorkspaceAi
                                         key={workspaceId}
                                         workspace={selected}
-                                        onChanged={(ai) =>
+                                        onChanged={(ai) => {
                                             setWorkspaces((current) =>
                                                 current?.map((workspace) =>
                                                     workspace.id === workspaceId
                                                         ? { ...workspace, ai }
                                                         : workspace
                                                 )
-                                            )
-                                        }
+                                            );
+                                            // This copy's editor follows at once, without waiting to list workspaces again.
+                                            setDocumentAccess(
+                                                Object.fromEntries(
+                                                    Object.entries(documentAccess)
+                                                        .filter(
+                                                            ([, access]) =>
+                                                                access.workspaceId === workspaceId
+                                                        )
+                                                        .map(([id, access]) => [
+                                                            id,
+                                                            { ...access, aiOff: !ai }
+                                                        ])
+                                                )
+                                            );
+                                        }}
                                     />
                                 )}
                                 <section className={styles.card} aria-labelledby="pending-heading">
