@@ -32,11 +32,11 @@ test('the application rail switches left sections and the tool picker stays at t
 });
 
 test('a bottom-docked panel pushes the tool picker upward', async ({ page }) => {
-    await setLayout(page, { stats: 'bottom' });
-    await openEditor(page);
+    await setLayout(page, { documentInfo: 'bottom' });
+    await openEditor(page, ['Document Info']);
 
     const tools = (await page.getByRole('list', { name: 'Tools' }).boundingBox())!;
-    const bottomPanel = (await page.locator('[data-panel="stats"]').boundingBox())!;
+    const bottomPanel = (await page.locator('[data-panel="documentInfo"]').boundingBox())!;
     expect(tools.y + tools.height).toBeLessThanOrEqual(bottomPanel.y);
 });
 
@@ -157,8 +157,8 @@ for (const dock of [
 ]) {
     test(`${dock} grows for stacked panels and keeps their headers reachable`, async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await setLayout(page, { explorer: dock, controlPanel: dock, stats: dock });
-        await openEditor(page, ['Explorer']);
+        await setLayout(page, { explorer: dock, controlPanel: dock, documentInfo: dock });
+        await openEditor(page, ['Explorer', 'Document Info']);
 
         const zone = page.locator(`[data-dock="${dock}"]`);
         const panels = zone.locator('[data-panel]');
@@ -175,7 +175,7 @@ for (const dock of [
         await page.setViewportSize({ width: 900, height: 420 });
         await expectReachableHeaders(page);
 
-        const handle = zone.locator('[data-panel="stats"] > button');
+        const handle = zone.locator('[data-panel="documentInfo"] > button');
         const bounds = (await handle.boundingBox())!;
         await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
         await page.mouse.down();
@@ -185,7 +185,8 @@ for (const dock of [
         await expect
             .poll(() =>
                 page.evaluate(
-                    () => JSON.parse(localStorage.getItem('reactor:panel-layout')!).stats.dock
+                    () =>
+                        JSON.parse(localStorage.getItem('reactor:panel-layout')!).documentInfo.dock
                 )
             )
             .toBeNull();
@@ -194,8 +195,12 @@ for (const dock of [
 
 test('growing neighboring zones share space without covering headers', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 420 });
-    await setLayout(page, { explorer: 'top-right', controlPanel: 'right', stats: 'bottom-right' });
-    await openEditor(page, ['Explorer']);
+    await setLayout(page, {
+        explorer: 'top-right',
+        controlPanel: 'right',
+        documentInfo: 'bottom-right'
+    });
+    await openEditor(page, ['Explorer', 'Document Info']);
     await expectReachableHeaders(page);
 
     const panels = await page.locator('[data-panel]').all();
@@ -335,19 +340,21 @@ test('vertical panels reject horizontal docks by keyboard, drag and saved placem
     await expect(page.locator('[data-dock] [data-panel="inspector"]')).toHaveCount(0);
 });
 
-test('Stats switches between horizontal and vertical content when docked', async ({ page }) => {
+test('Stats is off until chosen and docks only to the sides', async ({ page }) => {
     await openEditor(page);
     const panel = page.locator('[data-panel="stats"]');
+    await expect(panel).toHaveCount(0);
+
+    await page.getByRole('checkbox', { name: 'Stats', exact: true }).check();
+    await expect(page.locator('[data-dock="bottom-right"] [data-panel="stats"]')).toBeVisible();
+
     const header = panel.locator(':scope > button');
     await header.focus();
     await page.keyboard.press('Shift+ArrowUp');
-    await expect(panel).toHaveAttribute('data-orientation', 'horizontal');
-    await expect(panel.locator('[data-horizontal="true"]')).toBeVisible();
-    const horizontalHeight = (await panel.boundingBox())!.height;
-    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.locator('[data-dock="top"] [data-panel="stats"]')).toHaveCount(0);
+    await page.keyboard.press('Shift+ArrowLeft');
+    await expect(page.locator('[data-dock="left"] [data-panel="stats"]')).toBeVisible();
     await expect(panel).toHaveAttribute('data-orientation', 'vertical');
-    await expect(panel.locator('[data-horizontal="false"]')).toBeVisible();
-    expect((await panel.boundingBox())!.height).toBeGreaterThan(horizontalHeight);
 });
 
 test('panels share a default width, keep a size dragged by a corner and restore it', async ({
@@ -523,7 +530,8 @@ test('a panel goes where it is dropped among the panels docked with it, also aft
 
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
     await page.mouse.down();
-    await page.mouse.move(target.x + target.width / 2, target.y + target.height - 2, {
+    // In its lower half, above the bottom corner's drop target, which a tall panel reaches.
+    await page.mouse.move(target.x + target.width / 2, target.y + (target.height * 3) / 4, {
         steps: 8
     });
     // A line shows where it would go: below the panel under the pointer.
