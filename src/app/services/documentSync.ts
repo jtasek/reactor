@@ -418,8 +418,9 @@ export async function startDocumentSync(
     };
 
     const startServer = async () => {
-        const { ServerSync } = await import('./serverSync');
+        const { ServerSync, followPresence, presence } = await import('./serverSync');
         server = new ServerSync({
+            self: owner,
             collaboration,
             api: effects.api,
             transport: effects.serverTransport(),
@@ -466,9 +467,11 @@ export async function startDocumentSync(
                     Object.keys(instance.state.documents).forEach((documentId) =>
                         instance.actions.markDocumentOutdated({ documentId, editableFrom })
                     ),
-                changed: report
+                changed: report,
+                presence: presence.set
             }
         });
+        followPresence(instance, server);
 
         await server.refresh();
     };

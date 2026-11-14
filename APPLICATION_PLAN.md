@@ -24,7 +24,7 @@ its implementation status explicitly says otherwise.
 | Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions inherited per Screen view, contextual numeric/text modes for supported consumers (R4.4), native design-system packages and a bounded DTCG adapter. Local simulation stays separate from authored frame/view/instance overrides. |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Accounts | Implemented: email, Google and GitHub sign-in, password reset, workspaces, member management, workspace invitations with sharing/acceptance UI, and a read-only viewer preview. Not built: document-level invitations, presence ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness), comments, account deletion, moving signed-out documents into an account, and a per-workspace AI switch. |
+| Accounts | Implemented: email, Google and GitHub sign-in, password reset, workspaces, member management, workspace invitations with sharing/acceptance UI, and a read-only viewer preview. Presence: other people's named pointers and selections on the canvas (S1 step 3). Not built: document-level invitations, comments, account deletion, moving signed-out documents into an account, and a per-workspace AI switch. |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
@@ -532,7 +532,7 @@ The user shares a document and sees who else is in it.
    and `tests/browser/sharing.spec.ts` cover these paths. Admin promotion/ownership transfer
    and invitation email delivery remain later work.
 2. Document invitations and read-only viewer links.
-3. Presence: names, colors, pointers and selections. Scheduled as S1 step 3.
+3. Presence: names, colors, pointers and selections. Built in S1 step 3.
 4. Comments on the canvas, in a change of their own.
 
 Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links) and
@@ -1178,6 +1178,20 @@ suggest. Do these in order; each is a separate change.
    but for the restore drill on the beta's database, which runs before the beta.
 3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
    sync connection. Acceptance: `tests/browser/presence.spec.ts`.
+   Implementation status (2026-11-14): each synced document's connection carries Yjs awareness.
+   The copy showing a document in the editor shares its pointer (canvas coordinates, while
+   over the canvas and the page is visible) and its selected shapes, at most every 50 ms
+   (`src/app/services/presence.ts`); other pages and documents share nothing. As the server
+   passes on no cleared states, leaving a document first shares an empty one. The server rewrites every state before
+   passing it on (`server/presence.ts`): who it is comes from the session, only a pointer of
+   numbers and up to 500 shape ids are kept, and client ids another connection holds are
+   refused, so nobody can show up as, or move, someone else. Viewers are present too. Signed
+   in, the canvas loads the presence layer on demand and draws each other person's pointer
+   with their name and their selected shapes' outlines in a color from their account; your
+   own other tabs are not shown. Covered by `tests/presence.test.ts`,
+   `tests/server/presence.test.ts`, `tests/server/editorSync.test.ts` and
+   `tests/browser/presence.spec.ts`. Not yet: selected frames and Screen views, a list of who
+   is in the document, and following someone's view. Step 3 is complete.
 4. **Workspace AI switch (S).** Admins turn AI off for a workspace; the gateway refuses and the
    editor hides AI entries. The product says what is sent to the provider and what is kept.
    Acceptance: `tests/server/ai.test.ts` and an AI browser spec.

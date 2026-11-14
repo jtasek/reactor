@@ -12,6 +12,7 @@ import { SelectionBadge } from '../SelectionMenu/SelectionBadge';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
 import { Measures } from '../SnapLines/Measures';
+import { Presence } from '../Presence';
 import { Stack } from 'src/tools/components/Stack';
 import { LargeSelectionBox, LargeSelectionProvider } from '../Selectable/LargeSelection';
 import { Surface } from './Surface';
@@ -37,6 +38,7 @@ export const Canvas: FC = () => {
                             <Measures overlay={overlay} />
                             <LargeSelectionBox overlay={overlay} />
                             <Stack />
+                            <Presence />
                         </ErrorBoundary>
                     </LargeSelectionProvider>
                 </Camera>

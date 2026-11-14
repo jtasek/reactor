@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
 import { dropNewerVersions } from './documentVersions.ts';
 import { insertSnapshot, snapshotDue } from './history.ts';
+import { stampPresence, type PresenceUser } from './presence.ts';
 import { restoreContent } from './restoreContent.ts';
 import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
 import type { Db, Log } from './schema.ts';
@@ -132,8 +133,12 @@ export function createSync({
     const sockets = new Map<string, number>();
     const served = () =>
         typeof editorVersion === 'function' ? editorVersion() : (editorVersion ?? SCHEMA_VERSION);
-    const hocuspocus = new Hocuspocus<{ userId: string }>({
+    const hocuspocus = new Hocuspocus<PresenceUser>({
         quiet: true,
+        // Pointers and selections are shared under the session's own name.
+        async beforeHandleAwareness(payload) {
+            stampPresence(payload);
+        },
         async onConnect({ context, documentName, connectionConfig }) {
             const role = await documentRole(db, context.userId, documentName);
 
@@ -232,7 +237,10 @@ export function createSync({
 
         server.handleUpgrade(req, socket, head, (websocket) => {
             const request = new Request(url, { headers });
-            const connection = hocuspocus.handleConnection(websocket, request, { userId });
+            const connection = hocuspocus.handleConnection(websocket, request, {
+                userId,
+                name: session.user.name
+            });
             const checking = setInterval(async () => {
                 let current;
 
