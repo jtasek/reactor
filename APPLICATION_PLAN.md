@@ -1224,7 +1224,8 @@ suggest. Do these in order; each is a separate change.
    complete.
 6. **Size warning (S).** The editor warns at 3 MiB of Yjs state and explains a refused first
    upload. Acceptance: a unit test on the measure and a browser spec on the message.
-   Implementation status (2026-11-15): `src/app/services/documentSize.ts` holds the measure:
+   Implementation status (2026-11-15): the limits and measuring intervals are
+   `config.documentSize` (defaults in `src/app/services/documentSize.ts`), which holds the measure:
    a document's whole state as another copy would receive it (content kept only for undo is
    left out), a warning from 3 MiB and an upload limit of 4 MiB less 1 KiB, the server's
    largest message (`MAX_MESSAGE`) less room for the document's id. The editor measures the

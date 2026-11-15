@@ -1,7 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import {
-    MAX_MOVE_BYTES,
     keepSignedOutDocuments,
     listSignedOutDocuments,
     moveSignedOutDocuments,
@@ -11,8 +10,6 @@ import {
 import { formatSize } from 'src/app/services/documentSize';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
-
-const size = formatSize;
 
 const count = (documents: unknown[]) =>
     documents.length === 1 ? 'one document' : `${documents.length} documents`;
@@ -27,6 +24,7 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
     const effects = useEffects();
     const { displayError, displaySuccess } = useActions();
     const held = useAppState((state) => state.documents);
+    const uploadBytes = useAppState((state) => state.config.documentSize.uploadBytes);
     const [documents, setDocuments] = useState<SignedOutDocument[]>([]);
     const [moving, setMoving] = useState(false);
 
@@ -51,7 +49,7 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
         return null;
     }
 
-    const movable = documents.filter((document) => !tooLarge(document));
+    const movable = documents.filter((document) => !tooLarge(document, uploadBytes));
 
     const keep = () => {
         keepSignedOutDocuments(effects, owner, documents);
@@ -70,7 +68,7 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
             moved,
             tooLarge: kept,
             failed
-        } = await moveSignedOutDocuments(effects, owner, documents);
+        } = await moveSignedOutDocuments(effects, owner, documents, uploadBytes);
 
         setDocuments([]);
 
@@ -122,10 +120,10 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
                 {documents.map((document) => (
                     <li key={document.id}>
                         <span>{document.name}</span>
-                        {tooLarge(document) && (
+                        {tooLarge(document, uploadBytes) && (
                             <small>
-                                Too large to move: {size(document.bytes)}, over the{' '}
-                                {size(MAX_MOVE_BYTES)} limit. It stays in this browser.
+                                Too large to move: {formatSize(document.bytes)}, over the{' '}
+                                {formatSize(uploadBytes)} limit. It stays in this browser.
                             </small>
                         )}
                     </li>

@@ -6,7 +6,10 @@ import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
 import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
-import { MAX_UPLOAD_BYTES } from 'src/app/services/documentSize';
+import {
+    DEFAULT_DOCUMENT_SIZE,
+    type DocumentSizeConfiguration
+} from 'src/app/services/documentSize';
 import { presence, type Peer } from 'src/app/services/presence';
 import { createTestStore } from '../support/store';
 import { ORIGIN, serve, type DocumentSummary } from './support';
@@ -127,13 +130,15 @@ async function device(
         online = () => true,
         storage = new Map<string, string>(),
         user = ada,
-        listing
+        listing,
+        documentSize
     }: {
         indexedDB?: IDBFactory;
         online?: () => boolean;
         storage?: Map<string, string>;
         user?: AccountUser;
         listing?: () => Promise<void>;
+        documentSize?: Partial<DocumentSizeConfiguration>;
     } = {}
 ) {
     class BrowserSocket extends WebSocket {
@@ -152,7 +157,8 @@ async function device(
             lastOwner: ada.id,
             api: apiFor(served, cookie, online, listing),
             assetServer: assetServerFor(served, cookie, online),
-            serverTransport: { url: served.syncURL, WebSocketPolyfill: BrowserSocket }
+            serverTransport: { url: served.syncURL, WebSocketPolyfill: BrowserSocket },
+            documentSize
         }
     );
 
@@ -185,6 +191,8 @@ const serverDocuments = ({ call }: Served, cookie: string, workspaceId: string) 
     call('GET', `/workspaces/${workspaceId}/documents`, { cookie }).then(
         (response) => response.json() as Promise<DocumentSummary[]>
     );
+
+const { uploadBytes } = DEFAULT_DOCUMENT_SIZE;
 
 describe('editor sync', () => {
     it('goes view only with Reload when the server serves a newer editor', async () => {
@@ -301,19 +309,18 @@ describe('editor sync', () => {
         const offline = await device(served, cookie, { online: () => false });
         const [large] = documentIds(offline);
 
-        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(MAX_UPLOAD_BYTES) });
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(uploadBytes) });
         offline.effects.collaboration.flush();
 
         const online = await restart(served, cookie, offline);
 
         await vi.waitFor(() =>
-            expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(MAX_UPLOAD_BYTES)
+            expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(uploadBytes)
         );
         expect(online.store.state.notifications.map(({ message }) => message).join('\n')).toContain(
             'more than the server takes at once'
         );
 
-        // Other documents still sync over the socket they share.
         online.store.actions.addDocument({ name: 'Small' });
         const small = documentIds(online).find((id) => id !== large)!;
         await vi.waitFor(async () =>
@@ -322,7 +329,6 @@ describe('editor sync', () => {
             ).toEqual([small])
         );
 
-        // Smaller, it is sent.
         online.store.actions.openDocument(large);
         const [shapeId] = Object.keys(online.store.state.documents[large].shapes);
         online.store.actions.updateShape({ id: shapeId, name: 'short' });
@@ -364,12 +370,10 @@ describe('editor sync', () => {
         const online = await restart(served, cookie, offline);
 
         await vi.waitFor(
-            () =>
-                expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(MAX_UPLOAD_BYTES),
+            () => expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(uploadBytes),
             { timeout: 10_000 }
         );
 
-        // The socket the documents share works again.
         online.store.actions.addDocument({ name: 'Small' });
         const small = documentIds(online).find((id) => id !== large)!;
         online.store.actions.openDocument(small);
@@ -379,6 +383,28 @@ describe('editor sync', () => {
         await vi.waitFor(() => expect(shapeCount(other, small)).toBe(1));
     });
 
+    it('holds back documents over a configured upload limit', async () => {
+        const served = await serve();
+        const { cookie, personal } = await served.user('ada@example.com');
+        const documentSize = { uploadBytes: 64 * 1024 };
+        const offline = await device(served, cookie, { online: () => false, documentSize });
+        const [documentId] = documentIds(offline);
+
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(100 * 1024) });
+        offline.effects.collaboration.flush();
+
+        const online = await device(served, cookie, {
+            indexedDB: offline.indexedDB,
+            storage: offline.storage,
+            documentSize
+        });
+
+        await vi.waitFor(() =>
+            expect(online.store.state.tooLargeToSync[documentId]).toBeGreaterThan(64 * 1024)
+        );
+        expect(await serverDocuments(served, cookie, personal.id)).toEqual([]);
+    });
+
     it('holds back a synced document whose change is too large to send at once', async () => {
         const served = await serve();
         const { cookie } = await served.user('ada@example.com');
@@ -386,13 +412,12 @@ describe('editor sync', () => {
         const [documentId] = documentIds(first);
 
         await vi.waitFor(() => expect(first.store.state.saveStatus).toEqual({ kind: 'saved' }));
-        first.store.actions.addShape({ ...rectangle, name: 'x'.repeat(MAX_UPLOAD_BYTES) });
+        first.store.actions.addShape({ ...rectangle, name: 'x'.repeat(uploadBytes) });
 
         await vi.waitFor(() =>
-            expect(first.store.state.tooLargeToSync[documentId]).toBeGreaterThan(MAX_UPLOAD_BYTES)
+            expect(first.store.state.tooLargeToSync[documentId]).toBeGreaterThan(uploadBytes)
         );
 
-        // The socket stays open: a small change to another document still arrives.
         first.store.actions.addDocument({ name: 'Small' });
         const small = documentIds(first).find((id) => id !== documentId)!;
         first.store.actions.openDocument(small);

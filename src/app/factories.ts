@@ -1,3 +1,4 @@
+import { DEFAULT_DOCUMENT_SIZE } from './services/documentSizeConfiguration';
 import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
@@ -355,6 +356,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             autoSave: true,
             debugMode: false,
             documentsLayout: 'cards',
+            documentSize: { ...DEFAULT_DOCUMENT_SIZE },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         previewModes: {},

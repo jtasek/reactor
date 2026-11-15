@@ -421,6 +421,7 @@ export async function startDocumentSync(
         const { ServerSync, followPresence, presence } = await import('./serverSync');
         server = new ServerSync({
             self: owner,
+            sizes: json(instance.state.config.documentSize),
             collaboration,
             api: effects.api,
             transport: effects.serverTransport(),

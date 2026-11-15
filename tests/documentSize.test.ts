@@ -1,18 +1,17 @@
 import * as Yjs from 'yjs';
-import { createDocument, createShape } from 'src/app/factories';
+import { createApplication, createDocument, createShape } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
 import {
-    MAX_UPLOAD_BYTES,
-    SIZE_WARNING_BYTES,
+    DEFAULT_DOCUMENT_SIZE,
     formatSize,
     measureDocument,
     sizeLevel,
     tooLargeMessage
 } from 'src/app/services/documentSize';
-import { MAX_MOVE_BYTES } from 'src/app/services/signedOutDocuments';
 import { MAX_MESSAGE } from '../server/sync';
 
-/** A document holding one rectangle named `text`, open in a collaboration. */
+const { warningBytes, uploadBytes } = DEFAULT_DOCUMENT_SIZE;
+
 async function opened(text: string) {
     const document = createDocument({ id: 'large', name: 'Large' });
     const shape = createShape({
@@ -39,52 +38,66 @@ async function opened(text: string) {
 }
 
 describe('document size', () => {
-    it('warns from 3 MiB and refuses what the server cannot take in one message', () => {
-        expect(SIZE_WARNING_BYTES).toBe(3 * 1024 * 1024);
-        expect(sizeLevel(SIZE_WARNING_BYTES - 1)).toBe('fits');
-        expect(sizeLevel(SIZE_WARNING_BYTES)).toBe('large');
-        expect(sizeLevel(MAX_UPLOAD_BYTES)).toBe('large');
-        expect(sizeLevel(MAX_UPLOAD_BYTES + 1)).toBe('tooLarge');
+    it('is configured with the defaults', () => {
+        expect(createApplication().config.documentSize).toEqual(DEFAULT_DOCUMENT_SIZE);
+        expect(warningBytes).toBe(3 * 1024 * 1024);
+    });
+
+    it('warns from the warning size and refuses what is over the upload limit', () => {
+        expect(sizeLevel(warningBytes - 1, DEFAULT_DOCUMENT_SIZE)).toBe('fits');
+        expect(sizeLevel(warningBytes, DEFAULT_DOCUMENT_SIZE)).toBe('large');
+        expect(sizeLevel(uploadBytes, DEFAULT_DOCUMENT_SIZE)).toBe('large');
+        expect(sizeLevel(uploadBytes + 1, DEFAULT_DOCUMENT_SIZE)).toBe('tooLarge');
+    });
+
+    it('follows configured limits', () => {
+        const limits = { warningBytes: 100, uploadBytes: 200 };
+
+        expect(sizeLevel(99, limits)).toBe('fits');
+        expect(sizeLevel(150, limits)).toBe('large');
+        expect(sizeLevel(201, limits)).toBe('tooLarge');
     });
 
     it('leaves room in the server’s largest message for the document’s id', () => {
-        expect(MAX_UPLOAD_BYTES).toBe(MAX_MESSAGE - 1024);
-        expect(MAX_MOVE_BYTES).toBe(MAX_UPLOAD_BYTES);
+        expect(uploadBytes).toBe(MAX_MESSAGE - 1024);
     });
 
     it('measures a document’s whole shared state', async () => {
-        const { collaboration, document } = await opened('x'.repeat(SIZE_WARNING_BYTES));
-        const bytes = measureDocument(() => collaboration.state(document.id), Yjs)!;
+        const { collaboration, document } = await opened('x'.repeat(warningBytes));
+        const bytes = measureDocument(() => collaboration.state(document.id), Yjs, warningBytes)!;
 
         expect(bytes).toBe(collaboration.state(document.id).byteLength);
-        expect(bytes).toBeGreaterThan(SIZE_WARNING_BYTES);
-        expect(sizeLevel(bytes)).toBe('large');
+        expect(sizeLevel(bytes, DEFAULT_DOCUMENT_SIZE)).toBe('large');
     });
 
     it('measures nothing for a document that is not open', async () => {
         const { collaboration } = await opened('small');
 
-        expect(measureDocument(() => collaboration.state('missing'), Yjs)).toBeUndefined();
+        expect(
+            measureDocument(() => collaboration.state('missing'), Yjs, warningBytes)
+        ).toBeUndefined();
     });
 
     it('leaves out deleted content kept for undo, which other copies drop', async () => {
-        const { collaboration, document } = await opened('x'.repeat(SIZE_WARNING_BYTES));
+        const { collaboration, document } = await opened('x'.repeat(warningBytes));
         const doc = new Yjs.Doc({ gc: false });
 
         Yjs.applyUpdate(doc, collaboration.state(document.id));
-        doc.getMap('kept').set('text', 'y'.repeat(SIZE_WARNING_BYTES));
+        doc.getMap('kept').set('text', 'y'.repeat(warningBytes));
         doc.getMap('kept').delete('text');
         const kept = Yjs.encodeStateAsUpdate(doc);
 
-        expect(kept.byteLength).toBeGreaterThan(2 * SIZE_WARNING_BYTES);
-        expect(measureDocument(() => kept, Yjs)).toBeLessThan(
+        expect(kept.byteLength).toBeGreaterThan(2 * warningBytes);
+        expect(measureDocument(() => kept, Yjs, warningBytes)).toBeLessThan(
             collaboration.state(document.id).byteLength + 1024
         );
+        // Below `above`, the encoded size is taken as it is.
+        expect(measureDocument(() => kept, Yjs, kept.byteLength)).toBe(kept.byteLength);
     });
 
     it('says how large a held-back document is and where it is kept', () => {
         expect(formatSize(3.25 * 1024 * 1024)).toBe('3.3 MB');
-        expect(formatSize(MAX_UPLOAD_BYTES)).toBe('4.0 MB');
+        expect(formatSize(uploadBytes)).toBe('4.0 MB');
         expect(formatSize(MAX_MESSAGE + 1)).toBe('4.1 MB');
         expect(tooLargeMessage('Plan', 4.5 * 1024 * 1024)).toBe(
             '“Plan” is 4.5 MB, more than the server takes at once. It is kept only in this browser until it is smaller.'

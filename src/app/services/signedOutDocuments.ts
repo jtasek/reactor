@@ -2,15 +2,8 @@ import * as Y from 'yjs';
 import type { Context } from 'src/app';
 import type { Document } from '../types';
 import { snapshotDocument } from './documentHistory';
-import { MAX_UPLOAD_BYTES } from './documentSize';
 import { COLLECTIONS, PERSISTENCE_KEY } from './documentStorage';
 import { accountCopy } from './documentSync';
-
-/**
- * The most a document's state may weigh to move into an account: the most the
- * server takes in a document's first sync.
- */
-export const MAX_MOVE_BYTES = MAX_UPLOAD_BYTES;
 
 /** A document this browser keeps signed out, as offered to move into an account. */
 export interface SignedOutDocument {
@@ -26,7 +19,7 @@ export interface SignedOutDocument {
 /** How the offer ended, for the person to be told. */
 export interface MoveResult {
     moved: SignedOutDocument[];
-    /** Over `MAX_MOVE_BYTES`, so kept in this browser. */
+    /** Over the upload limit, so kept in this browser. */
     tooLarge: SignedOutDocument[];
     /** Not moved for another reason, as storage that cannot be written; offered again. */
     failed: SignedOutDocument[];
@@ -37,7 +30,8 @@ type Effects = Pick<Context['effects'], 'openDocumentDatabase' | 'loadState' | '
 /** Where this browser records the signed-out documents an account was offered. */
 export const offeredKey = (owner: string) => `${PERSISTENCE_KEY}:offered:${owner}`;
 
-export const tooLarge = ({ bytes }: Pick<SignedOutDocument, 'bytes'>) => bytes > MAX_MOVE_BYTES;
+export const tooLarge = ({ bytes }: Pick<SignedOutDocument, 'bytes'>, uploadBytes: number) =>
+    bytes > uploadBytes;
 
 function offered(effects: Effects, owner: string): Set<string> {
     try {
@@ -158,7 +152,8 @@ function recordUnsent(effects: Effects, owner: string, documentId: string) {
 export async function moveSignedOutDocuments(
     effects: Effects,
     owner: string,
-    documents: SignedOutDocument[]
+    documents: SignedOutDocument[],
+    uploadBytes: number
 ): Promise<MoveResult> {
     const result: MoveResult = { moved: [], tooLarge: [], failed: [] };
     const source = await effects.openDocumentDatabase();
@@ -168,7 +163,7 @@ export async function moveSignedOutDocuments(
 
         try {
             for (const document of documents) {
-                if (tooLarge(document)) {
+                if (tooLarge(document, uploadBytes)) {
                     result.tooLarge.push(document);
                     continue;
                 }
@@ -199,7 +194,7 @@ export async function moveSignedOutDocuments(
     } catch {
         // The account's copy could not be opened, so nothing moved.
         documents.forEach((document) =>
-            (tooLarge(document) ? result.tooLarge : result.failed).push(document)
+            (tooLarge(document, uploadBytes) ? result.tooLarge : result.failed).push(document)
         );
     } finally {
         source.close();

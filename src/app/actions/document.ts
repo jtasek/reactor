@@ -222,10 +222,7 @@ export const markDocumentOutdated: ActionWithParam<{
     state.outdatedDocuments[documentId] = editableFrom;
 };
 
-/**
- * Records that the server sync holds a document back as too large to send, with the
- * size of its state; without `bytes`, that it sends it again.
- */
+/** Without `bytes`, the server sync sends the document again. */
 export const markTooLargeToSync: ActionWithParam<{ documentId: string; bytes?: number }> = (
     { state },
     { documentId, bytes }

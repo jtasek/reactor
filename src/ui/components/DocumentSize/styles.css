@@ -1,4 +1,3 @@
-/* A note above the canvas, centred below the menus, while the document's size needs saying. */
 .notice {
     align-items: center;
     background: var(--notice-background);

@@ -1,12 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createDocument, createShape } from 'src/app/factories';
-import { MAX_UPLOAD_BYTES, SIZE_WARNING_BYTES } from 'src/app/services/documentSize';
+import { DEFAULT_DOCUMENT_SIZE } from 'src/app/services/documentSize';
 import { accountCopy } from 'src/app/services/documentSync';
 
 const user = { id: 'document-size-user', name: 'Ada', email: 'ada@example.com' };
 
-/** The whole shared state of a document named `name` whose one shape's name is `text`, base64-encoded. */
 async function stateOf(id: string, name: string, text: string) {
     const document = createDocument({ id, name });
     const shape = createShape({
@@ -32,7 +31,6 @@ async function stateOf(id: string, name: string, text: string) {
     return state;
 }
 
-/** Adds a document with `state` to the page's IndexedDB database `database`. */
 const seed = (page: Page, database: string, id: string, state: string) =>
     page.evaluate(
         ({ database, id, state }) =>
@@ -65,7 +63,7 @@ const openFromDocuments = async (page: Page, name: string) => {
 test('warns that a document over 3 MB is growing too large to upload, until dismissed', async ({
     page
 }) => {
-    const state = await stateOf('big', 'Big', 'x'.repeat(SIZE_WARNING_BYTES));
+    const state = await stateOf('big', 'Big', 'x'.repeat(DEFAULT_DOCUMENT_SIZE.warningBytes));
 
     await page.route('**/api/auth/get-session', (route) => route.fulfill({ json: null }));
     await page.goto('/documents');
@@ -85,7 +83,7 @@ test('warns that a document over 3 MB is growing too large to upload, until dism
 test('explains a document kept in this browser as too large for its first upload', async ({
     page
 }) => {
-    const state = await stateOf('large', 'Large', 'x'.repeat(MAX_UPLOAD_BYTES));
+    const state = await stateOf('large', 'Large', 'x'.repeat(DEFAULT_DOCUMENT_SIZE.uploadBytes));
     const { database, recordKey } = accountCopy(user.id);
     const created: string[] = [];
     let online = false;
@@ -110,7 +108,6 @@ test('explains a document kept in this browser as too large for its first upload
     await page.route('**/api/ai', (route) => route.fulfill({ status: 404, json: {} }));
     await page.routeWebSocket(/\/sync(\?|$)/, () => {});
 
-    // Made in this browser while the server could not be reached.
     await page.goto('/documents');
     await expect(page.getByRole('heading', { name: 'Documents' }).first()).toBeVisible();
     await expect

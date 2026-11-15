@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createDocument, createShape } from 'src/app/factories';
-import { MAX_MOVE_BYTES } from 'src/app/services/signedOutDocuments';
+import { DEFAULT_DOCUMENT_SIZE } from 'src/app/services/documentSize';
 import type { Document } from 'src/app/types';
 
 const user = { id: 'move-documents-user', name: 'Ada', email: 'ada@example.com' };
@@ -156,7 +156,7 @@ test('moves signed-out documents into the account with their images, but not one
 }) => {
     const created = await signInWith(page, [
         drawing('plan', 'Plan', true),
-        drawing('large', 'Large', false, 'x'.repeat(MAX_MOVE_BYTES))
+        drawing('large', 'Large', false, 'x'.repeat(DEFAULT_DOCUMENT_SIZE.uploadBytes))
     ]);
 
     await page.reload();

@@ -1,52 +1,49 @@
 import React, { FC, useEffect, useState } from 'react';
+import { json } from 'overmind';
 import { useAppState, useEffects } from 'src/app/hooks';
 import {
-    MAX_UPLOAD_BYTES,
-    SIZE_WARNING_BYTES,
     formatSize,
     measureDocument,
     sizeLevel,
-    tooLargeMessage
+    tooLargeMessage,
+    type DocumentSizeConfiguration
 } from 'src/app/services/documentSize';
 import styles from './styles.css';
 
-/**
- * How long after a change the document is measured again, at most once in that
- * time: longer once it is large, as measuring it then reads it into a new copy.
- */
-const MEASURE_EVERY = 2000;
-const MEASURE_LARGE_EVERY = 15_000;
-
-/**
- * The size of `documentId`'s shared state, measured when it opens and again while
- * it changes, at most every 2 seconds, or 15 once it is large, as encoding it
- * whole takes a while.
- */
-export function useDocumentBytes(documentId: string): number | undefined {
+/** Measured when the document opens, then at most once per configured interval while it changes. */
+export function useDocumentBytes(
+    documentId: string,
+    { warningBytes, measureEveryMs, measureLargeEveryMs }: DocumentSizeConfiguration
+): number | undefined {
     const { collaboration } = useEffects();
     const modified = useAppState((state) => state.documents[documentId]?.modified);
     const [measured, setMeasured] = useState<{ documentId: string; bytes?: number }>();
     const [due, setDue] = useState(0);
 
     useEffect(() => {
-        const wait = Math.max(0, due - Date.now());
         let current = true;
-        const timer = setTimeout(() => {
-            // Loaded already by the documents' collaboration.
-            void import('yjs').then((yjs) => {
-                if (!current) {
-                    return;
-                }
+        const timer = setTimeout(
+            () => {
+                void import('yjs').then((yjs) => {
+                    if (!current) {
+                        return;
+                    }
 
-                const bytes = measureDocument(() => collaboration.state(documentId), yjs);
+                    const bytes = measureDocument(
+                        () => collaboration.state(documentId),
+                        yjs,
+                        warningBytes
+                    );
 
-                setDue(
-                    Date.now() +
-                        ((bytes ?? 0) >= SIZE_WARNING_BYTES ? MEASURE_LARGE_EVERY : MEASURE_EVERY)
-                );
-                setMeasured({ documentId, bytes });
-            });
-        }, wait);
+                    setDue(
+                        Date.now() +
+                            ((bytes ?? 0) >= warningBytes ? measureLargeEveryMs : measureEveryMs)
+                    );
+                    setMeasured({ documentId, bytes });
+                });
+            },
+            Math.max(0, due - Date.now())
+        );
 
         return () => {
             current = false;
@@ -54,22 +51,18 @@ export function useDocumentBytes(documentId: string): number | undefined {
         };
         // `due` changes only as it measures, which must not measure again.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [collaboration, documentId, modified]);
+    }, [collaboration, documentId, modified, warningBytes, measureEveryMs, measureLargeEveryMs]);
 
     return measured?.documentId === documentId ? measured.bytes : undefined;
 }
 
-/**
- * Says when the document shown is growing too large to sync (from 3 MB of shared
- * state), and why one the server sync holds back is kept only in this browser.
- * The warning can be dismissed for the document until it grows past another
- * megabyte; the hold-back stays until the document is smaller.
- */
+/** A dismissed warning returns once the document grows past another megabyte. */
 export const DocumentSize: FC = () => {
     const documentId = useAppState((state) => state.currentDocumentId);
     const name = useAppState((state) => state.documents[state.currentDocumentId]?.name);
     const heldBack = useAppState((state) => state.tooLargeToSync[state.currentDocumentId]);
-    const bytes = useDocumentBytes(documentId);
+    const limits = useAppState((state) => json(state.config.documentSize));
+    const bytes = useDocumentBytes(documentId, limits);
     const [dismissed, setDismissed] = useState<Record<string, number>>({});
 
     if (heldBack !== undefined) {
@@ -83,7 +76,7 @@ export const DocumentSize: FC = () => {
         );
     }
 
-    if (bytes === undefined || sizeLevel(bytes) === 'fits') {
+    if (bytes === undefined || sizeLevel(bytes, limits) === 'fits') {
         return null;
     }
 
@@ -96,7 +89,7 @@ export const DocumentSize: FC = () => {
     return (
         <div className={`${styles.notice} ${styles.warning}`} role="status">
             <span>
-                This document is {formatSize(bytes)}. Over {formatSize(MAX_UPLOAD_BYTES)}, a
+                This document is {formatSize(bytes)}. Over {formatSize(limits.uploadBytes)}, a
                 document cannot be moved into an account, and large changes to it may not sync. Move
                 some screens into another document to keep it smaller.
             </span>
