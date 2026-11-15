@@ -23,7 +23,9 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: unknown, info: ErrorInfo) {
-        console.error(error, info.componentStack);
+        console.error(info.componentStack);
+        // The fallback handles it on the page, but the server should still hear of it.
+        reportError(error);
     }
 
     render() {

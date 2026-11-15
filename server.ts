@@ -7,6 +7,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import { config } from './webpack.config.mjs';
 import { fileURLToPath } from 'url';
 import { startAccounts } from './server/accounts.ts';
+import { browserErrors, createMetrics, metricsRoutes } from './server/metrics.ts';
 import { notFound, pageFallback, parsePort } from './server/pages.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,9 +26,18 @@ try {
 const PREVIEW = previewConfiguration(process.env);
 const app = express();
 const compiler = webpack(config);
-const accounts = await startAccounts(process.env, { production: false, log: console });
+const metrics = createMetrics();
+const accounts = await startAccounts(process.env, { production: false, log: console, metrics });
 
 app.get('/api/preview-config', previewConfigHandler(PREVIEW));
+app.use(
+    metricsRoutes({
+        token: process.env.METRICS_TOKEN,
+        metrics,
+        prototypes: accounts?.sharedPrototypes
+    })
+);
+app.use(browserErrors({ metrics, log: console }));
 
 // Before any body parser, which would consume the request Better Auth reads.
 if (accounts) {

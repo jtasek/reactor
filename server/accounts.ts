@@ -1,4 +1,5 @@
-import { deleteExpiredLinks } from './repositories/prototypeLinks.ts';
+import { deleteExpiredLinks, sharedPrototypes } from './repositories/prototypeLinks.ts';
+import type { Metrics } from './metrics.ts';
 import { previewConfiguration } from './preview.ts';
 import { configuresAi, providerFromEnv } from './ai.ts';
 import { createApi } from './api.ts';
@@ -33,7 +34,7 @@ const FIRST_ASSET_CLEANUP_MS = 60 * 1000;
 
 export async function startAccounts(
     env: NodeJS.ProcessEnv,
-    { production, log }: { production: boolean; log: Log }
+    { production, log, metrics }: { production: boolean; log: Log; metrics?: Metrics }
 ) {
     if (!env.DATABASE_URL) {
         return undefined;
@@ -66,7 +67,7 @@ export async function startAccounts(
     }
 
     const origin = new URL(baseURL).origin;
-    const sync = createSync({ db, auth, origin, log });
+    const sync = createSync({ db, auth, origin, log, metrics });
     const blobs = postgresBlobs(db);
     const cleanUp = () =>
         Promise.all([
@@ -94,9 +95,12 @@ export async function startAccounts(
             log,
             blobs,
             ai,
-            previewOrigin: previewConfiguration(env)?.previewOrigin
+            previewOrigin: previewConfiguration(env)?.previewOrigin,
+            metrics
         }),
         sync,
+        /** Each prototype link shared, with its screens and distinct players. */
+        sharedPrototypes: () => sharedPrototypes(db),
         close: () => {
             clearTimeout(firstCleanup);
             clearInterval(cleanups);

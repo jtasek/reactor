@@ -35,6 +35,7 @@ import {
 } from './history.ts';
 import type { AiProvider } from './aiTasks.ts';
 import type { Auth } from './auth.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db, Log } from './schema.ts';
 
 declare global {
@@ -102,10 +103,12 @@ export function createApi({
     ai,
     previewOrigin,
     history,
+    metrics = noMetrics,
     now = () => new Date()
 }: {
     db: Db;
     history: HistorySync;
+    metrics?: Metrics;
     /** The time deletions are dated with; a test may move it on. */
     now?: () => Date;
     previewOrigin?: string;
@@ -121,7 +124,7 @@ export function createApi({
     ai?: { provider: AiProvider; limits?: AiLimits };
 }) {
     const api = express.Router();
-    api.use(publicPrototypeLinks(db, previewOrigin));
+    api.use(publicPrototypeLinks(db, previewOrigin, { metrics, log }));
 
     // Only public provider names, so signed-out people see the configured sign-in choices.
     api.get('/sign-in/providers', (_req, res) => {
@@ -182,7 +185,7 @@ export function createApi({
         return next();
     });
 
-    api.use(prototypeLinks(db, previewOrigin));
+    api.use(prototypeLinks(db, previewOrigin, { metrics, log }));
     api.use(createInvitations(db));
     api.use(createMembers(db, onAccessChanged, log));
 
@@ -484,7 +487,7 @@ export function createApi({
     });
 
     if (ai) {
-        api.use('/ai', createAi({ db, ...ai }));
+        api.use('/ai', createAi({ db, metrics, ...ai }));
     }
 
     api.use(

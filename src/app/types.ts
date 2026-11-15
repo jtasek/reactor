@@ -1,4 +1,5 @@
 import type { DocumentSizeConfiguration } from './services/documentSizeConfiguration';
+import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord } from './dataTypes';
@@ -656,6 +657,7 @@ export type Configuration = {
     /** How the Documents page shows documents, kept per device. */
     documentsLayout: DocumentsLayout;
     documentSize: DocumentSizeConfiguration;
+    errorReport: ErrorReportConfiguration;
     panelLayout: Record<string, PanelPlacement>;
     version: string;
 };

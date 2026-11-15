@@ -499,6 +499,25 @@ window.addEventListener('message', (event) => {
 });
 window.addEventListener('pagehide', () => port?.close());
 
+/**
+ * A random id this browser keeps on the preview site, so the server counts distinct
+ * players per link; it is never sent anywhere else, nor with anything about the player.
+ */
+function playerId() {
+    try {
+        const kept = localStorage.getItem('reactor:player');
+        if (kept) {
+            return kept;
+        }
+        const id = crypto.randomUUID();
+        localStorage.setItem('reactor:player', id);
+
+        return id;
+    } catch {
+        return undefined;
+    }
+}
+
 /** Public links load one immutable validated snapshot, without cookies or an editor channel. */
 async function openSharedPrototype() {
     root.textContent = 'Loading shared prototype…';
@@ -515,7 +534,7 @@ async function openSharedPrototype() {
             cache: 'no-store',
             referrerPolicy: 'no-referrer',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, player: playerId() }),
             signal: controller.signal
         });
         if (!response.ok) {

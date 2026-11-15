@@ -15,6 +15,7 @@ import { anthropicProvider } from './anthropic.ts';
 import { imageType } from './assets.ts';
 import { openAiProvider } from './openai.ts';
 import { allows, workspaceRole } from './workspaces.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db } from './schema.ts';
 
 /** What one person, and one workspace, may use of AI in a day. */
@@ -212,11 +213,13 @@ interface Kept {
 export function createAi({
     db,
     provider,
-    limits = AI_LIMITS
+    limits = AI_LIMITS,
+    metrics = noMetrics
 }: {
     db: Db;
     provider: AiProvider;
     limits?: AiLimits;
+    metrics?: Metrics;
 }) {
     const router = express.Router();
     /** People with a request running: each may run one at a time. */
@@ -252,6 +255,12 @@ export function createAi({
         const controller = new AbortController();
         const send = (event: object) => res.write(`${JSON.stringify(event)}\n`);
         let usage: Usage = { inputTokens: 0, outputTokens: 0 };
+        const task = conversation.request.task;
+        const turnKind = repairable ? 'request' : 'repair';
+        const started = performance.now();
+        const seconds = () => (performance.now() - started) / 1000;
+        let firstOperation = true;
+        let result = 'failed';
 
         res.on('close', () => controller.abort());
         // Not compressed, as compression holds back what is written until it ends.
@@ -266,7 +275,18 @@ export function createAi({
                 conversation,
                 AbortSignal.any([controller.signal, AbortSignal.timeout(TURN_TIMEOUT_MS)]),
                 {
-                    operation: (operation) => send({ type: 'operation', operation }),
+                    operation: (operation) => {
+                        if (firstOperation) {
+                            firstOperation = false;
+                            metrics.observe(
+                                'reactor_ai_first_operation_seconds',
+                                'Time from an AI turn starting to its first operation.',
+                                seconds(),
+                                { task, turn: turnKind }
+                            );
+                        }
+                        send({ type: 'operation', operation });
+                    },
                     message: (text) => send({ type: 'message', text }),
                     usage: (used) => {
                         usage = used;
@@ -274,6 +294,7 @@ export function createAi({
                 }
             );
 
+            result = turn.stop;
             if (turn.stop !== 'done') {
                 send({
                     type: 'error',
@@ -294,11 +315,24 @@ export function createAi({
             }
             send({ type: 'done' });
         } catch (error) {
-            if (!controller.signal.aborted) {
+            if (controller.signal.aborted) {
+                result = 'aborted';
+            } else {
                 (req.log ?? console).error(error);
                 send({ type: 'error', code: 'AI_FAILED' });
             }
         } finally {
+            metrics.count('reactor_ai_turns_total', 'AI turns, by task and how they ended.', {
+                task,
+                turn: turnKind,
+                result
+            });
+            metrics.observe(
+                'reactor_ai_turn_seconds',
+                'Time an AI turn took, start to end.',
+                seconds(),
+                { task, turn: turnKind }
+            );
             await addUsage(requestId, usage);
             res.end();
         }
@@ -327,6 +361,9 @@ export function createAi({
                 if (!(error instanceof Refusal)) {
                     throw error;
                 }
+                metrics.count('reactor_ai_refusals_total', 'AI requests refused, by code.', {
+                    code: error.message
+                });
                 res.status(error.status).json({ code: error.message });
             }
         };
