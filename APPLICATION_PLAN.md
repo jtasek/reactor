@@ -313,7 +313,7 @@ That suits the beta on one machine. Before R7:
 | ------------------------------ | ----------------------------------------------------------------------- |
 | Projecting a slice             | 4 ms for 300 controls, 16 ms for 2,000 records; only on committed edits |
 | Preview after a committed edit | 250 ms at p95                                                           |
-| Shared document                | A warning at 3 MiB of Yjs state; the server accepts at most 4 MiB on first sync (S1, not built yet) |
+| Shared document                | A warning at 3 MiB of Yjs state; the server accepts at most 4 MiB on first sync (S1 step 6) |
 | Entry bundle                   | 498 KiB (S1 target: under 492 KiB), 248 KiB per file                     |
 | Preview and runtime chunk      | 150 KiB                                                                 |
 | AI chunk in the editor         | 40 KiB                                                                  |
@@ -1224,6 +1224,20 @@ suggest. Do these in order; each is a separate change.
    complete.
 6. **Size warning (S).** The editor warns at 3 MiB of Yjs state and explains a refused first
    upload. Acceptance: a unit test on the measure and a browser spec on the message.
+   Implementation status (2026-11-15): `src/app/services/documentSize.ts` holds the measure:
+   a document's whole state as another copy would receive it (content kept only for undo is
+   left out), a warning from 3 MiB and an upload limit of 4 MiB less 1 KiB, the server's
+   largest message (`MAX_MESSAGE`) less room for the document's id. The editor measures the
+   document it shows when it opens and at most every 2 seconds while it changes, and from
+   3 MiB says how large it is and that over the limit it cannot reach an account; the note
+   can be dismissed until the document grows another megabyte. The server sync no longer
+   sends what the server would refuse: a document too large for its first upload, or with a
+   change too large to send at once, is held back in this browser (before, the server closed
+   the socket every document shares, again on each reconnect), named in an error and in a
+   note in the editor, and sent once it is smaller. Covered by `tests/documentSize.test.ts`,
+   `tests/server/editorSync.test.ts` and `tests/browser/documentSize.spec.ts`. Not yet: a
+   note on the Documents page's card, and the server checking sizes itself. Step 6 is
+   complete.
 7. **Measures and signals (S).** Count prototype links created, distinct players per link and
    screens per shared prototype on the server, with no third-party tracker; add the server
    metrics and browser error report from Operations. Acceptance: `tests/server/metrics.test.ts`.

@@ -7,11 +7,18 @@ import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
 import { SCHEMA_VERSION } from './schemaVersion';
 import { readPeers, type LocalPresence, type Peer } from './presence';
+import { MAX_UPLOAD_BYTES, measureDocument, tooLargeMessage } from './documentSize';
 
 export { followPresence, presence } from './presence';
 
 /** The close code and query parameter of the server's check of the editor's format. */
 const EDITOR_OUTDATED = 4426;
+
+/** The close code of a socket whose message the server refused as too large. */
+const MESSAGE_TOO_BIG = 1009;
+
+/** How long after a change a document held back as too large is measured again. */
+const REMEASURE_AFTER = 2000;
 
 export interface ServerEvents {
     /** The documents this copy holds. */
@@ -35,6 +42,11 @@ export interface ServerEvents {
     outdated?(version: number): void;
     /** Who else has a document open changed: their pointers and selections. */
     presence?(documentId: string, peers: Peer[]): void;
+    /**
+     * A document is held back as too large to send, its state weighing `bytes`, for
+     * the reason `message` says; or, without them, sent again now that it is smaller.
+     */
+    tooLarge?(documentId: string, bytes?: number, message?: string): void;
 }
 
 export interface ServerSyncOptions {
@@ -65,6 +77,8 @@ interface Link {
     replace: boolean;
     /** Ends the wait for the document to sync, as when it is closed first. */
     settle(): void;
+    /** Whether it has synced since it was linked, so the server holds most of it. */
+    synced: boolean;
 }
 
 /** How long to wait before trying an unreachable server again, at first and at most. */
@@ -95,6 +109,12 @@ export class ServerSync {
      * it keeps refusing is asked again ever more rarely rather than at once.
      */
     private readonly refused = new Map<string, number>();
+    /**
+     * Documents held back as too large for the server to take, with their size: kept
+     * in this browser, and measured again after they change until they fit.
+     */
+    private readonly oversized = new Map<string, number>();
+    private readonly remeasure = new Map<string, ReturnType<typeof setTimeout>>();
     private socket?: Hocuspocus.HocuspocusProviderWebsocket;
     private connected = false;
     private reachable = true;
@@ -208,6 +228,7 @@ export class ServerSync {
     /** Deletes a document this copy deleted from the server, which may have it. */
     deleted(documentId: string): void {
         this.unlink(documentId);
+        this.fits(documentId);
 
         if (this.stopped && !this.outdated) {
             return;
@@ -227,6 +248,7 @@ export class ServerSync {
     /** Stops syncing a document another copy on this device deleted. */
     forget(documentId: string): void {
         this.unlink(documentId);
+        this.fits(documentId);
     }
 
     /** Passes a change to the server: this copy's own, or another copy's on this device. */
@@ -237,8 +259,27 @@ export class ServerSync {
         if (link) {
             this.images?.changed(documentId);
         }
+        // The server would close the socket shared by every document for a change too
+        // large to take at once, and again each time it reconnects.
+        if (link?.held && update.byteLength > MAX_UPLOAD_BYTES && this.tooLarge(documentId)) {
+            return;
+        }
+
         if (link?.held) {
             Yjs.applyUpdate(link.doc, update, OUTGOING);
+        }
+
+        if (this.oversized.has(documentId) && !this.remeasure.has(documentId)) {
+            this.remeasure.set(
+                documentId,
+                setTimeout(() => {
+                    this.remeasure.delete(documentId);
+
+                    if (!this.tooLarge(documentId)) {
+                        void this.refresh();
+                    }
+                }, REMEASURE_AFTER)
+            );
         }
     }
 
@@ -268,6 +309,8 @@ export class ServerSync {
 
     dispose(): void {
         clearTimeout(this.retryTimer);
+        this.remeasure.forEach((timer) => clearTimeout(timer));
+        this.remeasure.clear();
         [...this.links.keys()].forEach((documentId) => this.unlink(documentId));
         this.socket?.destroy();
     }
@@ -364,7 +407,7 @@ export class ServerSync {
 
         await Promise.all([
             ...kept
-                .filter((id) => !gone.includes(id))
+                .filter((id) => !gone.includes(id) && !this.oversized.has(id))
                 .map((id) => (listed.has(id) ? this.link(id, true) : this.create(id))),
             ...[...listed]
                 .filter((id) => !current.has(id) && !deletedHere.has(id))
@@ -380,8 +423,9 @@ export class ServerSync {
             return pending;
         }
 
-        // Before the first refresh, which creates what this copy holds.
-        if (!workspaceId) {
+        // Before the first refresh, which creates what this copy holds; and not one the
+        // server could not take, which stays unsent until it is smaller.
+        if (!workspaceId || this.tooLarge(documentId)) {
             return Promise.resolve();
         }
 
@@ -469,6 +513,7 @@ export class ServerSync {
                 name: documentId,
                 document: doc,
                 onSynced: () => {
+                    link.synced = true;
                     this.refused.delete(documentId);
                     this.images?.changed(documentId);
 
@@ -491,7 +536,7 @@ export class ServerSync {
                 // It may have been deleted, or not be created yet.
                 onAuthenticationFailed: () => this.leave(documentId)
             });
-            const link: Link = { doc, provider, held, replace, settle };
+            const link: Link = { doc, provider, held, replace, settle, synced: false };
             const { awareness } = provider;
 
             if (awareness) {
@@ -568,6 +613,59 @@ export class ServerSync {
         this.options.events.changed();
     }
 
+    /**
+     * Whether a document this copy holds is too large for the server to take in its
+     * first sync, holding it back if so and sending it again once it fits. One that
+     * cannot be measured, as when it is not open, counts as fitting.
+     */
+    private tooLarge(documentId: string): boolean {
+        // Not open here, it has nothing to send.
+        const bytes = measureDocument(() => this.options.collaboration.state(documentId), Yjs) ?? 0;
+
+        if (bytes <= MAX_UPLOAD_BYTES) {
+            this.fits(documentId);
+
+            return false;
+        }
+
+        if (this.oversized.get(documentId) !== bytes) {
+            this.oversized.set(documentId, bytes);
+            this.unlink(documentId);
+            this.options.events.tooLarge?.(
+                documentId,
+                bytes,
+                tooLargeMessage(this.options.events.document(documentId)?.name, bytes)
+            );
+        }
+
+        return true;
+    }
+
+    /** Stops holding a document back as too large. */
+    private fits(documentId: string) {
+        clearTimeout(this.remeasure.get(documentId));
+        this.remeasure.delete(documentId);
+
+        if (this.oversized.delete(documentId)) {
+            this.options.events.tooLarge?.(documentId);
+        }
+    }
+
+    /**
+     * The server closed the shared socket for a message too large, which would close it
+     * again each time it reconnects, for every document. That message synced a
+     * document this copy holds that had not synced since it was linked, or had changes
+     * the server had not confirmed; of those, the ones too large to send whole are
+     * held back.
+     */
+    private holdBackOversized() {
+        [...this.links.entries()]
+            .filter(
+                ([, { held, synced, provider }]) => held && (!synced || provider.hasUnsyncedChanges)
+            )
+            .forEach(([documentId]) => this.tooLarge(documentId));
+    }
+
     /** The socket documents share, opened with the first. */
     private connect(): Hocuspocus.HocuspocusProviderWebsocket {
         const url = new URL(this.options.transport.url);
@@ -578,6 +676,10 @@ export class ServerSync {
             url: url.href,
             onStatus: () => this.options.events.changed(),
             onClose: ({ event }) => {
+                if (event.code === MESSAGE_TOO_BIG) {
+                    this.holdBackOversized();
+                }
+
                 if (event.code === EDITOR_OUTDATED && !this.stopped) {
                     this.outdated = true;
                     this.stop();

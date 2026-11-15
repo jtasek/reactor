@@ -1,0 +1,42 @@
+/* A note above the canvas, centred below the menus, while the document's size needs saying. */
+.notice {
+    align-items: center;
+    background: var(--notice-background);
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    color: var(--notice-color);
+    display: flex;
+    gap: 12px;
+    left: 50%;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 14px;
+    position: fixed;
+    top: 64px;
+    transform: translateX(-50%);
+    width: max-content;
+    z-index: 900;
+}
+
+.warning {
+    --notice-background: var(--warning-background);
+    --notice-color: var(--warning-color);
+}
+
+.error {
+    --notice-background: var(--error-background);
+    --notice-color: var(--error-color);
+}
+
+.dismiss {
+    background: var(--surface);
+    border: 1px solid var(--action-border);
+    border-radius: 8px;
+    color: var(--ink-strong);
+    cursor: pointer;
+    flex: 0 0 auto;
+    padding: 3px 10px;
+}
+
+.dismiss:hover {
+    border-color: var(--action-border-hover);
+}

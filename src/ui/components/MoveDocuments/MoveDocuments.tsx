@@ -8,12 +8,11 @@ import {
     tooLarge,
     type SignedOutDocument
 } from 'src/app/services/signedOutDocuments';
+import { formatSize } from 'src/app/services/documentSize';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
-const MIB = 1024 * 1024;
-
-const size = (bytes: number) => `${(bytes / MIB).toFixed(1)} MB`;
+const size = formatSize;
 
 const count = (documents: unknown[]) =>
     documents.length === 1 ? 'one document' : `${documents.length} documents`;

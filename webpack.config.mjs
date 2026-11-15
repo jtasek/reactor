@@ -119,11 +119,13 @@ export const config = {
     // that lets visibility and lock checks skip scanning every group, layer and component.
     // 2026-11-13: +1 KiB entry for the version check (S1 step 1): a document a newer editor
     // changed goes view only, stops a held drag and becomes editable again after a rollback.
+    // 2026-11-15: +1 KiB entry for the size warning (S1 step 6): the store keeps which
+    // documents the server sync holds back as too large (~250 bytes with the chunk map).
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 505 * 1024,
+              maxEntrypointSize: 506 * 1024,
               maxAssetSize: 253 * 1024
           },
     optimization: {

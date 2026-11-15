@@ -2,16 +2,15 @@ import * as Y from 'yjs';
 import type { Context } from 'src/app';
 import type { Document } from '../types';
 import { snapshotDocument } from './documentHistory';
+import { MAX_UPLOAD_BYTES } from './documentSize';
 import { COLLECTIONS, PERSISTENCE_KEY } from './documentStorage';
 import { accountCopy } from './documentSync';
 
 /**
- * The most a document's state may weigh to move into an account. The server takes
- * messages of at most 4 MiB (`MAX_MESSAGE` in server/sync.ts), and a document's
- * first sync sends its whole state in one, with the document's id; a larger one
- * would never reach the server.
+ * The most a document's state may weigh to move into an account: the most the
+ * server takes in a document's first sync.
  */
-export const MAX_MOVE_BYTES = 4 * 1024 * 1024 - 1024;
+export const MAX_MOVE_BYTES = MAX_UPLOAD_BYTES;
 
 /** A document this browser keeps signed out, as offered to move into an account. */
 export interface SignedOutDocument {

@@ -687,6 +687,11 @@ export type Application = {
      * edit them: this copy only shows them until it reloads. Never saved.
      */
     outdatedDocuments: Record<string, number>;
+    /**
+     * Documents the server sync holds back as too large to send, by id, with the size
+     * of their state: they are kept only in this browser until smaller. Never saved.
+     */
+    tooLargeToSync: Record<string, number>;
     /** The outdated document whose gesture stopped part way, to say so. Never saved. */
     interruptedDocumentId?: string;
     ai: AiAvailability;

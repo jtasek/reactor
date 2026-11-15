@@ -468,7 +468,11 @@ export async function startDocumentSync(
                         instance.actions.markDocumentOutdated({ documentId, editableFrom })
                     ),
                 changed: report,
-                presence: presence.set
+                presence: presence.set,
+                tooLarge: (documentId, bytes, message) => {
+                    instance.actions.markTooLargeToSync({ documentId, bytes });
+                    if (message) displayError(message);
+                }
             }
         });
         followPresence(instance, server);

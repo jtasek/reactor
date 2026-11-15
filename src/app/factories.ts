@@ -381,6 +381,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         account: { kind: 'loading' },
         documentAccess: {},
         outdatedDocuments: {},
+        tooLargeToSync: {},
         ai: 'unavailable',
         ...options
     };

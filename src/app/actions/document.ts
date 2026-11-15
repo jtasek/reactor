@@ -222,6 +222,21 @@ export const markDocumentOutdated: ActionWithParam<{
     state.outdatedDocuments[documentId] = editableFrom;
 };
 
+/**
+ * Records that the server sync holds a document back as too large to send, with the
+ * size of its state; without `bytes`, that it sends it again.
+ */
+export const markTooLargeToSync: ActionWithParam<{ documentId: string; bytes?: number }> = (
+    { state },
+    { documentId, bytes }
+) => {
+    if (bytes === undefined) {
+        delete state.tooLargeToSync[documentId];
+    } else {
+        state.tooLargeToSync[documentId] = bytes;
+    }
+};
+
 /** Removes a document added only to hold saved or shared content that could not be read. */
 export const discardDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);

@@ -6,6 +6,7 @@ import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
 import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
+import { MAX_UPLOAD_BYTES } from 'src/app/services/documentSize';
 import { presence, type Peer } from 'src/app/services/presence';
 import { createTestStore } from '../support/store';
 import { ORIGIN, serve, type DocumentSummary } from './support';
@@ -292,6 +293,81 @@ describe('editor sync', () => {
         const other = await device(served, cookie);
 
         await vi.waitFor(() => expect(shapeCount(other, documentId)).toBe(1));
+    });
+
+    it('keeps a document too large for its first upload in this browser, says why, and sends it once smaller', async () => {
+        const served = await serve();
+        const { cookie, personal } = await served.user('ada@example.com');
+        const offline = await device(served, cookie, { online: () => false });
+        const [large] = documentIds(offline);
+
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(MAX_UPLOAD_BYTES) });
+        offline.effects.collaboration.flush();
+
+        const online = await restart(served, cookie, offline);
+
+        await vi.waitFor(() =>
+            expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(MAX_UPLOAD_BYTES)
+        );
+        expect(online.store.state.notifications.map(({ message }) => message).join('\n')).toContain(
+            'more than the server takes at once'
+        );
+
+        // Other documents still sync over the socket they share.
+        online.store.actions.addDocument({ name: 'Small' });
+        const small = documentIds(online).find((id) => id !== large)!;
+        await vi.waitFor(async () =>
+            expect(
+                (await serverDocuments(served, cookie, personal.id)).map(({ id }) => id)
+            ).toEqual([small])
+        );
+
+        // Smaller, it is sent.
+        online.store.actions.openDocument(large);
+        const [shapeId] = Object.keys(online.store.state.documents[large].shapes);
+        online.store.actions.updateShape({ id: shapeId, name: 'short' });
+
+        await vi.waitFor(
+            async () =>
+                expect(
+                    (await serverDocuments(served, cookie, personal.id)).map(({ id }) => id).sort()
+                ).toEqual([large, small].sort()),
+            { timeout: 10_000 }
+        );
+        expect(online.store.state.tooLargeToSync).toEqual({});
+
+        const other = await device(served, cookie);
+        await vi.waitFor(() =>
+            expect(
+                Object.values(other.store.state.documents[large]?.shapes ?? {}).map(
+                    ({ name }) => name
+                )
+            ).toEqual(['short'])
+        );
+    });
+
+    it('holds back a synced document whose change is too large to send at once', async () => {
+        const served = await serve();
+        const { cookie } = await served.user('ada@example.com');
+        const first = await device(served, cookie);
+        const [documentId] = documentIds(first);
+
+        await vi.waitFor(() => expect(first.store.state.saveStatus).toEqual({ kind: 'saved' }));
+        first.store.actions.addShape({ ...rectangle, name: 'x'.repeat(MAX_UPLOAD_BYTES) });
+
+        await vi.waitFor(() =>
+            expect(first.store.state.tooLargeToSync[documentId]).toBeGreaterThan(MAX_UPLOAD_BYTES)
+        );
+
+        // The socket stays open: a small change to another document still arrives.
+        first.store.actions.addDocument({ name: 'Small' });
+        const small = documentIds(first).find((id) => id !== documentId)!;
+        first.store.actions.openDocument(small);
+        first.store.actions.addShape(rectangle);
+        const second = await device(served, cookie);
+
+        await vi.waitFor(() => expect(shapeCount(second, small)).toBe(1));
+        expect(shapeCount(second, documentId)).toBe(0);
     });
 
     it('removes a document deleted on another device, here and from the browser database', async () => {
