@@ -18,7 +18,7 @@ const EDITOR_OUTDATED = 4426;
 const MESSAGE_TOO_BIG = 1009;
 
 /** How long after a change a document held back as too large is measured again. */
-const REMEASURE_AFTER = 2000;
+const REMEASURE_AFTER = 5000;
 
 export interface ServerEvents {
     /** The documents this copy holds. */
@@ -115,6 +115,8 @@ export class ServerSync {
      */
     private readonly oversized = new Map<string, number>();
     private readonly remeasure = new Map<string, ReturnType<typeof setTimeout>>();
+    /** Documents this copy created on the server that have not synced since: first uploads. */
+    private readonly uploading = new Set<string>();
     private socket?: Hocuspocus.HocuspocusProviderWebsocket;
     private connected = false;
     private reachable = true;
@@ -450,6 +452,8 @@ export class ServerSync {
                     }));
 
                     if (this.options.events.documentIds().includes(documentId)) {
+                        this.uploading.add(documentId);
+
                         return this.link(documentId, true);
                     }
                 },
@@ -514,6 +518,7 @@ export class ServerSync {
                 document: doc,
                 onSynced: () => {
                     link.synced = true;
+                    this.uploading.delete(documentId);
                     this.refused.delete(documentId);
                     this.images?.changed(documentId);
 
@@ -620,7 +625,12 @@ export class ServerSync {
      */
     private tooLarge(documentId: string): boolean {
         // Not open here, it has nothing to send.
-        const bytes = measureDocument(() => this.options.collaboration.state(documentId), Yjs) ?? 0;
+        const bytes =
+            measureDocument(
+                () => this.options.collaboration.state(documentId),
+                Yjs,
+                MAX_UPLOAD_BYTES
+            ) ?? 0;
 
         if (bytes <= MAX_UPLOAD_BYTES) {
             this.fits(documentId);
@@ -655,15 +665,22 @@ export class ServerSync {
      * The server closed the shared socket for a message too large, which would close it
      * again each time it reconnects, for every document. That message synced a
      * document this copy holds that had not synced since it was linked, or had changes
-     * the server had not confirmed; of those, the ones too large to send whole are
-     * held back.
+     * the server had not confirmed. First uploads too large to send whole are the
+     * likely cause and are held back; only when none is are the other such documents
+     * too large to send whole, though a document the server already holds most of
+     * syncs only what it lacks.
      */
     private holdBackOversized() {
-        [...this.links.entries()]
+        const pending = [...this.links.entries()]
             .filter(
                 ([, { held, synced, provider }]) => held && (!synced || provider.hasUnsyncedChanges)
             )
-            .forEach(([documentId]) => this.tooLarge(documentId));
+            .map(([documentId]) => documentId);
+        const uploads = pending.filter((documentId) => this.uploading.has(documentId));
+
+        if (!uploads.some((documentId) => this.tooLarge(documentId))) {
+            pending.forEach((documentId) => this.tooLarge(documentId));
+        }
     }
 
     /** The socket documents share, opened with the first. */

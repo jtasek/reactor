@@ -346,6 +346,39 @@ describe('editor sync', () => {
         );
     });
 
+    it('holds back a listed document whose first sync the server closes the socket for', async () => {
+        const served = await serve();
+        const { cookie, personal } = await served.user('ada@example.com');
+        const offline = await device(served, cookie, { online: () => false });
+        const [large] = documentIds(offline);
+
+        // Over the server's largest message, not only over the editor's limit.
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(4 * 1024 * 1024) });
+        offline.effects.collaboration.flush();
+        // Created on the server, empty, as by a build that then failed to send it.
+        await served.call('POST', `/workspaces/${personal.id}/documents`, {
+            cookie,
+            body: { id: large, name: 'Large' }
+        });
+
+        const online = await restart(served, cookie, offline);
+
+        await vi.waitFor(
+            () =>
+                expect(online.store.state.tooLargeToSync[large]).toBeGreaterThan(MAX_UPLOAD_BYTES),
+            { timeout: 10_000 }
+        );
+
+        // The socket the documents share works again.
+        online.store.actions.addDocument({ name: 'Small' });
+        const small = documentIds(online).find((id) => id !== large)!;
+        online.store.actions.openDocument(small);
+        online.store.actions.addShape(rectangle);
+        const other = await device(served, cookie);
+
+        await vi.waitFor(() => expect(shapeCount(other, small)).toBe(1));
+    });
+
     it('holds back a synced document whose change is too large to send at once', async () => {
         const served = await serve();
         const { cookie } = await served.user('ada@example.com');

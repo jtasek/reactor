@@ -1228,8 +1228,9 @@ suggest. Do these in order; each is a separate change.
    a document's whole state as another copy would receive it (content kept only for undo is
    left out), a warning from 3 MiB and an upload limit of 4 MiB less 1 KiB, the server's
    largest message (`MAX_MESSAGE`) less room for the document's id. The editor measures the
-   document it shows when it opens and at most every 2 seconds while it changes, and from
-   3 MiB says how large it is and that over the limit it cannot reach an account; the note
+   document it shows when it opens and while it changes, at most every 2 seconds (15 once it
+   is large, as leaving out undo content then costs about 150 ms), and from 3 MiB says how
+   large it is and that over the limit it cannot move into an account; the note
    can be dismissed until the document grows another megabyte. The server sync no longer
    sends what the server would refuse: a document too large for its first upload, or with a
    change too large to send at once, is held back in this browser (before, the server closed

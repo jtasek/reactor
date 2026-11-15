@@ -76,7 +76,7 @@ test('warns that a document over 3 MB is growing too large to upload, until dism
     const warning = page.getByRole('status').filter({ hasText: 'This document is 3.1 MB' });
     await expect(warning).toBeVisible();
     await expect(warning).toContainText(
-        'Documents over 4.0 MB cannot be uploaded to an account, so they stay in one browser.'
+        'Over 4.0 MB, a document cannot be moved into an account, and large changes to it may not sync.'
     );
     await warning.getByRole('button', { name: 'Dismiss' }).click();
     await expect(warning).toBeHidden();

@@ -34,11 +34,15 @@ export const formatSize = (bytes: number) =>
 /**
  * The size of a document's whole state as it would reach another copy: `state` as
  * encoded, less the content of deleted items this copy keeps for undo, which a
- * copy starting from it drops. Undefined when the state cannot be read.
+ * copy starting from it drops. Undefined when the state cannot be read. Dropping
+ * that content means reading the state into a new copy, several times slower than
+ * encoding it (about 150 ms at 3 MB of shapes), so it is done only when the state
+ * as encoded is over `above`; below it, the encoded size is the answer.
  */
 export function measureDocument(
     state: () => Uint8Array,
-    yjs: Pick<typeof Yjs, 'Doc' | 'applyUpdate' | 'encodeStateAsUpdate'>
+    yjs: Pick<typeof Yjs, 'Doc' | 'applyUpdate' | 'encodeStateAsUpdate'>,
+    above = SIZE_WARNING_BYTES
 ): number | undefined {
     let encoded: Uint8Array;
 
@@ -49,7 +53,7 @@ export function measureDocument(
     }
 
     // Kept content only adds, so a state small enough as it is needs no second look.
-    if (encoded.byteLength < SIZE_WARNING_BYTES) {
+    if (encoded.byteLength <= above) {
         return encoded.byteLength;
     }
 
