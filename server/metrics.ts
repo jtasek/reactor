@@ -235,7 +235,8 @@ export function browserErrors({
         } catch {
             origin = undefined;
         }
-        if (!origin || origin !== req.headers.host) {
+        // `req.host` is the forwarded host behind a trusted proxy, which may rewrite `Host`.
+        if (!origin || origin !== req.host) {
             res.status(403).json({ code: 'INVALID_ORIGIN' });
 
             return;

@@ -197,7 +197,6 @@ export function createPrototypeLinkService(
             }
 
             return { snapshot: link.snapshot };
-        },
-        measures: () => repository.sharedPrototypes(db)
+        }
     };
 }

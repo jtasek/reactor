@@ -24,6 +24,7 @@ it('reports errors and rejections nothing handled, each message once', () => {
     fail(error);
     fail(new TypeError('boom'));
     reject('offline');
+    reject(Symbol('reason'));
 
     expect(sent).toEqual([
         {
@@ -36,6 +37,12 @@ it('reports errors and rejections nothing handled, each message once', () => {
         {
             kind: 'rejection',
             message: 'offline',
+            page: 'https://reactor.test/designer',
+            release: `${SCHEMA_VERSION}`
+        },
+        {
+            kind: 'rejection',
+            message: 'Symbol(reason)',
             page: 'https://reactor.test/designer',
             release: `${SCHEMA_VERSION}`
         }

@@ -16,7 +16,7 @@ export function reportErrors(
 ) {
     const sent = new Set<string>();
     const report = (kind: string, error: unknown) => {
-        const message = `${error}`.slice(0, 500);
+        const message = String(error).slice(0, 500);
         if (sent.size < perPage && !sent.has(message)) {
             sent.add(message);
             send(
