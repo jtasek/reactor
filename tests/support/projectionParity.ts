@@ -5,8 +5,8 @@ import { registerEditor } from 'src/pages/registerEditor';
 import { ScreenViews } from 'src/ui/components/Frames/ScreenViews';
 import { Shapes } from 'src/ui/components/Surface/Shapes';
 import { serializePersistedState } from 'src/app/services/documentStorage';
-import { previewModes } from 'src/app/modeEdits';
-import { projectPreview } from 'src/preview/project';
+import { previewModes, prototypeModes } from 'src/app/modeEdits';
+import { projectPreview, type PreviewSession } from 'src/preview/project';
 import { projectSvg, serializeSvg } from 'src/export/svg';
 import type { PreviewDrawing, PreviewNode } from 'src/preview/protocol';
 import type { Document } from 'src/app/types';
@@ -31,6 +31,8 @@ export interface Mark {
     fontSize?: number;
     fontWeight?: string;
     text?: string;
+    /** Any other attribute it is drawn with, so one the comparison doesn't know still counts. */
+    other?: Record<string, string>;
 }
 
 /** The stroke a shape gets when it has none of its own. */
@@ -107,6 +109,17 @@ interface Paint {
 }
 
 const ART = new Set(['rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
+/** Attributes a mark already accounts for, or that change nothing drawn. */
+const READ = new Set(
+    [
+        'x y width height rx ry r cx cy x1 y1 x2 y2 points transform opacity',
+        // The canvas paints primitives through CSS, which wins over its own paint attributes.
+        'fill stroke stroke-width font-size font-weight style',
+        'class href pointer-events'
+    ]
+        .join(' ')
+        .split(' ')
+);
 
 function mark(element: Element, paint: Paint, fill: string, stroke?: string, strokeWidth?: number) {
     const { attrs } = element;
@@ -116,6 +129,12 @@ function mark(element: Element, paint: Paint, fill: string, stroke?: string, str
     if (stroke !== undefined) {
         result.stroke = stroke;
         result.strokeWidth = strokeWidth;
+    }
+    const other = Object.entries(attrs).filter(
+        ([key]) => !READ.has(key) && !key.startsWith('data-') && !key.startsWith('aria-')
+    );
+    if (other.length) {
+        result.other = Object.fromEntries(other);
     }
     switch (element.tag) {
         case 'rect':
@@ -450,10 +469,31 @@ export function nodeMarks(
     return marks;
 }
 
+/**
+ * How a View opens: in the editor's Preview pane, or as Play and shared links do, with
+ * every screen in the launch viewport (as `PrototypeWorkspace` in `src/pages/Prototype.tsx`
+ * starts from the View Play was pressed on).
+ */
+export type Launch = 'preview' | 'prototype';
+
+function launchSession(store: ParityStore, launch: Launch): PreviewSession {
+    if (launch === 'preview') {
+        return previewModes(store.state);
+    }
+    const seed: PreviewSession = prototypeModes(store.state);
+
+    return { ...seed, viewport: { ...seed.viewport! }, scope: 'all-screens' };
+}
+
 /** Prototype launched from a View: the drawing, its screen and each shape's marks. */
-export function previewProjection(store: ParityStore, viewId: string, player: Player = {}) {
+export function previewProjection(
+    store: ParityStore,
+    viewId: string,
+    player: Player = {},
+    launch: Launch = 'preview'
+) {
     store.actions.editFrame({ kind: 'select', id: viewId });
-    const session = previewModes(store.state);
+    const session = launchSession(store, launch);
     const drawing: PreviewDrawing = projectPreview(store.state.currentDocument, {}, [], session);
     const screen = drawing.screens.find((item) => item.id === session.screenId)!;
     const shapes: ShapeMarks = new Map(

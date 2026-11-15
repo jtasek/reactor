@@ -1262,11 +1262,13 @@ suggest. Do these in order; each is a separate change.
    compared as normalized output, run on every change to projection code. Acceptance:
    `tests/projectionParity.test.ts`.
    Implementation status (2026-11-15): the suite draws each fixture's Views three ways: the
-   canvas's `ScreenViews` rendered to markup, Prototype's drawing launched from the View, and
-   the SVG file Export writes. It reduces each to the primitives a person sees, with every
+   canvas's `ScreenViews` rendered to markup, Prototype's drawing launched from the View (as
+   the editor's Preview pane and as Play and shared links start it), and the SVG file Export
+   writes. It reduces each to the primitives a person sees, with every
    transform applied (corners, centres, ends and text anchors in the screen's coordinates)
    and the paint the canvas's CSS or the drawing's attributes give them
-   (`tests/support/projectionParity.ts`). Fixtures: every primitive with rotation, opacity
+   (`tests/support/projectionParity.ts`); any other attribute a primitive carries is compared
+   as it is. Fixtures: every primitive with rotation, opacity
    and its own paint, nested rotated instances, wrapped text, an image, a hidden shape, a
    frame with its own theme and a state-driven badge (`tests/support/parityArtwork.ts`);
    theme and width modes; automatic and explicit screen layouts; stacks with Fill;

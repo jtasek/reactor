@@ -97,22 +97,25 @@ describe.each(FIXTURES)('%s', (_, document) => {
         }
     });
 
-    it('opens each View in Prototype as the canvas draws it', async () => {
-        const store = await openDocument(document());
-        const opened = store.state.currentDocument;
-        for (const [viewId, canvas] of canvasProjection(store)) {
-            const preview = previewProjection(store, viewId).shapes;
-            expect([...preview.keys()], label(store, viewId)).toEqual([...canvas.keys()]);
-            for (const [shapeId, marks] of canvas) {
-                if (instanceOf(opened, shapeId).dataList) {
-                    continue;
+    it.each(['preview', 'prototype'] as const)(
+        'opens each View in %s as the canvas draws it',
+        async (launch) => {
+            const store = await openDocument(document());
+            const opened = store.state.currentDocument;
+            for (const [viewId, canvas] of canvasProjection(store)) {
+                const preview = previewProjection(store, viewId, {}, launch).shapes;
+                expect([...preview.keys()], label(store, viewId)).toEqual([...canvas.keys()]);
+                for (const [shapeId, marks] of canvas) {
+                    if (instanceOf(opened, shapeId).dataList) {
+                        continue;
+                    }
+                    expect(preview.get(shapeId), label(store, viewId, shapeId)).toEqual(
+                        hiddenAtStart(opened, shapeId) ? [] : marks
+                    );
                 }
-                expect(preview.get(shapeId), label(store, viewId, shapeId)).toEqual(
-                    hiddenAtStart(opened, shapeId) ? [] : marks
-                );
             }
         }
-    });
+    );
 });
 
 it.each(CONTROLS)(
@@ -120,7 +123,8 @@ it.each(CONTROLS)(
     async (name) => {
         const store = await openDocument(fixture(name)());
         let compared = 0;
-        for (const viewId of views(store)) {
+        const authored = canvasProjection(store);
+        for (const viewId of authored.keys()) {
             const { drawing, screen } = previewProjection(store, viewId);
             for (const node of screen.nodes) {
                 const shapeId = node.key.slice(screen.id.length + 1);
@@ -144,7 +148,7 @@ it.each(CONTROLS)(
                         visibility: { [stateKey ?? key]: stateKey ? when : true }
                     });
                     expect(shown, label(store, viewId, shapeId)).toEqual(
-                        canvasProjection(store).get(viewId)!.get(shapeId)
+                        authored.get(viewId)!.get(shapeId)
                     );
                     compared += 1;
                 }
