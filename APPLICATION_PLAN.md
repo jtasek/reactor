@@ -1261,6 +1261,25 @@ suggest. Do these in order; each is a separate change.
    variants, data records, interactive state) projected by Canvas, Preview and SVG export and
    compared as normalized output, run on every change to projection code. Acceptance:
    `tests/projectionParity.test.ts`.
+   Implementation status (2026-11-15): the suite draws each fixture's Views three ways: the
+   canvas's `ScreenViews` rendered to markup, Prototype's drawing launched from the View, and
+   the SVG file Export writes. It reduces each to the primitives a person sees, with every
+   transform applied (corners, centres, ends and text anchors in the screen's coordinates)
+   and the paint the canvas's CSS or the drawing's attributes give them
+   (`tests/support/projectionParity.ts`). Fixtures: every primitive with rotation, opacity
+   and its own paint, nested rotated instances, wrapped text, an image, a hidden shape, a
+   frame with its own theme and a state-driven badge (`tests/support/parityArtwork.ts`);
+   theme and width modes; automatic and explicit screen layouts; stacks with Fill;
+   responsive variants; a repeated list and a selected record; and the five starter
+   templates. Export must equal the canvas exactly. Prototype at launch must equal it shape
+   by shape, except that instances hidden at start draw nothing; each variant a control
+   picks must draw as the canvas draws that variant chosen on the instance, each hidden
+   instance a control reveals as the canvas draws it, and each record as the canvas draws
+   the template with that record's values. Selected artwork outside Screens exports as the
+   canvas draws it. The suite runs with the unit tests on every pull request and push to
+   master. It found no differences in today's projection code. Not covered: images'
+   content (only their placement), the canvas's selection and hover styles, where a list
+   places its rows, and Preview's native fields drawn over inputs. Step 8 is complete.
 9. **First-run path (S–M).** Template, edit, Prototype, share link, with none of the advanced
    concepts required; measure time to the first shared link.
 10. **Housekeeping (S).** Move code the server shares into one folder copied whole by the
