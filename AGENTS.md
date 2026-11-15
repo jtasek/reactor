@@ -138,6 +138,12 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   A minute after it starts and then every hour it deletes the images no document links to
   any more, an hour after they were last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
+- **Metrics** (`server/metrics.ts`): both servers make one `createMetrics()` and pass it to
+  accounts, which hands it to the sync, the API and the AI gateway; code run without one uses
+  `noMetrics`. `/metrics` and `/metrics/prototypes` need `METRICS_TOKEN`. Shared prototypes and
+  their distinct players are tables (`shared_prototypes`, `prototype_players`) that outlive the
+  links. The editor's `reportErrors` beacons unhandled errors to `/api/client-errors`.
+
 - **Sign-in pages**: `/login` is the signed-out entry point; `/signin` is an alias.
   Signed-out `/account` visitors go to login with Account as the return destination.
   Both pages share the lazy-loaded `pages/AccountFrame.tsx` frame and `pages/Account.tsx`

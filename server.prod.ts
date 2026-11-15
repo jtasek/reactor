@@ -9,6 +9,7 @@ import compression from 'compression';
 import { pinoHttp } from 'pino-http';
 
 import { startAccounts } from './server/accounts.ts';
+import { browserErrors, createMetrics, metricsRoutes } from './server/metrics.ts';
 import { healthCheck, notFound, PAGE_FILE, parsePort, serveBuild } from './server/pages.ts';
 import { parseTrustProxy } from './server/trustProxy.ts';
 
@@ -103,14 +104,28 @@ app.get('/api/preview-config', previewConfigHandler(PREVIEW));
 
 app.get('/healthz', healthCheck(DIST_DIR));
 
+const metrics = createMetrics();
 let accounts: Awaited<ReturnType<typeof startAccounts>>;
 
 try {
-    accounts = await startAccounts(process.env, { production: true, log: logger.logger });
+    accounts = await startAccounts(process.env, {
+        production: true,
+        log: logger.logger,
+        metrics
+    });
 } catch (err) {
     logger.logger.error(err, 'Accounts could not be started');
     process.exit(1);
 }
+
+app.use(
+    metricsRoutes({
+        token: process.env.METRICS_TOKEN,
+        metrics,
+        prototypes: accounts?.sharedPrototypes
+    })
+);
+app.use(browserErrors({ metrics, log: logger.logger }));
 
 // Before any body parser, which would consume the request Better Auth reads.
 if (accounts) {

@@ -47,6 +47,7 @@ PostgreSQL; see Accounts below.
 | `HOST` | Address to listen on; `localhost` for the development server, `0.0.0.0` for the production server |
 | `LOG_LEVEL` | Production server log level; `info` by default |
 | `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
+| `METRICS_TOKEN` | Turns on `/metrics` and `/metrics/prototypes` for requests sending it as `Authorization: Bearer <token>`; off by default |
 
 The production server stops at start with a clear message when `PORT` or
 `TRUST_PROXY` is invalid; `LOG_LEVEL` must be one of `fatal`, `error`, `warn`,
@@ -685,6 +686,26 @@ Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
 tests run against PGlite, PostgreSQL built to run inside the test process.
+
+## Metrics and error reports
+
+With `METRICS_TOKEN` set, `GET /metrics` answers the server's metrics in the Prometheus text
+format: sync sockets open, opened and refused, documents saved and failed saves, AI turns by
+task and outcome with their time to the first operation and to the end, AI refusals, prototype
+snapshots published and refused, prototype links opened, and browser error reports. Counters
+start at zero with each process.
+
+`GET /metrics/prototypes` lists every prototype link shared, newest first, with its workspace,
+document, who shared it, its number of screens, distinct players, opens and last open. Links
+stay listed after they are revoked or expire (`expiresAt` is then null). A player is a browser:
+the `/share` page keeps a random id on the preview site and sends it when it opens a link, and
+the server stores only a hash of it with the link's id, so one browser is not recognizable
+across links. Nothing is sent to a third party.
+
+The editor sends errors nothing handled, up to ten per page load and each message once, to
+`POST /api/client-errors`, signed in or not. The server takes them only from its own pages,
+at most 20 a minute per address and 600 in all, and logs each as `browserError` with its
+message, stack, page path (without query or fragment) and document format.
 
 ## History and backups
 

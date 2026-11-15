@@ -1243,6 +1243,20 @@ suggest. Do these in order; each is a separate change.
 7. **Measures and signals (S).** Count prototype links created, distinct players per link and
    screens per shared prototype on the server, with no third-party tracker; add the server
    metrics and browser error report from Operations. Acceptance: `tests/server/metrics.test.ts`.
+   Implementation status (2026-11-15): sharing a prototype records the link in
+   `shared_prototypes` with its screens, kept after the link is revoked or expires; the `/share`
+   page sends a random id the preview site keeps, and the server counts distinct players and
+   opens per link in `prototype_players` under a hash of the link and that id. The server keeps
+   metrics in its process (`server/metrics.ts`): sync sockets, refusals and failed saves, AI
+   turns by outcome with time to first operation and to the end, AI refusals, prototype
+   publishes and opens, and browser errors. `GET /metrics` (Prometheus text) and
+   `GET /metrics/prototypes` (each shared link with screens, players and opens) answer only
+   with `METRICS_TOKEN`. The editor beacons errors nothing handled to `/api/client-errors`
+   (`src/app/services/errorReport.ts`, `config.errorReport`), which the server takes from its
+   own pages only, rate limits, logs and counts. Covered by `tests/server/metrics.test.ts` and
+   `tests/errorReport.test.ts`. Not yet: telling the sharer's own opens apart from others',
+   screens visited per player, the Preview-after-edit budget (a browser timing), and a
+   dashboard. Step 7 is complete.
 8. **Projection parity suite (M).** Pulled forward from R6: one fixture set (modes, layouts,
    variants, data records, interactive state) projected by Canvas, Preview and SVG export and
    compared as normalized output, run on every change to projection code. Acceptance:

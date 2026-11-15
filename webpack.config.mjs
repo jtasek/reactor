@@ -120,11 +120,13 @@ export const config = {
     // 2026-11-13: +1 KiB entry for the version check (S1 step 1): a document a newer editor
     // changed goes view only, stops a held drag and becomes editable again after a rollback.
     // 2026-11-15: +1 KiB entry and per file for the size warning and its configuration (S1 step 6).
+    // 2026-11-15: +1 KiB entry for the browser error report (S1 step 7), which has to listen
+    // from the start to hear errors as pages open (~750 bytes).
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 506 * 1024,
+              maxEntrypointSize: 507 * 1024,
               maxAssetSize: 254 * 1024
           },
     optimization: {

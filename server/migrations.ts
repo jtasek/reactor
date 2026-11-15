@@ -286,6 +286,45 @@ const migrations: Record<string, Migration> = {
                 .addColumn('ai_enabled', 'boolean', (c) => c.notNull().defaultTo(true))
                 .execute();
         }
+    },
+    '0010_prototype_measures': {
+        async up(db) {
+            // Each link shared, kept after it is revoked or expires, so it is still counted.
+            await db.schema
+                .createTable('shared_prototypes')
+                .addColumn('link_id', 'text', (c) => c.primaryKey())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('document_id', 'text', (c) => c.notNull())
+                .addColumn('created_by', 'text', (c) =>
+                    c.references('auth.user.id').onDelete('set null')
+                )
+                .addColumn('screens', 'integer', (c) => c.notNull())
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .execute();
+            await db.schema
+                .createIndex('shared_prototypes_workspace')
+                .on('shared_prototypes')
+                .column('workspace_id')
+                .execute();
+            // Who opened it: a hash of the link and a random id the player's browser keeps.
+            await db.schema
+                .createTable('prototype_players')
+                .addColumn('link_id', 'text', (c) =>
+                    c.notNull().references('shared_prototypes.link_id').onDelete('cascade')
+                )
+                .addColumn('player', 'text', (c) => c.notNull())
+                .addColumn('opens', 'integer', (c) => c.notNull().defaultTo(1))
+                .addColumn('first_opened_at', 'timestamptz', (c) =>
+                    c.notNull().defaultTo(sql`now()`)
+                )
+                .addColumn('last_opened_at', 'timestamptz', (c) =>
+                    c.notNull().defaultTo(sql`now()`)
+                )
+                .addPrimaryKeyConstraint('prototype_players_pkey', ['link_id', 'player'])
+                .execute();
+        }
     }
 };
 

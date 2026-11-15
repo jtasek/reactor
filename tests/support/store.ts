@@ -24,6 +24,7 @@ import {
 } from 'src/app/services/documentSize';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createClipboard } from 'src/app/services/clipboard';
+import { DEFAULT_ERROR_REPORT } from 'src/app/services/errorReport';
 import { createAssets } from 'src/app/services/assets';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
@@ -173,6 +174,7 @@ export function createTestStore(
             debugMode: false,
             documentsLayout: 'cards',
             documentSize: { ...DEFAULT_DOCUMENT_SIZE, ...options.documentSize },
+            errorReport: { ...DEFAULT_ERROR_REPORT },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
             version: '1.0'
         }

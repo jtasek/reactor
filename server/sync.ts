@@ -10,6 +10,7 @@ import { insertSnapshot, snapshotDue } from './history.ts';
 import { stampPresence, type PresenceUser } from './presence.ts';
 import { restoreContent } from './restoreContent.ts';
 import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';
 
@@ -115,10 +116,12 @@ export function createSync({
     log,
     sessionCheck = SESSION_CHECK,
     editorVersion,
+    metrics = noMetrics,
     now = () => new Date()
 }: {
     db: Db;
     auth: Auth;
+    metrics?: Metrics;
     origin: string;
     log: Pick<Log, 'warn' | 'error'>;
     sessionCheck?: number;
@@ -133,6 +136,16 @@ export function createSync({
     const sockets = new Map<string, number>();
     const served = () =>
         typeof editorVersion === 'function' ? editorVersion() : (editorVersion ?? SCHEMA_VERSION);
+    const saved = (result: string) =>
+        metrics.count('reactor_document_saves_total', 'Documents saved by the sync, by result.', {
+            result
+        });
+    const refused = (reason: string) =>
+        metrics.count(
+            'reactor_sync_refused_total',
+            'Sync connections refused before they opened, by reason.',
+            { reason }
+        );
     const hocuspocus = new Hocuspocus<PresenceUser>({
         quiet: true,
         // Pointers and selections are shared under the session's own name.
@@ -169,12 +182,21 @@ export function createSync({
         async onStoreDocument({ documentName, document }) {
             try {
                 await saveState(db, documentName, document, now());
+                saved('ok');
             } catch (error) {
+                saved('failed');
                 log.error(error, `Document ${documentName} could not be saved`);
                 throw error;
             }
         }
     });
+    let open = 0;
+    metrics.gauge('reactor_sync_connections', 'Sync sockets open now.', () => open);
+    metrics.gauge(
+        'reactor_sync_documents',
+        'Documents open in this process now.',
+        () => hocuspocus.documents.size
+    );
     const server = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE });
 
     const count = (userId: string, change: number) => {
@@ -197,6 +219,7 @@ export function createSync({
         }
 
         if (req.headers.origin !== origin) {
+            refused('origin');
             refuseUpgrade(socket, 403, 'Forbidden');
 
             return;
@@ -206,6 +229,7 @@ export function createSync({
         const session = await auth.api.getSession({ headers });
 
         if (!session) {
+            refused('session');
             refuseUpgrade(socket, 401, 'Unauthorized');
 
             return;
@@ -217,6 +241,7 @@ export function createSync({
 
         // Builds from before the parameter send none, and are older than any that check.
         if (!(editor >= version)) {
+            refused('outdated');
             server.handleUpgrade(req, socket, head, (websocket) =>
                 websocket.close(EDITOR_OUTDATED, `${version}`)
             );
@@ -225,6 +250,7 @@ export function createSync({
         }
 
         if ((sockets.get(userId) ?? 0) >= MAX_SOCKETS_PER_USER) {
+            refused('too-many');
             refuseUpgrade(socket, 429, 'Too Many Requests');
 
             return;
@@ -236,6 +262,9 @@ export function createSync({
         socket.once('close', () => count(userId, -1));
 
         server.handleUpgrade(req, socket, head, (websocket) => {
+            open++;
+            metrics.count('reactor_sync_connections_opened_total', 'Sync sockets opened.');
+            websocket.once('close', () => open--);
             const request = new Request(url, { headers });
             const connection = hocuspocus.handleConnection(websocket, request, {
                 userId,
@@ -281,7 +310,10 @@ export function createSync({
                 clearInterval(checking);
                 connection.handleClose({ code, reason: reason.toString() });
             });
-            websocket.on('error', (error) => log.warn(error, 'A sync connection failed'));
+            websocket.on('error', (error) => {
+                metrics.count('reactor_sync_errors_total', 'Sync sockets that failed.');
+                log.warn(error, 'A sync connection failed');
+            });
         });
     }
 

@@ -2,6 +2,8 @@ import express, { type Request } from 'express';
 import type { Db } from './schema.ts';
 import { createPrototypeLinkService, type ShareProblem } from './services/prototypeLinks.ts';
 
+type Measured = Parameters<typeof createPrototypeLinkService>[1];
+
 const PATH = '/documents/:documentId/prototype-links';
 const readSnapshot = express.json({ limit: '24mb' });
 const STATUS: Record<ShareProblem, number> = {
@@ -15,9 +17,9 @@ export const sendsPrototypeSnapshot = (req: Request) =>
     req.method === 'POST' && /^\/documents\/[^/]+\/prototype-links$/.test(req.path);
 
 /** Mounted before cookie authentication: the random capability grants this snapshot only. */
-export function publicPrototypeLinks(db: Db, previewOrigin?: string) {
+export function publicPrototypeLinks(db: Db, previewOrigin?: string, measured?: Measured) {
     const api = express.Router();
-    const service = createPrototypeLinkService(db);
+    const service = createPrototypeLinkService(db, measured);
     api.use('/prototype-links/open', (req, res, next) => {
         res.set('Cache-Control', 'no-store');
         res.set('Referrer-Policy', 'no-referrer');
@@ -39,7 +41,7 @@ export function publicPrototypeLinks(db: Db, previewOrigin?: string) {
         next();
     });
     api.post('/prototype-links/open', express.json({ limit: '1kb' }), async (req, res) => {
-        const opened = await service.open(req.body?.token);
+        const opened = await service.open(req.body?.token, req.body?.player);
         if (!opened) {
             res.status(404).json({ code: 'NOT_FOUND' });
 
@@ -57,9 +59,9 @@ export function publicPrototypeLinks(db: Db, previewOrigin?: string) {
 }
 
 /** Authenticated management; SQL and authorization policy live outside the router. */
-export function prototypeLinks(db: Db, previewOrigin?: string) {
+export function prototypeLinks(db: Db, previewOrigin?: string, measured?: Measured) {
     const api = express.Router();
-    const service = createPrototypeLinkService(db);
+    const service = createPrototypeLinkService(db, measured);
     api.use(PATH, (_req, res, next) => {
         res.set('Cache-Control', 'no-store');
         next();

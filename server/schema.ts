@@ -101,6 +101,23 @@ export interface Database {
         snapshot_id: string;
         hash: string;
     };
+    shared_prototypes: {
+        /** The link's id, which outlives the link. */
+        link_id: string;
+        workspace_id: string;
+        document_id: string;
+        created_by: string | null;
+        screens: number;
+        created_at: Generated<Date>;
+    };
+    prototype_players: {
+        link_id: string;
+        /** A hash of the link's id and the id the player's browser keeps. */
+        player: string;
+        opens: Generated<number>;
+        first_opened_at: Generated<Date>;
+        last_opened_at: Generated<Date>;
+    };
     ai_requests: {
         id: string;
         workspace_id: string;

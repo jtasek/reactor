@@ -1,4 +1,5 @@
 import { DEFAULT_DOCUMENT_SIZE } from './services/documentSizeConfiguration';
+import { DEFAULT_ERROR_REPORT } from './services/errorReport';
 import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
@@ -357,6 +358,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             debugMode: false,
             documentsLayout: 'cards',
             documentSize: { ...DEFAULT_DOCUMENT_SIZE },
+            errorReport: { ...DEFAULT_ERROR_REPORT },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         previewModes: {},
