@@ -46,6 +46,7 @@ const memberships = (db: Db, userId: string) =>
             'workspace.id',
             'workspace.kind',
             'workspace.name',
+            'workspace.ai_enabled as ai',
             select.fn.coalesce('member.role', 'workspace.default_role').as('role')
         ]);
 

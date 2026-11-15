@@ -642,7 +642,8 @@ it('loads invited viewer permissions, receives live edits and preserves read-onl
     await vi.waitFor(() => expect(shapeCount(viewer, id)).toBe(1));
     expect(viewer.store.state.documentAccess[id]).toEqual({
         workspaceId: owner.personal.id,
-        role: 'viewer'
+        role: 'viewer',
+        aiOff: false
     });
     viewer.store.actions.updateDocument({ id, name: 'Refused' });
     expect(viewer.store.state.documents[id].name).toBe(editor.store.state.documents[id].name);

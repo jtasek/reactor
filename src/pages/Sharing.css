@@ -67,3 +67,5 @@
 }
 
 .page button.primary { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
+.page label.check { align-items: center; display: flex; gap: 8px; }
+.page .check input { min-height: 0; width: auto; }

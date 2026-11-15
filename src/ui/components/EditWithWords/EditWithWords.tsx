@@ -9,6 +9,7 @@ import React, {
 import { chatFor } from 'src/ai/chat';
 import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
+import { AI_DISCLOSURE } from 'src/ai/disclosure';
 import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { authoringKeys } from 'src/app/screenAuthoring';
@@ -146,9 +147,13 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                 }}
             >
                 {turns.length === 0 && (
-                    <p className={styles.status}>
-                        Describe a change to get a proposal. Your canvas stays editable.
-                    </p>
+                    <>
+                        <p className={styles.status}>
+                            Describe a change to get a proposal. Your canvas stays editable.
+                        </p>
+                        <p className={styles.status}>{AI_DISCLOSURE.sent}</p>
+                        <p className={styles.status}>{AI_DISCLOSURE.kept}</p>
+                    </>
                 )}
                 {turns.map((turn) => (
                     <article key={turn.id} className={styles.turn}>

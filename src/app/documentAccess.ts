@@ -4,6 +4,8 @@ import type { Application } from './types';
 export interface DocumentAccess {
     workspaceId?: string;
     role: 'viewer' | 'editor' | 'admin' | 'unknown';
+    /** Set when the workspace's admins turned AI off. */
+    aiOff?: boolean;
 }
 
 export const isReadOnly = (

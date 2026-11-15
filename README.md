@@ -545,6 +545,14 @@ proposes, which the editor checks before showing; a problem goes back to the mod
 Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
 requests and 10 million tokens, one request of a person at a time.
 
+AI is on for every workspace until an admin turns it off on Sharing (the AI card), which the
+API takes as `PUT /api/workspaces/:workspaceId/ai` with `{ "enabled": false }`. The gateway
+then refuses that workspace's requests with `AI_OFF`, and the editor hides Edit with words in
+its documents. A request sends the person's words and the selected part of the document, or
+the whole document, to the configured provider. Reactor keeps only the `ai_requests` row (who,
+when, which document, the model and the tokens), not the words, what was sent or the answer (which reaches the document only when accepted);
+the conversation stays in the server's memory for 5 minutes, for one repair.
+
 Edit with words (`W`, or its application-bar button) opens a movable, dockable chat
 window. Messages and proposals stay in the conversation; Accept applies a proposal as one
 undo step, and Discard leaves the document unchanged. The canvas stays editable beside the

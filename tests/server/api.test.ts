@@ -20,6 +20,7 @@ describe('API', () => {
             id: expect.any(String),
             kind: 'personal',
             name: 'Personal',
+            ai: true,
             role: 'admin'
         });
         expect(await json(call('GET', '/workspaces', { cookie }))).toEqual([personal]);

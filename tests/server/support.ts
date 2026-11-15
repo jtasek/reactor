@@ -122,6 +122,7 @@ export interface Workspace {
     kind: string;
     name: string;
     role: string;
+    ai: boolean;
 }
 
 export interface DocumentSummary {

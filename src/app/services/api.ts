@@ -4,6 +4,8 @@ export interface Workspace {
     kind: 'personal' | 'team' | 'organization';
     name: string;
     role: 'viewer' | 'editor' | 'admin';
+    /** Whether its admins leave AI on. */
+    ai: boolean;
 }
 
 /** Where documents sync, and the WebSocket class to open it with where the browser's is missing. */

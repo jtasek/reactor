@@ -1,7 +1,8 @@
 import { WorkspaceMembers } from './WorkspaceMembers';
+import { WorkspaceAi } from './WorkspaceAi';
 import React, { FC, SubmitEvent, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
-import { useAccount, useAppState, useEffects } from 'src/app/hooks';
+import { useAccount, useActions, useAppState, useEffects } from 'src/app/hooks';
 import type { Workspace } from 'src/app/services/api';
 import {
     invitations,
@@ -15,6 +16,9 @@ import styles from './Sharing.css';
 export const Sharing: FC = () => {
     const account = useAccount();
     const { api, reloadPage } = useEffects();
+    const serverAi = useAppState((state) => state.ai === 'available');
+    const documentAccess = useAppState((state) => state.documentAccess);
+    const { setDocumentAccess } = useActions();
     const currentWorkspace = useAppState(
         (state) => state.documentAccess[state.currentDocumentId]?.workspaceId
     );
@@ -28,6 +32,7 @@ export const Sharing: FC = () => {
     const [problem, setProblem] = useState<string>();
     const [created, setCreated] = useState<{ id: string; email: string; link: string }>();
     const link = created?.link ?? '';
+    const selected = workspaces?.find(({ id }) => id === workspaceId);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
@@ -237,6 +242,35 @@ export const Sharing: FC = () => {
                                         );
                                     }}
                                 />
+                                {serverAi && selected && (
+                                    <WorkspaceAi
+                                        key={workspaceId}
+                                        workspace={selected}
+                                        onChanged={(ai) => {
+                                            setWorkspaces((current) =>
+                                                current?.map((workspace) =>
+                                                    workspace.id === workspaceId
+                                                        ? { ...workspace, ai }
+                                                        : workspace
+                                                )
+                                            );
+                                            // This copy's editor follows at once, without waiting to list workspaces again.
+                                            setDocumentAccess(
+                                                Object.fromEntries(
+                                                    Object.entries(documentAccess)
+                                                        .filter(
+                                                            ([, access]) =>
+                                                                access.workspaceId === workspaceId
+                                                        )
+                                                        .map(([id, access]) => [
+                                                            id,
+                                                            { ...access, aiOff: !ai }
+                                                        ])
+                                                )
+                                            );
+                                        }}
+                                    />
+                                )}
                                 <section className={styles.card} aria-labelledby="pending-heading">
                                     <h2 id="pending-heading">Pending invitations</h2>
                                     <p className={styles.secondary}>

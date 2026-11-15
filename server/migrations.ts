@@ -277,6 +277,15 @@ const migrations: Record<string, Migration> = {
                 .column('hash')
                 .execute();
         }
+    },
+    '0009_workspace_ai': {
+        async up(db) {
+            // Admins may turn AI off for a workspace; it is on until they do.
+            await db.schema
+                .alterTable('workspaces')
+                .addColumn('ai_enabled', 'boolean', (c) => c.notNull().defaultTo(true))
+                .execute();
+        }
     }
 };
 
