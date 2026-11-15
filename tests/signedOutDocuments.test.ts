@@ -7,11 +7,11 @@ import { Collaboration } from 'src/app/services/collaboration';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { accountCopy } from 'src/app/services/documentSync';
 import {
-    MAX_MOVE_BYTES,
     keepSignedOutDocuments,
     listSignedOutDocuments,
     moveSignedOutDocuments
 } from 'src/app/services/signedOutDocuments';
+import { DEFAULT_DOCUMENT_SIZE } from 'src/app/services/documentSize';
 import { createTestStore } from './support/store';
 
 const ada: AccountUser = { id: 'user-ada', name: 'Ada', email: 'ada@example.com' };
@@ -145,7 +145,12 @@ describe('signed-out documents', () => {
         const { effects, held } = await signIn(indexedDB, storage);
         const offered = await listSignedOutDocuments(effects, ada.id, held);
 
-        const result = await moveSignedOutDocuments(effects, ada.id, offered);
+        const result = await moveSignedOutDocuments(
+            effects,
+            ada.id,
+            offered,
+            DEFAULT_DOCUMENT_SIZE.uploadBytes
+        );
 
         expect(result.moved.map(({ id }) => id).sort()).toEqual(['map', 'plan']);
         expect(await signedOutIds(indexedDB)).toEqual([]);
@@ -182,12 +187,22 @@ describe('signed-out documents', () => {
     });
 
     it('keeps a document too large for the server in the browser', async () => {
-        const large = drawing('large', 'Large', false, 'x'.repeat(MAX_MOVE_BYTES));
+        const large = drawing(
+            'large',
+            'Large',
+            false,
+            'x'.repeat(DEFAULT_DOCUMENT_SIZE.uploadBytes)
+        );
         const indexedDB = await browserWith([large, drawing('plan', 'Plan')]);
         const { effects, held } = await signIn(indexedDB);
         const offered = await listSignedOutDocuments(effects, ada.id, held);
 
-        const result = await moveSignedOutDocuments(effects, ada.id, offered);
+        const result = await moveSignedOutDocuments(
+            effects,
+            ada.id,
+            offered,
+            DEFAULT_DOCUMENT_SIZE.uploadBytes
+        );
 
         expect(result.tooLarge.map(({ id }) => id)).toEqual(['large']);
         expect(result.moved.map(({ id }) => id)).toEqual(['plan']);

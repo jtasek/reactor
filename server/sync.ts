@@ -17,7 +17,7 @@ import { allows, documentRole } from './workspaces.ts';
 export const SYNC_PATH = '/sync';
 
 /** The largest message a client may send, as the whole document when it first syncs. */
-const MAX_MESSAGE = 4 * 1024 * 1024;
+export const MAX_MESSAGE = 4 * 1024 * 1024;
 
 /** How many sockets one user may have open at once, across tabs and devices. */
 const MAX_SOCKETS_PER_USER = 16;

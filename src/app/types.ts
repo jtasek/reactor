@@ -1,3 +1,4 @@
+import type { DocumentSizeConfiguration } from './services/documentSizeConfiguration';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord } from './dataTypes';
@@ -654,6 +655,7 @@ export type Configuration = {
     debugMode: boolean;
     /** How the Documents page shows documents, kept per device. */
     documentsLayout: DocumentsLayout;
+    documentSize: DocumentSizeConfiguration;
     panelLayout: Record<string, PanelPlacement>;
     version: string;
 };
@@ -687,6 +689,8 @@ export type Application = {
      * edit them: this copy only shows them until it reloads. Never saved.
      */
     outdatedDocuments: Record<string, number>;
+    /** Documents the server sync holds back as too large to send, with their size. Never saved. */
+    tooLargeToSync: Record<string, number>;
     /** The outdated document whose gesture stopped part way, to say so. Never saved. */
     interruptedDocumentId?: string;
     ai: AiAvailability;
