@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
-import { json } from 'overmind';
 import { useAppState, useEffects } from 'src/app/hooks';
 import {
+    MAX_UPLOAD_BYTES,
     formatSize,
     measureDocument,
     sizeLevel,
@@ -18,7 +18,7 @@ export function useDocumentBytes(
     const { collaboration } = useEffects();
     const modified = useAppState((state) => state.documents[documentId]?.modified);
     const [measured, setMeasured] = useState<{ documentId: string; bytes?: number }>();
-    const [due, setDue] = useState(0);
+    const [due, setDue] = useState<{ documentId: string; at: number }>();
 
     useEffect(() => {
         let current = true;
@@ -35,14 +35,16 @@ export function useDocumentBytes(
                         warningBytes
                     );
 
-                    setDue(
-                        Date.now() +
+                    setDue({
+                        documentId,
+                        at:
+                            Date.now() +
                             ((bytes ?? 0) >= warningBytes ? measureLargeEveryMs : measureEveryMs)
-                    );
+                    });
                     setMeasured({ documentId, bytes });
                 });
             },
-            Math.max(0, due - Date.now())
+            due?.documentId === documentId ? Math.max(0, due.at - Date.now()) : 0
         );
 
         return () => {
@@ -56,12 +58,28 @@ export function useDocumentBytes(
     return measured?.documentId === documentId ? measured.bytes : undefined;
 }
 
+function useDocumentSizeConfiguration(): DocumentSizeConfiguration {
+    const warningBytes = useAppState((state) => state.config.documentSize.warningBytes);
+    const uploadBytes = useAppState((state) =>
+        Math.min(state.config.documentSize.uploadBytes, MAX_UPLOAD_BYTES)
+    );
+    const measureEveryMs = useAppState((state) => state.config.documentSize.measureEveryMs);
+    const measureLargeEveryMs = useAppState(
+        (state) => state.config.documentSize.measureLargeEveryMs
+    );
+    const remeasureHeldBackMs = useAppState(
+        (state) => state.config.documentSize.remeasureHeldBackMs
+    );
+
+    return { warningBytes, uploadBytes, measureEveryMs, measureLargeEveryMs, remeasureHeldBackMs };
+}
+
 /** A dismissed warning returns once the document grows past another megabyte. */
 export const DocumentSize: FC = () => {
     const documentId = useAppState((state) => state.currentDocumentId);
     const name = useAppState((state) => state.documents[state.currentDocumentId]?.name);
     const heldBack = useAppState((state) => state.tooLargeToSync[state.currentDocumentId]);
-    const limits = useAppState((state) => json(state.config.documentSize));
+    const limits = useDocumentSizeConfiguration();
     const bytes = useDocumentBytes(documentId, limits);
     const [dismissed, setDismissed] = useState<Record<string, number>>({});
 

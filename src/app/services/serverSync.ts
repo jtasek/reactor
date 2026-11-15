@@ -7,7 +7,12 @@ import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
 import { SCHEMA_VERSION } from './schemaVersion';
 import { readPeers, type LocalPresence, type Peer } from './presence';
-import { measureDocument, tooLargeMessage, type DocumentSizeConfiguration } from './documentSize';
+import {
+    MAX_UPLOAD_BYTES,
+    measureDocument,
+    tooLargeMessage,
+    type DocumentSizeConfiguration
+} from './documentSize';
 
 export { followPresence, presence } from './presence';
 
@@ -59,6 +64,7 @@ export interface ServerSyncOptions {
     images?: Omit<AssetSyncSource, 'document'>;
     /** The signed-in account, whose other copies are not shown as other people. */
     self?: string;
+    /** `uploadBytes` is capped at what the server takes, `MAX_UPLOAD_BYTES`. */
     sizes: DocumentSizeConfiguration;
 }
 
@@ -253,11 +259,7 @@ export class ServerSync {
             this.images?.changed(documentId);
         }
         // The server would close the socket every document shares, and again on each reconnect.
-        if (
-            link?.held &&
-            update.byteLength > this.options.sizes.uploadBytes &&
-            this.tooLarge(documentId)
-        ) {
+        if (link?.held && update.byteLength > this.uploadBytes && this.tooLarge(documentId)) {
             return;
         }
 
@@ -599,6 +601,7 @@ export class ServerSync {
         }
 
         this.links.delete(documentId);
+        this.uploading.delete(documentId);
         link.settle();
         this.options.events.presence?.(documentId, []);
 
@@ -613,7 +616,7 @@ export class ServerSync {
 
     /** Holds a document back while it is too large to send whole; one not open here fits. */
     private tooLarge(documentId: string): boolean {
-        const { uploadBytes } = this.options.sizes;
+        const uploadBytes = this.uploadBytes;
         const bytes =
             measureDocument(() => this.options.collaboration.state(documentId), Yjs, uploadBytes) ??
             0;
@@ -624,17 +627,25 @@ export class ServerSync {
             return false;
         }
 
+        const first = !this.oversized.has(documentId);
+
         if (this.oversized.get(documentId) !== bytes) {
             this.oversized.set(documentId, bytes);
             this.unlink(documentId);
             this.options.events.tooLarge?.(
                 documentId,
                 bytes,
-                tooLargeMessage(this.options.events.document(documentId)?.name, bytes)
+                first
+                    ? tooLargeMessage(this.options.events.document(documentId)?.name, bytes)
+                    : undefined
             );
         }
 
         return true;
+    }
+
+    private get uploadBytes() {
+        return Math.min(this.options.sizes.uploadBytes, MAX_UPLOAD_BYTES);
     }
 
     private fits(documentId: string) {
@@ -658,8 +669,9 @@ export class ServerSync {
             )
             .map(([documentId]) => documentId);
         const uploads = pending.filter((documentId) => this.uploading.has(documentId));
+        const heldBack = uploads.filter((documentId) => this.tooLarge(documentId));
 
-        if (!uploads.some((documentId) => this.tooLarge(documentId))) {
+        if (heldBack.length === 0) {
             pending.forEach((documentId) => this.tooLarge(documentId));
         }
     }

@@ -405,6 +405,58 @@ describe('editor sync', () => {
         expect(await serverDocuments(served, cookie, personal.id)).toEqual([]);
     });
 
+    it('says once that a document is held back, however often it is measured again', async () => {
+        const served = await serve();
+        const { cookie } = await served.user('ada@example.com');
+        const documentSize = { uploadBytes: 64 * 1024, remeasureHeldBackMs: 100 };
+        const offline = await device(served, cookie, { online: () => false, documentSize });
+        const [documentId] = documentIds(offline);
+
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(100 * 1024) });
+        offline.effects.collaboration.flush();
+
+        const online = await device(served, cookie, {
+            indexedDB: offline.indexedDB,
+            storage: offline.storage,
+            documentSize
+        });
+        const errors = () =>
+            online.store.state.notifications.filter(({ type }) => type === 'error').length;
+
+        await vi.waitFor(() => expect(online.store.state.tooLargeToSync[documentId]).toBeDefined());
+        const first = online.store.state.tooLargeToSync[documentId];
+        online.store.actions.openDocument(documentId);
+
+        for (let edit = 0; edit < 3; edit++) {
+            online.store.actions.addShape({ ...rectangle, name: `more ${edit}` });
+            online.effects.collaboration.flush();
+            await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+
+        expect(online.store.state.tooLargeToSync[documentId]).toBeGreaterThan(first);
+        expect(errors()).toBe(1);
+    });
+
+    it('never sends more than the server takes, whatever the configured limit', async () => {
+        const served = await serve();
+        const { cookie, personal } = await served.user('ada@example.com');
+        const documentSize = { uploadBytes: 64 * 1024 * 1024 };
+        const offline = await device(served, cookie, { online: () => false, documentSize });
+        const [documentId] = documentIds(offline);
+
+        offline.store.actions.addShape({ ...rectangle, name: 'x'.repeat(4 * 1024 * 1024) });
+        offline.effects.collaboration.flush();
+
+        const online = await device(served, cookie, {
+            indexedDB: offline.indexedDB,
+            storage: offline.storage,
+            documentSize
+        });
+
+        await vi.waitFor(() => expect(online.store.state.tooLargeToSync[documentId]).toBeDefined());
+        expect(await serverDocuments(served, cookie, personal.id)).toEqual([]);
+    });
+
     it('holds back a synced document whose change is too large to send at once', async () => {
         const served = await serve();
         const { cookie } = await served.user('ada@example.com');

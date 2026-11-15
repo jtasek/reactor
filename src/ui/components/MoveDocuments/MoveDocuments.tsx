@@ -7,7 +7,7 @@ import {
     tooLarge,
     type SignedOutDocument
 } from 'src/app/services/signedOutDocuments';
-import { formatSize } from 'src/app/services/documentSize';
+import { MAX_UPLOAD_BYTES, formatSize } from 'src/app/services/documentSize';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
@@ -24,7 +24,9 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
     const effects = useEffects();
     const { displayError, displaySuccess } = useActions();
     const held = useAppState((state) => state.documents);
-    const uploadBytes = useAppState((state) => state.config.documentSize.uploadBytes);
+    const uploadBytes = useAppState((state) =>
+        Math.min(state.config.documentSize.uploadBytes, MAX_UPLOAD_BYTES)
+    );
     const [documents, setDocuments] = useState<SignedOutDocument[]>([]);
     const [moving, setMoving] = useState(false);
 

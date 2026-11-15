@@ -2,7 +2,11 @@ import type * as Yjs from 'yjs';
 
 import type { DocumentSizeConfiguration } from './documentSizeConfiguration';
 
-export { DEFAULT_DOCUMENT_SIZE, type DocumentSizeConfiguration } from './documentSizeConfiguration';
+export {
+    DEFAULT_DOCUMENT_SIZE,
+    MAX_UPLOAD_BYTES,
+    type DocumentSizeConfiguration
+} from './documentSizeConfiguration';
 
 const MIB = 1024 * 1024;
 
