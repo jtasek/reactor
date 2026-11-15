@@ -122,6 +122,23 @@ describe('signed-out documents', () => {
         ]);
     });
 
+    it('offers the readable documents when one cannot be read', async () => {
+        const indexedDB = await browserWith([drawing('plan', 'Plan')]);
+        const database = await DocumentDatabase.open(indexedDB);
+
+        // Not an update at all, as a damaged record reads.
+        await database.create('broken', 'damaged' as unknown as Uint8Array);
+        await database.append('broken', 'records' as unknown as Uint8Array);
+        database.close();
+
+        const { effects, held } = await signIn(indexedDB);
+
+        expect((await listSignedOutDocuments(effects, ada.id, held)).map(({ id }) => id)).toEqual([
+            'plan'
+        ]);
+        expect(await signedOutIds(indexedDB)).toEqual(['broken', 'plan']);
+    });
+
     it('moves documents into the account with their images, and offers them no more', async () => {
         const indexedDB = await browserWith([drawing('plan', 'Plan', true), drawing('map', 'Map')]);
         const storage = new Map<string, string>();

@@ -59,6 +59,11 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
         setDocuments([]);
     };
 
+    // Escape only puts the question off: it is asked again on the next start.
+    const dismiss = () => {
+        if (!moving) setDocuments([]);
+    };
+
     const move = async () => {
         setMoving(true);
 
@@ -91,7 +96,7 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
             title="Move documents into your account?"
             description={`This browser keeps ${count(documents)} you made while signed out. Moved into your account, with their images, they open wherever you sign in. Kept here, they show again when you sign out.`}
             visible
-            onClose={keep}
+            onClose={dismiss}
             actions={
                 <>
                     <button type="button" disabled={moving} onClick={keep}>

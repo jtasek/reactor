@@ -100,8 +100,16 @@ export async function listSignedOutDocuments(
                 continue;
             }
 
-            const updates = await database.load(id);
-            const state = updates.length > 0 ? Y.mergeUpdates(updates) : undefined;
+            // One that cannot be read is left as saved; the others are still offered.
+            const updates = await database.load(id).catch(() => []);
+            let state: Uint8Array | undefined;
+
+            try {
+                state = updates.length > 0 ? Y.mergeUpdates(updates) : undefined;
+            } catch {
+                state = undefined;
+            }
+
             const document = state && snapshotDocument(state, id);
 
             if (state && document && !document.deleted && !isBlank(document)) {

@@ -194,6 +194,11 @@ test('keeps signed-out documents in this browser when skipped, and does not ask 
 }) => {
     const created = await signInWith(page, [drawing('plan', 'Plan')]);
 
+    // Escape only puts the question off until the next start.
+    await page.reload();
+    await expect(offer(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(offer(page)).toBeHidden();
     await page.reload();
     await offer(page).getByRole('button', { name: 'Keep in this browser' }).click();
 
