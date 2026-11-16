@@ -24,7 +24,7 @@ import { orderAbove, resolveDrawOrderTies, validDrawOrder } from '../drawOrder';
 import { isClosedShape, isHexColor, isStrokedShape } from '../utils';
 import { buildVariable, isVariableType } from '../variables';
 import { repairComponents } from '../componentRepair';
-import { SCHEMA_VERSION } from './schemaVersion';
+import { SCHEMA_VERSION } from '../../shared/schemaVersion';
 
 export { SCHEMA_VERSION };
 export const PERSISTENCE_KEY = 'reactor';

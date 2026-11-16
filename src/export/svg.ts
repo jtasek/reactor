@@ -16,7 +16,7 @@ import {
     type PreviewDrawing,
     type PreviewApplication,
     type PreviewNode
-} from 'src/preview/protocol';
+} from 'src/shared/previewProtocol';
 
 /** Export the same placed artwork as Canvas, independently of camera zoom and editor overlays. */
 export function projectSvg(state: Context['state']): PreviewDrawing {

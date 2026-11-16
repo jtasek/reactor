@@ -45,7 +45,7 @@ test('shared sessions isolate visibility and retain hidden input values until Re
     const { buildInspectorTypography } = await import('src/templates/inspectorTypography');
     const { createDocument } = await import('src/app/factories');
     const { projectPreview } = await import('src/preview/project');
-    const { PREVIEW_PROTOCOL_VERSION } = await import('src/preview/protocol');
+    const { PREVIEW_PROTOCOL_VERSION } = await import('src/shared/previewProtocol');
     let sequence = 0;
     const drawing = projectPreview(
         createDocument(buildInspectorTypography(() => `sample-${++sequence}`)),
@@ -125,7 +125,7 @@ test('closing a card from inside returns focus to the control that opened it', a
     const { buildInspectorTypography } = await import('src/templates/inspectorTypography');
     const { createDocument } = await import('src/app/factories');
     const { projectPreview } = await import('src/preview/project');
-    const { PREVIEW_PROTOCOL_VERSION } = await import('src/preview/protocol');
+    const { PREVIEW_PROTOCOL_VERSION } = await import('src/shared/previewProtocol');
     let sequence = 0;
     const drawing = projectPreview(
         createDocument(buildInspectorTypography(() => `sample-${++sequence}`)),

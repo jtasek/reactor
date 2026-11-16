@@ -1,4 +1,4 @@
-import { recoveryDestination } from '../authenticationDestination';
+import { recoveryDestination } from '../../shared/authenticationDestination';
 import { accountRequest } from './accounts';
 
 export function requestPasswordReset(email: string, destination: string) {

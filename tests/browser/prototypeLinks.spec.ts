@@ -2,7 +2,7 @@ import { setPrototypeSetting } from './support/prototypeControls';
 import { expect, test, type Page } from '@playwright/test';
 import { Collaboration } from 'src/app/services/collaboration';
 import { prototypeDocument } from '../support/prototype';
-import type { PreviewApplication } from 'src/preview/protocol';
+import type { PreviewApplication } from 'src/shared/previewProtocol';
 
 const user = { id: 'prototype-author', name: 'Ada', email: 'ada@example.com' };
 const token = 'a'.repeat(43);

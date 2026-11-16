@@ -1,4 +1,4 @@
-import type { PreviewApplication } from './protocol';
+import type { PreviewApplication } from '../shared/previewProtocol';
 
 export interface PrototypeLink {
     id: string;

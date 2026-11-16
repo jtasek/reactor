@@ -1,5 +1,5 @@
 import { projectPreview } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import { previewFixture } from './support/preview';
 import { createComponent, createDocument, createShape } from 'src/app/factories';
 import {

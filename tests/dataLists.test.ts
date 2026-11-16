@@ -3,7 +3,7 @@ import type { InstanceShape } from 'src/app/types';
 import { writeClipboard, readClipboard } from 'src/app/clipboard';
 import { dataListFixture } from './support/dataList';
 import { projectPreview, type PreviewDiagnostic } from 'src/preview/project';
-import { readPreview, type PreviewNode } from 'src/preview/protocol';
+import { readPreview, type PreviewNode } from 'src/shared/previewProtocol';
 import { listsUsing } from 'src/app/dataLists';
 import { readEntity, copyDocument } from 'src/app/services/documentStorage';
 import { buildVariable } from 'src/app/variables';

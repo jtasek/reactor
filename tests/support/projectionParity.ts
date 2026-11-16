@@ -8,7 +8,7 @@ import { serializePersistedState } from 'src/app/services/documentStorage';
 import { previewModes, prototypeModes } from 'src/app/modeEdits';
 import { projectPreview, type PreviewSession } from 'src/preview/project';
 import { projectSvg, serializeSvg } from 'src/export/svg';
-import type { PreviewDrawing, PreviewNode } from 'src/preview/protocol';
+import type { PreviewDrawing, PreviewNode } from 'src/shared/previewProtocol';
 import type { Document } from 'src/app/types';
 import { createTestStore } from './store';
 

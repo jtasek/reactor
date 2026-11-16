@@ -19,7 +19,7 @@ export default {
                 test: /\.ts$/,
                 use: {
                     loader: 'swc-loader',
-                    options: { jsc: { parser: { syntax: 'typescript' } } }
+                    options: { jsc: { target: 'es2022', parser: { syntax: 'typescript' } } }
                 }
             },
             { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] }

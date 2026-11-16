@@ -119,7 +119,9 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 - **Server code** is TypeScript that Node (22.18 or later) runs as it is, with no build step:
   it may only use syntax Node can strip (no `enum`, namespaces or parameter properties, which
   `erasableSyntaxOnly` enforces), and relative imports name the `.ts` file. The tables' types
-  are in `server/schema.ts`.
+  are in `server/schema.ts`. Code the server shares with the editor lives in `src/shared`,
+  which the Docker image copies whole; server code imports nothing else from `src`
+  (`tests/server/sharedCode.test.ts`).
 - **Accounts**: server code lives in `server/`. `startAccounts`
   (`server/accounts.ts`) turns accounts on when `DATABASE_URL` is set and both servers mount
   Better Auth at `/api/auth/*splat`; without it the editor runs signed out. Server tests
@@ -194,9 +196,10 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
   `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
   recorded counts: fix a touched file's existing findings rather than adding exceptions.
-- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 504 KiB or
-  any file 253 KiB (the budget in `webpack.config.mjs`, entry measured at 503.1 KiB with the container index); raise
-  it only for code every page needs as it opens, after checking what grew. Commands and
+- `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 410 KiB or
+  any file 232 KiB (the budget in `webpack.config.mjs`; entry measured at 401.4 KiB on
+  2026-11-16). swc compiles `src` to ES2022; raise the budget only for code every page needs as
+  it opens, after checking what grew. Commands and
   tools load with the editor page, which registers them (`src/pages/registerEditor.ts`),
   not at startup: the store keeps only the tools namespace's state and actions
   (`src/tools/store.ts`).

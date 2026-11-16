@@ -9,7 +9,7 @@ import {
     migratePersistedState
 } from 'src/app/services/documentStorage';
 import { projectPreview } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import type { InstanceShape, Shape } from 'src/app/types';
 
 it('projects an editable typography example with validated local variants and preserves authored values', () => {

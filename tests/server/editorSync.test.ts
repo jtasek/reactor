@@ -5,7 +5,7 @@ import type { Api } from 'src/app/services/api';
 import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
-import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
+import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
 import {
     DEFAULT_DOCUMENT_SIZE,
     type DocumentSizeConfiguration

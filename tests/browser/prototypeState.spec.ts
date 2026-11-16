@@ -70,7 +70,7 @@ test('shared sessions isolate named state and preserve hidden input values until
     const { createDocument } = await import('src/app/factories');
     const { buildInspectorTypography } = await import('src/templates/inspectorTypography');
     const { projectPreview } = await import('src/preview/project');
-    const { PREVIEW_PROTOCOL_VERSION } = await import('src/preview/protocol');
+    const { PREVIEW_PROTOCOL_VERSION } = await import('src/shared/previewProtocol');
     let id = 0;
     const document = createDocument(buildInspectorTypography(() => `s${++id}`));
     document.prototypeBooleans.flag = { id: 'flag', name: 'showHelp', initial: false };

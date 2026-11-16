@@ -1,5 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** Chromium unless `BROWSERS` lists others, as the nightly run does with `webkit`. */
+const browsers = {
+    chromium: devices['Desktop Chrome'],
+    webkit: devices['Desktop Safari']
+};
+const chosen = (process.env.BROWSERS ?? 'chromium')
+    .split(',')
+    .map((name) => name.trim())
+    .filter((name): name is keyof typeof browsers => Object.hasOwn(browsers, name));
+
 export default defineConfig({
     testDir: './tests/browser',
     fullyParallel: true,
@@ -25,7 +35,7 @@ export default defineConfig({
         },
         trace: 'retain-on-failure'
     },
-    projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+    projects: chosen.map((name) => ({ name, use: { ...browsers[name] } })),
     webServer: [
         {
             command: 'pnpm run build:webpack && node server.prod.ts',
