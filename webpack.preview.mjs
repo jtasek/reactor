@@ -30,5 +30,6 @@ export default {
         new HtmlWebpackPlugin({ template: './src/preview/template.html' }),
         new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' })
     ],
-    performance: { hints: 'error', maxEntrypointSize: 492 * 1024, maxAssetSize: 248 * 1024 }
+    // The plan's budget for the preview runtime; it was 24.8 KiB on 2026-11-16.
+    performance: { hints: 'error', maxEntrypointSize: 150 * 1024, maxAssetSize: 150 * 1024 }
 };

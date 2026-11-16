@@ -17,7 +17,7 @@ function sourceFiles(directory: string): string[] {
 }
 
 const imports = (file: string) =>
-    [...readFileSync(file, 'utf8').matchAll(/(?:from|import\()\s*['"]([^'"]+)['"]/g)].map(
+    [...readFileSync(file, 'utf8').matchAll(/(?:from|import\(?)\s*['"]([^'"]+)['"]/g)].map(
         ([, specifier]) => specifier
     );
 

@@ -5,10 +5,16 @@ const browsers = {
     chromium: devices['Desktop Chrome'],
     webkit: devices['Desktop Safari']
 };
-const chosen = (process.env.BROWSERS ?? 'chromium')
-    .split(',')
-    .map((name) => name.trim())
-    .filter((name): name is keyof typeof browsers => Object.hasOwn(browsers, name));
+const chosen = (process.env.BROWSERS ?? 'chromium').split(',').map((name) => {
+    const browser = name.trim();
+
+    // An unknown name would otherwise leave no projects, and a run of no tests passes.
+    if (!Object.hasOwn(browsers, browser)) {
+        throw new Error(`BROWSERS lists ${browser}; use ${Object.keys(browsers).join(' or ')}`);
+    }
+
+    return browser as keyof typeof browsers;
+});
 
 export default defineConfig({
     testDir: './tests/browser',

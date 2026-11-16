@@ -56,17 +56,18 @@ const databaseURL = (name: string) => {
     return url.toString();
 };
 
-const openServerDatabase = (name: string, plugins: KyselyPlugin[] = []) =>
-    new Kysely<Database>({
-        dialect: new PostgresDialect({
-            pool: new pg.Pool({
-                connectionString: databaseURL(name),
-                max: 4,
-                idleTimeoutMillis: 500
-            })
-        }),
-        plugins
+const openServerDatabase = (name: string, plugins: KyselyPlugin[] = []) => {
+    const pool = new pg.Pool({
+        connectionString: databaseURL(name),
+        max: 4,
+        idleTimeoutMillis: 500
     });
+
+    // Dropping the database ends its connections, which the pool reports here.
+    pool.on('error', () => {});
+
+    return new Kysely<Database>({ dialect: new PostgresDialect({ pool }), plugins });
+};
 
 /** Runs `statement` on the server's own database, outside any test's. */
 async function administer(statement: string) {
@@ -109,20 +110,23 @@ beforeAll(async () => {
     await pglite.close();
 }, EMPTY_DATABASE_TIMEOUT);
 
+/**
+ * Drops every database this file made, ending connections a test left open (a pool
+ * waits for those forever), then closes the pools.
+ */
 afterAll(async () => {
-    for (const { name, db } of databases.splice(0)) {
-        await db.destroy();
-        await administer(`DROP DATABASE IF EXISTS ${name}`);
+    const made = databases.splice(0);
+
+    for (const name of made.map(({ name }) => name).concat(template ?? [])) {
+        await administer(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
     }
 
-    if (template) {
-        await administer(`DROP DATABASE IF EXISTS ${template}`);
-    }
+    await Promise.allSettled(made.map(({ db }) => db.destroy()));
 }, EMPTY_DATABASE_TIMEOUT);
 
 /** An empty database with the app's tables, for one test or a file's tests. */
 async function emptyCopy(plugins: KyselyPlugin[]) {
-    if (!SERVER_URL || !template) {
+    if (!template) {
         return new Kysely<Database>({
             dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase })),
             plugins
