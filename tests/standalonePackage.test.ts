@@ -1,8 +1,8 @@
 import { packageFileName, writeStandalonePackage } from 'src/preview/standalonePackage';
 import { PREVIEW_PROTOCOL_VERSION, type PreviewApplication } from 'src/shared/previewProtocol';
 
-const template =
-    '<!doctype html><html><body><main id="preview"></main><!-- reactor:package --><script>run()</script></body></html>';
+const protocol = `<meta name="reactor-preview-protocol" content="${PREVIEW_PROTOCOL_VERSION}" />`;
+const template = `<!doctype html><html><head>${protocol}</head><body><main id="preview"></main><!-- reactor:package --><script>run()</script></body></html>`;
 const application: PreviewApplication = {
     documentId: 'document',
     images: {},
@@ -39,6 +39,16 @@ test('refuses a page that is not the package template', () => {
     expect(() =>
         writeStandalonePackage(`${template}<!-- reactor:package -->`, 'A', application)
     ).toThrow('not valid');
+});
+
+test('refuses a package page from a runtime with another protocol', () => {
+    expect(() =>
+        writeStandalonePackage(
+            template.replace(protocol, protocol.replace(/content="\d+"/, 'content="1"')),
+            'A',
+            application
+        )
+    ).toThrow('different Reactor release');
 });
 
 test('names the file after the document', () => {

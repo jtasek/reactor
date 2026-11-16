@@ -55,7 +55,15 @@ class PackagePlugin {
                         "base-uri 'none'",
                         "form-action 'none'"
                     ].join('; ');
+                    // The editor refuses a package page from a runtime with another protocol.
+                    const version = /PREVIEW_PROTOCOL_VERSION = (\d+);/.exec(
+                        readFileSync(path.join(root, 'src/shared/previewProtocol.ts'), 'utf8')
+                    )?.[1];
+                    if (!version) {
+                        throw new Error('The preview protocol version was not found.');
+                    }
                     const page = readFileSync(path.join(root, 'src/preview/package.html'), 'utf8')
+                        .replace('<!-- reactor:version -->', version)
                         .replace('<!-- reactor:csp -->', () => csp)
                         .replace('<!-- reactor:style -->', () => style)
                         .replace('<!-- reactor:script -->', () => script);

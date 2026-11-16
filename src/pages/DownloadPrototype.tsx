@@ -51,6 +51,9 @@ export function DownloadPrototype({
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch (error) {
             if (!controller.signal.aborted) {
+                // Stop the other half of the work, which may still be reading images.
+                controller.abort();
+                setPending(false);
                 displayError(
                     error instanceof Error
                         ? error.message

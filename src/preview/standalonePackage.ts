@@ -12,6 +12,15 @@ export function writeStandalonePackage(
     if (!/^<!doctype html>/i.test(template) || template.split(MARKER).length !== 2) {
         throw new Error('The prototype package from the preview site is not valid.');
     }
+    if (
+        !template.includes(
+            `<meta name="reactor-preview-protocol" content="${PREVIEW_PROTOCOL_VERSION}" />`
+        )
+    ) {
+        throw new Error(
+            'The preview site runs a different Reactor release. Try again once both are updated.'
+        );
+    }
     // `<` escaped so no text in the document can end the script element early.
     const data = JSON.stringify({ version: PREVIEW_PROTOCOL_VERSION, name, application }).replace(
         /</g,
@@ -38,7 +47,7 @@ export function packageFileName(name: string) {
 export async function fetchPackageTemplate(signal: AbortSignal) {
     const config = await fetch('/api/preview-config', { signal });
     const origin = config.ok ? (await config.json()).origin : null;
-    if (typeof origin !== 'string' || new URL(origin).origin !== origin) {
+    if (typeof origin !== 'string' || !URL.canParse(origin) || new URL(origin).origin !== origin) {
         throw new Error('Downloading needs the preview site. Set PREVIEW_ORIGIN and start it.');
     }
     const response = await fetch(`${origin}/package.html`, {
