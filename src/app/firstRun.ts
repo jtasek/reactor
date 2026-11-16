@@ -132,24 +132,50 @@ export const useFirstRunGuide = () => {
     return guide && !guide.closed ? guide : null;
 };
 
+/** How long after asking to sign in to share the document still opens again. */
+const OPEN_AFTER_SIGN_IN_MS = 60 * 60 * 1000;
+
 /** Signing in to share `documentId`: once it has moved into the account, it opens again. */
 export const openAfterSignIn = (documentId: string) => {
     try {
-        localStorage.setItem(OPEN_AFTER_SIGN_IN_KEY, documentId);
+        localStorage.setItem(
+            OPEN_AFTER_SIGN_IN_KEY,
+            JSON.stringify({ documentId, asked: Date.now() })
+        );
     } catch {
         // The person opens it from Documents.
     }
 };
 
-/** The document to open again after signing in, forgotten once read. */
+/**
+ * The document to open again after signing in, forgotten once read; an hour after the
+ * question, as when the person kept the document in this browser, it is forgotten unread.
+ */
 export const takeOpenAfterSignIn = (exists: (documentId: string) => boolean) => {
     try {
-        const documentId = localStorage.getItem(OPEN_AFTER_SIGN_IN_KEY);
+        const text = localStorage.getItem(OPEN_AFTER_SIGN_IN_KEY);
+        const value: unknown = text === null ? null : JSON.parse(text);
 
-        if (documentId && exists(documentId)) {
+        if (
+            !value ||
+            typeof value !== 'object' ||
+            !('documentId' in value) ||
+            typeof value.documentId !== 'string' ||
+            !('asked' in value) ||
+            typeof value.asked !== 'number' ||
+            Date.now() - value.asked > OPEN_AFTER_SIGN_IN_MS
+        ) {
+            if (text !== null) {
+                localStorage.removeItem(OPEN_AFTER_SIGN_IN_KEY);
+            }
+
+            return null;
+        }
+
+        if (exists(value.documentId)) {
             localStorage.removeItem(OPEN_AFTER_SIGN_IN_KEY);
 
-            return documentId;
+            return value.documentId;
         }
     } catch {
         // Nothing to open.

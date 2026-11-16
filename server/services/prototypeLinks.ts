@@ -7,6 +7,8 @@ import * as repository from '../repositories/prototypeLinks.ts';
 const LINK_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const WORKSPACE_SHARE_BYTES = 64 * 1024 * 1024;
 const MAX_DOCUMENT_LINKS = 20;
+/** A reported start older than this is no first run's, and would skew the measure. */
+const OLDEST_START_MS = 365 * 24 * 60 * 60 * 1000;
 /** From a minute to a week: a first prototype may be shared in minutes or after days. */
 const FIRST_LINK_BUCKETS = [60, 300, 600, 1800, 3600, 7200, 21600, 86400, 604800];
 /** Distinct players counted per link; anyone with the link can claim to be a new one. */
@@ -145,7 +147,11 @@ export function createPrototypeLinkService(
                         ? new Date(body.started)
                         : null;
                 const startedAt =
-                    started && !Number.isNaN(started.getTime()) && started <= now ? started : null;
+                    started &&
+                    started <= now &&
+                    now.getTime() - started.getTime() <= OLDEST_START_MS
+                        ? started
+                        : null;
                 await repository.recordShare(tx, {
                     link_id: id,
                     workspace_id: permitted.workspaceId,

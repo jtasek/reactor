@@ -176,8 +176,10 @@ describe('time to the first shared link', () => {
         await server.share(['home'], 'not a date');
         const future = await setup();
         await future.share(['home'], new Date(Date.now() + 86_400_000).toISOString());
+        const ancient = await setup();
+        await ancient.share(['home'], new Date(0).toISOString());
 
-        for (const each of [server, future]) {
+        for (const each of [server, future, ancient]) {
             const [person] = await firstLinks(each);
             expect(person.seconds).toBeLessThan(60);
             expect(histogram(await each.metrics(), '60')).toBe(1);

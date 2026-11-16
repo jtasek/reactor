@@ -47,8 +47,8 @@ test('starts from a template, edits it, plays it and is asked to sign in to shar
     await page.getByRole('button', { name: 'Share prototype' }).click();
     await page.getByRole('button', { name: 'Sign in to share' }).click();
     await expect(page).toHaveURL(/\/login\?returnTo=%2F$|\/login\?returnTo=\/$/);
-    const documentId = await page.evaluate(() =>
-        localStorage.getItem('reactor:open-after-sign-in')
+    const documentId = await page.evaluate(
+        () => JSON.parse(localStorage.getItem('reactor:open-after-sign-in') ?? '{}').documentId
     );
     expect(documentId).toBe(
         await page.evaluate(
@@ -57,9 +57,7 @@ test('starts from a template, edits it, plays it and is asked to sign in to shar
     );
 });
 
-test('keeps the guide closed, and offers templates only until the first start', async ({
-    page
-}) => {
+test('keeps the guide closed once closed', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Start from List / detail' }).click();
     await guide(page).getByRole('button', { name: 'Close guide' }).click();
@@ -67,15 +65,16 @@ test('keeps the guide closed, and offers templates only until the first start', 
 
     await page.reload();
     await expect(page.locator('svg#surface')).toBeVisible();
+    await expect(page.getByText('List / detail starter', { exact: true })).toBeVisible();
     await expect(guide(page)).toBeHidden();
+});
 
-    await page.evaluate(() => localStorage.removeItem('reactor:first-run:started'));
-    await page.goto('/documents');
-    await page.getByRole('button', { name: 'New document' }).click();
+test('a blank start is not offered templates again', async ({ page }) => {
+    await page.goto('/');
     await page.getByRole('button', { name: 'Start with a blank canvas' }).click();
     await expect(page.getByRole('heading', { name: 'Start a prototype' })).toBeHidden();
-    await page.goto('/documents');
-    await page.getByRole('button', { name: 'New document' }).click();
+
+    await page.reload();
     await expect(page.locator('svg#surface')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Start a prototype' })).toBeHidden();
 });

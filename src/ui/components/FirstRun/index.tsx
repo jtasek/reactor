@@ -37,14 +37,16 @@ export function FirstRun() {
         }
     }, [signedIn, documentsIds, documentId, openDocument]);
 
-    // Drawing, or a document with content, starts without a template.
+    // Drawing, a document with content, or more documents than the one a first visit
+    // makes, mean the person has started without a template.
+    const several = documentsIds.length > 1;
     useEffect(() => {
-        if (!started && (!empty || drawing)) {
+        if (!started && (!empty || drawing || several)) {
             markStarted();
         }
-    }, [started, empty, drawing]);
+    }, [started, empty, drawing, several]);
 
-    if (!started && empty && !drawing) {
+    if (!started && empty && !drawing && !several) {
         return (
             <Suspense fallback={null}>
                 <StartPanel onBlank={markStarted} />
