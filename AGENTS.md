@@ -1331,6 +1331,16 @@ entity or values without a field; `dataLeftovers` finds them and `removeLeftover
 on demand and owns only drafts/selection locally. List/form/runtime bindings are not yet built.
 
 
+Schema v32 adds `choice` fields (`options`) and `reference` fields (`targetEntityId`), and
+optional `DataEntity.labelFieldId`. `dataValueProblem(document, field, value)` takes the
+document because a reference must name an existing record of its target entity. Show a record
+through `recordLabel`/`fieldChoices` in `src/app/data.ts`, never by reading a field directly.
+Lists and forms treat both types as text. `MAX_RECORDS_PER_ENTITY` (1,000) is enforced by
+`addRecord`; readers never trim. The decided action/expression vocabulary for typed state,
+forms and workflows is in APPLICATION_PLAN.md → Decisions; build new state actions and
+conditions on it rather than adding parallel shapes.
+
+
 ## Bound sample lists
 
 Schema v25 adds optional `InstanceShape.dataList`: an entity ID, exposed property-to-field ID

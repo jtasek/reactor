@@ -1,4 +1,11 @@
-import type { DataEntity, DataField, DataRecord, DataValue, DataList } from '../dataTypes';
+import type {
+    DataEntity,
+    DataField,
+    DataRecord,
+    DataType,
+    DataValue,
+    DataList
+} from '../dataTypes';
 import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
@@ -804,8 +811,7 @@ export function readDataList(value: unknown): DataList {
     };
 }
 
-function readDataEntity(value: unknown): DataEntity {
-    const data = record(value);
+function readName(data: Record<string, unknown>) {
     const name = text(data.name).trim();
     if (!name || name.length > 200) {
         throw new Error('Name must have 1–200 characters');
@@ -814,17 +820,47 @@ function readDataEntity(value: unknown): DataEntity {
     return { id: id(data.id), name };
 }
 
+function readDataEntity(value: unknown): DataEntity {
+    const data = record(value);
+
+    return {
+        ...readName(data),
+        ...(data.labelFieldId === undefined ? {} : { labelFieldId: id(data.labelFieldId) })
+    };
+}
+
+const DATA_TYPES = new Set(['text', 'number', 'boolean', 'choice', 'reference']);
+export const MAX_CHOICE_OPTIONS = 100;
+
+/** Options are trimmed, distinct and 1–200 characters; an empty list is a diagnostic. */
+export function readChoiceOptions(value: unknown): string[] {
+    if (!Array.isArray(value) || value.length > MAX_CHOICE_OPTIONS) {
+        throw new Error(`A choice field has up to ${MAX_CHOICE_OPTIONS} options`);
+    }
+    const options = value.map((option) => text(option).trim());
+    if (options.some((option) => !option || option.length > 200)) {
+        throw new Error('Options must have 1–200 characters');
+    }
+    if (new Set(options).size !== options.length) {
+        throw new Error('Options must be different from each other');
+    }
+
+    return options;
+}
+
 function readDataField(value: unknown): DataField {
     const data = record(value);
-    if (data.type !== 'text' && data.type !== 'number' && data.type !== 'boolean') {
+    if (typeof data.type !== 'string' || !DATA_TYPES.has(data.type)) {
         throw new Error('Invalid field type');
     }
 
     return {
-        ...readDataEntity(data),
+        ...readName(data),
         entityId: id(data.entityId),
-        type: data.type,
-        required: bool(data.required)
+        type: data.type as DataType,
+        required: bool(data.required),
+        ...(data.options === undefined ? {} : { options: readChoiceOptions(data.options) }),
+        ...(data.targetEntityId === undefined ? {} : { targetEntityId: id(data.targetEntityId) })
     };
 }
 

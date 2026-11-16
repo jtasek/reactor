@@ -1,17 +1,22 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import type { Document } from 'src/app/types';
 import type { DataField, DataRecord } from 'src/app/dataTypes';
+import { fieldChoices } from 'src/app/data';
 import { formFieldProblem } from 'src/preview/recordForms';
 import { Dialog } from '../Dialog/Dialog';
 import styles from './recordForm.css';
 
 export function RecordForm({
     record,
+    document,
     fields,
     entityName,
     close,
     save
 }: {
     record: DataRecord;
+    /** Includes this session's saved records, so references show their current names. */
+    document: Document;
     fields: DataField[];
     entityName: string;
     close: () => void;
@@ -113,7 +118,7 @@ export function RecordForm({
                             setProblems((previous) => ({
                                 ...previous,
                                 [field.id]: previous[field.id]
-                                    ? (formFieldProblem(field, value) ?? '')
+                                    ? (formFieldProblem(document, field, value) ?? '')
                                     : ''
                             }));
                         }
@@ -140,6 +145,8 @@ export function RecordForm({
                                             </option>
                                         )}
                                 </select>
+                            ) : field.type === 'choice' || field.type === 'reference' ? (
+                                <ChoiceSelect {...common} choices={fieldChoices(document, field)} />
                             ) : (
                                 <input
                                     {...common}
@@ -156,5 +163,28 @@ export function RecordForm({
                 })}
             </form>
         </Dialog>
+    );
+}
+
+/** A value that is no longer offered stays selectable, marked, so opening a form never changes it. */
+function ChoiceSelect({
+    choices,
+    ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+    value: string;
+    choices: { value: string; label: string }[];
+}) {
+    return (
+        <select {...props}>
+            <option value="">Not set</option>
+            {choices.map((choice) => (
+                <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                </option>
+            ))}
+            {props.value && !choices.some((choice) => choice.value === props.value) && (
+                <option value={props.value}>{props.value} (unavailable)</option>
+            )}
+        </select>
     );
 }

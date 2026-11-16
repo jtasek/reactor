@@ -399,6 +399,7 @@ export default function InteractivePreview({
                 <RecordForm
                     key={`${document.id}:${record.id}`}
                     record={record}
+                    document={local}
                     fields={dataFields(document, record.entityId)}
                     entityName={entity.name}
                     close={() => setEditing(false)}

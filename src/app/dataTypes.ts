@@ -1,5 +1,5 @@
 /** Stable IDs, rather than names, connect schema fields to record values. */
-export type DataType = 'text' | 'number' | 'boolean';
+export type DataType = 'text' | 'number' | 'boolean' | 'choice' | 'reference';
 export type DataValue = string | number | boolean | null;
 /** Document-local bindings; the instance's component is the repeated item template. */
 export interface DataList {
@@ -10,14 +10,24 @@ export interface DataList {
     /** Omitted repeats all records; record shows the record selected during navigation. */
     mode?: 'record';
 }
-export interface DataEntity {
+interface Named {
     id: string;
     name: string;
 }
-export interface DataField extends DataEntity {
+export interface DataEntity extends Named {
+    /** The text field that names a record wherever a reference shows it; else the first. */
+    labelFieldId?: string;
+}
+/**
+ * Choice values are one of `options`; reference values are a record ID of `targetEntityId`.
+ * Both settings stay when the type changes, so changing it back loses nothing.
+ */
+export interface DataField extends Named {
     entityId: string;
     type: DataType;
     required: boolean;
+    options?: string[];
+    targetEntityId?: string;
 }
 export interface DataRecord {
     id: string;

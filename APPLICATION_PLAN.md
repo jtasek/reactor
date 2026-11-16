@@ -646,15 +646,18 @@ conditions, with accept/undo rates recorded for Edit with words.
 The user shows a list of customers, opens one, edits it with validation, and exports the
 prototype.
 
-Scope reset (2026-11-09): the code has Text, Number and Boolean fields and a required flag.
-Before list/detail is called done, add references between entities and enums, enforce the
-1,000-record limit, and decide how interactive state (Set/Toggle actions and conditions), form
-state and R9 workflow conditions share one action and expression vocabulary, so that the next
-typed-state step does not create a third one. Dates and the full expression grammar can follow
-outside users' needs.
+Scope reset (2026-11-09): before list/detail is called done, add references between entities
+and enums, enforce the 1,000-record limit, and decide how interactive state, form state and R9
+workflow conditions share one action and expression vocabulary. All three are done as of
+2026-11-16 (R5.1b and the "Actions and expressions" decision below). Dates and further
+expression operators can follow outside users' needs.
 
 1. Entities, sample records and their editor, with schema diagnostics.
    R5.1 built; see the [delivery log](DELIVERY_LOG.md#r51-entities-fields-and-sample-records).
+   R5.1b built (choice and reference fields, records named by a text field, 1,000 records per
+   entity); see the [delivery log](DELIVERY_LOG.md#r51b-choice-and-reference-fields-and-the-record-limit).
+   Not yet: AI proposing these field types, and a reference shown as more than its record's name
+   (for example the customer's email in an order row).
 2. A list bound to an entity through an item template, and a details screen that receives the
    record.
    R5.2a built; see the [delivery log](DELIVERY_LOG.md#r52a-lists-bound-to-entities).
@@ -779,6 +782,14 @@ Additional decisions for the next R4 increments:
 | Screen layout choice | Continuous reflow first; optional alternate layouts retain one screen ID. | R4.7 |
 | Behavior ownership | Roles provide semantics; typed interactions reference screen IDs, not view IDs. | R4.8 |
 | Flow and Prototype | Separate, explicitly invoked features; Flow edits definitions, Prototype executes them in local session state. | R4.9–R4.10 |
+
+Data and behavior (decided 2026-11-16):
+
+| Decision | Default | Delivered by |
+| --- | --- | --- |
+| Enums and references | A field is Text, Number, Boolean, Choice (one of its listed options) or Reference (a record ID of one target entity). Schema edits never rewrite values; a value that no longer fits is a diagnostic. A record shows as its entity's chosen text field, else the first, else "Entity N". | R5.1b |
+| Record limit | 1,000 sample records per entity, refused when adding; more from concurrent adds is reported, never trimmed. | R5.1b |
+| Actions and expressions | One vocabulary for interactive state, forms and R9 workflows. Actions are typed records `set`, `toggle` and `reset` on a target: a named state value or a field of the player's current record; navigation and variant changes stay their own actions. Conditions and validation rules are typed trees stored as JSON, never formula strings: comparisons (`equals`, `notEquals`, `less`, `greater`, `isSet`, `contains`) between operands (state value, current record field, literal), combined with `and`, `or` and `not`. One checker validates them against the state and entity schemas, and one evaluator runs them in the player. Today's `setState`, `toggleState` and `prototypeVisibilityWhen` are its first cases and are read into it when the next typed-state step lands. No text formula language until users ask for one. | Next typed-state step, R5.3b, R9 |
 
 ## Keeping this plan current
 

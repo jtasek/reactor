@@ -1,11 +1,15 @@
 import type { Document, InstanceShape, PropertyValue } from './types';
 import type { DataField, DataList, DataRecord } from './dataTypes';
 import { acceptsComponentValue, resolveComponentProp, exposableProperties } from './componentProps';
-import { dataValueProblem } from './data';
+import { dataValueProblem, recordLabel } from './data';
 import { instanceComponent } from './componentSource';
 import { escapeTemplate } from './variables';
 
 export const DEFAULT_LIST_GAP = 8;
+
+/** Choices show their option and references their record's label, both as text. */
+const listValueType = (field: DataField) =>
+    field.type === 'choice' || field.type === 'reference' ? 'text' : field.type;
 
 export function compatibleListField(
     document: Document,
@@ -25,7 +29,7 @@ export function compatibleListField(
         exposableProperties(resolved.source, document).some(
             (property) => property.key === resolved.prop.key
         ) &&
-        (resolved.property.kind === field.type ||
+        (resolved.property.kind === listValueType(field) ||
             (resolved.property.kind === 'color' && field.type === 'text'))
     );
 }
@@ -92,7 +96,7 @@ export function recordOverrides(
             continue;
         }
         const value = record.values[fieldId];
-        const problem = dataValueProblem(field, value);
+        const problem = dataValueProblem(document, field, value);
         if (problem) {
             problems.push(`Row ${row}: ${problem} The item shows the template value.`);
             continue;
@@ -100,14 +104,15 @@ export function recordOverrides(
         if (value === null || value === undefined) {
             continue;
         }
-        if (!acceptsComponentValue(resolved.property, value)) {
+        const shown = field.type === 'reference' ? recordLabel(document, String(value)) : value;
+        if (!acceptsComponentValue(resolved.property, shown)) {
             problems.push(
                 `Row ${row}: ${field.name} is incompatible with the item property; the item shows the template value.`
             );
             continue;
         }
         overrides[propId] =
-            resolved.property.kind === 'text' ? escapeTemplate(String(value)) : value;
+            resolved.property.kind === 'text' ? escapeTemplate(String(shown)) : shown;
     }
 
     return { overrides, problems };

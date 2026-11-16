@@ -2,7 +2,7 @@ import type { ActionWithParamAndResult, Document } from './types';
 import type { DataField, DataType, DataValue, DataList } from './dataTypes';
 import { isReadOnly } from './documentAccess';
 import { readEntity, readDataList } from './services/documentStorage';
-import { dataLeftovers, dataRecords, dataValueProblem } from './data';
+import { dataLeftovers, dataRecords, dataValueProblem, MAX_RECORDS_PER_ENTITY } from './data';
 import { dataListProblems } from './dataLists';
 import { isShapeLocked } from './utils';
 
@@ -11,11 +11,20 @@ export type DataChange =
     | { kind: 'addEntity'; name: string }
     | { kind: 'renameEntity'; id: string; name: string }
     | { kind: 'deleteEntity'; id: string }
-    | { kind: 'addField'; entityId: string; name: string; type: DataType; required: boolean }
+    | { kind: 'setLabelField'; entityId: string; fieldId: string | null }
+    | ({
+          kind: 'addField';
+          entityId: string;
+          name: string;
+          type: DataType;
+          required: boolean;
+      } & Pick<DataField, 'options' | 'targetEntityId'>)
     | {
           kind: 'updateField';
           id: string;
-          changes: Partial<Pick<DataField, 'name' | 'type' | 'required'>>;
+          changes: Partial<
+              Pick<DataField, 'name' | 'type' | 'required' | 'options' | 'targetEntityId'>
+          >;
       }
     | { kind: 'deleteField'; id: string }
     | { kind: 'addRecord'; entityId: string }
@@ -95,6 +104,24 @@ function prepare(
             }
         };
     }
+    if (edit.kind === 'setLabelField') {
+        entity(document, edit.entityId);
+        const field = edit.fieldId === null ? undefined : document.dataFields[edit.fieldId];
+        if (edit.fieldId !== null && (field?.entityId !== edit.entityId || field.type !== 'text')) {
+            throw new Error('Records are named by one of their text fields.');
+        }
+
+        return {
+            write: () => {
+                if (edit.fieldId === null) {
+                    delete document.dataEntities[edit.entityId].labelFieldId;
+
+                    return;
+                }
+                document.dataEntities[edit.entityId].labelFieldId = edit.fieldId;
+            }
+        };
+    }
     if (edit.kind === 'deleteEntity') {
         entity(document, edit.id);
 
@@ -120,6 +147,26 @@ function prepare(
             edit.kind === 'addField' ? { ...edit, id: newId() } : { ...previous, ...edit.changes }
         );
         entity(document, field.entityId);
+        const typeChanged =
+            edit.kind === 'addField' ||
+            'type' in edit.changes ||
+            'options' in edit.changes ||
+            'targetEntityId' in edit.changes;
+        if (
+            typeChanged &&
+            field.type === 'choice' &&
+            edit.kind === 'addField' &&
+            !field.options?.length
+        ) {
+            throw new Error('Add at least one option.');
+        }
+        if (
+            typeChanged &&
+            field.type === 'reference' &&
+            !document.dataEntities[field.targetEntityId ?? '']
+        ) {
+            throw new Error('Choose the entity this field refers to.');
+        }
         uniqueName(
             Object.values(document.dataFields).filter((item) => item.entityId === field.entityId),
             field.name,
@@ -145,6 +192,10 @@ function prepare(
 
         return {
             write: () => {
+                const entity = document.dataEntities[document.dataFields[edit.id].entityId];
+                if (entity?.labelFieldId === edit.id) {
+                    delete entity.labelFieldId;
+                }
                 delete document.dataFields[edit.id];
                 Object.values(document.dataRecords).forEach(
                     (record) => delete record.values[edit.id]
@@ -154,7 +205,13 @@ function prepare(
     }
     if (edit.kind === 'addRecord') {
         entity(document, edit.entityId);
-        const last = dataRecords(document, edit.entityId).at(-1);
+        const records = dataRecords(document, edit.entityId);
+        if (records.length >= MAX_RECORDS_PER_ENTITY) {
+            throw new Error(
+                `An entity holds up to ${MAX_RECORDS_PER_ENTITY.toLocaleString('en-US')} sample records.`
+            );
+        }
+        const last = records.at(-1);
         const record = {
             id: newId(),
             entityId: edit.entityId,
@@ -202,7 +259,7 @@ function prepare(
         throw new Error('This record or field is no longer available.');
     }
     entity(document, record.entityId);
-    const problem = dataValueProblem(field, edit.value);
+    const problem = dataValueProblem(document, field, edit.value);
     if (problem) {
         throw new Error(problem);
     }
