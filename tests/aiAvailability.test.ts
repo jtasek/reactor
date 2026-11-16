@@ -48,3 +48,30 @@ describe('AI availability', () => {
         expect(aiAvailable).not.toHaveBeenCalled();
     });
 });
+
+describe('the workspace AI switch', () => {
+    it('hides AI entries in documents whose workspace has AI off', async () => {
+        const { EditWithWordsCommand } = await import('src/commands/ai');
+        const { aiOffered } = await import('src/app/aiAccess');
+        const { store } = createTestStore();
+        const id = store.state.currentDocumentId;
+        const context = { state: store.state, actions: store.actions } as unknown as Parameters<
+            NonNullable<typeof EditWithWordsCommand.canExecute>
+        >[0];
+
+        store.actions.setAiAvailability('available');
+        store.actions.setDocumentAccess({ [id]: { workspaceId: 'team', role: 'editor' } });
+        expect(aiOffered(store.state)).toBe(true);
+        expect(EditWithWordsCommand.canExecute?.(context)).toBe(true);
+
+        store.actions.setDocumentAccess({
+            [id]: { workspaceId: 'team', role: 'editor', aiOff: true }
+        });
+        expect(aiOffered(store.state)).toBe(false);
+        expect(EditWithWordsCommand.canExecute?.(context)).toBe(false);
+
+        // Another workspace's document still offers AI.
+        store.actions.newDocument();
+        expect(aiOffered(store.state)).toBe(true);
+    });
+});

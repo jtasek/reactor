@@ -55,6 +55,7 @@ import {
     RedoCommand,
     RemoveFromGroupCommand,
     ResetDocumentCommand,
+    DocumentHistoryCommand,
     SendToBackCommand,
     SelectComponentSourceCommand,
     ResetComponentOverridesCommand,
@@ -132,6 +133,7 @@ function registerCommands() {
     registerCommand(ResetDocumentCommand);
     // Registered after Reset document, so the document group keeps its place in the bar.
     registerCommand(ExportSvgCommand);
+    registerCommand(DocumentHistoryCommand);
     registerCommand(EditWithWordsCommand);
 }
 

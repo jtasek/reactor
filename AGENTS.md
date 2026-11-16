@@ -138,6 +138,12 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   A minute after it starts and then every hour it deletes the images no document links to
   any more, an hour after they were last added (`deleteUnusedAssets`). `tests/server/support.ts` `serve()` runs all of it over HTTP.
 
+- **Metrics** (`server/metrics.ts`): both servers make one `createMetrics()` and pass it to
+  accounts, which hands it to the sync, the API and the AI gateway; code run without one uses
+  `noMetrics`. `/metrics` and `/metrics/prototypes` need `METRICS_TOKEN`. Shared prototypes and
+  their distinct players are tables (`shared_prototypes`, `prototype_players`) that outlive the
+  links. The editor's `reportErrors` beacons unhandled errors to `/api/client-errors`.
+
 - **Sign-in pages**: `/login` is the signed-out entry point; `/signin` is an alias.
   Signed-out `/account` visitors go to login with Account as the return destination.
   Both pages share the lazy-loaded `pages/AccountFrame.tsx` frame and `pages/Account.tsx`
@@ -276,7 +282,10 @@ re-renders.** Components never mutate state directly.
   `propose` (`src/ai/client.ts`) returns the proposal, nothing applied, and aborting it stops
   the model. Each request is a row of `ai_requests` with its tokens, counted against a day's
   limits per person and per workspace (`AI_LIMITS`), one request of a person at a time.
-  `state.ai` is `available` only signed in on a server with AI. `src/ai/` loads only with
+  Admins turn AI off per workspace (`workspaces.ai_enabled`, `PUT /api/workspaces/:id/ai`,
+  the AI card on Sharing); the gateway then refuses with `AI_OFF`. `state.ai` is `available`
+  only signed in on a server with AI; AI entries also check the document's workspace through
+  `aiOffered` (`src/app/aiAccess.ts`, which reads `documentAccess[id].aiOff`). `src/ai/` loads only with
   what uses it, never at startup. Edit with words (`EditWithWordsCommand`, `w`, and a button
   on the application bar only where AI is available) opens a non-modal chat for the current
   document (`state.aiEditDocumentId`) that loads with the AI client
@@ -1212,7 +1221,38 @@ navigation destinations and reachability from a chosen root are diagnostics, nev
 Nested source controls are labeled as shared. Diagram offsets are device-local
 `reactor:flow:<documentId>` storage, validated by `pages/flowPositions.ts`, not document data,
 canvas geometry or prototype session state. Opening Flow does not instantiate Preview.
-Tests: `tests/flowProjection.test.ts` and `tests/browser/flows.spec.ts`.
+Flow is drawn as a map over a state machine that never shows as a word in the interface
+(people see screens and links). `flowMachine.ts` turns the projection into states (Screens),
+transitions (controls with an action; only `go` leaves the Screen), idle controls (offered by
+Add link), counted `problems` and uncounted `notes`, with `sentence()` as each row's
+description. `flowLayout.ts` is pure too: `layoutFlow(machine, previous)` puts Screens in
+columns by distance from the start and, given the previous layout, moves only Screens whose
+column changed; `routeLinks` draws right-angled paths through the gaps, never across a card.
+Card and row sizes come from its `FLOW` constants, which `Flow.css` reads as variables; change
+them there only. `pages/FlowBoard.tsx` pans and zooms by writing one transform (no render),
+`pages/FlowLinkMenu.tsx` is the only editor (one `ExplorerMenu`, pages for "On this screen"
+and "Shown", every choice one `editInteractions` call). The machine is recomputed once per
+edit and thumbnails are drawn from a plain `json()` copy once edits pause: tracked reads per
+render cost a drag its frame rate.
+Links are also drawn by hand: a press on a control in a card's picture (`ScreenThumbnail`'s
+`controls` targets, fine pointers only) or on a row's dot starts `startLink` in `FlowBoard`,
+which follows the pointer with window listeners and, on a drop over an available Screen, makes
+one `editInteractions` call; Esc or a drop elsewhere changes nothing. A press anywhere else on
+the picture or name drags the card. Dragged cards are stored as offsets from the automatic
+layout; when that layout moves under a dragged card, `Flow.tsx` corrects the offset so the
+card stays put. Tidy up (the board's right-click menu, shown only when it would change
+something, and each Screen's ⋯ menu for the keyboard) clears the offsets and starts the layout
+over.
+Check (`FlowCheck.tsx`, in the toolbar) counts `machine.problems` and lists `machine.notes`
+uncounted; a remark selects what it is about, pans to it (`handle` on `FlowBoard`) and, where
+one fix is obvious, opens that link's menu or the Screen's Add link menu. Below 700 px
+`Flow.tsx` renders `FlowList` instead of the board (no pictures are drawn) and menus open as
+bottom sheets (`sheet` on `ExplorerMenu`). Both views share the keyboard model: one Tab stop
+per Screen (its name), ↑/↓ over `[data-flow-stop]` elements (`walkScreen`), Return opens a
+row's menu, ⌫ removes its link, Esc deselects. Link changes are announced in a polite live
+region (`[data-flow-announce]`) by comparing each link's `sentence()` before and after.
+Tests: `tests/flowProjection.test.ts`, `tests/flowMachine.test.ts` and
+`tests/browser/flows.spec.ts`.
 
 
 
@@ -1375,3 +1415,13 @@ the condition, and readers drop a condition left without a state (e.g. after con
 Set controls are plain buttons without `aria-pressed`, since pressing one again changes nothing. The sandbox validates and executes explicit assignments without toggling;
 Flow labels assignments and distinguishes the boolean value that can reveal a hidden control.
 Tests: prototypeState unit and prototypeBooleanActions browser coverage.
+
+Schema v31 adds the prototype's start screen as optional `start: true` on a Screen frame, so it
+syncs and undoes with the frames table (document fields are outside undo). Always read it through
+`startScreen(document)` in `src/app/screens.ts`: the marked available Screen, the lowest ID when
+copies marked two at once, otherwise the first Screen. Set it with
+`editFrame({ kind: 'start', id })`, which clears the previous mark in the same batch. New frames
+added by operations never carry the mark, and a Screen turned into a plain frame drops it. Flow's
+Start screen picker writes it; the Prototype player opens on `?screen=`, then the view Play was
+pressed on, then the start screen, and its own picker stays session-only.
+Tests: `tests/startScreen.test.ts` and `tests/browser/flows.spec.ts`.

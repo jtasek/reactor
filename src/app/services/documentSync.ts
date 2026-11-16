@@ -418,8 +418,10 @@ export async function startDocumentSync(
     };
 
     const startServer = async () => {
-        const { ServerSync } = await import('./serverSync');
+        const { ServerSync, followPresence, presence } = await import('./serverSync');
         server = new ServerSync({
+            self: owner,
+            sizes: json(instance.state.config.documentSize),
             collaboration,
             api: effects.api,
             transport: effects.serverTransport(),
@@ -462,9 +464,19 @@ export async function startDocumentSync(
                         /* Permissions are checked again when the server is reached. */
                     }
                 },
-                changed: report
+                outdated: (editableFrom) =>
+                    Object.keys(instance.state.documents).forEach((documentId) =>
+                        instance.actions.markDocumentOutdated({ documentId, editableFrom })
+                    ),
+                changed: report,
+                presence: presence.set,
+                tooLarge: (documentId, bytes, message) => {
+                    instance.actions.markTooLargeToSync({ documentId, bytes });
+                    if (message) displayError(message);
+                }
             }
         });
+        followPresence(instance, server);
 
         await server.refresh();
     };
@@ -684,6 +696,8 @@ export async function startDocumentSync(
             documentChanged: instance.actions.markDocumentModified,
             historyChanged: (documentId, history) =>
                 instance.actions.setDocumentHistory({ documentId, history }),
+            outdated: (documentId, editableFrom?: number) =>
+                instance.actions.markDocumentOutdated({ documentId, editableFrom }),
             sendUpdate: (documentId, update) => {
                 if (owner && isReadOnly(instance.state, documentId)) return;
                 sync?.send(documentId, update);

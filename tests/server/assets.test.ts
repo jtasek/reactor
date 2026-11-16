@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { sql } from 'kysely';
 import { MAX_ASSET_BYTES, deleteUnusedAssets, postgresBlobs } from '../../server/assets';
+import { SNAPSHOTS_KEPT_MS, pruneSnapshots } from '../../server/history';
 import { serve, type DocumentSummary } from './support';
 
 type Served = Awaited<ReturnType<typeof serve>>;
@@ -235,7 +236,7 @@ describe('assets', () => {
         expect((await sql`select 1 from document_assets`.execute(db)).rows).toEqual([]);
     });
 
-    it('deletes images no document uses once their grace has passed, and keeps the rest', async () => {
+    it('deletes images no document uses, nor a deleted one can restore, once their grace has passed', async () => {
         const { db, call, ada, plan, createDocument, upload, read } = await serveDocument();
         const other = await createDocument('Other');
         const counts = async () =>
@@ -254,6 +255,12 @@ describe('assets', () => {
         await deleteUnusedAssets(db, postgresBlobs(db), new Date(Date.now() - 60_000));
         expect(await counts()).toEqual({ assets: 2, blobs: 2 });
 
+        // The deleted document can still be restored, so its images stay too.
+        await deleteUnusedAssets(db, postgresBlobs(db), new Date(Date.now() + 60_000));
+        expect(await counts()).toEqual({ assets: 2, blobs: 2 });
+
+        // Once nothing can bring it back, they go.
+        await pruneSnapshots(db, new Date(Date.now() + SNAPSHOTS_KEPT_MS + 60_000));
         await deleteUnusedAssets(db, postgresBlobs(db), new Date(Date.now() + 60_000));
         expect(await counts()).toEqual({ assets: 1, blobs: 1 });
         expect((await read(JPEG, { documentId: other.id })).status).toBe(200);

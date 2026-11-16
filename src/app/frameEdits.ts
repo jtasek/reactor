@@ -1,4 +1,5 @@
 import { screenLayouts } from './screenLayouts';
+import { screenFrames, startScreen } from './screens';
 import { editableScreenView, sourceOffset } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
 import {
@@ -44,6 +45,7 @@ export type FrameEdit =
     | { kind: 'cut'; id: string; documentId?: string; frameIds: string[]; shapeIds: string[] }
     | { kind: 'clone'; id: string }
     | { kind: 'toggle'; id: string; flag: 'locked' | 'visible' }
+    | { kind: 'start'; id: string }
     | { kind: 'paste'; frame: Frame; target: Point | null; copied?: CopiedFrame };
 
 export const frameBox = (frame: Frame) => ({
@@ -395,6 +397,33 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
     }
 
     const frame = document.frames[input.id];
+
+    if (input.kind === 'start') {
+        // Where the prototype starts is the document's choice, so a locked Screen can take it.
+        if (
+            startScreen(document)?.id === input.id ||
+            !screenFrames(document).some((screen) => screen.id === input.id)
+        ) {
+            return;
+        }
+
+        const result = actions.applyOperations({
+            documentId: document.id,
+            by: { kind: 'person' },
+            operations: [
+                ...Object.values(document.frames)
+                    .filter((other) => other.start && other.id !== input.id)
+                    .map((other): import('./operations').UpdateFrame => ({
+                        op: 'updateFrame',
+                        frame: other.id,
+                        changes: { start: null }
+                    })),
+                { op: 'updateFrame', frame: input.id, changes: { start: true } }
+            ]
+        });
+
+        return result.applied ? input.id : undefined;
+    }
 
     if (input.kind === 'toggle') {
         if (

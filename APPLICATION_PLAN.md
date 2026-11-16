@@ -24,7 +24,7 @@ its implementation status explicitly says otherwise.
 | Variables and templates | Implemented: central resolver, explicit bindings, typed aliases, opt-in user-defined dimensions inherited per Screen view, contextual numeric/text modes for supported consumers (R4.4), native design-system packages and a bounded DTCG adapter. Local simulation stays separate from authored frame/view/instance overrides. |
 | Saving and collaboration   | Implemented: IndexedDB, tab sync, Yjs merges, server sync when signed in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Images                     | Implemented: content-addressed, shared with the server when signed in ([assetSync.ts](src/app/services/assetSync.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Accounts | Implemented: email, Google and GitHub sign-in, password reset, workspaces, member management, workspace invitations with sharing/acceptance UI, and a read-only viewer preview. Not built: document-level invitations, presence ([serverSync.ts](src/app/services/serverSync.ts) passes no awareness), comments, account deletion, moving signed-out documents into an account, and a per-workspace AI switch. |
+| Accounts | Implemented: email, Google and GitHub sign-in, password reset, workspaces, member management, workspace invitations with sharing/acceptance UI, and a read-only viewer preview. Presence: other people's named pointers and selections on the canvas (S1 step 3). Not built: document-level invitations, comments and account deletion. Admins turn AI on or off per workspace on Sharing (S1 step 4). Once signed in, the editor offers to move this browser's signed-out documents into the account (S1 step 5). |
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
@@ -313,7 +313,7 @@ That suits the beta on one machine. Before R7:
 | ------------------------------ | ----------------------------------------------------------------------- |
 | Projecting a slice             | 4 ms for 300 controls, 16 ms for 2,000 records; only on committed edits |
 | Preview after a committed edit | 250 ms at p95                                                           |
-| Shared document                | A warning at 3 MiB of Yjs state; the server accepts at most 4 MiB on first sync (S1, not built yet) |
+| Shared document                | A warning at 3 MiB of Yjs state; the server accepts at most 4 MiB on first sync (S1 step 6) |
 | Entry bundle                   | 498 KiB (S1 target: under 492 KiB), 248 KiB per file                     |
 | Preview and runtime chunk      | 150 KiB                                                                 |
 | AI chunk in the editor         | 40 KiB                                                                  |
@@ -532,7 +532,7 @@ The user shares a document and sees who else is in it.
    and `tests/browser/sharing.spec.ts` cover these paths. Admin promotion/ownership transfer
    and invitation email delivery remain later work.
 2. Document invitations and read-only viewer links.
-3. Presence: names, colors, pointers and selections. Scheduled as S1 step 3.
+3. Presence: names, colors, pointers and selections. Built in S1 step 3.
 4. Comments on the canvas, in a change of their own.
 
 Done when `tests/server/sharing.test.ts` (invited roles, read-only viewer links) and
@@ -1148,26 +1148,140 @@ suggest. Do these in order; each is a separate change.
    reader version that can edit it; an older copy goes read-only and offers Reload.
    Acceptance: a two-copy test where the older copy cannot write, and
    `tests/browser/versionCheck.spec.ts` for the Reload prompt.
+   Implementation status (2026-11-13): each copy that writes adds its `SCHEMA_VERSION` as a
+   key of the shared document's `versions` map (one key per version, so concurrent writes
+   never hide the newest). A copy that opens or receives a document with a higher key stops writing to it (edits, undo and migrations), shows the
+   read-only viewer with Reload, and keeps following others' changes. Covered by
+   `tests/versionCheck.test.ts` and `tests/browser/versionCheck.spec.ts`. The sync server removes keys
+   above the format it serves (and keys that are no format) on load and on every change, so a
+   rolled-back release or a bad client cannot lock documents; an outdated copy edits again
+   once the newer keys are gone. The editor names its format in the sync
+   socket's `editor` parameter; the server closes sockets from older editors (and builds
+   without the parameter) with code 4426 and the format it needs, and the editor stops
+   syncing and shows every document view only with Reload. Covered by
+   `tests/server/sync.test.ts` and `tests/server/editorSync.test.ts`. Step 1 is complete.
 2. **Document history and backups (M).** Server snapshots with Restore, a backup routine and
    one restore drill recorded in the README. Acceptance: `tests/server/history.test.ts`
    (snapshot schedule, restore as a new change, deleted documents, permissions).
+   Implementation status (2026-11-14): the server half is built. Saving a document whose last
+   snapshot is an hour old keeps the content saved before as a snapshot (`document_snapshots`);
+   the hourly cleanup keeps every snapshot for a day and each day's last for 30 days. Restore
+   applies as one change through the sync server, keeps what it replaced as a snapshot and
+   leaves the `versions` marks; deleting keeps the last content and images for 30 days, and an
+   admin restores it as a new document. `scripts/backup-database.sh` and
+   `scripts/restore-drill.sh`, with the first drill recorded in the README. Covered by
+   `tests/server/history.test.ts`. The editor's **Document history** command lists, draws and
+   restores versions; a restore marks the shared `restores` map, and every copy clears its undo
+   history when it arrives. Documents → Recently Deleted lists the deleted documents the server
+   keeps, for admins to restore. Covered by `tests/restoreUndo.test.ts`,
+   `tests/documentHistory.test.ts` and `tests/browser/documentHistory.spec.ts`. Step 2 is complete
+   but for the restore drill on the beta's database, which runs before the beta.
 3. **Presence (M).** R3 step 3: names, colors, pointers and selections, through the existing
    sync connection. Acceptance: `tests/browser/presence.spec.ts`.
+   Implementation status (2026-11-14): each synced document's connection carries Yjs awareness.
+   The copy showing a document in the editor shares its pointer (canvas coordinates, while
+   over the canvas and the page is visible) and its selected shapes, at most every 50 ms
+   (`src/app/services/presence.ts`); other pages and documents share nothing. As the server
+   passes on no cleared states, leaving a document first shares an empty one. The server rewrites every state before
+   passing it on (`server/presence.ts`): who it is comes from the session, only a pointer of
+   numbers and up to 500 shape ids are kept, and client ids another connection holds are
+   refused, so nobody can show up as, or move, someone else. Viewers are present too. Signed
+   in, the canvas loads the presence layer on demand and draws each other person's pointer
+   with their name and their selected shapes' outlines in a color from their account; your
+   own other tabs are not shown. Covered by `tests/presence.test.ts`,
+   `tests/server/presence.test.ts`, `tests/server/editorSync.test.ts` and
+   `tests/browser/presence.spec.ts`. Not yet: selected frames and Screen views, a list of who
+   is in the document, and following someone's view. Step 3 is complete.
 4. **Workspace AI switch (S).** Admins turn AI off for a workspace; the gateway refuses and the
    editor hides AI entries. The product says what is sent to the provider and what is kept.
    Acceptance: `tests/server/ai.test.ts` and an AI browser spec.
+   Implementation status (2026-11-14): each workspace has `ai_enabled` (on by default), listed as
+   `ai` with the workspaces. Admins change it with `PUT /api/workspaces/:id/ai` from the AI card
+   on Sharing; editors and viewers are refused. The gateway refuses requests and repairs in a
+   workspace with AI off (`AI_OFF`, checked again under the workspace lock before a request is
+   counted). The editor keeps the switch with each document's access (`aiOff`) and, where it is
+   off, hides the Edit with words button, command, shortcut and the command line's AI entry
+   (`src/app/aiAccess.ts`); it learns a change when it next lists the workspaces, and a chat
+   left open says an admin turned AI off. The chat and the Sharing card say what a request
+   sends to the provider and what Reactor keeps (`src/ai/disclosure.ts`). Covered by
+   `tests/server/ai.test.ts`, `tests/aiAvailability.test.ts` and
+   `tests/browser/workspaceAi.spec.ts`. Step 4 is complete.
 5. **Move signed-out documents into an account (M).** On first sign-in, offer to move this
    browser's signed-out documents into the account, with their images. Acceptance: a browser
    spec covering move, skip and a document over the size limit.
+   Implementation status (2026-11-15): signed in, the Documents page and the editor offer,
+   once per account, the documents this browser keeps signed out that have content and are
+   not in Recently Deleted (`src/ui/components/MoveDocuments`, loaded with the document
+   history's chunk). Move saves each in the account's copy in this browser with its images,
+   records it as made here so the server sync creates it in the personal workspace, removes
+   it from the signed-out documents, and has the editor catch up to open it
+   (`src/app/services/signedOutDocuments.ts`). A document whose state is over 4 MiB less
+   1 KiB, more than the server takes in its first sync, stays in this browser and is named
+   as too large. Keep in this browser leaves them, shown again signed out. Neither is offered
+   again; a document that failed to move is. Covered by `tests/signedOutDocuments.test.ts`
+   and `tests/browser/moveDocuments.spec.ts`. Not yet: a way to offer documents again after
+   Keep, and removing the signed-out copy's images no document uses any more. Step 5 is
+   complete.
 6. **Size warning (S).** The editor warns at 3 MiB of Yjs state and explains a refused first
    upload. Acceptance: a unit test on the measure and a browser spec on the message.
+   Implementation status (2026-11-15): the limits and measuring intervals are
+   `config.documentSize` (defaults in `src/app/services/documentSize.ts`), which holds the measure:
+   a document's whole state as another copy would receive it (content kept only for undo is
+   left out), a warning from 3 MiB and an upload limit of 4 MiB less 1 KiB, the server's
+   largest message (`MAX_MESSAGE`) less room for the document's id. The editor measures the
+   document it shows when it opens and while it changes, at most every 2 seconds (15 once it
+   is large, as leaving out undo content then costs about 150 ms), and from 3 MiB says how
+   large it is and that over the limit it cannot move into an account; the note
+   can be dismissed until the document grows another megabyte. The server sync no longer
+   sends what the server would refuse: a document too large for its first upload, or with a
+   change too large to send at once, is held back in this browser (before, the server closed
+   the socket every document shares, again on each reconnect), named in an error and in a
+   note in the editor, and sent once it is smaller. Covered by `tests/documentSize.test.ts`,
+   `tests/server/editorSync.test.ts` and `tests/browser/documentSize.spec.ts`. Not yet: a
+   note on the Documents page's card, and the server checking sizes itself. Step 6 is
+   complete.
 7. **Measures and signals (S).** Count prototype links created, distinct players per link and
    screens per shared prototype on the server, with no third-party tracker; add the server
    metrics and browser error report from Operations. Acceptance: `tests/server/metrics.test.ts`.
+   Implementation status (2026-11-15): sharing a prototype records the link in
+   `shared_prototypes` with its screens, kept after the link is revoked or expires; the `/share`
+   page sends a random id the preview site keeps, and the server counts distinct players and
+   opens per link in `prototype_players` under a hash of the link and that id. The server keeps
+   metrics in its process (`server/metrics.ts`): sync sockets, refusals and failed saves, AI
+   turns by outcome with time to first operation and to the end, AI refusals, prototype
+   publishes and opens, and browser errors. `GET /metrics` (Prometheus text) and
+   `GET /metrics/prototypes` (each shared link with screens, players and opens) answer only
+   with `METRICS_TOKEN`. The editor beacons errors nothing handled to `/api/client-errors`
+   (`src/app/services/errorReport.ts`, `config.errorReport`), which the server takes from its
+   own pages only, rate limits, logs and counts. Covered by `tests/server/metrics.test.ts` and
+   `tests/errorReport.test.ts`. Not yet: telling the sharer's own opens apart from others',
+   screens visited per player, the Preview-after-edit budget (a browser timing), and a
+   dashboard. Step 7 is complete.
 8. **Projection parity suite (M).** Pulled forward from R6: one fixture set (modes, layouts,
    variants, data records, interactive state) projected by Canvas, Preview and SVG export and
    compared as normalized output, run on every change to projection code. Acceptance:
    `tests/projectionParity.test.ts`.
+   Implementation status (2026-11-15): the suite draws each fixture's Views three ways: the
+   canvas's `ScreenViews` rendered to markup, Prototype's drawing launched from the View (as
+   the editor's Preview pane and as Play and shared links start it), and the SVG file Export
+   writes. It reduces each to the primitives a person sees, with every
+   transform applied (corners, centres, ends and text anchors in the screen's coordinates)
+   and the paint the canvas's CSS or the drawing's attributes give them
+   (`tests/support/projectionParity.ts`); any other attribute a primitive carries is compared
+   as it is. Fixtures: every primitive with rotation, opacity
+   and its own paint, nested rotated instances, wrapped text, an image, a hidden shape, a
+   frame with its own theme and a state-driven badge (`tests/support/parityArtwork.ts`);
+   theme and width modes; automatic and explicit screen layouts; stacks with Fill;
+   responsive variants; a repeated list and a selected record; and the five starter
+   templates. Export must equal the canvas exactly. Prototype at launch must equal it shape
+   by shape, except that instances hidden at start draw nothing; each variant a control
+   picks must draw as the canvas draws that variant chosen on the instance, each hidden
+   instance a control reveals as the canvas draws it, and each record as the canvas draws
+   the template with that record's values. Selected artwork outside Screens exports as the
+   canvas draws it. The suite runs with the unit tests on every pull request and push to
+   master. It found no differences in today's projection code. Not covered: images'
+   content (only their placement), the canvas's selection and hover styles, where a list
+   places its rows, and Preview's native fields drawn over inputs. Step 8 is complete.
 9. **First-run path (S–M).** Template, edit, Prototype, share link, with none of the advanced
    concepts required; measure time to the first shared link.
 10. **Housekeeping (S).** Move code the server shares into one folder copied whole by the

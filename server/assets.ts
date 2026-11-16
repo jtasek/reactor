@@ -224,6 +224,8 @@ export async function deleteUnusedAssets(db: Db, blobs: BlobStorage, before: Dat
         .deleteFrom('assets')
         .where('created_at', '<', before)
         .where('hash', 'not in', (select) => select.selectFrom('document_assets').select('hash'))
+        // A deleted document's images, kept while it can be restored.
+        .where('hash', 'not in', (select) => select.selectFrom('snapshot_assets').select('hash'))
         .execute();
     await blobs.removeUnused(before);
 }

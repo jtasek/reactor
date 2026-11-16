@@ -1,3 +1,5 @@
+import type { DocumentSizeConfiguration } from './services/documentSizeConfiguration';
+import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord } from './dataTypes';
@@ -424,6 +426,8 @@ export interface Frame {
     kind?: 'frame' | 'screen' | 'view';
     /** Screens are source definitions; every canvas placement is a separate view. */
     definitionOnly?: true;
+    /** The Screen a prototype starts on. Read through `startScreen`, which settles ties. */
+    start?: true;
     /** A separate artwork tree owned by its parent screen, never a destination. */
     screenLayout?: true;
     /** Screen rules by rule ID, so people adding rules at once keep both; a rule's
@@ -654,6 +658,8 @@ export type Configuration = {
     debugMode: boolean;
     /** How the Documents page shows documents, kept per device. */
     documentsLayout: DocumentsLayout;
+    documentSize: DocumentSizeConfiguration;
+    errorReport: ErrorReportConfiguration;
     panelLayout: Record<string, PanelPlacement>;
     version: string;
 };
@@ -682,6 +688,15 @@ export type Application = {
     id: string;
     account: Account;
     documentAccess: Record<string, DocumentAccess>;
+    /**
+     * Documents a newer editor changed, by id, with the lowest document format that may
+     * edit them: this copy only shows them until it reloads. Never saved.
+     */
+    outdatedDocuments: Record<string, number>;
+    /** Documents the server sync holds back as too large to send, with their size. Never saved. */
+    tooLargeToSync: Record<string, number>;
+    /** The outdated document whose gesture stopped part way, to say so. Never saved. */
+    interruptedDocumentId?: string;
     ai: AiAvailability;
     commands: HashTable<Command>;
     commandsIds: string[];
@@ -709,6 +724,8 @@ export type Application = {
         componentOrigin?: { componentId: string; instanceId: string; position: Point; size: Size };
     } | null;
     resetDocumentId: string | null;
+    /** The document whose server history is shown, while it is. */
+    historyDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
     guideDragActive: boolean;

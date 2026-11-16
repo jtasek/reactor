@@ -10,6 +10,14 @@ import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
 import type { Database } from '../../server/schema';
 import { createSync } from '../../server/sync';
+import {
+    browserErrors,
+    createMetrics,
+    metricsRoutes,
+    type BrowserErrorLimits
+} from '../../server/metrics';
+import { sharedPrototypes } from '../../server/repositories/prototypeLinks';
+import { SCHEMA_VERSION } from '../../src/app/services/schemaVersion';
 
 export const ORIGIN = 'http://localhost:4000';
 
@@ -121,6 +129,7 @@ export interface Workspace {
     kind: string;
     name: string;
     role: string;
+    ai: boolean;
 }
 
 export interface DocumentSummary {
@@ -148,9 +157,18 @@ export interface ServeOptions {
     socialProviders?: Parameters<typeof createAuth>[0]['socialProviders'];
     databasePlugins?: KyselyPlugin[];
     sessionCheck?: number;
+    /** The document format of the editor the sync server serves, or how to read it. */
+    editorVersion?: number | (() => number);
+    /** The server's clock, for snapshots, saves and deletions. */
+    now?: () => Date;
     assetQuota?: number;
     /** Where AI requests go, and their limits; without it, AI is off. */
     ai?: { provider: AiProvider; limits?: AiLimits };
+    /** The bearer token `/metrics` takes; without it, there are no metrics routes. */
+    metricsToken?: string;
+    browserErrorLimits?: BrowserErrorLimits;
+    /** Where browser error reports are logged. */
+    log?: { warn: (...args: unknown[]) => void };
 }
 
 /**
@@ -170,30 +188,50 @@ export async function startServer({
     socialProviders,
     previewOrigin,
     sessionCheck,
+    editorVersion,
+    now,
     assetQuota,
     ai,
-    databasePlugins
+    databasePlugins,
+    metricsToken,
+    browserErrorLimits,
+    log: browserLog = { warn: () => {} }
 }: ServeOptions = {}) {
     const accounts = await startAccounts(databasePlugins, socialProviders);
     const app = express();
     const log = { error: () => {}, warn: () => {} };
+    const metrics = createMetrics();
     const sync = createSync({
+        metrics,
         db: accounts.db,
         auth: accounts.auth,
         origin: ORIGIN,
         log,
-        sessionCheck
+        sessionCheck,
+        editorVersion,
+        now
     });
 
+    app.use(
+        metricsRoutes({
+            token: metricsToken,
+            metrics,
+            prototypes: () => sharedPrototypes(accounts.db)
+        })
+    );
+    app.use(browserErrors({ metrics, log: browserLog, limits: browserErrorLimits }));
     app.all('/api/auth/*splat', authHandler(accounts.auth));
     app.use(
         '/api',
         createApi({
+            metrics,
             db: accounts.db,
             auth: accounts.auth,
             origin: ORIGIN,
             onDeleted: sync.closeDocument,
             onAccessChanged: sync.closeMember,
+            history: sync,
+            now,
             log,
             assetQuota,
             previewOrigin,
@@ -271,11 +309,13 @@ export async function startServer({
 
     return {
         db: accounts.db,
+        metrics,
+        address: `http://127.0.0.1:${port}`,
         call,
         json,
         user,
         sync,
-        syncURL: `ws://127.0.0.1:${port}/sync`,
+        syncURL: `ws://127.0.0.1:${port}/sync?editor=${SCHEMA_VERSION}`,
         close: async () => {
             await sync.close();
             server.close();

@@ -35,7 +35,7 @@ async function signInWithAi(page: Page, answer: (body: object) => Promise<string
         requests.push(body);
         await route.fulfill({ contentType: 'application/x-ndjson', body: await answer(body) });
     });
-    await page.routeWebSocket('**/sync', () => {});
+    await page.routeWebSocket(/\/sync(\?|$)/, () => {});
 
     return requests;
 }

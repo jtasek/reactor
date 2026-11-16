@@ -17,17 +17,25 @@ import {
 import {
     allows,
     createDocument,
-    deleteDocument,
     listDocuments,
     ensurePersonalWorkspace,
     workspaceRole,
     documentRole,
+    documentWorkspace,
     listWorkspaces
 } from './workspaces.ts';
 import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
 import { createInvitations } from './invitations.ts';
+import {
+    deleteDocumentKeepingHistory,
+    listDeletedDocuments,
+    listSnapshots,
+    readSnapshot,
+    restoreDeletedDocument
+} from './history.ts';
 import type { AiProvider } from './aiTasks.ts';
 import type { Auth } from './auth.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db, Log } from './schema.ts';
 
 declare global {
@@ -63,6 +71,16 @@ const ASSET = '/documents/:documentId/assets/:hash';
 
 const BYTES = 'application/octet-stream';
 
+/** What the API needs of the document sync to keep and restore documents' history. */
+export interface HistorySync {
+    /** The document format of the editor served. */
+    version(): number;
+    /** A document's whole content, including changes not saved yet. */
+    currentState(documentId: string): Promise<Uint8Array>;
+    /** Restores a document to a whole state, as a new change; false when it is gone. */
+    restore(documentId: string, state: Uint8Array, userId: string): Promise<boolean>;
+}
+
 /** Whether the request uploads an asset, the one that sends bytes. */
 const uploadsAsset = (req: Request) =>
     req.method === 'PUT' && /^\/documents\/[^/]+\/assets\/[^/]+$/.test(req.path);
@@ -83,9 +101,16 @@ export function createApi({
     blobs = postgresBlobs(db),
     assetQuota = WORKSPACE_ASSET_BYTES,
     ai,
-    previewOrigin
+    previewOrigin,
+    history,
+    metrics = noMetrics,
+    now = () => new Date()
 }: {
     db: Db;
+    history: HistorySync;
+    metrics?: Metrics;
+    /** The time deletions are dated with; a test may move it on. */
+    now?: () => Date;
     previewOrigin?: string;
     auth: Auth;
     origin: string;
@@ -99,7 +124,7 @@ export function createApi({
     ai?: { provider: AiProvider; limits?: AiLimits };
 }) {
     const api = express.Router();
-    api.use(publicPrototypeLinks(db, previewOrigin));
+    api.use(publicPrototypeLinks(db, previewOrigin, { metrics, log }));
 
     // Only public provider names, so signed-out people see the configured sign-in choices.
     api.get('/sign-in/providers', (_req, res) => {
@@ -132,6 +157,16 @@ export function createApi({
     });
     const readJson = express.json({ limit: '16kb' });
 
+    /** The user's role on a document and its workspace, when they may read it. */
+    const readableDocument = async (userId: string, documentId: string) => {
+        const role = await documentRole(db, userId, documentId);
+        const workspaceId = allows(role, 'viewer')
+            ? await documentWorkspace(db, documentId)
+            : undefined;
+
+        return { role, workspaceId };
+    };
+
     // An AI request reads its larger body once the user may make one.
     api.use((req, res, next) =>
         sendsAiRequest(req) || sendsPrototypeSnapshot(req) ? next() : readJson(req, res, next)
@@ -150,13 +185,38 @@ export function createApi({
         return next();
     });
 
-    api.use(prototypeLinks(db, previewOrigin));
+    api.use(prototypeLinks(db, previewOrigin, { metrics, log }));
     api.use(createInvitations(db));
     api.use(createMembers(db, onAccessChanged, log));
 
     api.get('/workspaces', async (req, res) => {
         await ensurePersonalWorkspace(db, req.userId);
         res.json(await listWorkspaces(db, req.userId));
+    });
+
+    // Admins turn AI on or off for everyone in the workspace; the gateway checks it on every request.
+    api.put('/workspaces/:workspaceId/ai', async (req, res) => {
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
+        const enabled: unknown = req.body?.enabled;
+
+        if (!allows(role, 'viewer')) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        if (!allows(role, 'admin')) {
+            return refuse(res, 403, 'FORBIDDEN');
+        }
+
+        if (typeof enabled !== 'boolean') {
+            return refuse(res, 400, 'INVALID_BODY');
+        }
+
+        await db
+            .updateTable('workspaces')
+            .set({ ai_enabled: enabled })
+            .where('id', '=', req.params.workspaceId)
+            .execute();
+        res.status(204).end();
     });
 
     api.get('/workspaces/:workspaceId/documents', async (req, res) => {
@@ -217,10 +277,130 @@ export function createApi({
             return refuse(res, 403, 'FORBIDDEN');
         }
 
-        await deleteDocument(db, req.params.documentId);
+        const state = await history.currentState(req.params.documentId);
+
+        await deleteDocumentKeepingHistory(db, {
+            documentId: req.params.documentId,
+            state,
+            userId: req.userId,
+            now: now()
+        });
         onDeleted(req.params.documentId);
 
         res.status(204).end();
+    });
+
+    // The document's earlier states, for anyone who can read it.
+    api.get('/documents/:documentId/history', async (req, res) => {
+        const { workspaceId } = await readableDocument(req.userId, req.params.documentId);
+
+        if (!workspaceId) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        const version = history.version();
+        const snapshots = await listSnapshots(db, req.params.documentId, workspaceId);
+
+        res.set('Cache-Control', 'no-store');
+        res.json(
+            snapshots.map((snapshot) => ({ ...snapshot, restorable: snapshot.version <= version }))
+        );
+    });
+
+    // A snapshot's content, as one Yjs update, to show before restoring it.
+    api.get('/documents/:documentId/history/:snapshotId', async (req, res) => {
+        const { workspaceId } = await readableDocument(req.userId, req.params.documentId);
+        const snapshot =
+            workspaceId &&
+            (await readSnapshot(db, req.params.documentId, workspaceId, req.params.snapshotId));
+
+        if (!snapshot) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        res.set({ 'Content-Type': BYTES, 'Cache-Control': 'private, no-store' });
+        res.end(snapshot.state);
+    });
+
+    // Restores the document to a snapshot, as a change everyone with it open receives.
+    api.post('/documents/:documentId/history/:snapshotId/restore', async (req, res) => {
+        const { role, workspaceId } = await readableDocument(req.userId, req.params.documentId);
+
+        if (!workspaceId) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        if (!allows(role, 'editor')) {
+            return refuse(res, 403, 'FORBIDDEN');
+        }
+
+        const snapshot = await readSnapshot(
+            db,
+            req.params.documentId,
+            workspaceId,
+            req.params.snapshotId
+        );
+
+        if (!snapshot) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        // Written by a newer release than the one served, as after a rollback.
+        if (snapshot.version > history.version()) {
+            return refuse(res, 409, 'NEWER_FORMAT');
+        }
+
+        const restored = await history.restore(
+            req.params.documentId,
+            new Uint8Array(snapshot.state),
+            req.userId
+        );
+
+        if (!restored) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        res.status(204).end();
+    });
+
+    // Deleted documents, which only admins could delete, so only they see and restore them.
+    api.get('/workspaces/:workspaceId/deleted-documents', async (req, res) => {
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
+
+        if (!allows(role, 'viewer')) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        if (!allows(role, 'admin')) {
+            return refuse(res, 403, 'FORBIDDEN');
+        }
+
+        res.set('Cache-Control', 'no-store');
+        res.json(await listDeletedDocuments(db, req.params.workspaceId));
+    });
+
+    api.post('/workspaces/:workspaceId/deleted-documents/:documentId/restore', async (req, res) => {
+        const role = await workspaceRole(db, req.userId, req.params.workspaceId);
+
+        if (!allows(role, 'viewer')) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        if (!allows(role, 'admin')) {
+            return refuse(res, 403, 'FORBIDDEN');
+        }
+
+        const document = await restoreDeletedDocument(db, {
+            workspaceId: req.params.workspaceId,
+            documentId: req.params.documentId,
+            userId: req.userId
+        });
+
+        if (!document) {
+            return refuse(res, 404, 'NOT_FOUND');
+        }
+
+        res.status(201).json(document);
     });
 
     api.put(
@@ -307,7 +487,7 @@ export function createApi({
     });
 
     if (ai) {
-        api.use('/ai', createAi({ db, ...ai }));
+        api.use('/ai', createAi({ db, metrics, ...ai }));
     }
 
     api.use(

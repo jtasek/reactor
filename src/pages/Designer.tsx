@@ -32,6 +32,9 @@ import { usePreviewOpen } from 'src/app/previewHooks';
 import { InteractivePreview } from 'src/ui/components/InteractivePreview';
 import { useAiEdit } from 'src/app/aiHooks';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
+import { DocumentHistory } from 'src/ui/components/DocumentHistory';
+import { MoveDocuments } from 'src/ui/components/MoveDocuments';
+import { DocumentSize } from 'src/ui/components/DocumentSize';
 import { registerEditor } from './registerEditor';
 import { CommandAvailability } from './CommandAvailability';
 import { Viewer } from './Viewer';
@@ -116,6 +119,9 @@ export const Designer: FC = () => {
             </PanelLayout>
             <StatusBar />
             <ResetDocumentDialog />
+            <DocumentHistory />
+            <MoveDocuments />
+            <DocumentSize />
         </Layout>
     );
 };

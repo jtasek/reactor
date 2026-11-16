@@ -130,6 +130,70 @@ describe('document sync', () => {
         expect(notes(later.document)).toBe('Ship it');
     });
 
+    it('drops version marks newer than its editor, as a rolled-back release leaves', async () => {
+        const { served, ada, plan } = await start({ editorVersion: 31 });
+        const versions = (document: Y.Doc) => [...document.getMap('versions').keys()].sort();
+
+        // A copy of a release newer than the one served, and a bogus key.
+        const newer = open(served, ada.cookie, plan.id);
+        const other = open(served, ada.cookie, plan.id);
+
+        expect(await newer.outcome).toBe('synced');
+        expect(await other.outcome).toBe('synced');
+        newer.document.transact(() => {
+            newer.document.getMap('versions').set('31', true);
+            newer.document.getMap('versions').set('32', true);
+            newer.document.getMap('versions').set('many', true);
+            newer.document.getText('notes').insert(0, 'Kept');
+        });
+
+        await vi.waitFor(() => expect(notes(other.document)).toBe('Kept'));
+        await vi.waitFor(() => expect(versions(other.document)).toEqual(['31']));
+        await vi.waitFor(() => expect(versions(newer.document)).toEqual(['31']));
+    });
+
+    it('drops newer version marks a saved document holds when it loads', async () => {
+        const { served, ada, plan } = await start({ editorVersion: 31 });
+        const saved = new Y.Doc();
+
+        saved.getMap('versions').set('31', true);
+        saved.getMap('versions').set('40', true);
+        await sql`insert into document_states (document_id, state, updated_at)
+            values (${plan.id}, ${Buffer.from(Y.encodeStateAsUpdate(saved))}, now())`.execute(
+            served.db
+        );
+
+        const copy = open(served, ada.cookie, plan.id);
+
+        expect(await copy.outcome).toBe('synced');
+        expect([...copy.document.getMap('versions').keys()]).toEqual(['31']);
+    });
+
+    it('turns away an editor older than the one it serves, saying which format it needs', async () => {
+        const { served, ada } = await start({ editorVersion: 32 });
+        const closed = (url: string) =>
+            new Promise<[number, string]>((resolve) => {
+                const socket = new WebSocket(url, {
+                    headers: { origin: ORIGIN, cookie: ada.cookie }
+                });
+
+                socket.on('close', (code, reason) => resolve([code, reason.toString()]));
+            });
+        const base = served.syncURL.replace(/\?.*/, '');
+
+        expect(await closed(`${base}?editor=31`)).toEqual([4426, '32']);
+        // Builds from before the check name no format.
+        expect(await closed(base)).toEqual([4426, '32']);
+
+        const current = new WebSocket(`${base}?editor=32`, {
+            headers: { origin: ORIGIN, cookie: ada.cookie }
+        });
+        onTestFinished(() => current.close());
+        await new Promise((resolve) => current.on('open', resolve));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(current.readyState).toBe(WebSocket.OPEN);
+    });
+
     it('refuses a document to someone who may not read it', async () => {
         const { served, grace, plan } = await start();
 

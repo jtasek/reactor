@@ -143,6 +143,8 @@ export interface UpdateFrame {
         layoutId?: string | null;
         layoutMode?: 'auto' | null;
         responsiveLayouts?: Frame['responsiveLayouts'] | null;
+        /** `true` on a Screen makes it the prototype's start; `null` clears it. */
+        start?: true | null;
     };
 }
 export interface DeleteFrame {

@@ -18,8 +18,13 @@ import { vi } from 'vitest';
 import { config } from 'src/app';
 import { DEFAULT_ARROW_KEY_STEP, createApplication, createDocument } from 'src/app/factories';
 import { DEFAULT_PANEL_LAYOUT, readPanelLayout } from 'src/app/panelLayout';
+import {
+    DEFAULT_DOCUMENT_SIZE,
+    type DocumentSizeConfiguration
+} from 'src/app/services/documentSize';
 import { Collaboration } from 'src/app/services/collaboration';
 import { createClipboard } from 'src/app/services/clipboard';
+import { DEFAULT_ERROR_REPORT } from 'src/app/services/errorReport';
 import { createAssets } from 'src/app/services/assets';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
@@ -66,6 +71,7 @@ export function createTestStore(
     options: {
         autoSave?: boolean;
         arrowKeyStep?: number;
+        documentSize?: Partial<DocumentSizeConfiguration>;
         collaboration?: Collaboration;
         indexedDB?: IDBFactory;
         openChannel?: (name?: string) => Channel;
@@ -167,6 +173,8 @@ export function createTestStore(
             autoSave: options.autoSave ?? false,
             debugMode: false,
             documentsLayout: 'cards',
+            documentSize: { ...DEFAULT_DOCUMENT_SIZE, ...options.documentSize },
+            errorReport: { ...DEFAULT_ERROR_REPORT },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
             version: '1.0'
         }

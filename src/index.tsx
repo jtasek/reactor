@@ -4,6 +4,9 @@ import { Shell } from './app/components/Shell';
 import { config } from './app';
 import { createOvermind } from 'overmind';
 import { createRoot } from 'react-dom/client';
+import { reportErrors } from './app/services/errorReport';
+
+reportErrors(config.state.config.errorReport);
 
 const overmind = createOvermind(config, {
     devtools: process.env.NODE_ENV !== 'production' && config.state.config.debugMode

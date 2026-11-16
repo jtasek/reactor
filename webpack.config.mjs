@@ -117,12 +117,17 @@ export const config = {
     // that every selection write keeps, so selection readers stop depending on every shape.
     // 2026-11-11: +3 KiB entry and per file for the container index (`containerState.ts`)
     // that lets visibility and lock checks skip scanning every group, layer and component.
+    // 2026-11-13: +1 KiB entry for the version check (S1 step 1): a document a newer editor
+    // changed goes view only, stops a held drag and becomes editable again after a rollback.
+    // 2026-11-15: +1 KiB entry and per file for the size warning and its configuration (S1 step 6).
+    // 2026-11-15: +1 KiB entry for the browser error report (S1 step 7), which has to listen
+    // from the start to hear errors as pages open (~750 bytes).
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 504 * 1024,
-              maxAssetSize: 253 * 1024
+              maxEntrypointSize: 507 * 1024,
+              maxAssetSize: 254 * 1024
           },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.

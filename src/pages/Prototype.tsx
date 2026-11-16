@@ -4,7 +4,7 @@ import { SharePrototype } from './SharePrototype';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
-import { screenFrames } from 'src/app/screens';
+import { screenFrames, startScreen } from 'src/app/screens';
 import { prototypeModes } from 'src/app/modeEdits';
 import { ordered } from 'src/app/variableModes';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
@@ -82,8 +82,10 @@ function PrototypeWorkspace() {
     const actions = useActions();
     const [session, setSession] = useState<PreviewSession>(() => {
         const requested = new URLSearchParams(window.location.search).get('screen');
+        // A link's screen, then the view Play was pressed on, then the document's start.
         const initial =
-            screens.find((screen) => screen.id === (requested ?? seed.screenId)) ?? screens[0];
+            screens.find((screen) => screen.id === (requested ?? seed.screenId)) ??
+            startScreen(document);
         const fromView = initial?.id === seed.screenId;
 
         return {

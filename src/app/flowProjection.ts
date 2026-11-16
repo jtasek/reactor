@@ -3,7 +3,8 @@ import { shownShapesIds } from './membership';
 import { screenOwners } from './screenViews';
 import { screenFrames } from './screens';
 import { isShapeLocked } from './utils';
-import { effectiveActivation } from './screenInteractions';
+import { effectiveActivation, inheritedActivation } from './screenInteractions';
+import { effectiveRoleSettings } from './componentRoles';
 import { prototypeTargetCheck } from './interactiveVariants';
 
 /** Definitions and authored layout controls, independent of canvas placements and geometry. */
@@ -31,6 +32,12 @@ export function projectFlow(document: Document) {
         sets?: { id: string; name: string; value: boolean };
         /** The screen instance holding it starts hidden in the prototype. */
         startsHidden?: string;
+        /** The named state the screen instance holding it follows, and the value that shows it. */
+        follows?: { id: string; when: boolean };
+        /** Acts on Enter in a field, not on a press. */
+        enter: boolean;
+        /** Uses its component's action. */
+        inherited: boolean;
         editable: boolean;
         shared: boolean;
         /** Preview never draws it: hidden here or in a hidden container. */
@@ -43,7 +50,12 @@ export function projectFlow(document: Document) {
         screenId: string,
         path: string,
         ancestors: Set<string>,
-        state: { hidden: boolean; unusedVariant: boolean; startsHidden?: string }
+        state: {
+            hidden: boolean;
+            unusedVariant: boolean;
+            startsHidden?: string;
+            follows?: { id: string; when: boolean };
+        }
     ) => {
         const component = document.components[instance.componentId];
         if (!component || ancestors.has(component.id)) {
@@ -64,6 +76,8 @@ export function projectFlow(document: Document) {
             instanceId: instance.id,
             name: instance.name,
             shared: path !== instance.id,
+            enter: effectiveRoleSettings(component, instance).role === 'input',
+            inherited: inheritedActivation(instance),
             ...state,
             target: activation?.screenId,
             ...(activation?.type === 'setState'
@@ -134,6 +148,9 @@ export function projectFlow(document: Document) {
             visit(shape, owner, shape.id, new Set(), {
                 hidden: !shown.has(shape.id),
                 unusedVariant: false,
+                ...(boundState && isTarget(shape.id, owner)
+                    ? { follows: { id: boundState.id, when } }
+                    : {}),
                 ...(startsHidden && isTarget(shape.id, owner)
                     ? { startsHidden: boundState ? `state:${boundState.id}:${when}` : shape.id }
                     : {})

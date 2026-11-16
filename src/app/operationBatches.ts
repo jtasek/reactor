@@ -972,8 +972,10 @@ function stage(
                     if (document.locked) {
                         throw new Error('The document is locked.');
                     }
+                    // A copied or proposed Screen never takes the start from the one that has it.
                     const frame = readEntity('frames', {
                         ...operation.frame,
+                        start: undefined,
                         id: ids.get(operation.key)
                     });
                     // Layout rules may point forward to an artwork tree added with its screen.
@@ -1018,7 +1020,8 @@ function stage(
                         'stack',
                         'layoutId',
                         'layoutMode',
-                        'responsiveLayouts'
+                        'responsiveLayouts',
+                        'start'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
@@ -1031,14 +1034,18 @@ function stage(
                         ...(operation.changes.stack === null ? { stack: undefined } : {}),
                         ...(operation.changes.layoutId === null ? { layoutId: undefined } : {}),
                         ...(operation.changes.layoutMode === null ? { layoutMode: undefined } : {}),
+                        ...(operation.changes.start === null ? { start: undefined } : {}),
                         ...(operation.changes.responsiveLayouts === null
                             ? { responsiveLayouts: undefined }
                             : {}),
                         ...(operation.changes.kind === 'frame'
-                            ? { responsiveLayouts: undefined }
+                            ? { responsiveLayouts: undefined, start: undefined }
                             : {}),
                         ...(operation.changes.kind === 'screen' ? { screenLayout: undefined } : {})
                     });
+                    if (operation.changes.start === true && frame.kind !== 'screen') {
+                        throw new Error('Only a Screen can be the start.');
+                    }
                     if (frame.layoutId && 'layoutId' in operation.changes) {
                         frame.layoutId = reference(frame.layoutId, 'frames', index);
                     }

@@ -26,7 +26,9 @@ declare namespace StylesCssNamespace {
     layerManagerTitle: string;
     layerName: string;
     layerRow: string;
+    menuDetail: string;
     menuIconSpace: string;
+    menuSheet: string;
     muted: string;
     name: string;
     newLayer: string;

@@ -4,14 +4,18 @@ import type { Application } from './types';
 export interface DocumentAccess {
     workspaceId?: string;
     role: 'viewer' | 'editor' | 'admin' | 'unknown';
+    /** Set when the workspace's admins turned AI off. */
+    aiOff?: boolean;
 }
 
 export const isReadOnly = (
-    state: Pick<Application, 'account' | 'documentAccess' | 'currentDocumentId'>,
+    state: Pick<Application, 'account' | 'documentAccess' | 'currentDocumentId'> &
+        Partial<Pick<Application, 'outdatedDocuments'>>,
     id = state.currentDocumentId
 ) => {
     const role = state.documentAccess[id]?.role;
     return (
+        isOutdated(state, id) ||
         role === 'viewer' ||
         role === 'unknown' ||
         (role === undefined && state.account.kind === 'signedIn')
@@ -24,3 +28,9 @@ export const canDeleteDocument = (
 ) =>
     state.documentAccess[id]?.role === 'admin' ||
     (!state.documentAccess[id] && state.account.kind !== 'signedIn');
+
+/** Whether a newer editor changed the document, so this copy may only show it until it reloads. */
+export const isOutdated = (
+    state: Partial<Pick<Application, 'outdatedDocuments'>>,
+    id: string
+): boolean => !!state.outdatedDocuments?.[id];

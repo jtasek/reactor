@@ -228,6 +228,103 @@ const migrations: Record<string, Migration> = {
                 .column('document_id')
                 .execute();
         }
+    },
+    '0008_document_snapshots': {
+        async up(db) {
+            // Earlier states of a document, kept past its deletion, until pruned.
+            await db.schema
+                .createTable('document_snapshots')
+                .addColumn('id', 'text', (c) => c.primaryKey())
+                // Not a reference: a deleted document's snapshots are how it is restored.
+                .addColumn('document_id', 'text', (c) => c.notNull())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('name', 'text', (c) => c.notNull())
+                .addColumn('state', 'bytea', (c) => c.notNull())
+                .addColumn('size', 'integer', (c) => c.notNull())
+                .addColumn('version', 'integer', (c) => c.notNull())
+                .addColumn('reason', 'text', (c) =>
+                    c.notNull().check(sql`reason in ('scheduled', 'before-restore', 'deleted')`)
+                )
+                .addColumn('created_by', 'text', (c) =>
+                    c.references('auth.user.id').onDelete('set null')
+                )
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .execute();
+            await db.schema
+                .createIndex('document_snapshots_document_time')
+                .on('document_snapshots')
+                .columns(['document_id', 'created_at'])
+                .execute();
+            await db.schema
+                .createIndex('document_snapshots_workspace')
+                .on('document_snapshots')
+                .column('workspace_id')
+                .execute();
+            // The images a deleted document used, spared by the cleanup until it is restored or pruned.
+            await db.schema
+                .createTable('snapshot_assets')
+                .addColumn('snapshot_id', 'text', (c) =>
+                    c.notNull().references('document_snapshots.id').onDelete('cascade')
+                )
+                .addColumn('hash', 'text', (c) => c.notNull().references('assets.hash'))
+                .addPrimaryKeyConstraint('snapshot_assets_pkey', ['snapshot_id', 'hash'])
+                .execute();
+            await db.schema
+                .createIndex('snapshot_assets_hash')
+                .on('snapshot_assets')
+                .column('hash')
+                .execute();
+        }
+    },
+    '0009_workspace_ai': {
+        async up(db) {
+            // Admins may turn AI off for a workspace; it is on until they do.
+            await db.schema
+                .alterTable('workspaces')
+                .addColumn('ai_enabled', 'boolean', (c) => c.notNull().defaultTo(true))
+                .execute();
+        }
+    },
+    '0010_prototype_measures': {
+        async up(db) {
+            // Each link shared, kept after it is revoked or expires, so it is still counted.
+            await db.schema
+                .createTable('shared_prototypes')
+                .addColumn('link_id', 'text', (c) => c.primaryKey())
+                .addColumn('workspace_id', 'text', (c) =>
+                    c.notNull().references('workspaces.id').onDelete('cascade')
+                )
+                .addColumn('document_id', 'text', (c) => c.notNull())
+                .addColumn('created_by', 'text', (c) =>
+                    c.references('auth.user.id').onDelete('set null')
+                )
+                .addColumn('screens', 'integer', (c) => c.notNull())
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .execute();
+            await db.schema
+                .createIndex('shared_prototypes_workspace')
+                .on('shared_prototypes')
+                .column('workspace_id')
+                .execute();
+            // Who opened it: a hash of the link and a random id the player's browser keeps.
+            await db.schema
+                .createTable('prototype_players')
+                .addColumn('link_id', 'text', (c) =>
+                    c.notNull().references('shared_prototypes.link_id').onDelete('cascade')
+                )
+                .addColumn('player', 'text', (c) => c.notNull())
+                .addColumn('opens', 'integer', (c) => c.notNull().defaultTo(1))
+                .addColumn('first_opened_at', 'timestamptz', (c) =>
+                    c.notNull().defaultTo(sql`now()`)
+                )
+                .addColumn('last_opened_at', 'timestamptz', (c) =>
+                    c.notNull().defaultTo(sql`now()`)
+                )
+                .addPrimaryKeyConstraint('prototype_players_pkey', ['link_id', 'player'])
+                .execute();
+        }
     }
 };
 

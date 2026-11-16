@@ -1,3 +1,5 @@
+import { DEFAULT_DOCUMENT_SIZE } from './services/documentSizeConfiguration';
+import { DEFAULT_ERROR_REPORT } from './services/errorReport';
 import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
 import { documentsIds } from './computed/documents';
@@ -357,6 +359,8 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             autoSave: true,
             debugMode: false,
             documentsLayout: 'cards',
+            documentSize: { ...DEFAULT_DOCUMENT_SIZE },
+            errorReport: { ...DEFAULT_ERROR_REPORT },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
         },
         previewModes: {},
@@ -367,6 +371,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         enteredGroupId: null,
         enteredComponentId: null,
         resetDocumentId: null,
+        historyDocumentId: null,
         aiEditDocumentId: null,
         guideDragActive: false,
         previewDocumentId: null,
@@ -381,6 +386,8 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         saveStatus: { kind: 'notSaving', reason: 'Documents are loading.' },
         account: { kind: 'loading' },
         documentAccess: {},
+        outdatedDocuments: {},
+        tooLargeToSync: {},
         ai: 'unavailable',
         ...options
     };

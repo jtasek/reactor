@@ -1,0 +1,56 @@
+.serverDeleted {
+    --server-deleted-gap: 0.5rem;
+    --server-deleted-row-padding: 0.5rem 0;
+    --server-deleted-button-padding: 0.375rem 0.875rem;
+
+    margin-top: 2rem;
+}
+
+.serverDeleted h2 {
+    font-size: var(--font-size-title-3);
+    font-weight: 600;
+}
+
+.serverDeleted > p {
+    color: var(--ink-muted);
+    margin-bottom: var(--server-deleted-gap);
+}
+
+.serverDeleted ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.serverDeleted li {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
+    display: flex;
+    gap: var(--server-deleted-gap);
+    padding: var(--server-deleted-row-padding);
+}
+
+.serverDeleted li > span {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.serverDeleted small {
+    color: var(--ink-muted);
+}
+
+.serverDeleted button {
+    background: transparent;
+    border: 1px solid var(--hairline-color);
+    border-radius: 100rem;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: var(--server-deleted-button-padding);
+}
+
+.serverDeleted button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}

@@ -46,6 +46,7 @@ const memberships = (db: Db, userId: string) =>
             'workspace.id',
             'workspace.kind',
             'workspace.name',
+            'workspace.ai_enabled as ai',
             select.fn.coalesce('member.role', 'workspace.default_role').as('role')
         ]);
 
@@ -67,6 +68,17 @@ export async function workspaceRole(db: Db, userId: string, workspaceId: string)
         .executeTakeFirst();
 
     return found?.role;
+}
+
+/** The workspace a document is in, or undefined when there is no such document. */
+export async function documentWorkspace(db: Db, documentId: string) {
+    const document = await db
+        .selectFrom('documents')
+        .select('workspace_id')
+        .where('id', '=', documentId)
+        .executeTakeFirst();
+
+    return document?.workspace_id;
 }
 
 /** The user's role on a document and its workspace, or undefined when they have none. */
@@ -149,6 +161,3 @@ export async function createDocument(
         created: false
     };
 }
-
-export const deleteDocument = (db: Db, documentId: string) =>
-    db.deleteFrom('documents').where('id', '=', documentId).execute();

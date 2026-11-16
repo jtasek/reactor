@@ -1,6 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import type { Command } from 'src/app/types';
 import { takesEditorInput } from 'src/events/input';
+import { aiOffered } from 'src/app/aiAccess';
 
 export const EditWithWordsCommand: Command = {
     id: 'edit-with-words',
@@ -12,9 +13,9 @@ export const EditWithWordsCommand: Command = {
         size: 24
     },
     shortcut: 'w',
-    // Offered on the application bar, and only where AI is available.
+    // Offered on the application bar, and only where AI is available and the workspace leaves it on.
     places: [],
     canExecute: ({ state }) =>
-        state.ai === 'available' && takesEditorInput(state) && !state.currentDocument.locked,
+        aiOffered(state) && takesEditorInput(state) && !state.currentDocument.locked,
     execute: ({ actions }) => actions.requestAiEdit()
 };

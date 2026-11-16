@@ -5,6 +5,12 @@ import type { Duplex } from 'node:stream';
 import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
+import { dropNewerVersions } from './documentVersions.ts';
+import { insertSnapshot, snapshotDue } from './history.ts';
+import { stampPresence, type PresenceUser } from './presence.ts';
+import { restoreContent } from './restoreContent.ts';
+import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';
 
@@ -12,10 +18,17 @@ import { allows, documentRole } from './workspaces.ts';
 export const SYNC_PATH = '/sync';
 
 /** The largest message a client may send, as the whole document when it first syncs. */
-const MAX_MESSAGE = 4 * 1024 * 1024;
+export const MAX_MESSAGE = 4 * 1024 * 1024;
 
 /** How many sockets one user may have open at once, across tabs and devices. */
 const MAX_SOCKETS_PER_USER = 16;
+
+/**
+ * Closes a socket from an editor older than the one served here, with the format it
+ * needs as the reason, so the editor offers Reload rather than writing what it may
+ * misread. The editor names its format in the `editor` query parameter.
+ */
+export const EDITOR_OUTDATED = 4426;
 
 /** How often an open socket's session is checked again, in milliseconds. */
 const SESSION_CHECK = 60 * 1000;
@@ -37,26 +50,50 @@ async function loadState(db: Db, documentId: string, document: Y.Doc) {
     }
 }
 
-/** Saves a document's whole content, unless it was deleted meanwhile. */
-async function saveState(db: Db, documentId: string, document: Y.Doc) {
+/**
+ * Saves a document's whole content, unless it was deleted meanwhile. When the
+ * document is due a snapshot, the content saved before is kept as one first, so
+ * each snapshot holds the document as it was before a stretch of changes.
+ */
+async function saveState(db: Db, documentId: string, document: Y.Doc, now: Date) {
     const state = Buffer.from(Y.encodeStateAsUpdate(document));
 
     await db.transaction().execute(async (trx) => {
         const updated = await trx
             .updateTable('documents')
-            .set({ updated_at: new Date() })
+            .set({ updated_at: now })
             .where('id', '=', documentId)
+            .returning(['workspace_id', 'name'])
             .executeTakeFirst();
 
-        if (updated.numUpdatedRows === 0n) {
+        if (!updated) {
             return;
+        }
+
+        if (await snapshotDue(trx, documentId, now)) {
+            const previous = await trx
+                .selectFrom('document_states')
+                .select('state')
+                .where('document_id', '=', documentId)
+                .executeTakeFirst();
+
+            if (previous) {
+                await insertSnapshot(trx, {
+                    documentId,
+                    workspaceId: updated.workspace_id,
+                    name: updated.name,
+                    state: new Uint8Array(previous.state),
+                    reason: 'scheduled',
+                    now
+                });
+            }
         }
 
         await trx
             .insertInto('document_states')
-            .values({ document_id: documentId, state, updated_at: new Date() })
+            .values({ document_id: documentId, state, updated_at: now })
             .onConflict((conflict) =>
-                conflict.column('document_id').doUpdateSet({ state, updated_at: new Date() })
+                conflict.column('document_id').doUpdateSet({ state, updated_at: now })
             )
             .execute();
     });
@@ -77,17 +114,44 @@ export function createSync({
     auth,
     origin,
     log,
-    sessionCheck = SESSION_CHECK
+    sessionCheck = SESSION_CHECK,
+    editorVersion,
+    metrics = noMetrics,
+    now = () => new Date()
 }: {
     db: Db;
     auth: Auth;
+    metrics?: Metrics;
     origin: string;
     log: Pick<Log, 'warn' | 'error'>;
     sessionCheck?: number;
+    /**
+     * The document format of the editor served here, read on each connection; the
+     * build's own unless a test sets it, as to deploy a newer release.
+     */
+    editorVersion?: number | (() => number);
+    /** The time snapshots and saves are dated with; a test may move it on. */
+    now?: () => Date;
 }) {
     const sockets = new Map<string, number>();
-    const hocuspocus = new Hocuspocus<{ userId: string }>({
+    const served = () =>
+        typeof editorVersion === 'function' ? editorVersion() : (editorVersion ?? SCHEMA_VERSION);
+    const saved = (result: string) =>
+        metrics.count('reactor_document_saves_total', 'Documents saved by the sync, by result.', {
+            result
+        });
+    const refused = (reason: string) =>
+        metrics.count(
+            'reactor_sync_refused_total',
+            'Sync connections refused before they opened, by reason.',
+            { reason }
+        );
+    const hocuspocus = new Hocuspocus<PresenceUser>({
         quiet: true,
+        // Pointers and selections are shared under the session's own name.
+        async beforeHandleAwareness(payload) {
+            stampPresence(payload);
+        },
         async onConnect({ context, documentName, connectionConfig }) {
             const role = await documentRole(db, context.userId, documentName);
 
@@ -106,16 +170,33 @@ export function createSync({
             }
             connection.readOnly = !allows(role, 'editor');
         },
-        onLoadDocument: ({ documentName, document }) => loadState(db, documentName, document),
+        async onLoadDocument({ documentName, document }) {
+            await loadState(db, documentName, document);
+            // A rolled-back release's marks would otherwise keep the document view only.
+            dropNewerVersions(document, served());
+        },
+        // Every client's change is checked, and the removal is shared like any change.
+        async onChange({ document }) {
+            dropNewerVersions(document, served());
+        },
         async onStoreDocument({ documentName, document }) {
             try {
-                await saveState(db, documentName, document);
+                await saveState(db, documentName, document, now());
+                saved('ok');
             } catch (error) {
+                saved('failed');
                 log.error(error, `Document ${documentName} could not be saved`);
                 throw error;
             }
         }
     });
+    let open = 0;
+    metrics.gauge('reactor_sync_connections', 'Sync sockets open now.', () => open);
+    metrics.gauge(
+        'reactor_sync_documents',
+        'Documents open in this process now.',
+        () => hocuspocus.documents.size
+    );
     const server = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE });
 
     const count = (userId: string, change: number) => {
@@ -138,6 +219,7 @@ export function createSync({
         }
 
         if (req.headers.origin !== origin) {
+            refused('origin');
             refuseUpgrade(socket, 403, 'Forbidden');
 
             return;
@@ -147,14 +229,28 @@ export function createSync({
         const session = await auth.api.getSession({ headers });
 
         if (!session) {
+            refused('session');
             refuseUpgrade(socket, 401, 'Unauthorized');
 
             return;
         }
 
         const userId = session.user.id;
+        const editor = Number(url.searchParams.get('editor'));
+        const version = served();
+
+        // Builds from before the parameter send none, and are older than any that check.
+        if (!(editor >= version)) {
+            refused('outdated');
+            server.handleUpgrade(req, socket, head, (websocket) =>
+                websocket.close(EDITOR_OUTDATED, `${version}`)
+            );
+
+            return;
+        }
 
         if ((sockets.get(userId) ?? 0) >= MAX_SOCKETS_PER_USER) {
+            refused('too-many');
             refuseUpgrade(socket, 429, 'Too Many Requests');
 
             return;
@@ -166,8 +262,14 @@ export function createSync({
         socket.once('close', () => count(userId, -1));
 
         server.handleUpgrade(req, socket, head, (websocket) => {
+            open++;
+            metrics.count('reactor_sync_connections_opened_total', 'Sync sockets opened.');
+            websocket.once('close', () => open--);
             const request = new Request(url, { headers });
-            const connection = hocuspocus.handleConnection(websocket, request, { userId });
+            const connection = hocuspocus.handleConnection(websocket, request, {
+                userId,
+                name: session.user.name
+            });
             const checking = setInterval(async () => {
                 let current;
 
@@ -208,7 +310,10 @@ export function createSync({
                 clearInterval(checking);
                 connection.handleClose({ code, reason: reason.toString() });
             });
-            websocket.on('error', (error) => log.warn(error, 'A sync connection failed'));
+            websocket.on('error', (error) => {
+                metrics.count('reactor_sync_errors_total', 'Sync sockets that failed.');
+                log.warn(error, 'A sync connection failed');
+            });
         });
     }
 
@@ -221,6 +326,63 @@ export function createSync({
                     socket.destroy();
                 });
             });
+        },
+        /** The document format of the editor served here. */
+        version: served,
+        /** A document's whole content: as open here, or else as saved. */
+        async currentState(documentId: string): Promise<Uint8Array> {
+            const open = hocuspocus.documents.get(documentId);
+
+            if (open) {
+                return Y.encodeStateAsUpdate(open);
+            }
+
+            const document = new Y.Doc();
+            await loadState(db, documentId, document);
+
+            return Y.encodeStateAsUpdate(document);
+        },
+        /**
+         * Restores a document's content to `snapshot`, a whole Yjs state, as a change
+         * everyone with it open receives. The content it replaces is kept as a
+         * snapshot first, so the restore can itself be undone by restoring that one.
+         */
+        async restore(documentId: string, snapshot: Uint8Array, userId: string) {
+            const restored = new Y.Doc();
+            Y.applyUpdate(restored, snapshot);
+
+            const connection = await hocuspocus.openDirectConnection(documentId, { userId });
+
+            try {
+                const document = connection.document;
+                const owner = await db
+                    .selectFrom('documents')
+                    .select(['workspace_id', 'name'])
+                    .where('id', '=', documentId)
+                    .executeTakeFirst();
+
+                if (!document || !owner) {
+                    return false;
+                }
+
+                await insertSnapshot(db, {
+                    documentId,
+                    workspaceId: owner.workspace_id,
+                    name: owner.name,
+                    state: Y.encodeStateAsUpdate(document),
+                    reason: 'before-restore',
+                    createdBy: userId,
+                    now: now()
+                });
+                // A snapshot from before a deleted document was restored names its old id.
+                const id = document.getMap('document').get('id');
+                if (id !== undefined) restored.getMap('document').set('id', id);
+                await connection.transact((live) => restoreContent(live, restored, now()));
+
+                return true;
+            } finally {
+                await connection.disconnect();
+            }
         },
         /** Disconnects everyone from a document, as when it is deleted. */
         closeDocument(documentId: string) {
@@ -247,7 +409,7 @@ export function createSync({
             server.close();
             await Promise.all(
                 [...hocuspocus.documents.values()].map((document) =>
-                    saveState(db, document.name, document)
+                    saveState(db, document.name, document, now())
                 )
             );
         }

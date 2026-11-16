@@ -1,6 +1,7 @@
 declare namespace SharingCssNamespace {
   export interface ISharingCss {
     card: string;
+    check: string;
     content: string;
     list: string;
     member: string;
@@ -8,6 +9,7 @@ declare namespace SharingCssNamespace {
     page: string;
     person: string;
     preview: string;
+    primary: string;
     result: string;
     secondary: string;
   }

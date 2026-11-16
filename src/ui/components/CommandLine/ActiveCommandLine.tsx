@@ -20,6 +20,7 @@ import {
     useEffects
 } from 'src/app/hooks';
 import { takesEditorInput } from 'src/events/input';
+import { aiOffered } from 'src/app/aiAccess';
 import { viewLayoutRoot } from 'src/app/screenLayouts';
 import { screenViewName } from 'src/app/screenViews';
 import { isFrameLocked, isFrameVisible } from 'src/app/frameState';
@@ -142,7 +143,7 @@ const ActiveCommandLine: FC = () => {
         if (documentId !== state.currentDocumentId) {
             return 'The document changed. Try again in the current document.';
         }
-        if (state.ai !== 'available' || !takesEditorInput(state) || state.currentDocument.locked) {
+        if (!aiOffered(state) || !takesEditorInput(state) || state.currentDocument.locked) {
             return 'AI chat is unavailable right now.';
         }
 
@@ -340,7 +341,7 @@ const ActiveCommandLine: FC = () => {
                         enabled: enabled[commands.indexOf(command)]
                     }))
             ]}
-            onAskAi={state.ai === 'available' && canEdit ? askAi : undefined}
+            onAskAi={aiOffered(state) && canEdit ? askAi : undefined}
         />
     );
 };

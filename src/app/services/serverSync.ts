@@ -5,6 +5,22 @@ import type { Api, ServerRecord, SyncStatus, Transport } from './api';
 import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
+import { SCHEMA_VERSION } from './schemaVersion';
+import { readPeers, type LocalPresence, type Peer } from './presence';
+import {
+    MAX_UPLOAD_BYTES,
+    measureDocument,
+    tooLargeMessage,
+    type DocumentSizeConfiguration
+} from './documentSize';
+
+export { followPresence, presence } from './presence';
+
+/** The close code and query parameter of the server's check of the editor's format. */
+const EDITOR_OUTDATED = 4426;
+
+/** The WebSocket close code for a message over the server's limit. */
+const MESSAGE_TOO_BIG = 1009;
 
 export interface ServerEvents {
     /** The documents this copy holds. */
@@ -21,6 +37,15 @@ export interface ServerEvents {
     changed(): void;
     /** Current workspace permissions, before opening or refreshing documents. */
     access?(documents: Record<string, DocumentAccess>): void;
+    /**
+     * The server serves a newer editor, whose format is `version`, and refuses this
+     * copy: it stops syncing until reloaded.
+     */
+    outdated?(version: number): void;
+    /** Who else has a document open changed: their pointers and selections. */
+    presence?(documentId: string, peers: Peer[]): void;
+    /** Without `bytes`, a document held back as too large is sent again. */
+    tooLarge?(documentId: string, bytes?: number, message?: string): void;
 }
 
 export interface ServerSyncOptions {
@@ -37,6 +62,10 @@ export interface ServerSyncOptions {
     signedIn(): Promise<boolean>;
     /** The documents' images, shared with the server as each document changes or links. */
     images?: Omit<AssetSyncSource, 'document'>;
+    /** The signed-in account, whose other copies are not shown as other people. */
+    self?: string;
+    /** `uploadBytes` is capped at what the server takes, `MAX_UPLOAD_BYTES`. */
+    sizes: DocumentSizeConfiguration;
 }
 
 const union = (ids: string[], more: string[]) => [...new Set([...ids, ...more])];
@@ -49,6 +78,7 @@ interface Link {
     replace: boolean;
     /** Ends the wait for the document to sync, as when it is closed first. */
     settle(): void;
+    synced: boolean;
 }
 
 /** How long to wait before trying an unreachable server again, at first and at most. */
@@ -79,6 +109,11 @@ export class ServerSync {
      * it keeps refusing is asked again ever more rarely rather than at once.
      */
     private readonly refused = new Map<string, number>();
+    /** Documents held back as too large to send, with their size. */
+    private readonly oversized = new Map<string, number>();
+    private readonly remeasure = new Map<string, ReturnType<typeof setTimeout>>();
+    /** Documents this copy created on the server that have not synced since. */
+    private readonly uploading = new Set<string>();
     private socket?: Hocuspocus.HocuspocusProviderWebsocket;
     private connected = false;
     private reachable = true;
@@ -89,8 +124,15 @@ export class ServerSync {
     private retryTimer?: ReturnType<typeof setTimeout>;
     private retryDelay = RETRY_FIRST;
     private stopped = false;
+    /**
+     * The server serves a newer editor and refused this copy: nothing is sent, but
+     * documents made or deleted here are still recorded, for the build that reloads.
+     */
+    private outdated = false;
 
     private readonly images?: AssetSync;
+    /** What this copy shares of the document it shows, through that document's awareness. */
+    private shown: { documentId?: string; local: LocalPresence } = { local: {} };
 
     constructor(private readonly options: ServerSyncOptions) {
         if (options.images) {
@@ -171,33 +213,41 @@ export class ServerSync {
 
     /** Creates a document this copy made on the server, then syncs it. */
     created(documentId: string): void {
-        if (this.stopped) {
+        if (this.stopped && !this.outdated) {
             return;
         }
 
         this.change(({ unsent, deleting }) => ({ unsent: union(unsent, [documentId]), deleting }));
-        void this.create(documentId);
+
+        if (!this.outdated) {
+            void this.create(documentId);
+        }
     }
 
     /** Deletes a document this copy deleted from the server, which may have it. */
     deleted(documentId: string): void {
         this.unlink(documentId);
+        this.fits(documentId);
 
-        if (this.stopped) {
+        if (this.stopped && !this.outdated) {
             return;
         }
 
-        this.deletions.add(documentId);
         this.change(({ unsent, deleting }) => ({
             unsent: unsent.filter((id) => id !== documentId),
             deleting: union(deleting, [documentId])
         }));
-        void this.sendDeletion(documentId);
+
+        if (!this.outdated) {
+            this.deletions.add(documentId);
+            void this.sendDeletion(documentId);
+        }
     }
 
     /** Stops syncing a document another copy on this device deleted. */
     forget(documentId: string): void {
         this.unlink(documentId);
+        this.fits(documentId);
     }
 
     /** Passes a change to the server: this copy's own, or another copy's on this device. */
@@ -208,13 +258,57 @@ export class ServerSync {
         if (link) {
             this.images?.changed(documentId);
         }
+        // The server would close the socket every document shares, and again on each reconnect.
+        if (link?.held && update.byteLength > this.uploadBytes && this.tooLarge(documentId)) {
+            return;
+        }
+
         if (link?.held) {
             Yjs.applyUpdate(link.doc, update, OUTGOING);
+        }
+
+        if (this.oversized.has(documentId) && !this.remeasure.has(documentId)) {
+            this.remeasure.set(
+                documentId,
+                setTimeout(() => {
+                    this.remeasure.delete(documentId);
+
+                    if (!this.tooLarge(documentId)) {
+                        void this.refresh();
+                    }
+                }, this.options.sizes.remeasureHeldBackMs)
+            );
+        }
+    }
+
+    /**
+     * Shares where this copy's pointer is and what it has selected in `documentId`,
+     * the document it shows, and nothing in the others it syncs. The server passes on
+     * no cleared states, so leaving a document first shares an empty state, which
+     * shows nothing; clearing it then stops this copy renewing it every 15 seconds,
+     * and the others drop it once it is 30 seconds old.
+     */
+    present(documentId: string | undefined, local: LocalPresence): void {
+        const previous = this.shown.documentId;
+
+        this.shown = { documentId, local };
+
+        if (previous !== documentId && previous !== undefined) {
+            const awareness = this.links.get(previous)?.provider.awareness;
+
+            awareness?.setLocalState({});
+            awareness?.setLocalState(null);
+        }
+
+        if (documentId !== undefined) {
+            this.links.get(documentId)?.provider.awareness?.setLocalState(local);
         }
     }
 
     dispose(): void {
         clearTimeout(this.retryTimer);
+        this.remeasure.forEach((timer) => clearTimeout(timer));
+        this.remeasure.clear();
         [...this.links.keys()].forEach((documentId) => this.unlink(documentId));
         this.socket?.destroy();
     }
@@ -272,7 +366,7 @@ export class ServerSync {
                 workspaces.flatMap((workspace, index) =>
                     lists[index].map(({ id }) => [
                         id,
-                        { workspaceId: workspace.id, role: workspace.role }
+                        { workspaceId: workspace.id, role: workspace.role, aiOff: !workspace.ai }
                     ])
                 )
             );
@@ -311,7 +405,7 @@ export class ServerSync {
 
         await Promise.all([
             ...kept
-                .filter((id) => !gone.includes(id))
+                .filter((id) => !gone.includes(id) && !this.oversized.has(id))
                 .map((id) => (listed.has(id) ? this.link(id, true) : this.create(id))),
             ...[...listed]
                 .filter((id) => !current.has(id) && !deletedHere.has(id))
@@ -328,7 +422,7 @@ export class ServerSync {
         }
 
         // Before the first refresh, which creates what this copy holds.
-        if (!workspaceId) {
+        if (!workspaceId || this.tooLarge(documentId)) {
             return Promise.resolve();
         }
 
@@ -353,6 +447,8 @@ export class ServerSync {
                     }));
 
                     if (this.options.events.documentIds().includes(documentId)) {
+                        this.uploading.add(documentId);
+
                         return this.link(documentId, true);
                     }
                 },
@@ -415,8 +511,9 @@ export class ServerSync {
                 websocketProvider: this.connect(),
                 name: documentId,
                 document: doc,
-                awareness: null,
                 onSynced: () => {
+                    link.synced = true;
+                    this.uploading.delete(documentId);
                     this.refused.delete(documentId);
                     this.images?.changed(documentId);
 
@@ -439,7 +536,27 @@ export class ServerSync {
                 // It may have been deleted, or not be created yet.
                 onAuthenticationFailed: () => this.leave(documentId)
             });
-            const link: Link = { doc, provider, held, replace, settle };
+            const link: Link = { doc, provider, held, replace, settle, synced: false };
+            const { awareness } = provider;
+
+            if (awareness) {
+                // Documents this copy does not show share nothing, and are not renewed.
+                awareness.setLocalState(
+                    this.shown.documentId === documentId ? this.shown.local : null
+                );
+                awareness.on('change', (changes: Record<string, number[]>) => {
+                    const others = Object.values(changes)
+                        .flat()
+                        .some((clientId) => clientId !== doc.clientID);
+
+                    if (others && this.links.get(documentId) === link) {
+                        events.presence?.(
+                            documentId,
+                            readPeers(awareness.getStates(), doc.clientID, this.options.self ?? '')
+                        );
+                    }
+                });
+            }
 
             doc.on('update', (update: Uint8Array, origin: unknown) => {
                 if (origin !== OUTGOING && link.held) {
@@ -484,7 +601,9 @@ export class ServerSync {
         }
 
         this.links.delete(documentId);
+        this.uploading.delete(documentId);
         link.settle();
+        this.options.events.presence?.(documentId, []);
 
         if (closed) {
             this.socket?.configuration.providerMap.delete(documentId);
@@ -495,11 +614,88 @@ export class ServerSync {
         this.options.events.changed();
     }
 
+    /** Holds a document back while it is too large to send whole; one not open here fits. */
+    private tooLarge(documentId: string): boolean {
+        const uploadBytes = this.uploadBytes;
+        const bytes =
+            measureDocument(() => this.options.collaboration.state(documentId), Yjs, uploadBytes) ??
+            0;
+
+        if (bytes <= uploadBytes) {
+            this.fits(documentId);
+
+            return false;
+        }
+
+        const first = !this.oversized.has(documentId);
+
+        if (this.oversized.get(documentId) !== bytes) {
+            this.oversized.set(documentId, bytes);
+            this.unlink(documentId);
+            this.options.events.tooLarge?.(
+                documentId,
+                bytes,
+                first
+                    ? tooLargeMessage(this.options.events.document(documentId)?.name, bytes)
+                    : undefined
+            );
+        }
+
+        return true;
+    }
+
+    private get uploadBytes() {
+        return Math.min(this.options.sizes.uploadBytes, MAX_UPLOAD_BYTES);
+    }
+
+    private fits(documentId: string) {
+        clearTimeout(this.remeasure.get(documentId));
+        this.remeasure.delete(documentId);
+
+        if (this.oversized.delete(documentId)) {
+            this.options.events.tooLarge?.(documentId);
+        }
+    }
+
+    /**
+     * The message the server refused synced a document with something unconfirmed.
+     * First uploads are the likely cause; only when none is too large are the others
+     * held back, though one the server already holds syncs only what it lacks.
+     */
+    private holdBackOversized() {
+        const pending = [...this.links.entries()]
+            .filter(
+                ([, { held, synced, provider }]) => held && (!synced || provider.hasUnsyncedChanges)
+            )
+            .map(([documentId]) => documentId);
+        const uploads = pending.filter((documentId) => this.uploading.has(documentId));
+        const heldBack = uploads.filter((documentId) => this.tooLarge(documentId));
+
+        if (heldBack.length === 0) {
+            pending.forEach((documentId) => this.tooLarge(documentId));
+        }
+    }
+
     /** The socket documents share, opened with the first. */
     private connect(): Hocuspocus.HocuspocusProviderWebsocket {
+        const url = new URL(this.options.transport.url);
+
+        url.searchParams.set('editor', `${SCHEMA_VERSION}`);
         this.socket ??= new Hocuspocus.HocuspocusProviderWebsocket({
             ...this.options.transport,
+            url: url.href,
             onStatus: () => this.options.events.changed(),
+            onClose: ({ event }) => {
+                if (event.code === MESSAGE_TOO_BIG) {
+                    this.holdBackOversized();
+                }
+
+                if (event.code === EDITOR_OUTDATED && !this.stopped) {
+                    this.outdated = true;
+                    this.stop();
+                    this.options.events.outdated?.(Number(event.reason) || SCHEMA_VERSION + 1);
+                }
+            },
             onConnect: () => {
                 // Once connected again, what changed meanwhile is picked up.
                 if (this.connected) {

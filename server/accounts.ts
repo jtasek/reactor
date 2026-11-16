@@ -1,4 +1,5 @@
-import { deleteExpiredLinks } from './repositories/prototypeLinks.ts';
+import { deleteExpiredLinks, sharedPrototypes } from './repositories/prototypeLinks.ts';
+import type { Metrics } from './metrics.ts';
 import { previewConfiguration } from './preview.ts';
 import { configuresAi, providerFromEnv } from './ai.ts';
 import { createApi } from './api.ts';
@@ -10,6 +11,7 @@ import { logMailer, smtpMailer } from './mailer.ts';
 import { migrateApp } from './migrations.ts';
 import type { Log } from './schema.ts';
 import { createSync } from './sync.ts';
+import { pruneSnapshots } from './history.ts';
 
 const required = (env: NodeJS.ProcessEnv, name: string) => {
     if (!env[name]) {
@@ -26,13 +28,13 @@ const required = (env: NodeJS.ProcessEnv, name: string) => {
  * HTTP server. On shutdown, close the sync first, then the rest once it is done. Without it, the editor is used signed out only. With `AI_PROVIDER`, the API's `/ai` gateway is on (`providerFromEnv`). Production sends email
  * over SMTP; development without `SMTP_URL` writes it to the log.
  */
-/** How often images no document uses are looked for and deleted, the first time soon after start. */
+/** How often unused images, expired links and old snapshots are deleted, the first time soon after start. */
 const ASSET_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const FIRST_ASSET_CLEANUP_MS = 60 * 1000;
 
 export async function startAccounts(
     env: NodeJS.ProcessEnv,
-    { production, log }: { production: boolean; log: Log }
+    { production, log, metrics }: { production: boolean; log: Log; metrics?: Metrics }
 ) {
     if (!env.DATABASE_URL) {
         return undefined;
@@ -65,12 +67,13 @@ export async function startAccounts(
     }
 
     const origin = new URL(baseURL).origin;
-    const sync = createSync({ db, auth, origin, log });
+    const sync = createSync({ db, auth, origin, log, metrics });
     const blobs = postgresBlobs(db);
     const cleanUp = () =>
         Promise.all([
             deleteUnusedAssets(db, blobs, new Date(Date.now() - UNUSED_ASSET_GRACE_MS)),
-            deleteExpiredLinks(db, new Date())
+            deleteExpiredLinks(db, new Date()),
+            pruneSnapshots(db, new Date())
         ]).catch((error: unknown) => log.error(error));
     // Soon after start as well, so a server restarted within the hour still cleans up.
     const firstCleanup = setTimeout(cleanUp, FIRST_ASSET_CLEANUP_MS);
@@ -88,12 +91,16 @@ export async function startAccounts(
             origin,
             onDeleted: sync.closeDocument,
             onAccessChanged: sync.closeMember,
+            history: sync,
             log,
             blobs,
             ai,
-            previewOrigin: previewConfiguration(env)?.previewOrigin
+            previewOrigin: previewConfiguration(env)?.previewOrigin,
+            metrics
         }),
         sync,
+        /** Each prototype link shared, with its screens and distinct players. */
+        sharedPrototypes: () => sharedPrototypes(db),
         close: () => {
             clearTimeout(firstCleanup);
             clearInterval(cleanups);

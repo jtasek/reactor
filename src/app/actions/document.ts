@@ -120,6 +120,15 @@ export const requestDocumentReset: Action = ({ state }) => {
     }
 };
 
+/** Shows the current document's history; the Document history command checks it may. */
+export const openDocumentHistory: Action = ({ state }) => {
+    state.historyDocumentId = state.currentDocumentId;
+};
+
+export const closeDocumentHistory: Action = ({ state }) => {
+    state.historyDocumentId = null;
+};
+
 export const cancelDocumentReset: Action = ({ state }) => {
     state.resetDocumentId = null;
 };
@@ -190,6 +199,41 @@ export const setDocumentHistory: ActionWithParam<{ documentId: string; history: 
     document.history = history;
 };
 
+/**
+ * Shows a document a newer editor changed as read-only, until this copy reloads:
+ * `editableFrom` is the lowest document format that may edit it. Without it, the
+ * document may be edited again. A gesture held on it stops, as when access drops.
+ */
+export const markDocumentOutdated: ActionWithParam<{
+    documentId: string;
+    editableFrom?: number;
+}> = ({ state, actions }, { documentId, editableFrom }) => {
+    if (editableFrom === undefined) {
+        delete state.outdatedDocuments[documentId];
+        delete state.interruptedDocumentId;
+        return;
+    }
+
+    if (documentId === state.currentDocumentId && state.events.pointer.gesture.kind !== 'idle') {
+        actions.events.cancelGesture();
+        state.interruptedDocumentId = documentId;
+    }
+
+    state.outdatedDocuments[documentId] = editableFrom;
+};
+
+/** Without `bytes`, the server sync sends the document again. */
+export const markTooLargeToSync: ActionWithParam<{ documentId: string; bytes?: number }> = (
+    { state },
+    { documentId, bytes }
+) => {
+    if (bytes === undefined) {
+        delete state.tooLargeToSync[documentId];
+    } else {
+        state.tooLargeToSync[documentId] = bytes;
+    }
+};
+
 /** Removes a document added only to hold saved or shared content that could not be read. */
 export const discardDocument: ActionWithParam<string> = ({ state }, documentId) => {
     deleteDocument(state, documentId);
@@ -233,6 +277,7 @@ export const openDocument: ActionWithParam<string> = ({ state }, documentId) => 
     state.currentDocumentId = documentId;
     state.enteredComponentId = null;
     state.resetDocumentId = null;
+    state.historyDocumentId = null;
 };
 
 export const editDocument: ActionWithParam<string> = ({ actions, effects }, documentId) => {

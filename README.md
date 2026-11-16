@@ -47,6 +47,7 @@ PostgreSQL; see Accounts below.
 | `HOST` | Address to listen on; `localhost` for the development server, `0.0.0.0` for the production server |
 | `LOG_LEVEL` | Production server log level; `info` by default |
 | `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
+| `METRICS_TOKEN` | Turns on `/metrics` and `/metrics/prototypes` for requests sending it as `Authorization: Bearer <token>`; off by default |
 
 The production server stops at start with a clear message when `PORT` or
 `TRUST_PROXY` is invalid; `LOG_LEVEL` must be one of `fatal`, `error`, `warn`,
@@ -545,6 +546,14 @@ proposes, which the editor checks before showing; a problem goes back to the mod
 Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
 requests and 10 million tokens, one request of a person at a time.
 
+AI is on for every workspace until an admin turns it off on Sharing (the AI card), which the
+API takes as `PUT /api/workspaces/:workspaceId/ai` with `{ "enabled": false }`. The gateway
+then refuses that workspace's requests with `AI_OFF`, and the editor hides Edit with words in
+its documents. A request sends the person's words and the selected part of the document, or
+the whole document, to the configured provider. Reactor keeps only the `ai_requests` row (who,
+when, which document, the model and the tokens), not the words, what was sent or the answer (which reaches the document only when accepted);
+the conversation stays in the server's memory for 5 minutes, for one repair.
+
 Edit with words (`W`, or its application-bar button) opens a movable, dockable chat
 window. Messages and proposals stay in the conversation; Accept applies a proposal as one
 undo step, and Discard leaves the document unchanged. The canvas stays editable beside the
@@ -677,6 +686,93 @@ Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
 tests run against PGlite, PostgreSQL built to run inside the test process.
+
+## Metrics and error reports
+
+With `METRICS_TOKEN` set, `GET /metrics` answers the server's metrics in the Prometheus text
+format: sync sockets open, opened and refused, documents saved and failed saves, AI turns by
+task and outcome with their time to the first operation and to the end, AI refusals, prototype
+snapshots published and refused, prototype links opened, and browser error reports. Counters
+start at zero with each process.
+
+`GET /metrics/prototypes` lists every prototype link shared, newest first, with its workspace,
+document, who shared it, its number of screens, distinct players, opens and last open. Links
+stay listed after they are revoked or expire (`expiresAt` is then null). A player is a browser:
+the `/share` page keeps a random id on the preview site and sends it when it opens a link, and
+the server stores only a hash of it with the link's id, so one browser is not recognizable
+across links. Nothing is sent to a third party.
+
+The editor sends errors nothing handled, up to ten per page load and each message once, to
+`POST /api/client-errors`, signed in or not. The server takes them only from its own pages,
+at most 20 a minute per address and 600 in all, and logs each as `browserError` with its
+message, stack, page path (without query or fragment) and document format.
+
+## History and backups
+
+Signed in, the server keeps earlier states of each document as snapshots. When a
+document is saved and its last snapshot is an hour old or more, the content saved
+before is kept as a snapshot first, so each one holds the document as it was before
+a stretch of changes. Snapshots from the last day are all kept; older ones only as each
+document's last of the day (UTC), for 30 days. The hourly cleanup prunes them.
+
+Restoring a snapshot brings the document back to it as a new change that everyone
+with the document open receives; entries that already match are left alone, so
+others' edits elsewhere merge. The content it replaced is kept as a snapshot first,
+so a restore can be undone by restoring that one. Restore leaves the record of which
+editor formats wrote to the document, so older editors stay view only, and a snapshot
+written by a newer format than the server serves (as after a rollback) cannot be
+restored. Shared undo stays per person and per session.
+
+In the editor, **Document history** in the command bar (signed in, as an editor or
+admin of the document) lists the versions the server keeps, newest first, and draws the
+one chosen. **Restore this version** restores it; each copy of the editor with the
+document open then clears its undo history, so undo cannot reach past the restore.
+A version made by a newer release is listed but cannot be restored.
+
+Deleting a document keeps its last content, including changes not saved yet, as a
+snapshot, with the images it used, for 30 days. A workspace admin can restore it as
+a new document in the same workspace, with its images and history; the cleanup spares
+those images until then. Signed in, Documents → **Recently Deleted** lists them under
+**Kept on the server** with **Restore**, below the documents this browser keeps there.
+
+| Request | Body / result |
+|---|---|
+| `GET /documents/:documentId/history` | Viewer: snapshots newest first, with `id`, `createdAt`, `reason` (`scheduled`, `before-restore` or `deleted`), `version`, `size` and `restorable` |
+| `GET /documents/:documentId/history/:snapshotId` | Viewer: the snapshot's content as one Yjs update (`application/octet-stream`) |
+| `POST /documents/:documentId/history/:snapshotId/restore` | Editor: restores it, returns 204; 409 `NEWER_FORMAT` for a snapshot the server cannot restore |
+| `GET /workspaces/:workspaceId/deleted-documents` | Admin: deleted documents that can be restored, with `id`, `name` and `deletedAt` |
+| `POST /workspaces/:workspaceId/deleted-documents/:documentId/restore` | Admin: restores one as a new document, returns it with 201 |
+
+Snapshots live in the same PostgreSQL database, so they do not replace backups.
+`scripts/backup-database.sh` writes a `pg_dump` custom-format file of `DATABASE_URL`
+into `BACKUP_DIR` (default `./backups`), checks that `pg_restore` can read it, and
+deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). The URL goes on `pg_dump`'s
+command line, so on a shared machine leave the password out of it and keep it in
+`~/.pgpass` (or `PGPASSFILE`) instead. Run it daily, and copy `BACKUP_DIR` off the
+machine, for example:
+
+```sh
+# crontab: every day at 03:15
+15 3 * * * cd /srv/reactor && DATABASE_URL=postgres://... scripts/backup-database.sh
+```
+
+With Docker Compose, back up from the database container:
+`docker compose exec -T db pg_dump -U reactor --format=custom reactor > reactor.dump`.
+To restore, stop the app, create an empty database and run
+`pg_restore --no-owner --no-privileges --exit-on-error --dbname=<empty database URL> reactor.dump`,
+then point `DATABASE_URL` at it and start the app, which migrates it if needed.
+
+`scripts/restore-drill.sh` is the restore drill: it backs up `DATABASE_URL`, restores
+the dump into the empty database at `DRILL_DATABASE_URL`, and compares every table's
+row count and a checksum of all document content and snapshots. It refuses a drill
+database that already has tables.
+
+| Date | Where | Result |
+|---|---|---|
+| 2026-11-14 | Local PostgreSQL 16.15, seeded with 5 accounts, 35 documents (7,000 shapes), 5 deleted documents, 45 snapshots and 40 images | Passed: 716 KB dump restored in 1 s; all 18 tables and both checksums matched, the restored database migrated on start and every document read back |
+
+Run the drill against the beta's database before the beta opens, then monthly, and
+add a row here each time.
 
 ## Variables
 
@@ -811,7 +907,6 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 - Moving documents made signed out into an account
 - Inviting someone to a single document (sharing is per workspace)
 - Seeing other people's pointers and selections, and comments
-- Document version history
 - Exporting a prototype as a standalone web package
 
 [APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;

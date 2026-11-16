@@ -15,6 +15,7 @@ import { anthropicProvider } from './anthropic.ts';
 import { imageType } from './assets.ts';
 import { openAiProvider } from './openai.ts';
 import { allows, workspaceRole } from './workspaces.ts';
+import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db } from './schema.ts';
 
 /** What one person, and one workspace, may use of AI in a day. */
@@ -128,12 +129,16 @@ function readProblem(body: unknown): Problem {
     return { operation: operation as number | undefined, problem };
 }
 
-/** The workspace of a document the person may edit; refuses others as missing or forbidden. */
+/**
+ * The workspace of a document the person may edit with AI; refuses others as
+ * missing or forbidden, and documents whose workspace has AI turned off.
+ */
 async function editableDocument(db: Db, userId: string, documentId: string) {
     const document = await db
         .selectFrom('documents')
-        .select('workspace_id')
-        .where('id', '=', documentId)
+        .innerJoin('workspaces', 'workspaces.id', 'documents.workspace_id')
+        .select(['documents.workspace_id', 'workspaces.ai_enabled'])
+        .where('documents.id', '=', documentId)
         .executeTakeFirst();
     const role = document && (await workspaceRole(db, userId, document.workspace_id));
 
@@ -143,6 +148,10 @@ async function editableDocument(db: Db, userId: string, documentId: string) {
 
     if (!allows(role, 'editor')) {
         throw new Refusal(403, 'FORBIDDEN');
+    }
+
+    if (!document.ai_enabled) {
+        throw new Refusal(403, 'AI_OFF');
     }
 
     return document.workspace_id;
@@ -204,11 +213,13 @@ interface Kept {
 export function createAi({
     db,
     provider,
-    limits = AI_LIMITS
+    limits = AI_LIMITS,
+    metrics = noMetrics
 }: {
     db: Db;
     provider: AiProvider;
     limits?: AiLimits;
+    metrics?: Metrics;
 }) {
     const router = express.Router();
     /** People with a request running: each may run one at a time. */
@@ -244,6 +255,12 @@ export function createAi({
         const controller = new AbortController();
         const send = (event: object) => res.write(`${JSON.stringify(event)}\n`);
         let usage: Usage = { inputTokens: 0, outputTokens: 0 };
+        const task = conversation.request.task;
+        const turnKind = repairable ? 'request' : 'repair';
+        const started = performance.now();
+        const seconds = () => (performance.now() - started) / 1000;
+        let firstOperation = true;
+        let result = 'failed';
 
         res.on('close', () => controller.abort());
         // Not compressed, as compression holds back what is written until it ends.
@@ -258,7 +275,18 @@ export function createAi({
                 conversation,
                 AbortSignal.any([controller.signal, AbortSignal.timeout(TURN_TIMEOUT_MS)]),
                 {
-                    operation: (operation) => send({ type: 'operation', operation }),
+                    operation: (operation) => {
+                        if (firstOperation) {
+                            firstOperation = false;
+                            metrics.observe(
+                                'reactor_ai_first_operation_seconds',
+                                'Time from an AI turn starting to its first operation.',
+                                seconds(),
+                                { task, turn: turnKind }
+                            );
+                        }
+                        send({ type: 'operation', operation });
+                    },
                     message: (text) => send({ type: 'message', text }),
                     usage: (used) => {
                         usage = used;
@@ -266,6 +294,7 @@ export function createAi({
                 }
             );
 
+            result = turn.stop;
             if (turn.stop !== 'done') {
                 send({
                     type: 'error',
@@ -286,11 +315,24 @@ export function createAi({
             }
             send({ type: 'done' });
         } catch (error) {
-            if (!controller.signal.aborted) {
+            if (controller.signal.aborted) {
+                result = 'aborted';
+            } else {
                 (req.log ?? console).error(error);
                 send({ type: 'error', code: 'AI_FAILED' });
             }
         } finally {
+            metrics.count('reactor_ai_turns_total', 'AI turns, by task and how they ended.', {
+                task,
+                turn: turnKind,
+                result
+            });
+            metrics.observe(
+                'reactor_ai_turn_seconds',
+                'Time an AI turn took, start to end.',
+                seconds(),
+                { task, turn: turnKind }
+            );
             await addUsage(requestId, usage);
             res.end();
         }
@@ -319,6 +361,9 @@ export function createAi({
                 if (!(error instanceof Refusal)) {
                     throw error;
                 }
+                metrics.count('reactor_ai_refusals_total', 'AI requests refused, by code.', {
+                    code: error.message
+                });
                 res.status(error.status).json({ code: error.message });
             }
         };
@@ -351,14 +396,18 @@ export function createAi({
                     );
                     const workspace = await trx
                         .selectFrom('workspaces')
-                        .select('id')
+                        .select('ai_enabled')
                         .where('id', '=', workspaceId)
                         .forUpdate()
                         .executeTakeFirst();
 
-                    // The workspace may have been deleted since the document was checked.
+                    // The workspace may have been deleted, or AI turned off, since the document was checked.
                     if (!workspace) {
                         throw new Refusal(404, 'NOT_FOUND');
+                    }
+
+                    if (!workspace.ai_enabled) {
+                        throw new Refusal(403, 'AI_OFF');
                     }
 
                     if (await reachedLimits(trx, limits, req.userId, workspaceId)) {

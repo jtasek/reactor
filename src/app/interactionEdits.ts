@@ -26,7 +26,14 @@ export interface VisibilityEdit {
 }
 
 export type PrototypeStateEdit =
-    | { target: 'state'; kind: 'add'; name: string; initial: boolean }
+    | {
+          target: 'state';
+          kind: 'add';
+          name: string;
+          initial: boolean;
+          /** A control that switches the new state, in the same undo step. */
+          switchedBy?: string;
+      }
     | { target: 'state'; kind: 'update'; id: string; name: string; initial: boolean }
     | { target: 'state'; kind: 'delete'; id: string }
     | {
@@ -162,10 +169,8 @@ function editPrototypeVisibility(
 }
 
 /** Named runtime values are authored graph records; a session never writes them back. */
-function editPrototypeState(
-    { state, effects }: Context,
-    edit: PrototypeStateEdit
-): string | undefined {
+function editPrototypeState(context: Context, edit: PrototypeStateEdit): string | undefined {
+    const { state, effects } = context;
     const document = state.currentDocument;
     if (
         document.locked ||
@@ -239,6 +244,13 @@ function editPrototypeState(
             existing.initial = value.initial;
         } else {
             document.prototypeBooleans[id] = value;
+        }
+        if (edit.kind === 'add' && edit.switchedBy) {
+            editInteractions(context, {
+                target: 'instance',
+                id: edit.switchedBy,
+                settings: { activate: { type: 'toggleState', stateId: id } }
+            });
         }
         effects.collaboration.flush();
     } catch (error) {
