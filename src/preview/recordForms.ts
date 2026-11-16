@@ -27,7 +27,10 @@ export function sessionDocument(document: Document, session: RecordSession): Doc
                 Object.entries(edited.values).filter(([fieldId, value]) => {
                     const field = document.dataFields[fieldId];
 
-                    return field?.entityId === current.entityId && !dataValueProblem(field, value);
+                    return (
+                        field?.entityId === current.entityId &&
+                        !dataValueProblem(document, field, value)
+                    );
                 })
             );
 
@@ -88,6 +91,9 @@ export function formValue(field: DataField, draft: string): DataValue {
     if (!draft.trim()) {
         return null;
     }
+    if (field.type === 'choice' || field.type === 'reference') {
+        return draft;
+    }
     if (field.type === 'boolean') {
         if (draft !== 'true' && draft !== 'false') {
             throw new Error(`${field.name} must be boolean.`);
@@ -99,9 +105,9 @@ export function formValue(field: DataField, draft: string): DataValue {
     return Number(draft);
 }
 
-export function formFieldProblem(field: DataField, draft: string) {
+export function formFieldProblem(document: Document, field: DataField, draft: string) {
     try {
-        return dataValueProblem(field, formValue(field, draft));
+        return dataValueProblem(document, field, formValue(field, draft));
     } catch (error) {
         return error instanceof Error ? error.message : 'Invalid value.';
     }
@@ -126,7 +132,7 @@ export function saveRecord(
     const problems: Record<string, string> = {};
     const values: Record<string, DataValue> = {};
     for (const field of fields) {
-        const problem = formFieldProblem(field, draft[field.id] ?? '');
+        const problem = formFieldProblem(document, field, draft[field.id] ?? '');
         if (problem) {
             problems[field.id] = problem;
             continue;

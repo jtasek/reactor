@@ -561,6 +561,24 @@ collaboration. Schema v24 reads older documents with empty data collections. The
 lazy-loaded; runtime list/form bindings and expression validation remain steps 2–3.
 Verification: `tests/data.test.ts` and `tests/browser/dataForms.spec.ts`.
 
+## R5.1b Choice and reference fields and the record limit
+
+_Recorded 2026-11-16._
+
+Schema v32. Fields can be **choice** (`options`: 1–100 distinct trimmed strings) or
+**reference** (`targetEntityId`); values are the option or a record ID. Both settings stay on
+the field when its type changes, so changing it back loses nothing. Values are checked when
+written; options edits, deleted records and deleted target entities leave values in place and
+show in diagnostics. An entity can name its records by one of its text fields
+(`labelFieldId`, Data View's "Name records by"); without one the first text field is used, and
+a blank name falls back to "Entity N". Data View offers options and target entity when adding
+or editing a field, and the record cells become selects that keep an unavailable value marked.
+Repeated lists and record details show a choice as its option and a reference as its record's
+name in text properties. Prototype record forms offer the same selects. Adding a record past
+1,000 in one entity is refused; more from concurrent adds is reported. The action and
+expression vocabulary for state, forms and workflows was decided in the plan without code.
+Verification: `tests/dataChoices.test.ts` and `tests/browser/dataForms.spec.ts`.
+
 ## R5.2a Lists bound to entities
 
 _Recorded 2026-11-04._

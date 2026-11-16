@@ -1,2 +1,2 @@
 /** The document format this build reads and writes; the server drops version marks newer than it. */
-export const SCHEMA_VERSION = 31;
+export const SCHEMA_VERSION = 32;

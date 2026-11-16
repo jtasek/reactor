@@ -6,33 +6,59 @@ import {
     dataLeftovers,
     dataProblems,
     dataRecords,
-    dataValueProblem
+    dataValueProblem,
+    fieldChoices,
+    labelField,
+    MAX_RECORDS_PER_ENTITY
 } from 'src/app/data';
 import { listsUsing } from 'src/app/dataLists';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
 import type { DataType, DataValue } from 'src/app/dataTypes';
 import styles from './styles.css';
 
-const TYPES: DataType[] = ['text', 'number', 'boolean'];
+const TYPES: DataType[] = ['text', 'number', 'boolean', 'choice', 'reference'];
+
+/**
+ * A reference column offers every record of its target, and an entity has up to 1,000 rows, so
+ * a long list of choices is only drawn into a cell once that cell is used.
+ */
+const DRAWN_CHOICES = 100;
+
+type Choice = { value: string; label: string };
+
+/** One option per line; blank lines are ignored, the rest checked when saved. */
+const optionLines = (draft: string) =>
+    draft
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
 
 /** Drafts stay local until Save; failed validation never writes a record. */
 function ValueEditor({
     value,
     label,
     type = 'text',
+    choices,
     disabled,
     save
 }: {
     value: DataValue | undefined;
     label: string;
     type?: DataType;
+    /** Choice options or referenced records; a value no longer offered stays, marked. */
+    choices?: Choice[];
     disabled: boolean;
     save: (value: DataValue) => DataEditResult;
 }) {
     const initial = value === null || value === undefined ? '' : String(value);
     const [draft, setDraft] = useState(initial);
     const [problem, setProblem] = useState('');
-    const expected = type === 'text' ? 'string' : type;
+    const [used, setUsed] = useState(false);
+    const expected = type === 'number' || type === 'boolean' ? type : 'string';
+    const offered =
+        choices && (used || choices.length <= DRAWN_CHOICES)
+            ? choices
+            : choices?.filter((choice) => choice.value === draft);
     const needsConversion = value !== null && value !== undefined && typeof value !== expected;
 
     return (
@@ -52,7 +78,9 @@ function ValueEditor({
                           ? null
                           : type === 'number'
                             ? Number(draft)
-                            : draft === 'true';
+                            : type === 'boolean'
+                              ? draft === 'true'
+                              : draft;
                 const result = save(next);
                 setProblem(result.applied ? '' : result.problem);
             }}
@@ -69,6 +97,25 @@ function ValueEditor({
                     <option value="false">False</option>
                     {draft !== '' && draft !== 'true' && draft !== 'false' && (
                         <option value={draft}>{draft} (invalid)</option>
+                    )}
+                </select>
+            ) : choices && offered ? (
+                <select
+                    aria-label={label}
+                    value={draft}
+                    disabled={disabled}
+                    onFocus={() => setUsed(true)}
+                    onPointerDown={() => setUsed(true)}
+                    onChange={(event) => setDraft(event.target.value)}
+                >
+                    <option value="">Not set</option>
+                    {offered.map((choice) => (
+                        <option key={choice.value} value={choice.value}>
+                            {choice.label}
+                        </option>
+                    ))}
+                    {draft !== '' && !choices.some((choice) => choice.value === draft) && (
+                        <option value={draft}>{draft} (unavailable)</option>
                     )}
                 </select>
             ) : (
@@ -96,12 +143,15 @@ function ValueEditor({
 function DeleteConfirmation({
     deletion,
     lists,
+    references,
     disabled,
     cancel,
     confirm
 }: {
     deletion: DataEdit;
     lists: number;
+    /** Reference fields in other entities that point at the entity being deleted. */
+    references: number;
     disabled: boolean;
     cancel: () => void;
     confirm: () => void;
@@ -129,6 +179,14 @@ function DeleteConfirmation({
                         : 'field. Bound properties will show component values instead.'}
                 </p>
             )}
+            {references > 0 && (
+                <p>
+                    {references === 1
+                        ? 'A reference field refers'
+                        : `${references} reference fields refer`}{' '}
+                    to this entity. Their values will need new records.
+                </p>
+            )}
             <button ref={cancelButton} type="button" onClick={cancel}>
                 Cancel
             </button>
@@ -152,6 +210,8 @@ function DataEditor() {
     const [fieldName, setFieldName] = useState('');
     const [type, setType] = useState<DataType>('text');
     const [required, setRequired] = useState(false);
+    const [options, setOptions] = useState('');
+    const [target, setTarget] = useState('');
     const [message, setMessage] = useState('');
     const [deletion, setDeletion] = useState<DataEdit>();
     const data = useAppState((state) => {
@@ -165,6 +225,23 @@ function DataEditor() {
             ...record,
             values: { ...record.values }
         }));
+        const choices = Object.fromEntries(
+            fields
+                .filter((field) => field.type === 'choice' || field.type === 'reference')
+                .map((field) => [field.id, fieldChoices(document, field)])
+        );
+        const cellProblems = Object.fromEntries(
+            records.map((record) => [
+                record.id,
+                Object.fromEntries(
+                    fields.flatMap((field) => {
+                        const problem = dataValueProblem(document, field, record.values[field.id]);
+
+                        return problem ? [[field.id, problem]] : [];
+                    })
+                )
+            ])
+        );
         const leftovers = dataLeftovers(document);
         const target =
             deletion && 'id' in deletion
@@ -182,7 +259,19 @@ function DataEditor() {
             fields,
             records,
             problems: dataProblems(document),
+            choices,
+            cellProblems,
+            label: entity && labelField(document, entity.id)?.id,
             listsUsingDeletion: target ? listsUsing(document, target) : 0,
+            referencesToDeletion:
+                deletion?.kind === 'deleteEntity'
+                    ? Object.values(document.dataFields).filter(
+                          (field) =>
+                              field.type === 'reference' &&
+                              field.targetEntityId === deletion.id &&
+                              field.entityId !== deletion.id
+                      ).length
+                    : 0,
             hasLeftovers:
                 leftovers.fields.length + leftovers.records.length + leftovers.values.length > 0,
             disabled:
@@ -193,6 +282,10 @@ function DataEditor() {
         };
     });
     const entityId = data.entity?.id ?? '';
+    // The entity chosen for a new reference field may have been deleted since.
+    const addTarget = data.entities.some((entity) => entity.id === target)
+        ? target
+        : data.entities[0]?.id;
     useEffect(() => {
         if (selectedId !== entityId) {
             setSelectedId(entityId);
@@ -212,6 +305,7 @@ function DataEditor() {
             <DeleteConfirmation
                 deletion={deletion}
                 lists={data.listsUsingDeletion}
+                references={data.referencesToDeletion}
                 disabled={data.disabled}
                 cancel={() => setDeletion(undefined)}
                 confirm={() => {
@@ -306,10 +400,17 @@ function DataEditor() {
                                         entityId: data.entity!.id,
                                         name: fieldName,
                                         type,
-                                        required
+                                        required,
+                                        ...(type === 'choice' && {
+                                            options: optionLines(options)
+                                        }),
+                                        ...(type === 'reference' && {
+                                            targetEntityId: addTarget
+                                        })
                                     });
                                     if (result.applied) {
                                         setFieldName('');
+                                        setOptions('');
                                     }
                                 }}
                             >
@@ -336,6 +437,27 @@ function DataEditor() {
                                         ))}
                                     </select>
                                 </label>
+                                {type === 'choice' && (
+                                    <label>
+                                        Options, one per line
+                                        <textarea
+                                            value={options}
+                                            disabled={data.disabled}
+                                            rows={3}
+                                            onChange={(event) => setOptions(event.target.value)}
+                                            placeholder={'Active\nPaused'}
+                                        />
+                                    </label>
+                                )}
+                                {type === 'reference' && (
+                                    <EntitySelect
+                                        label="Refers to"
+                                        entities={data.entities}
+                                        value={addTarget}
+                                        disabled={data.disabled}
+                                        change={setTarget}
+                                    />
+                                )}
                                 <label>
                                     <input
                                         type="checkbox"
@@ -403,6 +525,36 @@ function DataEditor() {
                                         />
                                         Required
                                     </label>
+                                    {field.type === 'choice' && (
+                                        <OptionsEditor
+                                            key={JSON.stringify(field.options ?? [])}
+                                            label={`Options for ${field.name}`}
+                                            options={field.options ?? []}
+                                            disabled={data.disabled}
+                                            save={(options) =>
+                                                edit({
+                                                    kind: 'updateField',
+                                                    id: field.id,
+                                                    changes: { options }
+                                                })
+                                            }
+                                        />
+                                    )}
+                                    {field.type === 'reference' && (
+                                        <EntitySelect
+                                            label={`${field.name} refers to`}
+                                            entities={data.entities}
+                                            value={field.targetEntityId}
+                                            disabled={data.disabled}
+                                            change={(targetEntityId) =>
+                                                edit({
+                                                    kind: 'updateField',
+                                                    id: field.id,
+                                                    changes: { targetEntityId }
+                                                })
+                                            }
+                                        />
+                                    )}
                                     <button
                                         disabled={data.disabled}
                                         onClick={() =>
@@ -418,15 +570,49 @@ function DataEditor() {
                                     {confirmation('deleteField', field.id)}
                                 </div>
                             ))}
+                            {data.fields.some((field) => field.type === 'text') && (
+                                <label>
+                                    Name records by
+                                    <select
+                                        value={data.label}
+                                        disabled={data.disabled}
+                                        onChange={(event) =>
+                                            edit({
+                                                kind: 'setLabelField',
+                                                entityId: data.entity!.id,
+                                                fieldId: event.target.value
+                                            })
+                                        }
+                                    >
+                                        {data.fields
+                                            .filter((field) => field.type === 'text')
+                                            .map((field) => (
+                                                <option key={field.id} value={field.id}>
+                                                    {field.name}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </label>
+                            )}
                             <h3>Sample records</h3>
                             <button
-                                disabled={data.disabled || !data.fields.length}
+                                disabled={
+                                    data.disabled ||
+                                    !data.fields.length ||
+                                    data.records.length >= MAX_RECORDS_PER_ENTITY
+                                }
                                 onClick={() =>
                                     edit({ kind: 'addRecord', entityId: data.entity!.id })
                                 }
                             >
                                 Add record
                             </button>
+                            {data.records.length >= MAX_RECORDS_PER_ENTITY && (
+                                <p>
+                                    An entity holds up to{' '}
+                                    {MAX_RECORDS_PER_ENTITY.toLocaleString('en-US')} sample records.
+                                </p>
+                            )}
                             {!data.records.length && <p>No sample records yet.</p>}
                             <div className={styles.records}>
                                 <table>
@@ -453,6 +639,7 @@ function DataEditor() {
                                                             key={`${field.type}:${JSON.stringify(record.values[field.id])}`}
                                                             value={record.values[field.id]}
                                                             type={field.type}
+                                                            choices={data.choices[field.id]}
                                                             label={`${field.name}, record ${index + 1}`}
                                                             disabled={data.disabled}
                                                             save={(value) =>
@@ -465,10 +652,11 @@ function DataEditor() {
                                                             }
                                                         />
                                                         <small>
-                                                            {dataValueProblem(
-                                                                field,
-                                                                record.values[field.id]
-                                                            )}
+                                                            {
+                                                                data.cellProblems[record.id]?.[
+                                                                    field.id
+                                                                ]
+                                                            }
                                                         </small>
                                                     </td>
                                                 ))}
@@ -514,5 +702,85 @@ function DataEditor() {
                 </section>
             )}
         </section>
+    );
+}
+
+function EntitySelect({
+    label,
+    entities,
+    value,
+    disabled,
+    change
+}: {
+    label: string;
+    entities: { id: string; name: string }[];
+    value?: string;
+    disabled: boolean;
+    change: (id: string) => void;
+}) {
+    return (
+        <label>
+            {label}
+            <select
+                value={value ?? ''}
+                disabled={disabled}
+                onChange={(event) => change(event.target.value)}
+            >
+                {!entities.some((entity) => entity.id === value) && (
+                    <option value={value ?? ''}>Deleted entity</option>
+                )}
+                {entities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                        {entity.name}
+                    </option>
+                ))}
+            </select>
+        </label>
+    );
+}
+
+/** Saves the whole list at once; a rejected list (duplicates, too long) keeps the draft. */
+function OptionsEditor({
+    label,
+    options,
+    disabled,
+    save
+}: {
+    label: string;
+    options: string[];
+    disabled: boolean;
+    save: (options: string[]) => DataEditResult;
+}) {
+    const initial = options.join('\n');
+    const [draft, setDraft] = useState(initial);
+    const [problem, setProblem] = useState('');
+
+    return (
+        <form
+            className={styles.valueEditor}
+            onSubmit={(event) => {
+                event.preventDefault();
+                const result = save(optionLines(draft));
+                setProblem(result.applied ? '' : result.problem);
+            }}
+        >
+            <label>
+                {label}
+                <textarea
+                    value={draft}
+                    rows={Math.min(6, Math.max(2, options.length))}
+                    disabled={disabled}
+                    onChange={(event) => setDraft(event.target.value)}
+                />
+            </label>
+            <button
+                type="submit"
+                disabled={disabled || draft === initial}
+                aria-label={`Save ${label}`}
+            >
+                Save
+            </button>
+            {problem && <small role="alert">{problem}</small>}
+        </form>
     );
 }

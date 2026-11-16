@@ -22,6 +22,7 @@ export function projectDataList(
     const binding = instance.dataList!;
     const records = dataRecords(document, binding.entityId);
     const context = instance.projectedSource?.context;
+    const labels = new Map<string, Map<string, string>>();
     if (binding.mode === 'record') {
         const fallback = draw({ ...instance, dataList: undefined }, `${key}/unselected`, '')!;
         const alternatives: Record<string, PreviewNode> = {};
@@ -49,7 +50,13 @@ export function projectDataList(
     }
     function projectRecord(record: (typeof records)[number], index: number) {
         const localProblems: Record<string, string> = {};
-        const { overrides, problems } = recordOverrides(document, instance, record, index + 1);
+        const { overrides, problems } = recordOverrides(
+            document,
+            instance,
+            record,
+            index + 1,
+            labels
+        );
         problems.forEach(report);
         const item = projectGeometry(
             { ...instance, dataList: undefined, projectedSource: undefined, overrides },
