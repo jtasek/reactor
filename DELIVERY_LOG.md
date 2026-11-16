@@ -676,6 +676,27 @@ is produced. Public links remain read-only snapshots without the host-side form 
 Authored form controls/actions, expression rules and editable standalone/shared forms remain
 later increments. Verification: `tests/recordForms.test.ts`, `tests/browser/recordForms.spec.ts`.
 
+## R5.4 Standalone web package
+
+_Recorded 2026-11-16._
+
+**Download** on the Prototype page saves one HTML file: the snapshot a shared link would hold
+(start screen, viewport, modes, all screens, verified images as data URLs), written into a page
+built from the preview runtime itself. `webpack.preview.mjs` now has a second configuration that
+compiles `src/preview/runtime.ts` again with the Roboto fonts inlined and writes JavaScript and
+CSS into `dist-preview/package.html` (about 120 KiB, budget 250 KiB). The page carries its own
+Content-Security-Policy: the script allowed only by its build-time SHA-256, styles inline,
+images and fonts from `data:`, and no `connect-src`, so it cannot make requests. The editor
+fetches that page from the preview origin (CORS for the editor origin only; the editor's
+`connect-src` now lists the preview origin) and inserts the snapshot as
+`<script type="application/json" id="reactor-package">` with every `<` escaped
+(`src/preview/standalonePackage.ts`). The runtime reads it with the same `readPreview` checks as
+a shared link and plays it with the shared link's controls. One file rather than a zip: it opens
+from disk, where a separate JSON file could not be fetched, and needs no zip writer. Record forms
+are not in the package, as with shared links. Verification: `tests/standalonePackage.test.ts`
+and the offline package test in `tests/browser/dataForms.spec.ts` (list to details, input kept
+per record, Restart, font loaded, no requests, no console errors).
+
 ## S1 step 1: Version check on sync
 
 _Recorded 2026-11-13._

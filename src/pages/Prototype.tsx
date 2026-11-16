@@ -1,6 +1,7 @@
 import { ArrowLeft, RotateCcw, SlidersHorizontal, Workflow } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import { SharePrototype } from './SharePrototype';
+import { DownloadPrototype } from './DownloadPrototype';
 import { Guide } from 'src/ui/components/FirstRun/Guide';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
@@ -163,6 +164,7 @@ function PrototypeWorkspace() {
                         <Icon icon={{ component: Workflow, size: 18 }} />
                         Flow
                     </a>
+                    <DownloadPrototype session={session} inspection={inspection} />
                     <SharePrototype session={session} inspection={inspection} />
                 </div>
             </header>

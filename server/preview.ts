@@ -118,6 +118,10 @@ export function previewServer(
                 if (file.endsWith('.woff2')) {
                     res.setHeader('Access-Control-Allow-Origin', '*');
                 }
+                // The editor fills this page with a snapshot when someone downloads a prototype.
+                if (path.basename(file) === 'package.html') {
+                    res.setHeader('Access-Control-Allow-Origin', config.editorOrigin);
+                }
                 res.setHeader(
                     'Cache-Control',
                     /\.[a-f0-9]+\.(js|css)$/.test(file)
