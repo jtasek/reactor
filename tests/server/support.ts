@@ -16,7 +16,7 @@ import {
     metricsRoutes,
     type BrowserErrorLimits
 } from '../../server/metrics';
-import { sharedPrototypes } from '../../server/repositories/prototypeLinks';
+import { firstSharedLinks, sharedPrototypes } from '../../server/repositories/prototypeLinks';
 import { SCHEMA_VERSION } from '../../src/app/services/schemaVersion';
 
 export const ORIGIN = 'http://localhost:4000';
@@ -216,7 +216,8 @@ export async function startServer({
         metricsRoutes({
             token: metricsToken,
             metrics,
-            prototypes: () => sharedPrototypes(accounts.db)
+            prototypes: () => sharedPrototypes(accounts.db),
+            firstLinks: () => firstSharedLinks(accounts.db)
         })
     );
     app.use(browserErrors({ metrics, log: browserLog, limits: browserErrorLimits }));

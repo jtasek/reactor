@@ -35,6 +35,7 @@ import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { DocumentHistory } from 'src/ui/components/DocumentHistory';
 import { MoveDocuments } from 'src/ui/components/MoveDocuments';
 import { DocumentSize } from 'src/ui/components/DocumentSize';
+import { FirstRun } from 'src/ui/components/FirstRun';
 import { registerEditor } from './registerEditor';
 import { CommandAvailability } from './CommandAvailability';
 import { Viewer } from './Viewer';
@@ -122,6 +123,7 @@ export const Designer: FC = () => {
             <DocumentHistory />
             <MoveDocuments />
             <DocumentSize />
+            <FirstRun />
         </Layout>
     );
 };

@@ -124,19 +124,23 @@ export const noMetrics: Metrics = createMetrics();
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
 /**
- * `GET /metrics` in the Prometheus text format and `GET /metrics/prototypes`, what each
- * shared prototype was opened by, for whoever sends `token` as a bearer token. Without a
- * token, neither exists.
+ * `GET /metrics` in the Prometheus text format, `GET /metrics/prototypes`, what each
+ * shared prototype was opened by, and `GET /metrics/first-links`, how long each person took
+ * to share their first link, for whoever sends `token` as a bearer token. Without a token,
+ * none exists.
  */
 export function metricsRoutes({
     token,
     metrics,
-    prototypes
+    prototypes,
+    firstLinks
 }: {
     token?: string;
     metrics: Metrics;
     /** The shared prototypes' measures; without accounts there are none. */
     prototypes?: () => Promise<unknown>;
+    /** Each person's first shared link; without accounts there are none. */
+    firstLinks?: () => Promise<unknown>;
 }): Router {
     const router = express.Router();
     if (!token) {
@@ -158,6 +162,9 @@ export function metricsRoutes({
     });
     router.get('/metrics/prototypes', async (_req, res) => {
         res.json(prototypes ? await prototypes() : []);
+    });
+    router.get('/metrics/first-links', async (_req, res) => {
+        res.json(firstLinks ? await firstLinks() : []);
     });
 
     return router;

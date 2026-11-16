@@ -1,6 +1,7 @@
 import { ArrowLeft, RotateCcw, SlidersHorizontal, Workflow } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import { SharePrototype } from './SharePrototype';
+import { Guide } from 'src/ui/components/FirstRun/Guide';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
@@ -332,6 +333,7 @@ function PrototypeWorkspace() {
                     </p>
                 </div>
             )}
+            <Guide page="prototype" />
         </main>
     );
 }

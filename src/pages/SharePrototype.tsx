@@ -10,6 +10,8 @@ import {
     revokePrototypeLink,
     type PrototypeLink
 } from 'src/preview/shareRequests';
+import { markFirstRunStep, openAfterSignIn } from 'src/app/firstRun';
+import { loginFrom } from 'src/app/services/accounts';
 import styles from './Prototype.css';
 
 export function SharePrototype({
@@ -19,7 +21,7 @@ export function SharePrototype({
     session: PreviewSession;
     inspection: PreviewInspection;
 }) {
-    const { document, allowed, member, busy } = useAppState((state) => ({
+    const { document, allowed, member, account, busy } = useAppState((state) => ({
         document: state.currentDocument,
         allowed:
             state.account.kind === 'signedIn' &&
@@ -27,9 +29,10 @@ export function SharePrototype({
         member:
             state.account.kind === 'signedIn' &&
             state.documentAccess[state.currentDocumentId] !== undefined,
+        account: state.account.kind,
         busy: state.events.pointer.gesture.kind !== 'idle' || state.guideDragActive
     }));
-    const { assets } = useEffects();
+    const { assets, navigate } = useEffects();
     const [opened, setOpened] = useState(false);
     const [links, setLinks] = useState<PrototypeLink[]>([]);
     const [pending, setPending] = useState(false);
@@ -112,9 +115,11 @@ export function SharePrototype({
                 document.id,
                 name,
                 application,
+                document.created,
                 controller.signal
             );
             if (!controller.signal.aborted) {
+                markFirstRunStep(document.id, 'shared');
                 setCreated(link);
                 setLinks((items) => [link, ...items]);
             }
@@ -171,11 +176,30 @@ export function SharePrototype({
                                 Only workspace admins can create and revoke public links for this
                                 document.
                             </p>
-                        ) : (
+                        ) : account === 'signedOut' ? (
+                            <>
+                                <p>
+                                    Sign in to create a link. Reactor then offers to move this
+                                    document into your account.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        openAfterSignIn(document.id);
+                                        navigate(loginFrom('designer'));
+                                    }}
+                                >
+                                    Sign in to share
+                                </button>
+                            </>
+                        ) : account === 'signedIn' ? (
                             <p>
                                 Save this document to your account. A workspace admin can then
                                 create and revoke public links.
                             </p>
+                        ) : (
+                            account === 'unavailable' && (
+                                <p>Sharing links needs a Reactor server with accounts.</p>
+                            )
                         )
                     ) : (
                         <>

@@ -13,6 +13,7 @@ for (const template of [false, true]) {
             await page.getByRole('button', { name: 'Templates', exact: true }).click();
             await page.getByRole('button', { name: 'Use Forms template', exact: true }).click();
             await expect(page.locator('#screen-views > g').first()).toBeVisible();
+            await page.getByRole('button', { name: 'Close guide' }).click();
         }
         await page.keyboard.press('p');
         await pointer(page, 'pointerdown', { x: 900, y: 550 });

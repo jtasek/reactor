@@ -325,6 +325,16 @@ const migrations: Record<string, Migration> = {
                 .addPrimaryKeyConstraint('prototype_players_pkey', ['link_id', 'player'])
                 .execute();
         }
+    },
+    '0011_first_shared_link': {
+        async up(db) {
+            // When the shared document was started, as the editor reports it, to measure
+            // how long people take to their first shared link.
+            await db.schema
+                .alterTable('shared_prototypes')
+                .addColumn('started_at', 'timestamptz')
+                .execute();
+        }
     }
 };
 

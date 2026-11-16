@@ -1284,6 +1284,21 @@ suggest. Do these in order; each is a separate change.
    places its rows, and Preview's native fields drawn over inputs. Step 8 is complete.
 9. **First-run path (S–M).** Template, edit, Prototype, share link, with none of the advanced
    concepts required; measure time to the first shared link.
+   Implementation status (2026-11-16): until someone has started a document in this browser,
+   the editor's empty canvas offers the four journey starters (not Inspector typography, which
+   is about component variants) or a blank canvas; a drawing tool or content also counts as
+   starting (`src/ui/components/FirstRun`, `src/app/firstRun.ts`). A document started from a
+   starter, here or from Documents → Templates, gets a guide in the editor and Prototype:
+   change a text (in the Inspector, as text in Screen views is not edited on the canvas),
+   Play prototype, Share; each step is checked off as it happens. Signed out, Share offers
+   Sign in to share, and the moved document opens again after sign-in. The server records the
+   document's start the editor reports with each shared link (`shared_prototypes.started_at`)
+   and measures each person's time to their first link from the earlier of that and their
+   account's creation: `reactor_first_shared_link_seconds` and `GET /metrics/first-links`.
+   Covered by `tests/server/metrics.test.ts` and `tests/browser/firstRun.spec.ts`. Walked
+   end to end against PostgreSQL signed out, through sign-up and the move, to a link in
+   under a minute. Not yet: editing a Screen view's text on the canvas, and a fitted camera for
+   a document reopened after the move. Step 9 is complete.
 10. **Housekeeping (S).** Move code the server shares into one folder copied whole by the
     Dockerfile; load the readers for old schema versions only when an old document opens, to
     bring the entry bundle back under 492 KiB; add a nightly WebKit and PostgreSQL run; give each

@@ -8,14 +8,18 @@ export default defineConfig({
     reporter: 'list',
     use: {
         baseURL: 'http://127.0.0.1:4173',
-        // The signed-out notices count as shown, so they cover nothing tests click;
-        // tests/browser/notices.spec.ts starts without this.
+        // The signed-out notices count as shown and the first document as started, so
+        // neither covers what tests click; tests/browser/notices.spec.ts and
+        // tests/browser/firstRun.spec.ts start without these.
         storageState: {
             cookies: [],
             origins: [
                 {
                     origin: 'http://127.0.0.1:4173',
-                    localStorage: [{ name: 'reactor:notices', value: '["first","many"]' }]
+                    localStorage: [
+                        { name: 'reactor:notices', value: '["first","many"]' },
+                        { name: 'reactor:first-run:started', value: 'true' }
+                    ]
                 }
             ]
         },
