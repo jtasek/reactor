@@ -1,6 +1,6 @@
 import type { Document } from '../app/types';
 import type { DataField, DataRecord, DataValue } from '../app/dataTypes';
-import type { PreviewDrawing, PreviewNode } from './protocol';
+import type { PreviewDrawing, PreviewNode } from '../shared/previewProtocol';
 import { dataFields, dataValueProblem } from '../app/data';
 
 /** Lives in one mounted player only. Never enters the document, undo or collaboration. */

@@ -5,7 +5,7 @@ import type { Api, ServerRecord, SyncStatus, Transport } from './api';
 import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
-import { SCHEMA_VERSION } from './schemaVersion';
+import { SCHEMA_VERSION } from '../../shared/schemaVersion';
 import { readPeers, type LocalPresence, type Peer } from './presence';
 import {
     MAX_UPLOAD_BYTES,

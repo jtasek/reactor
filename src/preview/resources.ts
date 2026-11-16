@@ -7,7 +7,7 @@ import {
     MAX_PREVIEW_NODES,
     type PreviewDrawing,
     type PreviewNode
-} from './protocol';
+} from '../shared/previewProtocol';
 
 const BASE64_CHUNK_SIZE = 8192;
 const encode = (bytes: Uint8Array) => {

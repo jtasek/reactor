@@ -685,7 +685,9 @@ do not establish the R2 model-quality gate or replace testing with people outsid
 Without `SMTP_URL`, the development server writes email to its log instead.
 `compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
 `BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
-tests run against PGlite, PostgreSQL built to run inside the test process.
+tests run against PGlite, PostgreSQL built to run inside the test process. With
+`TEST_DATABASE_URL` set to a PostgreSQL server (its `postgres` database, by a user that may
+create databases), they run there instead, each test on its own copy of an empty database.
 
 ## Metrics and error reports
 
@@ -914,13 +916,17 @@ the current pan position. Touchscreen pinch zooms the same way; see Input above.
 - Seeing other people's pointers and selections, and comments
 - Exporting a prototype as a standalone web package
 
-[APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order;
+[APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order, and
+[DELIVERY_LOG.md](./DELIVERY_LOG.md) what each step delivered;
 [REFACTOR_PLAN.md](./REFACTOR_PLAN.md) keeps the earlier audit and its phases.
 
 ## Development
 
 `pnpm check` is what CI runs, with a second job that builds the Docker image,
-runs it and checks it with `node scripts/smoke.mjs <address>`. The production build fails when
+runs it and checks it with `node scripts/smoke.mjs <address>`. The **Nightly** workflow
+(02:40 UTC, or manually) runs the browser tests in WebKit (`BROWSERS=webkit pnpm test:browser`)
+and the server tests on PostgreSQL 17. Known flaky browser tests, each with an owner and a fix
+date, are listed in [tests/browser/FLAKY.md](./tests/browser/FLAKY.md). The production build fails when
 the bundle outgrows its budget in `webpack.config.mjs`. Install the test
 browser once with `pnpm exec playwright install chromium` (Linux may need
 `--with-deps`).

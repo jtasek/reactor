@@ -1,5 +1,5 @@
 import { accountRequest } from './accounts';
-import { AUTH_DESTINATIONS } from '../authenticationDestination';
+import { AUTH_DESTINATIONS } from '../../shared/authenticationDestination';
 
 /** Authentication may return only to known app pages; invitation secrets stay in this tab. */
 export function authenticationURLs(invitation?: string) {

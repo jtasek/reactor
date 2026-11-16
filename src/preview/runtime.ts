@@ -4,7 +4,7 @@ import {
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
     type PreviewNode
-} from './protocol';
+} from '../shared/previewProtocol';
 import '../../static/styles/site.css';
 import './runtime.css';
 

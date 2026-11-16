@@ -1,4 +1,4 @@
-import { recoveryDestination } from '../src/app/authenticationDestination';
+import { recoveryDestination } from '../src/shared/authenticationDestination';
 import { passwordResetURL } from '../server/passwordReset';
 import { recoverySignInURL } from '../src/app/services/passwordRecovery';
 

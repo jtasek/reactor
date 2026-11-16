@@ -9,7 +9,7 @@ import {
     migratePersistedState
 } from 'src/app/services/documentStorage';
 import { projectPreview, createArtworkProjector } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import { projectFlow } from 'src/app/flowProjection';
 import { createCopies, edit, settle, shownDocument, DOCUMENT_ID } from './support/collaboration';
 import { createTestStore } from './support/store';

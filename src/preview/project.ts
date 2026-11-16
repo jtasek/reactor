@@ -23,7 +23,11 @@ import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRol
 import { themeColors } from '../app/themeColors';
 import { instanceModes, resolveModes } from '../app/inheritedModes';
 import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
-import { MAX_PREVIEW_NODES, type PreviewDrawing, type PreviewNode } from './protocol';
+import {
+    MAX_PREVIEW_NODES,
+    type PreviewDrawing,
+    type PreviewNode
+} from '../shared/previewProtocol';
 
 export interface PreviewInspection {
     width?: number;

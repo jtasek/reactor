@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
+import { SCHEMA_VERSION } from '../src/shared/schemaVersion.ts';
 
 /**
  * The shared map whose keys are the document formats of the editors that wrote to a

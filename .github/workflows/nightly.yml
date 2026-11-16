@@ -1,0 +1,80 @@
+name: Nightly
+
+# What the checks on each change leave out: the browser tests in WebKit, and the
+# server tests on PostgreSQL itself rather than PGlite in the test process.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps webkit
+
+      - run: pnpm test:browser
+        env:
+          BROWSERS: webkit
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: webkit-traces
+          path: test-results/
+          if-no-files-found: ignore
+
+  postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        # The version compose.yaml deploys.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: reactor
+          POSTGRES_PASSWORD: reactor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reactor"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - run: pnpm install --frozen-lockfile
+
+      # Each test file makes its own databases on this server and drops them after.
+      - run: pnpm exec vitest run tests/server
+        env:
+          TEST_DATABASE_URL: postgres://reactor:reactor@127.0.0.1:5432/postgres

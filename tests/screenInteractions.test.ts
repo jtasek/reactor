@@ -5,7 +5,7 @@ import { resolveComponentRole } from 'src/app/componentRoles';
 import { componentFingerprint, librarySnapshot } from 'src/app/componentLibrary';
 import { readClipboard } from 'src/app/clipboard';
 import { projectPreview } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import {
     readEntity,
     readInteractions,

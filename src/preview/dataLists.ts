@@ -1,5 +1,5 @@
 import type { Document, InstanceShape, Shape, VariableContext } from '../app/types';
-import type { PreviewNode } from './protocol';
+import type { PreviewNode } from '../shared/previewProtocol';
 import { dataRecords } from '../app/data';
 import { recordOverrides } from '../app/dataLists';
 import { projectGeometry } from '../app/contextualGeometry';

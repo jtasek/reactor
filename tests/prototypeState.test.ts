@@ -10,7 +10,7 @@ import {
     restoreDocuments
 } from 'src/app/services/documentStorage';
 import { projectPreview } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import { createTestStore } from './support/store';
 import { createCopies, DOCUMENT_ID, edit, settle, shownDocument } from './support/collaboration';
 

@@ -1,4 +1,4 @@
-import { recoveryDestination } from '../src/app/authenticationDestination.ts';
+import { recoveryDestination } from '../src/shared/authenticationDestination.ts';
 
 /** Keep the reset secret in the fragment, outside HTTP URLs and referrers. */
 export function passwordResetURL(baseURL: string, token: string, providerURL: string) {

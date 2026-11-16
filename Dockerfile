@@ -47,14 +47,8 @@ COPY --chown=node:node --from=builder /app/dist-preview ./dist-preview
 COPY --chown=node:node static ./static
 COPY --chown=node:node server.prod.ts server.preview.ts package.json ./
 COPY --chown=node:node server ./server
-# Password reset and browser sign-in share the allowed return destinations.
-COPY --chown=node:node src/app/authenticationDestination.ts ./src/app/authenticationDestination.ts
-
-# Sync drops version marks newer than the editor this image serves.
-COPY --chown=node:node src/app/services/schemaVersion.ts ./src/app/services/schemaVersion.ts
-
-# Public snapshots use the same strict render-protocol validation as the browser.
-COPY --chown=node:node src/preview/protocol.ts ./src/preview/protocol.ts
+# Code the server shares with the editor lives in src/shared, copied whole.
+COPY --chown=node:node src/shared ./src/shared
 
 # Drop privileges; the app never writes to disk so the FS can be mounted read-only.
 USER node

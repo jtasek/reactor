@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import { serve, type DocumentSummary } from './support';
-import { PREVIEW_PROTOCOL_VERSION } from '../../src/preview/protocol';
+import { PREVIEW_PROTOCOL_VERSION } from '../../src/shared/previewProtocol';
 
 const PREVIEW = 'https://app.prototype.test';
 function application(documentId: string) {

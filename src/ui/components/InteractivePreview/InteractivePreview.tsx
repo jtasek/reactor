@@ -16,7 +16,7 @@ import {
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
     type PreviewDrawing
-} from 'src/preview/protocol';
+} from 'src/shared/previewProtocol';
 import { createPreviewResources } from 'src/preview/resources';
 import type { PreviewInspection, PreviewSession, PreviewDiagnostic } from 'src/preview/project';
 import styles from './styles.css';

@@ -9,7 +9,7 @@ import { dropNewerVersions } from './documentVersions.ts';
 import { insertSnapshot, snapshotDue } from './history.ts';
 import { stampPresence, type PresenceUser } from './presence.ts';
 import { restoreContent } from './restoreContent.ts';
-import { SCHEMA_VERSION } from '../src/app/services/schemaVersion.ts';
+import { SCHEMA_VERSION } from '../src/shared/schemaVersion.ts';
 import { noMetrics, type Metrics } from './metrics.ts';
 import type { Db, Log } from './schema.ts';
 import { allows, documentRole } from './workspaces.ts';

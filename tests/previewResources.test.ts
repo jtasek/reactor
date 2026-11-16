@@ -1,6 +1,6 @@
 import { createPreviewResources } from 'src/preview/resources';
 import { projectPreview } from 'src/preview/project';
-import { readPreview, MAX_PREVIEW_BYTES, MAX_PREVIEW_NODES } from 'src/preview/protocol';
+import { readPreview, MAX_PREVIEW_BYTES, MAX_PREVIEW_NODES } from 'src/shared/previewProtocol';
 import { createComponent, createShape } from 'src/app/factories';
 import { MAX_IMAGE_BYTES } from 'src/app/services/assets';
 import { previewImageAsset, previewImageFixture, PREVIEW_PNG } from './support/previewImages';

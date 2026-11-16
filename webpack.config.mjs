@@ -37,6 +37,8 @@ export const config = {
                     loader: 'swc-loader',
                     options: {
                         jsc: {
+                            // Without a target, swc compiles to ES5, about a quarter larger.
+                            target: 'es2022',
                             parser: {
                                 syntax: 'typescript',
                                 tsx: true
@@ -104,32 +106,15 @@ export const config = {
               ]
             : [new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' })])
     ],
-    // The bundle budget: the production build fails beyond it. Measured on 2026-10-30
-    // at 493.4 KiB for the entry bundle after schema v19 validation and guarded routing.
-    // Readers and history tracking run on every page; rule resolution and authoring stay lazy.
-    // Raise it only for code every page needs as it opens, after checking what grew.
-    // Documents controls and icons load with their page; commands and tools load with
-    // the editor page (`registerEditor`). The individual-file limit is 250 KiB.
-    // Schema v24 adds required entity/field/record readers (~1.6 KiB); the data UI loads on demand.
-    // Schema v28 adds named boolean records and binding readers; its authoring UI stays lazy.
-    // 2026-11-07: +1 KiB so startup waits for the self-hosted Roboto before measuring text (~70 bytes).
-    // 2026-11-10: +3 KiB entry, +2 KiB per file for the list of selected shapes (`shapeSelection.ts`)
-    // that every selection write keeps, so selection readers stop depending on every shape.
-    // 2026-11-11: +3 KiB entry and per file for the container index (`containerState.ts`)
-    // that lets visibility and lock checks skip scanning every group, layer and component.
-    // 2026-11-13: +1 KiB entry for the version check (S1 step 1): a document a newer editor
-    // changed goes view only, stops a held drag and becomes editable again after a rollback.
-    // 2026-11-15: +1 KiB entry and per file for the size warning and its configuration (S1 step 6).
-    // 2026-11-15: +1 KiB entry for the browser error report (S1 step 7), which has to listen
-    // from the start to hear errors as pages open (~750 bytes).
-    // 2026-11-16: +1 KiB per file for faster large selections: command guards read each
-    // derived value once, Show all keeps hasHiddenItems, the Inspector measures once (~370 bytes).
+    // The bundle budget: the production build fails beyond it. On 2026-11-16 the entry bundle
+    // was 401.4 KiB and the largest file, React DOM, 225.1 KiB. Raise it only for code every page
+    // needs as it opens, after checking what grew; editor code loads with `registerEditor`.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 507 * 1024,
-              maxAssetSize: 255 * 1024
+              maxEntrypointSize: 410 * 1024,
+              maxAssetSize: 232 * 1024
           },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.

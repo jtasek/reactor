@@ -4,7 +4,7 @@ import { createDocument } from 'src/app/factories';
 import { dataRecords } from 'src/app/data';
 import { recordOverrides } from 'src/app/dataLists';
 import type { Document, InstanceShape } from 'src/app/types';
-import type { PreviewNode } from 'src/preview/protocol';
+import type { PreviewNode } from 'src/shared/previewProtocol';
 import {
     canvasProjection,
     canvasShapes,

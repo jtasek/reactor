@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION } from './schemaVersion';
+import { SCHEMA_VERSION } from '../../shared/schemaVersion';
 
 export interface ErrorReportConfiguration {
     /** Reports one page load sends at most; a message already sent is not sent again. */

@@ -2,7 +2,7 @@ import { json } from 'overmind';
 import { selectScreenLayout, viewLayoutRoot, screenLayoutProblems } from 'src/app/screenLayouts';
 import { projectScreen } from 'src/app/screenProjection';
 import { projectPreview } from 'src/preview/project';
-import { readPreview } from 'src/preview/protocol';
+import { readPreview } from 'src/shared/previewProtocol';
 import {
     readEntity,
     serializePersistedState,

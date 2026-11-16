@@ -1,6 +1,6 @@
 import { recordDetailFixture } from './support/dataList';
 import { projectPreview } from 'src/preview/project';
-import { readPreview, type PreviewNode } from 'src/preview/protocol';
+import { readPreview, type PreviewNode } from 'src/shared/previewProtocol';
 import { readEntity, copyDocument } from 'src/app/services/documentStorage';
 import { writeClipboard, readClipboard } from 'src/app/clipboard';
 import { createCopies, settle, DOCUMENT_ID, shownDocument } from './support/collaboration';

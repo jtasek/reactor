@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { readPreview, PREVIEW_PROTOCOL_VERSION } from '../../src/preview/protocol.ts';
+import { readPreview, PREVIEW_PROTOCOL_VERSION } from '../../src/shared/previewProtocol.ts';
 import { noMetrics, type Metrics } from '../metrics.ts';
 import type { Db, Log } from '../schema.ts';
 import * as repository from '../repositories/prototypeLinks.ts';

@@ -1,5 +1,5 @@
 import { reportErrors } from 'src/app/services/errorReport';
-import { SCHEMA_VERSION } from 'src/app/services/schemaVersion';
+import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
 
 function page(perPage = 3) {
     const target = new EventTarget();

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { recordDetailFixture } from '../support/dataList';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { projectPreview } from 'src/preview/project';
-import { PREVIEW_PROTOCOL_VERSION } from 'src/preview/protocol';
+import { PREVIEW_PROTOCOL_VERSION } from 'src/shared/previewProtocol';
 import { openEditor } from './support/editor';
 
 test('configures selected-record binding and navigates by keyboard with isolated values and Reset', async ({

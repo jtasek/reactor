@@ -1,8 +1,9 @@
 import { PGlite } from '@electric-sql/pglite';
 import express from 'express';
 import type { AddressInfo } from 'net';
-import { Kysely, type KyselyPlugin } from 'kysely';
+import { Kysely, PostgresDialect, type KyselyPlugin } from 'kysely';
 import { PGliteDialect } from 'kysely-pglite-dialect';
+import pg from 'pg';
 import type { AiLimits } from '../../server/ai';
 import type { AiProvider } from '../../server/aiTasks';
 import { createApi } from '../../server/api';
@@ -17,7 +18,7 @@ import {
     type BrowserErrorLimits
 } from '../../server/metrics';
 import { firstSharedLinks, sharedPrototypes } from '../../server/repositories/prototypeLinks';
-import { SCHEMA_VERSION } from '../../src/app/services/schemaVersion';
+import { SCHEMA_VERSION } from '../../src/shared/schemaVersion';
 
 export const ORIGIN = 'http://localhost:4000';
 
@@ -33,19 +34,115 @@ vi.setConfig({ testTimeout: 20_000 });
  */
 const EMPTY_DATABASE_TIMEOUT = 120_000;
 
+/**
+ * With `TEST_DATABASE_URL`, tests run on that PostgreSQL server instead of in the
+ * test process (the nightly run): each test takes its own copy of a database whose
+ * tables a file's tests make once, and the copies are dropped afterwards.
+ */
+const SERVER_URL = process.env.TEST_DATABASE_URL;
+
 let emptyDatabase: Blob;
+let template: string | undefined;
+const databases: { name: string; db: Kysely<Database> }[] = [];
 
-beforeAll(async () => {
-    const pglite = new PGlite();
-    const db = new Kysely<Database>({ dialect: new PGliteDialect(pglite) });
+const uniqueName = (prefix: string) =>
+    `${prefix}_${process.pid}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
+const databaseURL = (name: string) => {
+    const url = new URL(SERVER_URL!);
+
+    url.pathname = `/${name}`;
+
+    return url.toString();
+};
+
+const openServerDatabase = (name: string, plugins: KyselyPlugin[] = []) => {
+    const pool = new pg.Pool({
+        connectionString: databaseURL(name),
+        max: 4,
+        idleTimeoutMillis: 500
+    });
+
+    // Dropping the database ends its connections, which the pool reports here.
+    pool.on('error', () => {});
+
+    return new Kysely<Database>({ dialect: new PostgresDialect({ pool }), plugins });
+};
+
+/** Runs `statement` on the server's own database, outside any test's. */
+async function administer(statement: string) {
+    const client = new pg.Client({ connectionString: SERVER_URL });
+
+    await client.connect();
+
+    try {
+        await client.query(statement);
+    } finally {
+        await client.end();
+    }
+}
+
+async function makeTables(db: Kysely<Database>) {
     await migrateAuth(
         createAuth({ db, baseURL: ORIGIN, secret: SECRET, mailer: { send: async () => {} } })
     );
     await migrateApp(db);
+}
+
+beforeAll(async () => {
+    if (SERVER_URL) {
+        template = uniqueName('reactor_template');
+        await administer(`CREATE DATABASE ${template}`);
+
+        const db = openServerDatabase(template);
+
+        await makeTables(db);
+        await db.destroy();
+
+        return;
+    }
+
+    const pglite = new PGlite();
+    const db = new Kysely<Database>({ dialect: new PGliteDialect(pglite) });
+
+    await makeTables(db);
     emptyDatabase = await pglite.dumpDataDir('none');
     await pglite.close();
 }, EMPTY_DATABASE_TIMEOUT);
+
+/**
+ * Drops every database this file made, ending connections a test left open (a pool
+ * waits for those forever), then closes the pools.
+ */
+afterAll(async () => {
+    const made = databases.splice(0);
+
+    for (const name of made.map(({ name }) => name).concat(template ?? [])) {
+        await administer(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    }
+
+    await Promise.allSettled(made.map(({ db }) => db.destroy()));
+}, EMPTY_DATABASE_TIMEOUT);
+
+/** An empty database with the app's tables, for one test or a file's tests. */
+async function emptyCopy(plugins: KyselyPlugin[]) {
+    if (!template) {
+        return new Kysely<Database>({
+            dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase })),
+            plugins
+        });
+    }
+
+    const name = uniqueName('reactor_test');
+
+    await administer(`CREATE DATABASE ${name} TEMPLATE ${template}`);
+
+    const db = openServerDatabase(name, plugins);
+
+    databases.push({ name, db });
+
+    return db;
+}
 
 export interface Email {
     to: string;
@@ -58,10 +155,7 @@ export async function startAccounts(
     plugins: KyselyPlugin[] = [],
     socialProviders?: Parameters<typeof createAuth>[0]['socialProviders']
 ) {
-    const db = new Kysely<Database>({
-        dialect: new PGliteDialect(new PGlite({ loadDataDir: emptyDatabase })),
-        plugins
-    });
+    const db = await emptyCopy(plugins);
     const outbox: Email[] = [];
     const auth = createAuth({
         db,
