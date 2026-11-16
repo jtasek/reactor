@@ -562,6 +562,10 @@ export function selectedItems(document: Document) {
  * by its own setting, or the layers a highlighted layer leaves out.
  */
 export const hasHidden = (document: Document) =>
+    typeof document.hasHiddenItems === 'boolean' ? document.hasHiddenItems : anyHidden(document);
+
+/** `hasHidden` worked out, as the document's derived `hasHiddenItems` does. */
+export const anyHidden = (document: Document) =>
     (document.shownLayerId !== undefined && document.layers[document.shownLayerId] !== undefined) ||
     [document.shapes, document.groups, document.layers, document.frames].some((table) =>
         Object.values(table).some((item) => !item.visible)

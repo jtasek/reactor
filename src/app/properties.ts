@@ -1,6 +1,6 @@
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState } from './frameState';
-import type { Document, Shape } from './types';
+import type { Box, Document, Shape } from './types';
 import { limitCornerRadius, translateShape } from './geometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
@@ -41,6 +41,11 @@ export type ShapeProperty = {
           accepts?: (value: number) => boolean;
           /** The values a slider beside the field offers, when it has one. */
           range?: { min: number; max: number; step: number };
+          /**
+           * For a part of the shape's box: `read` is this of `getShapeBounds`,
+           * so a list of shapes measures each once for all four.
+           */
+          fromBox?: (box: Box) => number;
       }
     | {
           kind: 'boolean';
@@ -116,6 +121,12 @@ const colorProperty = (
     }
 });
 
+/** A number read from the shape's box, as `fromBox` describes. */
+const boxPart = (fromBox: (box: Box) => number) => ({
+    fromBox,
+    read: (shape: Shape) => fromBox(getShapeBounds(shape))
+});
+
 /** The properties the panel offers, in display order, grouped into sections. */
 export const SHAPE_PROPERTIES: ShapeProperty[] = [
     {
@@ -137,7 +148,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'X',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).topLeft.x,
+        ...boxPart((box) => box.topLeft.x),
         write: (shape, value) =>
             translateShape(shape, { x: value - getShapeBounds(shape).topLeft.x, y: 0 })
     },
@@ -146,7 +157,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'Y',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).topLeft.y,
+        ...boxPart((box) => box.topLeft.y),
         write: (shape, value) =>
             translateShape(shape, { x: 0, y: value - getShapeBounds(shape).topLeft.y })
     },
@@ -155,7 +166,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'Width',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).width,
+        ...boxPart((box) => box.width),
         editable: stackDimensionEditable('width'),
         write: (shape, value) => writeStackDimension(shape, 'width', value)
     },
@@ -164,7 +175,7 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         label: 'Height',
         group: 'Layout',
         kind: 'number',
-        read: (shape) => getShapeBounds(shape).height,
+        ...boxPart((box) => box.height),
         editable: stackDimensionEditable('height'),
         write: (shape, value) => writeStackDimension(shape, 'height', value)
     },
@@ -334,11 +345,22 @@ export function sharedProperties(shapes: Shape[], document: Document): PropertyR
         return [];
     }
 
-    // Laid out once per shape, not once per shape and property.
+    // Laid out once per shape, not once per shape and property; and measured
+    // once, not once for each of X, Y, Width and Height.
     const drawn = shapes.map((shape) => renderedShape(document, shape.id));
+    let boxes: Box[] | undefined;
+    const read = (property: ShapeProperty) => {
+        if (property.kind === 'number' && property.fromBox) {
+            boxes ??= drawn.map((shape) => getShapeBounds(shape));
+
+            return boxes.map(property.fromBox);
+        }
+
+        return drawn.map((shape) => property.read(shape, document));
+    };
 
     return SHAPE_PROPERTIES.flatMap((property) => {
-        const values = drawn.map((shape) => shown(property.read(shape, document)));
+        const values = read(property).map(shown);
 
         if (values.some((value) => value === undefined)) {
             return [];

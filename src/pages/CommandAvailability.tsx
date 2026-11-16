@@ -4,6 +4,7 @@ import { publishCommandAvailability } from 'src/app/commandAvailability';
 import { useReaction } from 'src/app/hooks';
 import type { Context } from 'src/app';
 import { storeOf } from 'src/app/storeOf';
+import { readingDerivedOnce } from 'src/app/derivedMemo';
 
 type State = Context['state'];
 
@@ -57,7 +58,9 @@ export function watchCommandAvailability(reaction: Context['reaction']) {
         // the watching, so a failed answer offers nothing and waits for a change.
         tree.trackScope(() => {
             try {
-                available = readAvailability(tree.state as State);
+                available = readingDerivedOnce(store, tree, () =>
+                    readAvailability(tree.state as State)
+                );
             } catch (error) {
                 console.error(error);
                 available = {};

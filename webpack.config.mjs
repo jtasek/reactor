@@ -122,12 +122,14 @@ export const config = {
     // 2026-11-15: +1 KiB entry and per file for the size warning and its configuration (S1 step 6).
     // 2026-11-15: +1 KiB entry for the browser error report (S1 step 7), which has to listen
     // from the start to hear errors as pages open (~750 bytes).
+    // 2026-11-16: +1 KiB per file for faster large selections: command guards read each
+    // derived value once, Show all keeps hasHiddenItems, the Inspector measures once (~370 bytes).
     performance: isDev
         ? false
         : {
               hints: 'error',
               maxEntrypointSize: 507 * 1024,
-              maxAssetSize: 254 * 1024
+              maxAssetSize: 255 * 1024
           },
     optimization: {
         // Readable module names on HMR in dev; stable hashes for caching in prod.

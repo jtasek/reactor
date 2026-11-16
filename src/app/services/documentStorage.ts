@@ -47,6 +47,7 @@ export const RUNTIME_FIELDS = new Set([
     'sourceOnlyShapesIds',
     'componentMembersIds',
     'containerStates',
+    'hasHiddenItems',
     'shownLayerId',
     'surfaceSelected',
     'shapeSelection'
