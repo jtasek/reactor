@@ -232,7 +232,8 @@ it('does not start a gesture outside the placed focus and safely exits after its
             prototypeBooleans: {},
             dataEntities: {},
             dataFields: {},
-            dataRecords: {}
+            dataRecords: {},
+            dataRules: {}
         }
     });
     store.actions.leaveComponentSource();

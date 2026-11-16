@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import type { Document } from 'src/app/types';
 import type { DataField, DataRecord } from 'src/app/dataTypes';
 import { fieldChoices } from 'src/app/data';
-import { formFieldProblem } from 'src/preview/recordForms';
+import { checkRecordDraft } from 'src/preview/recordForms';
 import { Dialog } from '../Dialog/Dialog';
 import styles from './recordForm.css';
 
@@ -113,14 +113,23 @@ export function RecordForm({
                         onChange: (
                             event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                         ) => {
-                            const value = event.target.value;
-                            setDraft({ ...draft, [field.id]: value });
-                            setProblems((previous) => ({
-                                ...previous,
-                                [field.id]: previous[field.id]
-                                    ? (formFieldProblem(document, field, value) ?? '')
-                                    : ''
-                            }));
+                            const next = { ...draft, [field.id]: event.target.value };
+                            setDraft(next);
+                            // Only messages already shown are updated, so typing never nags.
+                            setProblems((previous) => {
+                                if (!Object.values(previous).some(Boolean)) {
+                                    return previous;
+                                }
+                                const current = checkRecordDraft(
+                                    document,
+                                    record.entityId,
+                                    next
+                                ).problems;
+
+                                return Object.fromEntries(
+                                    Object.keys(previous).map((key) => [key, current[key] ?? ''])
+                                );
+                            });
                         }
                     };
 

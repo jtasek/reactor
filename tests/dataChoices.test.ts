@@ -6,6 +6,7 @@ import {
     hydrateDocument,
     migratePersistedState,
     readEntity,
+    SCHEMA_VERSION,
     serializePersistedState
 } from 'src/app/services/documentStorage';
 import { projectPreview } from 'src/preview/project';
@@ -174,7 +175,7 @@ it('round trips the new settings through the readers and marks the new format', 
     const { store, change, customers, name, status, customer } = setup();
     applied(change({ kind: 'setLabelField', entityId: customers, fieldId: name }));
     const saved = serializePersistedState(store.state);
-    expect(saved.version).toBe(32);
+    expect(saved.version).toBe(SCHEMA_VERSION);
     const migrated = migratePersistedState(JSON.parse(JSON.stringify(saved)))!;
     const restored = hydrateDocument(migrated.documents[store.state.currentDocumentId]);
     expect(restored.dataFields[status].options).toEqual(['Open', 'Shipped']);

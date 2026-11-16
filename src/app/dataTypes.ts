@@ -1,3 +1,4 @@
+import type { Condition } from './expressions';
 /** Stable IDs, rather than names, connect schema fields to record values. */
 export type DataType = 'text' | 'number' | 'boolean' | 'choice' | 'reference';
 export type DataValue = string | number | boolean | null;
@@ -35,4 +36,19 @@ export interface DataRecord {
     /** Rows show in this order; ties (from concurrent adds) fall back to the ID. */
     order: number;
     values: Record<string, DataValue>;
+}
+/**
+ * A record of `entityId` is valid only while `check` holds, or when `when` is set and doesn't
+ * hold. Forms refuse to save a record that breaks a rule and show `message` at `fieldId`, or
+ * for the whole record without one. Field operands name fields of the same entity.
+ */
+export interface DataRule {
+    id: string;
+    entityId: string;
+    when?: Condition;
+    check: Condition;
+    message: string;
+    fieldId?: string;
+    /** Rules show in this order. */
+    order: number;
 }

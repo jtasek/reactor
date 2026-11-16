@@ -2,7 +2,7 @@ import type { DocumentSizeConfiguration } from './services/documentSizeConfigura
 import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
-import type { DataEntity, DataField, DataRecord } from './dataTypes';
+import type { DataEntity, DataField, DataRecord, DataRule } from './dataTypes';
 import type { FrameLayout } from './frameLayout';
 import type { FrameState } from './frameState';
 import type { DocumentAccess } from './documentAccess';
@@ -455,6 +455,7 @@ export interface Document {
     dataEntities: HashTable<DataEntity>;
     dataFields: HashTable<DataField>;
     dataRecords: HashTable<DataRecord>;
+    dataRules: HashTable<DataRule>;
     frames: HashTable<Frame>;
     framesIds: string[];
     /** Local projection; never saved or shared. */

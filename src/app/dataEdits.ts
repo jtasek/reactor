@@ -1,8 +1,16 @@
 import type { ActionWithParamAndResult, Document } from './types';
-import type { DataField, DataType, DataValue, DataList } from './dataTypes';
+import type { DataField, DataType, DataValue, DataList, DataRule } from './dataTypes';
 import { isReadOnly } from './documentAccess';
 import { readEntity, readDataList } from './services/documentStorage';
-import { dataLeftovers, dataRecords, dataValueProblem, MAX_RECORDS_PER_ENTITY } from './data';
+import {
+    dataLeftovers,
+    dataRecords,
+    dataRules,
+    dataValueProblem,
+    hasLeftovers,
+    MAX_RECORDS_PER_ENTITY,
+    ruleProblems
+} from './data';
 import { dataListProblems } from './dataLists';
 import { isShapeLocked } from './utils';
 
@@ -30,7 +38,14 @@ export type DataChange =
     | { kind: 'addRecord'; entityId: string }
     | { kind: 'deleteRecord'; id: string }
     | { kind: 'setValue'; recordId: string; fieldId: string; value: DataValue }
+    | { kind: 'addRule'; entityId: string; rule: RuleContent }
+    | { kind: 'updateRule'; id: string; rule: RuleContent }
+    | { kind: 'deleteRule'; id: string }
     | { kind: 'removeLeftovers' };
+export type RuleContent = Pick<DataRule, 'when' | 'check' | 'message' | 'fieldId'>;
+
+/** Per entity, like the record limit: enough for any prototype form. */
+export const MAX_RULES_PER_ENTITY = 50;
 export type DataEdit = DataChange & { documentId: string };
 export type DataEditResult = { applied: true; id?: string } | { applied: false; problem: string };
 
@@ -133,6 +148,9 @@ function prepare(
                 Object.values(document.dataRecords)
                     .filter((record) => record.entityId === edit.id)
                     .forEach((record) => delete document.dataRecords[record.id]);
+                Object.values(document.dataRules)
+                    .filter((rule) => rule.entityId === edit.id)
+                    .forEach((rule) => delete document.dataRules[rule.id]);
                 delete document.dataEntities[edit.id];
             }
         };
@@ -203,6 +221,49 @@ function prepare(
             }
         };
     }
+    if (edit.kind === 'addRule' || edit.kind === 'updateRule') {
+        const previous = edit.kind === 'updateRule' ? document.dataRules[edit.id] : undefined;
+        if (edit.kind === 'updateRule' && !previous) {
+            throw new Error('This rule no longer exists.');
+        }
+        const entityId = previous?.entityId ?? (edit as { entityId: string }).entityId;
+        entity(document, entityId);
+        const existing = dataRules(document, entityId);
+        if (!previous && existing.length >= MAX_RULES_PER_ENTITY) {
+            throw new Error(`An entity has up to ${MAX_RULES_PER_ENTITY} rules.`);
+        }
+        const rule = readEntity('dataRules', {
+            ...edit.rule,
+            id: previous?.id ?? newId(),
+            entityId,
+            order: previous?.order ?? (existing.at(-1)?.order ?? -1) + 1
+        });
+        if (rule.fieldId && document.dataFields[rule.fieldId]?.entityId !== entityId) {
+            throw new Error('Show the message at one of this entity’s fields.');
+        }
+        const problems = ruleProblems(document, rule);
+        if (problems.length) {
+            throw new Error(problems.join(' '));
+        }
+
+        return {
+            id: rule.id,
+            write: () => {
+                document.dataRules[rule.id] = rule;
+            }
+        };
+    }
+    if (edit.kind === 'deleteRule') {
+        if (!document.dataRules[edit.id]) {
+            throw new Error('This rule no longer exists.');
+        }
+
+        return {
+            write: () => {
+                delete document.dataRules[edit.id];
+            }
+        };
+    }
     if (edit.kind === 'addRecord') {
         entity(document, edit.entityId);
         const records = dataRecords(document, edit.entityId);
@@ -239,7 +300,7 @@ function prepare(
     }
     if (edit.kind === 'removeLeftovers') {
         const leftovers = dataLeftovers(document);
-        if (!leftovers.fields.length && !leftovers.records.length && !leftovers.values.length) {
+        if (!hasLeftovers(leftovers)) {
             throw new Error('Nothing is left over.');
         }
 
@@ -247,6 +308,7 @@ function prepare(
             write: () => {
                 leftovers.fields.forEach((id) => delete document.dataFields[id]);
                 leftovers.records.forEach((id) => delete document.dataRecords[id]);
+                leftovers.rules.forEach((id) => delete document.dataRules[id]);
                 leftovers.values.forEach(
                     ({ recordId, fieldId }) => delete document.dataRecords[recordId].values[fieldId]
                 );

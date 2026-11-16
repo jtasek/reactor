@@ -3,7 +3,10 @@ import { recordDetailFixture } from '../support/dataList';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
 
-async function openFormEditor(page: import('@playwright/test').Page) {
+async function openFormEditor(
+    page: import('@playwright/test').Page,
+    change?: (document: ReturnType<typeof recordDetailFixture>['document']) => void
+) {
     const { document } = recordDetailFixture();
     document.dataFields.age = {
         id: 'age',
@@ -21,6 +24,7 @@ async function openFormEditor(page: import('@playwright/test').Page) {
     };
     document.dataRecords.ada.values = { name: 'Ada', age: 36, active: true };
     document.dataRecords.grace.values = { name: 'Grace', age: 85, active: false };
+    change?.(document);
     await page.addInitScript(
         (saved) => localStorage.setItem('reactor', saved),
         JSON.stringify(
@@ -183,4 +187,63 @@ test('hides Edit record in a preview with no selected-record binding', async ({ 
     const preview = page.frameLocator('iframe[title="Application preview"]');
     await expect(preview.getByRole('button', { name: 'Ada', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Edit record', exact: true })).toHaveCount(0);
+});
+
+test('refuses a record that breaks a rule and shows each message where it belongs', async ({
+    page
+}, info) => {
+    const preview = await openFormEditor(page, (document) => {
+        document.dataRules.adult = {
+            id: 'adult',
+            entityId: 'customers',
+            check: {
+                kind: 'greater',
+                left: { kind: 'field', fieldId: 'age' },
+                right: { kind: 'value', value: 17 }
+            },
+            message: 'Customers must be adults.',
+            fieldId: 'age',
+            order: 0
+        };
+        document.dataRules.active = {
+            id: 'active',
+            entityId: 'customers',
+            when: {
+                kind: 'equals',
+                left: { kind: 'field', fieldId: 'active' },
+                right: { kind: 'value', value: false }
+            },
+            check: {
+                kind: 'contains',
+                left: { kind: 'field', fieldId: 'name' },
+                right: { kind: 'value', value: '(inactive)' }
+            },
+            message: 'Mark inactive customers in their name.',
+            order: 1
+        };
+    });
+    await preview.getByRole('button', { name: 'Ada', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit record', exact: true }).click();
+    const form = page.getByRole('dialog', { name: 'Edit Customers record' });
+    await form.getByLabel('Age', { exact: false }).fill('12');
+    await form.getByLabel('Active', { exact: false }).selectOption('false');
+    await form.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(form.getByText('Customers must be adults.', { exact: true })).toBeVisible();
+    await expect(form.getByLabel('Age', { exact: false })).toHaveAttribute('aria-invalid', 'true');
+    await expect(
+        form.getByText('Mark inactive customers in their name.', { exact: true })
+    ).toBeVisible();
+    await page.screenshot({ path: info.outputPath('record-form-rules.png') });
+    // Fixing a value clears its shown message without waiting for Save.
+    await form.getByLabel('Age', { exact: false }).fill('40');
+    await expect(form.getByText('Customers must be adults.', { exact: true })).toHaveCount(0);
+    await form.getByLabel('Name', { exact: false }).fill('Ada (inactive)');
+    await expect(
+        form.getByText('Mark inactive customers in their name.', { exact: true })
+    ).toHaveCount(0);
+    await form.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(form).toHaveCount(0);
+    await expect(preview.getByRole('textbox', { name: 'Ada (inactive)', exact: true })).toHaveValue(
+        'Ada (inactive)'
+    );
 });

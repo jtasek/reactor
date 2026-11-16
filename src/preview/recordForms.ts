@@ -1,7 +1,7 @@
 import type { Document } from '../app/types';
 import type { DataField, DataRecord, DataValue } from '../app/dataTypes';
 import type { PreviewDrawing, PreviewNode } from '../shared/previewProtocol';
-import { dataFields, dataValueProblem } from '../app/data';
+import { breaksRule, dataFields, dataValueProblem, ruleTarget, runnableRules } from '../app/data';
 
 /** Lives in one mounted player only. Never enters the document, undo or collaboration. */
 export interface RecordSession {
@@ -114,6 +114,38 @@ export function formFieldProblem(document: Document, field: DataField, draft: st
 }
 
 /**
+ * Checks a form draft: each field's value first, then the entity's rules on the whole record.
+ * A rule's message shows at its field, or under `record`; a field's own problem comes first.
+ */
+export function checkRecordDraft(
+    document: Document,
+    entityId: string,
+    draft: Record<string, string>
+): { problems: Record<string, string>; values: Record<string, DataValue> } {
+    const problems: Record<string, string> = {};
+    const values: Record<string, DataValue> = {};
+    for (const field of dataFields(document, entityId)) {
+        const problem = formFieldProblem(document, field, draft[field.id] ?? '');
+        if (problem) {
+            problems[field.id] = problem;
+            continue;
+        }
+        values[field.id] = formValue(field, draft[field.id] ?? '');
+    }
+    if (Object.keys(problems).length) {
+        return { problems, values };
+    }
+    for (const rule of runnableRules(document, entityId)) {
+        const target = ruleTarget(document, rule);
+        if (!problems[target] && breaksRule(rule, values)) {
+            problems[target] = rule.message;
+        }
+    }
+
+    return { problems, values };
+}
+
+/**
  * Validate the whole record first, then return a new local session in one step. The session
  * keeps only values that differ from the authored record, so later Data View edits to other
  * fields still reach the preview.
@@ -128,17 +160,7 @@ export function saveRecord(
     if (!current || !document.dataEntities[current.entityId]) {
         return { session, problems: { record: 'This record is no longer available.' } };
     }
-    const fields = dataFields(document, current.entityId);
-    const problems: Record<string, string> = {};
-    const values: Record<string, DataValue> = {};
-    for (const field of fields) {
-        const problem = formFieldProblem(document, field, draft[field.id] ?? '');
-        if (problem) {
-            problems[field.id] = problem;
-            continue;
-        }
-        values[field.id] = formValue(field, draft[field.id] ?? '');
-    }
+    const { problems, values } = checkRecordDraft(document, current.entityId, draft);
     if (Object.keys(problems).length) {
         return { session, problems };
     }

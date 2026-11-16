@@ -275,6 +275,7 @@ export function createDocument(options: Partial<Document> = {}): Document {
         dataEntities: {},
         dataFields: {},
         dataRecords: {},
+        dataRules: {},
         dimensions: {},
         variables: {},
         ...options,

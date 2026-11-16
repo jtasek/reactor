@@ -80,3 +80,47 @@
     flex-basis: 100%;
     margin: 0;
 }
+.rule {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--panel-gap);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--hairline-color);
+}
+.rule p {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 240px;
+    margin: 0;
+}
+.dataView .ruleForm {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+}
+.conditions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+}
+.condition {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--panel-gap);
+}
+.dataView .inline {
+    flex-direction: row;
+    align-items: center;
+}
+.records th small {
+    display: block;
+    font-weight: normal;
+}

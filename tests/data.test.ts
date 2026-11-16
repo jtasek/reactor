@@ -242,7 +242,7 @@ it('removes what concurrent deletes leave behind, as one reversible edit', async
     const before = dataLeftovers(shownDocument(a));
     expect([before.fields.length, before.records.length, before.values.length]).toEqual([1, 1, 1]);
     expect(dataProblems(shownDocument(a))).toEqual([
-        'Left over from deleted entities or fields: 1 fields, 1 records, 1 values.'
+        'Left over from deleted entities or fields: 1 fields, 1 records, 1 values, 0 rules.'
     ]);
     edit(a, (actions) => {
         applied(actions.editData({ kind: 'removeLeftovers', documentId: DOCUMENT_ID }));
