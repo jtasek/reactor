@@ -18,6 +18,12 @@ import styles from './styles.css';
 
 const TYPES: DataType[] = ['text', 'number', 'boolean', 'choice', 'reference'];
 
+/**
+ * A reference column offers every record of its target, and an entity has up to 1,000 rows, so
+ * a long list of choices is only drawn into a cell once that cell is used.
+ */
+const DRAWN_CHOICES = 100;
+
 type Choice = { value: string; label: string };
 
 /** One option per line; blank lines are ignored, the rest checked when saved. */
@@ -47,7 +53,12 @@ function ValueEditor({
     const initial = value === null || value === undefined ? '' : String(value);
     const [draft, setDraft] = useState(initial);
     const [problem, setProblem] = useState('');
+    const [used, setUsed] = useState(false);
     const expected = type === 'number' || type === 'boolean' ? type : 'string';
+    const offered =
+        choices && (used || choices.length <= DRAWN_CHOICES)
+            ? choices
+            : choices?.filter((choice) => choice.value === draft);
     const needsConversion = value !== null && value !== undefined && typeof value !== expected;
 
     return (
@@ -88,15 +99,17 @@ function ValueEditor({
                         <option value={draft}>{draft} (invalid)</option>
                     )}
                 </select>
-            ) : choices ? (
+            ) : choices && offered ? (
                 <select
                     aria-label={label}
                     value={draft}
                     disabled={disabled}
+                    onFocus={() => setUsed(true)}
+                    onPointerDown={() => setUsed(true)}
                     onChange={(event) => setDraft(event.target.value)}
                 >
                     <option value="">Not set</option>
-                    {choices.map((choice) => (
+                    {offered.map((choice) => (
                         <option key={choice.value} value={choice.value}>
                             {choice.label}
                         </option>
@@ -269,6 +282,10 @@ function DataEditor() {
         };
     });
     const entityId = data.entity?.id ?? '';
+    // The entity chosen for a new reference field may have been deleted since.
+    const addTarget = data.entities.some((entity) => entity.id === target)
+        ? target
+        : data.entities[0]?.id;
     useEffect(() => {
         if (selectedId !== entityId) {
             setSelectedId(entityId);
@@ -388,7 +405,7 @@ function DataEditor() {
                                             options: optionLines(options)
                                         }),
                                         ...(type === 'reference' && {
-                                            targetEntityId: target || data.entities[0]?.id
+                                            targetEntityId: addTarget
                                         })
                                     });
                                     if (result.applied) {
@@ -436,7 +453,7 @@ function DataEditor() {
                                     <EntitySelect
                                         label="Refers to"
                                         entities={data.entities}
-                                        value={target || data.entities[0]?.id}
+                                        value={addTarget}
                                         disabled={data.disabled}
                                         change={setTarget}
                                     />

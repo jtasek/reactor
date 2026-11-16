@@ -116,6 +116,10 @@ it('needs options for a new choice field and an existing entity for a reference'
             false
         );
     }
+    expect(change({ kind: 'updateField', id: status, changes: { options: [] } })).toEqual({
+        applied: false,
+        problem: 'Add at least one option.'
+    });
     expect(
         change({
             kind: 'addField',

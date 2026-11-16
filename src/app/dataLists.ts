@@ -1,7 +1,7 @@
 import type { Document, InstanceShape, PropertyValue } from './types';
 import type { DataField, DataList, DataRecord } from './dataTypes';
 import { acceptsComponentValue, resolveComponentProp, exposableProperties } from './componentProps';
-import { dataValueProblem, recordLabel } from './data';
+import { dataValueProblem, recordLabels } from './data';
 import { instanceComponent } from './componentSource';
 import { escapeTemplate } from './variables';
 
@@ -74,11 +74,21 @@ export function recordOverrides(
     document: Document,
     instance: InstanceShape,
     record: DataRecord,
-    row: number
+    row: number,
+    /** Referenced records' names by entity, shared across one list's rows. */
+    labels = new Map<string, Map<string, string>>()
 ): { overrides: Record<string, PropertyValue | { variableId: string }>; problems: string[] } {
     const overrides = { ...instance.overrides };
     const problems: string[] = [];
     const component = instanceComponent(document, instance);
+    const labelFor = (recordId: string) => {
+        const entityId = document.dataRecords[recordId].entityId;
+        if (!labels.has(entityId)) {
+            labels.set(entityId, recordLabels(document, entityId));
+        }
+
+        return labels.get(entityId)!.get(recordId)!;
+    };
     for (const [propId, fieldId] of Object.entries(instance.dataList!.fields)) {
         const field = document.dataFields[fieldId];
         const resolved = component && resolveComponentProp(component, propId, document);
@@ -104,7 +114,7 @@ export function recordOverrides(
         if (value === null || value === undefined) {
             continue;
         }
-        const shown = field.type === 'reference' ? recordLabel(document, String(value)) : value;
+        const shown = field.type === 'reference' ? labelFor(String(value)) : value;
         if (!acceptsComponentValue(resolved.property, shown)) {
             problems.push(
                 `Row ${row}: ${field.name} is incompatible with the item property; the item shows the template value.`

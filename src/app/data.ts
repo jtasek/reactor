@@ -66,16 +66,21 @@ export function labelField(document: Document, entityId: string): DataField | un
 /** How a reference shows a record: its label field, else its row number as Data View shows it. */
 export function recordLabel(document: Document, recordId: string): string {
     const record = document.dataRecords[recordId];
-    if (!record) {
-        return 'Missing record';
-    }
-    const records = dataRecords(document, record.entityId);
 
-    return labelOf(
-        document,
-        record,
-        records.findIndex((item) => item.id === recordId),
-        labelField(document, record.entityId)
+    return record
+        ? (recordLabels(document, record.entityId).get(recordId) ?? 'Missing record')
+        : 'Missing record';
+}
+
+/** Every record's name in one entity, for callers that show many, such as a repeated list. */
+export function recordLabels(document: Document, entityId: string): Map<string, string> {
+    const label = labelField(document, entityId);
+
+    return new Map(
+        dataRecords(document, entityId).map((record, index) => [
+            record.id,
+            labelOf(document, record, index, label)
+        ])
     );
 }
 
@@ -93,11 +98,9 @@ export function fieldChoices(document: Document, field: DataField) {
         return (field.options ?? []).map((option) => ({ value: option, label: option }));
     }
     if (field.type === 'reference' && field.targetEntityId) {
-        const label = labelField(document, field.targetEntityId);
-
-        return dataRecords(document, field.targetEntityId).map((record, index) => ({
-            value: record.id,
-            label: labelOf(document, record, index, label)
+        return [...recordLabels(document, field.targetEntityId)].map(([value, label]) => ({
+            value,
+            label
         }));
     }
 

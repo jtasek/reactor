@@ -152,11 +152,11 @@ function prepare(
             'type' in edit.changes ||
             'options' in edit.changes ||
             'targetEntityId' in edit.changes;
+        // Turning a field into a choice may leave options to add; saving none is refused.
         if (
-            typeChanged &&
             field.type === 'choice' &&
-            edit.kind === 'addField' &&
-            !field.options?.length
+            !field.options?.length &&
+            (edit.kind === 'addField' || 'options' in edit.changes)
         ) {
             throw new Error('Add at least one option.');
         }
