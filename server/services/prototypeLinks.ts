@@ -7,6 +7,10 @@ import * as repository from '../repositories/prototypeLinks.ts';
 const LINK_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const WORKSPACE_SHARE_BYTES = 64 * 1024 * 1024;
 const MAX_DOCUMENT_LINKS = 20;
+/** A reported start older than this is no first run's, and would skew the measure. */
+const OLDEST_START_MS = 365 * 24 * 60 * 60 * 1000;
+/** From a minute to a week: a first prototype may be shared in minutes or after days. */
+const FIRST_LINK_BUCKETS = [60, 300, 600, 1800, 3600, 7200, 21600, 86400, 604800];
 /** Distinct players counted per link; anyone with the link can claim to be a new one. */
 const MAX_PLAYERS_PER_LINK = 10_000;
 const PLAYER = /^[A-Za-z0-9_-]{16,64}$/;
@@ -138,14 +142,39 @@ export function createPrototypeLinkService(
                     size,
                     expires_at: new Date(now.getTime() + LINK_LIFETIME_MS)
                 });
+                const started =
+                    'started' in body && typeof body.started === 'string'
+                        ? new Date(body.started)
+                        : null;
+                const startedAt =
+                    started &&
+                    started <= now &&
+                    now.getTime() - started.getTime() <= OLDEST_START_MS
+                        ? started
+                        : null;
                 await repository.recordShare(tx, {
                     link_id: id,
                     workspace_id: permitted.workspaceId,
                     document_id: documentId,
                     created_by: actorId,
-                    screens: application.screens.length
+                    screens: application.screens.length,
+                    started_at: startedAt
                 });
                 published('created');
+                const person = await repository.sharer(tx, actorId);
+                if (person?.shares === 1) {
+                    const start = Math.min(
+                        person.accountCreatedAt.getTime(),
+                        startedAt?.getTime() ?? Infinity
+                    );
+                    metrics.observe(
+                        'reactor_first_shared_link_seconds',
+                        "Seconds from a person's start, the earlier of their account's creation and the shared document's, to their first shared link.",
+                        Math.max(0, (now.getTime() - start) / 1000),
+                        {},
+                        FIRST_LINK_BUCKETS
+                    );
+                }
 
                 return { ok: true as const, link: described(link), token };
             }),

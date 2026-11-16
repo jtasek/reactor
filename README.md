@@ -702,6 +702,11 @@ the `/share` page keeps a random id on the preview site and sends it when it ope
 the server stores only a hash of it with the link's id, so one browser is not recognizable
 across links. Nothing is sent to a third party.
 
+`GET /metrics/first-links` lists each person's first shared link, newest first: when they
+started, the earlier of their account's creation and the shared document's creation as the
+editor reports it, when they shared it and the seconds between. `/metrics` has the same time
+as the `reactor_first_shared_link_seconds` histogram, observed once per person.
+
 The editor sends errors nothing handled, up to ten per page load and each message once, to
 `POST /api/client-errors`, signed in or not. The server takes them only from its own pages,
 at most 20 a minute per address and 600 in all, and logs each as `browserError` with its
@@ -1101,6 +1106,13 @@ controls. Its background is transparent. Text remains editable SVG text using th
 fallback (Roboto, then sans-serif); fonts are not embedded. Diagram connectors are not exported.
 
 ### Starter templates
+
+Until someone has started a document in this browser, an empty canvas offers List / detail,
+Forms, Sign-in and Settings, or a blank canvas; choosing a drawing tool or drawing also starts
+blank. A document started from a template shows a short guide: change a text, play the
+prototype and share a link, each step checked off once done (the guide is kept per browser and
+can be closed). Signed out, **Share** offers **Sign in to share**; once the document has moved
+into the account, the editor opens it again.
 
 On **Documents**, choose **Templates**, then List / detail, Forms, Sign-in or Settings.
 Each creates a new editable document with three Screen views, reusable controls and a

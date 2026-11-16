@@ -1,4 +1,8 @@
-import { deleteExpiredLinks, sharedPrototypes } from './repositories/prototypeLinks.ts';
+import {
+    deleteExpiredLinks,
+    firstSharedLinks,
+    sharedPrototypes
+} from './repositories/prototypeLinks.ts';
 import type { Metrics } from './metrics.ts';
 import { previewConfiguration } from './preview.ts';
 import { configuresAi, providerFromEnv } from './ai.ts';
@@ -101,6 +105,7 @@ export async function startAccounts(
         sync,
         /** Each prototype link shared, with its screens and distinct players. */
         sharedPrototypes: () => sharedPrototypes(db),
+        firstSharedLinks: () => firstSharedLinks(db),
         close: () => {
             clearTimeout(firstCleanup);
             clearInterval(cleanups);

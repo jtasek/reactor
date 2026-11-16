@@ -108,6 +108,8 @@ export interface Database {
         document_id: string;
         created_by: string | null;
         screens: number;
+        /** When the shared document was started, as the editor reports it. */
+        started_at: Date | null;
         created_at: Generated<Date>;
     };
     prototype_players: {

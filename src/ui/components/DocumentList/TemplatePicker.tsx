@@ -1,15 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useActions, useEffects } from 'src/app/hooks';
-import { STARTER_TEMPLATES, type StarterTemplateId } from 'src/templates/catalog';
-import { buildStarterTemplate } from 'src/templates/build';
+import React, { useEffect, useRef } from 'react';
+import { STARTER_TEMPLATES } from 'src/templates/catalog';
+import { useStartFromTemplate } from '../FirstRun/startFromTemplate';
 import styles from './templates.css';
 
 export default function TemplatePicker({ onClose }: { onClose: () => void }) {
     const dialog = useRef<HTMLDialogElement>(null);
-    const { newDocumentFromTemplate } = useActions();
-    const { newId } = useEffects();
-    const [error, setError] = useState('');
-    const creating = useRef(false);
+    const { create, error } = useStartFromTemplate(onClose);
 
     useEffect(() => {
         const previous = document.activeElement;
@@ -24,23 +20,6 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
             }
         };
     }, []);
-
-    const create = (id: StarterTemplateId) => {
-        if (creating.current) {
-            return;
-        }
-
-        creating.current = true;
-        setError('');
-
-        try {
-            newDocumentFromTemplate(buildStarterTemplate(id, newId));
-            onClose();
-        } catch {
-            creating.current = false;
-            setError('The template could not be created. Please try again.');
-        }
-    };
 
     return (
         <dialog

@@ -21,12 +21,13 @@ async function setup(options: ServeOptions = {}) {
             body: { name: 'App' }
         })
     );
-    const share = async (screens: string[]) => {
+    const share = async (screens: string[], started?: unknown) => {
         const response = await server.call('POST', `/documents/${document.id}/prototype-links`, {
             cookie: admin.cookie,
             body: {
                 name: 'Shared',
-                application: { documentId: document.id, images: {}, screens: screens.map(screen) }
+                application: { documentId: document.id, images: {}, screens: screens.map(screen) },
+                started
             }
         });
         const link = (await response.json()) as { id: string; url: string };
@@ -136,6 +137,62 @@ describe('measures of shared prototypes', () => {
             value(await server.metrics(), 'reactor_prototype_publishes_total{result="invalid"}')
         ).toBe(1);
         expect(await server.prototypes()).toEqual([]);
+    });
+});
+
+describe('time to the first shared link', () => {
+    const firstLinks = async (server: Awaited<ReturnType<typeof setup>>) =>
+        (await (await server.read('/metrics/first-links')).json()) as {
+            createdBy: string;
+            linkId: string;
+            startedAt: string;
+            sharedAt: string;
+            seconds: number;
+        }[];
+    const histogram = (text: string, bound: string) =>
+        value(text, `reactor_first_shared_link_seconds_bucket{le="${bound}"}`);
+
+    it('measures from the document start when it began before the account', async () => {
+        const server = await setup();
+        const started = new Date(Date.now() - 20 * 60 * 1000);
+        const first = await server.share(['home', 'details'], started.toISOString());
+        await server.share(['home'], new Date().toISOString());
+
+        const [person] = await firstLinks(server);
+        expect(person).toEqual(expect.objectContaining({ linkId: first.id }));
+        expect(new Date(person.startedAt).getTime()).toBe(started.getTime());
+        expect(person.seconds).toBeGreaterThanOrEqual(20 * 60);
+        expect(person.seconds).toBeLessThan(21 * 60);
+
+        // Only the first link is observed: twenty minutes is within half an hour.
+        const text = await server.metrics();
+        expect(histogram(text, '600')).toBe(0);
+        expect(histogram(text, '1800')).toBe(1);
+        expect(value(text, 'reactor_first_shared_link_seconds_count')).toBe(1);
+    });
+
+    it('measures from the account creation without a usable start', async () => {
+        const server = await setup();
+        await server.share(['home'], 'not a date');
+        const future = await setup();
+        await future.share(['home'], new Date(Date.now() + 86_400_000).toISOString());
+        const ancient = await setup();
+        await ancient.share(['home'], new Date(0).toISOString());
+
+        for (const each of [server, future, ancient]) {
+            const [person] = await firstLinks(each);
+            expect(person.seconds).toBeLessThan(60);
+            expect(histogram(await each.metrics(), '60')).toBe(1);
+        }
+        const rows = await future.db.selectFrom('shared_prototypes').select('started_at').execute();
+        expect(rows).toEqual([{ started_at: null }]);
+    });
+
+    it('lists nobody before a link is shared', async () => {
+        const server = await setup();
+
+        expect(await firstLinks(server)).toEqual([]);
+        expect((await server.read('/metrics/first-links', 'wrong')).status).toBe(401);
     });
 });
 

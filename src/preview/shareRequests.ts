@@ -49,8 +49,10 @@ export const publishPrototypeLink = (
     documentId: string,
     name: string,
     application: PreviewApplication,
+    started: Date,
     signal: AbortSignal
-): Promise<PrototypeLink> => request(path(documentId), 'POST', signal, { name, application });
+): Promise<PrototypeLink> =>
+    request(path(documentId), 'POST', signal, { name, application, started });
 
 export const revokePrototypeLink = (
     documentId: string,

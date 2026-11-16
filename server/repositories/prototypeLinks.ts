@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import type { Db } from '../schema.ts';
 
 export { lockWorkspace } from './members.ts';
@@ -83,8 +84,54 @@ export const recordShare = (
         document_id: string;
         created_by: string;
         screens: number;
+        started_at: Date | null;
     }
 ) => db.insertInto('shared_prototypes').values(share).execute();
+
+/** How many links `userId` has shared, and when their account was created. */
+export async function sharer(db: Db, userId: string) {
+    const result = await sql<{ shares: number; accountCreatedAt: Date }>`
+        select person."createdAt" as "accountCreatedAt",
+            (select count(*)::integer from shared_prototypes where created_by = person.id) as shares
+        from auth."user" person
+        where person.id = ${userId}
+    `.execute(db);
+
+    return result.rows[0];
+}
+
+/**
+ * Each person's first shared link: when they started, the earlier of their account's
+ * creation and the shared document's, and when they shared it.
+ */
+export async function firstSharedLinks(db: Db) {
+    const result = await sql<{
+        createdBy: string;
+        linkId: string;
+        screens: number;
+        accountCreatedAt: Date;
+        startedAt: Date;
+        sharedAt: Date;
+        seconds: number;
+    }>`
+        select distinct on (shared.created_by)
+            shared.created_by as "createdBy",
+            shared.link_id as "linkId",
+            shared.screens,
+            person."createdAt" as "accountCreatedAt",
+            least(person."createdAt", shared.started_at) as "startedAt",
+            shared.created_at as "sharedAt",
+            extract(epoch from shared.created_at
+                - least(person."createdAt", shared.started_at))::float8 as seconds
+        from shared_prototypes shared
+        join auth."user" person on person.id = shared.created_by
+        order by shared.created_by, shared.created_at
+    `.execute(db);
+
+    return result.rows.sort(
+        (first, second) => second.sharedAt.getTime() - first.sharedAt.getTime()
+    );
+}
 
 /** Counts an open by `player`; a new player only while the link has fewer than `limit`. */
 export async function recordPlayer(

@@ -124,7 +124,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
 
             return;
         }
-        expect(route.request().postDataJSON()).toEqual({ token });
+        expect(route.request().postDataJSON()).toEqual({ token, player: expect.any(String) });
         expect(route.request().headers().cookie).toBeUndefined();
         await route.fulfill({
             status: revoked ? 404 : 200,
@@ -201,12 +201,12 @@ test('public links have a scoped network policy and clear invalid-link errors', 
     await expect(page.getByRole('status')).toHaveText('This prototype link is invalid.');
 });
 
-test('signed-out authors get a clear sharing requirement without a publish action', async ({
+test('without accounts, sharing says what it needs and offers no publish action', async ({
     page
 }) => {
     await page.goto('/prototype');
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
-    await expect(page.getByRole('dialog')).toContainText('workspace admin');
+    await expect(page.getByRole('dialog')).toContainText('needs a Reactor server with accounts');
     await expect(page.getByRole('button', { name: 'Create snapshot link' })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);

@@ -1,0 +1,201 @@
+.start {
+    background: var(--surface);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-hover);
+    color: var(--ink-strong);
+    left: 50%;
+    max-height: calc(100dvh - 160px);
+    overflow: auto;
+    padding: 20px;
+    position: fixed;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 32px));
+    z-index: var(--control-zindex);
+}
+
+.start h2 {
+    font-size: var(--font-size-title);
+    letter-spacing: var(--tracking-title);
+    line-height: var(--line-height-title);
+    margin: 0;
+}
+
+.start p {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-body);
+    line-height: 1.5;
+    margin: 6px 0 0;
+}
+
+.templates {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 16px;
+}
+
+.template {
+    background: var(--control-background-active);
+    border: 1px solid var(--action-border);
+    border-radius: var(--radius-md);
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    gap: 4px;
+    padding: 12px;
+    text-align: left;
+}
+
+.template:hover {
+    border-color: var(--selection-color);
+}
+
+.template strong {
+    font-size: var(--font-size-title-3);
+    line-height: var(--line-height-title-3);
+}
+
+.template span {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    line-height: var(--line-height-callout);
+}
+
+.blank {
+    background: none;
+    border: 0;
+    color: var(--selection-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-body);
+    margin-top: 14px;
+    padding: 0;
+}
+
+.start button:focus-visible,
+.guide button:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.guide {
+    background: var(--surface);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--border-radius);
+    bottom: 48px;
+    box-shadow: var(--box-shadow-hover);
+    color: var(--ink-strong);
+    font-size: var(--font-size-body);
+    padding: 12px 14px;
+    position: fixed;
+    right: 16px;
+    width: min(300px, calc(100vw - 32px));
+    z-index: var(--control-zindex);
+}
+
+.guide header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.guide h2 {
+    font-size: var(--font-size-title-3);
+    line-height: var(--line-height-title-3);
+    margin: 0;
+}
+
+.guide header button {
+    background: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    display: flex;
+    padding: 4px;
+}
+
+.guide ol {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+}
+
+.guide li {
+    display: flex;
+    gap: 8px;
+}
+
+.guide li > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: var(--line-height-body);
+}
+
+.guide li span {
+    color: var(--text-secondary-color);
+}
+
+.guide li button {
+    align-self: flex-start;
+    background: var(--selection-color);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--on-selection-color);
+    cursor: pointer;
+    font: inherit;
+    margin-top: 4px;
+    padding: 4px 10px;
+}
+
+.mark {
+    align-items: center;
+    border: 1.5px solid var(--action-border);
+    border-radius: 50%;
+    display: flex;
+    flex: 0 0 auto;
+    height: 16px;
+    justify-content: center;
+    margin-top: 1px;
+    width: 16px;
+}
+
+.guide li[data-done] .mark {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: var(--on-selection-color);
+}
+
+.guide li[data-done] strong {
+    color: var(--text-secondary-color);
+}
+
+.guide p {
+    background: var(--success-background);
+    border-radius: var(--radius-sm);
+    color: var(--success-color);
+    margin: 10px 0 0;
+    padding: 6px 8px;
+}
+
+.hidden {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+@media (max-width: 36rem) {
+    .templates {
+        grid-template-columns: 1fr;
+    }
+}

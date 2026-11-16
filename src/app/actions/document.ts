@@ -319,8 +319,11 @@ export const updateDocument: ActionWithParam<Partial<Document> & { id: string }>
     setDocument(state, createDocument({ ...document, ...options }));
 };
 
-/** The chooser builds a complete independent graph before this synchronous commit. */
-export const newDocumentFromTemplate: ActionWithParam<StarterDocument> = (
+/**
+ * The chooser builds a complete independent graph before this synchronous commit; `id`,
+ * when given, names the new document, so the chooser can follow it.
+ */
+export const newDocumentFromTemplate: ActionWithParam<StarterDocument & { id?: string }> = (
     { state, effects },
     template
 ) => {

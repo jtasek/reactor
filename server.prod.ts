@@ -122,7 +122,8 @@ app.use(
     metricsRoutes({
         token: process.env.METRICS_TOKEN,
         metrics,
-        prototypes: accounts?.sharedPrototypes
+        prototypes: accounts?.sharedPrototypes,
+        firstLinks: accounts?.firstSharedLinks
     })
 );
 app.use(browserErrors({ metrics, log: logger.logger }));
