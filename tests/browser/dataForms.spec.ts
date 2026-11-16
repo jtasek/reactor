@@ -1,4 +1,7 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import { recordDetailFixture } from '../support/dataList';
+import { serializePersistedState } from 'src/app/services/documentStorage';
 import { openEditor } from './support/editor';
 
 test('authors typed data, preserves values when fields change, reloads and undoes', async ({
@@ -141,4 +144,76 @@ test('authors choice and reference fields and names referenced records', async (
     await expect(
         panel.getByRole('combobox', { name: 'Customer refers to', exact: true })
     ).toHaveValue(/.+/);
+});
+
+test('the downloaded package plays list and details offline, as the preview does', async ({
+    page,
+    browser
+}, info) => {
+    const { document } = recordDetailFixture();
+    document.name = 'Customers </script> app';
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    await page.addInitScript(
+        (value) => localStorage.setItem('reactor', value),
+        JSON.stringify(saved)
+    );
+    await page.goto('/prototype');
+    const player = page.frameLocator('iframe[title="Application preview"]');
+    await expect(player.getByRole('button', { name: 'Ada', exact: true })).toBeVisible();
+    const downloading = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download prototype' }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toBe('Customers --script- app.html');
+    const file = info.outputPath('package.html');
+    await download.saveAs(file);
+    expect(await readFile(file, 'utf8')).not.toContain('Customers </script>');
+
+    const offline = await browser.newContext({ offline: true });
+    const requests: string[] = [];
+    offline.on('request', (request) => requests.push(request.url()));
+    const played = await offline.newPage();
+    const errors: string[] = [];
+    played.on('console', (message) => {
+        if (message.type() === 'error') {
+            errors.push(message.text());
+        }
+    });
+    await played.goto(`file://${file}`);
+    await expect(played).toHaveTitle('Customers </script> app');
+    await played.getByRole('button', { name: 'Ada', exact: true }).click();
+    await expect(played.getByLabel('Preview screen')).toHaveValue('details');
+    await played.getByRole('textbox', { name: 'Ada', exact: true }).fill('Edited Ada');
+    await played.getByLabel('Preview screen').selectOption('home');
+    await played.getByRole('button', { name: 'Grace', exact: true }).click();
+    await expect(played.getByRole('textbox', { name: 'Grace', exact: true })).toHaveValue('Grace');
+    await played.getByLabel('Preview screen').selectOption('home');
+    await played.getByRole('button', { name: 'Ada', exact: true }).click();
+    await expect(played.getByRole('textbox', { name: 'Ada', exact: true })).toHaveValue(
+        'Edited Ada'
+    );
+    await played.getByRole('button', { name: 'Restart prototype' }).click();
+    await expect(played.getByLabel('Preview screen')).toHaveValue('home');
+    await played.getByLabel('Preview screen').selectOption('details');
+    await expect(played.getByRole('textbox', { name: 'Your name', exact: true })).toHaveValue(
+        'Your name'
+    );
+    // The drawing font comes from the page itself.
+    expect(
+        await played.evaluate(async () => {
+            await window.document.fonts.ready;
+
+            return [...window.document.fonts].some(
+                (font) => font.family.includes('Roboto') && font.status === 'loaded'
+            );
+        })
+    ).toBe(true);
+    await played.screenshot({ path: info.outputPath('package-offline.png') });
+    expect(requests.filter((url) => !url.startsWith('file:') && !url.startsWith('data:'))).toEqual(
+        []
+    );
+    expect(errors).toEqual([]);
+    await offline.close();
 });

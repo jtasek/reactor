@@ -1095,6 +1095,19 @@ servers from the same release. A release that changes the preview protocol leave
 unable to open: recipients are told to ask for a new link, and **Share prototype** marks them
 out of date so an admin can revoke them and share again.
 
+### Download a prototype
+
+Open **Prototype**, choose its start screen, viewport and modes, then select **Download**. The
+browser saves one HTML file named after the document. It holds the same snapshot a shared link
+would, played by the same runtime as Preview, with its images and the drawing font inside the
+file. Open it from disk or put it on any static host: it plays every screen, navigation, input,
+variant, visibility state and list-to-detail record, and **Restart prototype** returns to the
+start. The page's own content policy allows no requests, so it works offline and sends nothing
+anywhere. Downloading needs no account, but does need the separate preview server configured
+above: the editor fetches the runtime's `package.html` from it (`pnpm build:preview` builds that
+page beside the runtime). Record forms stay in the editor's Preview and Prototype for now, as
+with shared links.
+
 ### Export SVG
 
 Select a Screen view, a Screen (for example from the Explorer) or visible shapes, then choose

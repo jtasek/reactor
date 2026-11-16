@@ -29,7 +29,7 @@ step delivered is in the [delivery log](DELIVERY_LOG.md).
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
 | Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named boolean state. Data: entities with Text/Number/Boolean fields, sample records, repeated lists, list-to-detail records and session-only record forms (R5.1–R5.3a). Not built: references, enums, dates, expressions and the per-entity record limit. |
-| Export and runtime | Implemented: sandboxed Preview, the Prototype player (`/prototype`), read-only prototype links on the separate preview domain, SVG export and starter templates. Not built: the standalone web package (R5.4). |
+| Export and runtime | Implemented: sandboxed Preview, the Prototype player (`/prototype`), read-only prototype links on the separate preview domain, SVG export, starter templates and a downloadable standalone web package (R5.4). |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
 ([helpers.ts](src/events/drivers/helpers.ts)) and shapes are measured with `getBBox`. That
@@ -569,9 +569,9 @@ team can then send a working prototype link to others.
    set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
    from design-system variables and document mutations. Recreate the variable-editor comparison
    with selection and optional details before adding a general expression language.
-3. **Portable interactive output (planned, R5.4).** Export the same validated prototype runtime,
-   artwork and assets used by Preview and shared links. Verify interactions and Reset work offline;
-   add a small embedding/event bridge only when a concrete host needs it.
+3. **Portable interactive output (built, R5.4).** See the
+   [delivery log](DELIVERY_LOG.md#r54-standalone-web-package). Add a small embedding/event
+   bridge only when a concrete host needs it.
 
 ### S1 Ship to designers (M)
 
@@ -666,6 +666,9 @@ expression operators can follow outside users' needs.
    them on request.
    R5.3a built; see the [delivery log](DELIVERY_LOG.md#r53a-record-forms-in-the-player).
 4. Export as a standalone web package.
+   R5.4 built; see the [delivery log](DELIVERY_LOG.md#r54-standalone-web-package). Not yet:
+   record forms in the package (as in shared links), and a zip with separate files for hosts
+   that forbid inline scripts.
 5. AI: an entity and 20 records from a description or pasted CSV or JSON, with a list bound to
    them. Done when:
     - at least 90% of field types are right;

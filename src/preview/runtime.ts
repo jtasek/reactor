@@ -18,8 +18,11 @@ const XHTML = 'http://www.w3.org/1999/xhtml';
 const root = document.getElementById('preview')!;
 // The standalone player owns viewport and reset controls outside the sandbox.
 const shared = window.location.pathname.replace(/\/$/, '') === '/share';
+/** A downloaded package carries its snapshot in the page and never talks to a server. */
+const packaged = document.getElementById('reactor-package');
+const standalone = shared || packaged !== null;
 const externalControls =
-    !shared && new URLSearchParams(window.location.search).get('player') === 'prototype';
+    !standalone && new URLSearchParams(window.location.search).get('player') === 'prototype';
 const values = new Map<string, string>();
 let selectedRecord: { entityId: string; id: string } | undefined;
 /** Screen ID → entities its Selected record bindings show. */
@@ -263,7 +266,7 @@ function render() {
     label.append(select);
     const reset = document.createElement('button');
     reset.type = 'button';
-    reset.textContent = shared ? 'Restart prototype' : 'Restart preview';
+    reset.textContent = standalone ? 'Restart prototype' : 'Restart preview';
     reset.addEventListener('click', () => {
         values.clear();
         selectedRecord = undefined;
@@ -275,7 +278,7 @@ function render() {
         render();
     });
     navigation.append(label);
-    if (screen.layouts && !shared) {
+    if (screen.layouts && !standalone) {
         const widthLabel = document.createElement('label');
         widthLabel.textContent = 'Width ';
         const width = document.createElement('input');
@@ -465,7 +468,7 @@ function receive(value: unknown) {
 
 window.addEventListener('message', (event) => {
     if (
-        shared ||
+        standalone ||
         port ||
         event.source !== window.parent ||
         event.origin !== window.REACTOR_EDITOR_ORIGIN ||
@@ -561,6 +564,25 @@ async function openSharedPrototype() {
         root.setAttribute('role', 'status');
     }
 }
-if (shared) {
+/** Read the snapshot the editor wrote into the downloaded page, as a shared link would load it. */
+function openPackage(element: HTMLElement) {
+    try {
+        const data = JSON.parse(element.textContent ?? '');
+        if (data?.version !== PREVIEW_PROTOCOL_VERSION) {
+            throw new Error('This prototype uses an unsupported version.');
+        }
+        if (typeof data.name === 'string' && data.name) {
+            document.title = data.name;
+        }
+        receive(readPreview(data.application));
+    } catch (error) {
+        root.textContent =
+            error instanceof Error ? error.message : 'This prototype could not be opened.';
+        root.setAttribute('role', 'status');
+    }
+}
+if (packaged) {
+    openPackage(packaged);
+} else if (shared) {
     void openSharedPrototype();
 }

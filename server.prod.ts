@@ -86,7 +86,12 @@ app.use(
                 // Account photos come from the sign-in providers' own image hosts.
                 imgSrc: ["'self'", 'data:', 'blob:', ...PROFILE_PHOTO_HOSTS],
                 fontSrc: ["'self'", 'data:'],
-                connectSrc: ["'self'", ...(SYNC_ORIGIN ? [SYNC_ORIGIN] : [])],
+                // The Prototype page downloads the standalone package from the preview site.
+                connectSrc: [
+                    "'self'",
+                    ...(SYNC_ORIGIN ? [SYNC_ORIGIN] : []),
+                    ...(PREVIEW ? [PREVIEW.previewOrigin] : [])
+                ],
                 manifestSrc: ["'self'"],
                 workerSrc: ["'self'", 'blob:'],
                 upgradeInsecureRequests: []
