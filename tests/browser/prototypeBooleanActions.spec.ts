@@ -93,8 +93,11 @@ test('a disclosure reports the visible state of an inverse-bound target', async 
     if (help.type !== 'instance') {
         throw new Error('Expected help instance');
     }
-    help.prototypeVisibilityStateId = 'flag';
-    help.prototypeVisibilityWhen = false;
+    help.prototypeVisibleWhen = {
+        kind: 'equals',
+        left: { kind: 'state', stateId: 'flag' },
+        right: { kind: 'value', value: false }
+    };
     const application = projectPreview(document, {});
     await context.route('**/api/prototype-links/open', (route) =>
         route.fulfill({ json: { version: PREVIEW_PROTOCOL_VERSION, application } })

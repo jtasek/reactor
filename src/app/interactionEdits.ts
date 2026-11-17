@@ -1,9 +1,15 @@
 import { screenOwners } from './screenViews';
 import type { Context } from './index';
-import type { InteractionSettings } from './types';
+import type { InteractionSettings, StateValue } from './types';
+import { conditionOperands, type Condition } from '../shared/conditions';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
-import { orUndefined, readInteractions, readEntity } from './services/documentStorage';
+import {
+    orUndefined,
+    readInteractions,
+    readEntity,
+    readCondition
+} from './services/documentStorage';
 import { screenFrames } from './screens';
 import {
     validVariantAction,
@@ -12,6 +18,15 @@ import {
     bindingHidesControl
 } from './interactiveVariants';
 import { effectiveActivation } from './screenInteractions';
+import {
+    stateActionProblem,
+    stateEquals,
+    visibilityProblems,
+    visibilityStates,
+    stateType,
+    stateProperty
+} from './prototypeState';
+import { effectiveRoleSettings } from './componentRoles';
 
 export interface InteractionEdit {
     target: 'component' | 'instance';
@@ -30,11 +45,13 @@ export type PrototypeStateEdit =
           target: 'state';
           kind: 'add';
           name: string;
-          initial: boolean;
+          /** Yes/no when omitted. */
+          type?: 'boolean' | 'text' | 'number';
+          initial: StateValue;
           /** A control that switches the new state, in the same undo step. */
           switchedBy?: string;
       }
-    | { target: 'state'; kind: 'update'; id: string; name: string; initial: boolean }
+    | { target: 'state'; kind: 'update'; id: string; name: string; initial: StateValue }
     | { target: 'state'; kind: 'delete'; id: string }
     | {
           target: 'state';
@@ -43,7 +60,18 @@ export type PrototypeStateEdit =
           stateId: string | null;
           /** With no state, how the instance starts; leaves it unchanged when omitted. */
           visible?: boolean;
+          /** With a yes/no state, the value that shows the instance; true when omitted. */
           when?: boolean;
+      }
+    /** Shown while a condition over state values holds. */
+    | { target: 'state'; kind: 'show'; instanceId: string; condition: Condition }
+    /** An exposed property shows a state's value in the prototype; null unbinds it. */
+    | {
+          target: 'state';
+          kind: 'bindProperty';
+          instanceId: string;
+          propId: string;
+          stateId: string | null;
       };
 
 export function editInteractions(
@@ -113,19 +141,17 @@ export function editInteractions(
         return;
     }
     if (
-        (settings.activate?.type === 'toggleState' || settings.activate?.type === 'setState') &&
-        (!owner || !document.prototypeBooleans[settings.activate.stateId])
+        settings.activate?.type === 'state' &&
+        (!owner || stateActionProblem(document, settings.activate))
     ) {
         return;
     }
-    // A control bound to the state it toggles would hide itself until Reset.
-    if (
-        instance?.type === 'instance' &&
-        instance.prototypeVisibilityStateId &&
-        settings.activate &&
-        toggledState(document, instance, settings.activate) === instance.prototypeVisibilityStateId
-    ) {
-        return;
+    // A control that toggles a state its own visibility reads would hide itself until Reset.
+    if (instance?.type === 'instance' && settings.activate) {
+        const toggled = toggledState(document, instance, settings.activate);
+        if (toggled && visibilityStates(instance).includes(toggled)) {
+            return;
+        }
     }
     const destination = settings.activate?.screenId;
     if (
@@ -180,37 +206,11 @@ function editPrototypeState(context: Context, edit: PrototypeStateEdit): string 
     ) {
         return 'Prototype state cannot be edited right now.';
     }
-    if (edit.kind === 'bind') {
-        if (edit.when !== undefined && typeof edit.when !== 'boolean') {
-            return 'Choose true or false for the visibility condition.';
-        }
-        const shape = prototypeTarget(document, edit.instanceId);
-        if (
-            !shape ||
-            isShapeLocked(document, shape.id) ||
-            (edit.stateId !== null && !document.prototypeBooleans[edit.stateId])
-        ) {
-            return 'Choose an unlocked instance and an available state.';
-        }
-        if (edit.stateId !== null && bindingHidesControl(document, shape, edit.stateId)) {
-            return 'A control that toggles this state would hide itself. Choose another state.';
-        }
-        effects.collaboration.startBatch(document.id, { kind: 'person' });
-        if (edit.stateId === null) {
-            delete shape.prototypeVisibilityStateId;
-            delete shape.prototypeVisibilityWhen;
-            if (edit.visible === true) {
-                delete shape.prototypeVisible;
-            } else if (edit.visible === false) {
-                shape.prototypeVisible = false;
-            }
-        } else {
-            shape.prototypeVisibilityStateId = edit.stateId;
-            shape.prototypeVisibilityWhen = edit.when ?? true;
-        }
-        effects.collaboration.flush();
-
-        return;
+    if (edit.kind === 'bind' || edit.kind === 'show') {
+        return showWhen(context, edit);
+    }
+    if (edit.kind === 'bindProperty') {
+        return bindProperty(context, edit);
     }
     if (edit.kind !== 'add' && !document.prototypeBooleans[edit.id]) {
         return 'This state no longer exists.';
@@ -225,9 +225,15 @@ function editPrototypeState(context: Context, edit: PrototypeStateEdit): string 
     }
     try {
         const id = edit.kind === 'add' ? effects.newId() : edit.id;
+        // A state keeps its type; deleting and adding one is the way to change it.
+        const type =
+            edit.kind === 'add'
+                ? (edit.type ?? 'boolean')
+                : stateType(document.prototypeBooleans[edit.id]);
         const value = readEntity('prototypeBooleans', {
             id,
             name: edit.name,
+            ...(type === 'boolean' ? {} : { type }),
             initial: edit.initial
         });
         if (
@@ -245,15 +251,119 @@ function editPrototypeState(context: Context, edit: PrototypeStateEdit): string 
         } else {
             document.prototypeBooleans[id] = value;
         }
-        if (edit.kind === 'add' && edit.switchedBy) {
+        if (edit.kind === 'add' && edit.switchedBy && type === 'boolean') {
             editInteractions(context, {
                 target: 'instance',
                 id: edit.switchedBy,
-                settings: { activate: { type: 'toggleState', stateId: id } }
+                settings: { activate: { type: 'state', change: 'toggle', stateId: id } }
             });
         }
         effects.collaboration.flush();
     } catch (error) {
         return error instanceof Error ? error.message : 'Could not edit prototype state.';
     }
+}
+
+function showWhen(
+    { state, effects }: Context,
+    edit: Extract<PrototypeStateEdit, { kind: 'bind' | 'show' }>
+): string | undefined {
+    const document = state.currentDocument;
+    if (edit.kind === 'bind' && edit.when !== undefined && typeof edit.when !== 'boolean') {
+        return 'Choose true or false for the visibility condition.';
+    }
+    const shape = prototypeTarget(document, edit.instanceId);
+    if (!shape || isShapeLocked(document, shape.id)) {
+        return 'Choose an unlocked instance on a screen.';
+    }
+    let condition: Condition | null = null;
+    if (edit.kind === 'show') {
+        condition = orUndefined(() => readCondition(edit.condition)) ?? null;
+        // Visibility reads state values; there is no record to take fields from.
+        if (!condition || conditionOperands(condition).some((item) => item.kind === 'field')) {
+            return 'This condition cannot be read.';
+        }
+    } else if (edit.stateId !== null) {
+        const value = document.prototypeBooleans[edit.stateId];
+        if (!value || stateType(value) !== 'boolean') {
+            return 'Choose an available yes/no state.';
+        }
+        condition = stateEquals(edit.stateId, edit.when ?? true);
+    }
+    if (condition) {
+        const problem = visibilityProblems(document, condition)[0];
+        if (problem) {
+            return problem;
+        }
+        if (bindingHidesControl(document, shape, condition)) {
+            return 'A control that toggles this state would hide itself. Choose another state.';
+        }
+    }
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    if (condition) {
+        shape.prototypeVisibleWhen = condition;
+    } else {
+        delete shape.prototypeVisibleWhen;
+        if (edit.kind === 'bind' && edit.visible === true) {
+            delete shape.prototypeVisible;
+        } else if (edit.kind === 'bind' && edit.visible === false) {
+            shape.prototypeVisible = false;
+        }
+    }
+    effects.collaboration.flush();
+
+    return undefined;
+}
+
+/** Text and number states fit text properties; any state fits a text property as words. */
+function bindProperty(
+    { state, effects }: Context,
+    edit: Extract<PrototypeStateEdit, { kind: 'bindProperty' }>
+): string | undefined {
+    const document = state.currentDocument;
+    const shape = document.shapes[edit.instanceId];
+    if (shape?.type !== 'instance' || isShapeLocked(document, shape.id)) {
+        return 'Choose an unlocked instance.';
+    }
+    const component = document.components[shape.componentId];
+    const prop = component?.props?.find((item) => item.id === edit.propId);
+    if (!component || !prop) {
+        return 'This property is no longer exposed.';
+    }
+    if (edit.stateId !== null) {
+        const value = document.prototypeBooleans[edit.stateId];
+        if (!value) {
+            return 'Choose an available state.';
+        }
+        const settings = effectiveRoleSettings(component, shape);
+        if (
+            settings.role === 'input' &&
+            settings.props.value === prop.id &&
+            stateType(value) === 'boolean'
+        ) {
+            return 'A field writes text or a number; choose a text or number state.';
+        }
+        if (!stateProperty(document, shape.componentId, prop.id)) {
+            return 'Only a text property can show a state.';
+        }
+    }
+    if ((shape.stateBindings?.[prop.id] ?? null) === edit.stateId) {
+        return undefined;
+    }
+    effects.collaboration.startBatch(document.id, { kind: 'person' });
+    if (edit.stateId === null) {
+        if (shape.stateBindings) {
+            delete shape.stateBindings[prop.id];
+            if (!Object.keys(shape.stateBindings).length) {
+                delete shape.stateBindings;
+            }
+        }
+    } else if (shape.stateBindings) {
+        shape.stateBindings[prop.id] = edit.stateId;
+    } else {
+        shape.stateBindings = { [prop.id]: edit.stateId };
+    }
+    effects.collaboration.flush();
+
+    return undefined;
 }

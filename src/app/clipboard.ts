@@ -1,3 +1,4 @@
+import { instanceStates, renameInstanceStates, stateType } from './prototypeState';
 import { readCopiedGroup, readCopiedShape } from './services/clipboardStorage';
 import type {
     Component,
@@ -5,7 +6,7 @@ import type {
     Group,
     InstanceShape,
     Point,
-    PrototypeBoolean,
+    PrototypeValue,
     Shape,
     ShapeInput,
     Variable,
@@ -70,29 +71,22 @@ export interface Copied {
     dimensions?: Document['dimensions'];
     components?: Component[];
     /** Named prototype states the copied instances follow or toggle. */
-    prototypeBooleans?: PrototypeBoolean[];
+    prototypeBooleans?: PrototypeValue[];
 }
 
 /** The named state IDs a copied shape refers to. */
 const stateReferences = (shape: ShapeInput | Shape): string[] =>
-    shape.type !== 'instance'
-        ? []
-        : [
-              ...(shape.prototypeVisibilityStateId ? [shape.prototypeVisibilityStateId] : []),
-              ...(shape.interactions?.activate?.type === 'toggleState' ||
-              shape.interactions?.activate?.type === 'setState'
-                  ? [shape.interactions.activate.stateId]
-                  : [])
-          ];
+    shape.type !== 'instance' ? [] : instanceStates(shape);
 
 /**
- * The states `copied` refers to as `document` gets them: the same ID or name is
- * reused, anything else is added. Answers the states to add; copied shapes are
+ * The states `copied` refers to as `document` gets them: the same ID, or the same name and
+ * type, is reused, anything else is added. Answers the states to add; copied shapes are
  * changed in place to refer to the destination's states.
  */
-export function pasteStates(copied: Copied, document: Document): PrototypeBoolean[] {
-    const added: PrototypeBoolean[] = [];
+export function pasteStates(copied: Copied, document: Document): PrototypeValue[] {
+    const added: PrototypeValue[] = [];
     const targets = new Map<string, string>();
+    const names = new Set(Object.values(document.prototypeBooleans).map((state) => state.name));
     (copied.prototypeBooleans ?? []).forEach((state) => {
         if (document.prototypeBooleans[state.id]) {
             return;
@@ -100,30 +94,22 @@ export function pasteStates(copied: Copied, document: Document): PrototypeBoolea
         const same = Object.values(document.prototypeBooleans).find(
             (existing) => existing.name === state.name
         );
-        if (same) {
+        if (same && stateType(same) === stateType(state)) {
             targets.set(state.id, same.id);
-        } else {
-            added.push(structuredClone(state));
-        }
-    });
-    copied.shapes.forEach((shape) => {
-        if (shape.type !== 'instance') {
+
             return;
         }
-        const bound = targets.get(shape.prototypeVisibilityStateId ?? '');
-        if (bound) {
-            shape.prototypeVisibilityStateId = bound;
+        // A state of another type keeps its ID, under a name of its own.
+        let name = state.name;
+        for (let index = 2; names.has(name); index++) {
+            name = `${state.name.slice(0, 95)} ${index}`;
         }
-        const activate = shape.interactions?.activate;
-        const toggled =
-            activate?.type === 'toggleState' || activate?.type === 'setState'
-                ? targets.get(activate.stateId)
-                : undefined;
-        if (toggled && (activate?.type === 'toggleState' || activate?.type === 'setState')) {
-            shape.interactions = {
-                ...shape.interactions,
-                activate: { ...activate, stateId: toggled }
-            };
+        names.add(name);
+        added.push({ ...structuredClone(state), name });
+    });
+    copied.shapes.forEach((shape) => {
+        if (shape.type === 'instance' && targets.size) {
+            renameInstanceStates(shape, (id) => targets.get(id) ?? id);
         }
     });
 

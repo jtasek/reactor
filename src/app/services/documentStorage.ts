@@ -7,21 +7,15 @@ import type {
     DataList,
     DataRule
 } from '../dataTypes';
-import {
-    COMPARISONS,
-    MAX_CONDITION_DEPTH,
-    MAX_CONDITION_NODES,
-    type Comparison,
-    type Condition,
-    type Operand
-} from '../expressions';
+import { MAX_CONDITION_TEXT, readConditionTree, type Condition } from '../../shared/conditions';
 import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
 import type {
     Application,
-    PrototypeBoolean,
+    PrototypeValue,
+    StateValue,
     Camera,
     Document,
     Shape,
@@ -126,7 +120,7 @@ export type DocumentFields = Pick<
 
 /** The durable form of each kind of entity a document holds. */
 export interface SavedEntities {
-    prototypeBooleans: PrototypeBoolean;
+    prototypeBooleans: PrototypeValue;
     dataEntities: DataEntity;
     dataFields: DataField;
     dataRecords: DataRecord;
@@ -471,16 +465,17 @@ export function readShapeGeometry(value: unknown) {
                 type: s.type,
                 ...(s.variantMode === 'auto' ? { variantMode: 'auto' as const } : {}),
                 ...(s.variantId === undefined ? {} : { variantId: id(s.variantId) }),
-                prototypeVisibilityStateId:
-                    s.prototypeVisibilityStateId === undefined
-                        ? undefined
-                        : id(s.prototypeVisibilityStateId),
-                // A condition means nothing without its state; a stray one would invert the next binding.
-                prototypeVisibilityWhen:
-                    s.prototypeVisibilityWhen === undefined ||
-                    s.prototypeVisibilityStateId === undefined
-                        ? undefined
-                        : bool(s.prototypeVisibilityWhen),
+                ...readVisibleWhen(s),
+                ...(s.stateBindings === undefined
+                    ? {}
+                    : {
+                          stateBindings: Object.fromEntries(
+                              Object.entries(record(s.stateBindings)).map(([key, value]) => [
+                                  id(key),
+                                  id(value)
+                              ])
+                          )
+                      }),
                 prototypeVisible:
                     s.prototypeVisible === undefined ? undefined : bool(s.prototypeVisible),
                 modeOverrides: readBindings(s.modeOverrides ?? {}),
@@ -608,6 +603,21 @@ function readRoleAndInteractions(value: Record<string, unknown>) {
     };
 }
 
+function readStateValue(value: unknown): StateValue {
+    if (typeof value === 'string' && value.length > MAX_CONDITION_TEXT) {
+        throw new Error('A state value has up to 1,000 characters.');
+    }
+    if (
+        typeof value !== 'string' &&
+        typeof value !== 'boolean' &&
+        !(typeof value === 'number' && Number.isFinite(value))
+    ) {
+        throw new Error('Invalid state value');
+    }
+
+    return value;
+}
+
 export function readInteractions(value: unknown): import('../types').InteractionSettings {
     const { activate, ...rest } = record(value);
     const {
@@ -621,18 +631,49 @@ export function readInteractions(value: unknown): import('../types').Interaction
     if (
         Object.keys(rest).length ||
         (activate != null &&
-            !['navigate', 'changeVariant', 'toggleVisibility', 'toggleState', 'setState'].includes(
-                type as string
-            ))
+            ![
+                'navigate',
+                'changeVariant',
+                'toggleVisibility',
+                'state',
+                'toggleState',
+                'setState'
+            ].includes(type as string))
     ) {
         throw new Error('Invalid interactions');
     }
 
+    // Older documents stored a yes/no state's actions as their own types.
     if (type === 'setState') {
-        return { activate: { type, stateId: id(stateId), value: bool(stateValue) } };
+        return {
+            activate: {
+                type: 'state',
+                change: 'set',
+                stateId: id(stateId),
+                value: bool(stateValue)
+            }
+        };
     }
     if (type === 'toggleState') {
-        return { activate: { type, stateId: id(stateId) } };
+        return { activate: { type: 'state', change: 'toggle', stateId: id(stateId) } };
+    }
+    if (type === 'state') {
+        const change = record(activate).change;
+        if (change === 'set') {
+            return {
+                activate: {
+                    type,
+                    change,
+                    stateId: id(stateId),
+                    value: readStateValue(stateValue)
+                }
+            };
+        }
+        if (change !== 'toggle' && change !== 'reset') {
+            throw new Error('Invalid state action');
+        }
+
+        return { activate: { type, change, stateId: id(stateId) } };
     }
 
     return activate === undefined
@@ -902,59 +943,9 @@ function readDataValue(value: unknown): DataValue {
     return value as DataValue;
 }
 
-function readOperand(value: unknown): Operand {
-    const data = record(value);
-    if (data.kind === 'value') {
-        const literal = readDataValue(data.value);
-        if (typeof literal === 'string' && literal.length > 1000) {
-            throw new Error('Values in conditions have up to 1,000 characters');
-        }
-
-        return { kind: 'value', value: literal };
-    }
-    if (data.kind === 'field') {
-        return { kind: 'field', fieldId: id(data.fieldId) };
-    }
-    if (data.kind === 'state') {
-        return { kind: 'state', stateId: id(data.stateId) };
-    }
-    throw new Error('Invalid operand');
-}
-
 /** A typed condition tree, bounded in depth and size; unknown kinds are refused. */
 export function readCondition(value: unknown): Condition {
-    let nodes = 0;
-    const read = (value: unknown, depth: number): Condition => {
-        if (++nodes > MAX_CONDITION_NODES || depth > MAX_CONDITION_DEPTH) {
-            throw new Error('This condition is too large');
-        }
-        const data = record(value);
-        const kind = data.kind;
-        if (kind === 'and' || kind === 'or') {
-            const conditions = list(data.conditions, (item) => read(item, depth + 1));
-            if (!conditions.length) {
-                throw new Error('Combine at least one condition');
-            }
-
-            return { kind, conditions };
-        }
-        if (kind === 'not') {
-            return { kind, condition: read(data.condition, depth + 1) };
-        }
-        if (kind === 'isSet') {
-            return { kind, operand: readOperand(data.operand) };
-        }
-        if (COMPARISONS.includes(kind as Comparison)) {
-            return {
-                kind: kind as Comparison,
-                left: readOperand(data.left),
-                right: readOperand(data.right)
-            };
-        }
-        throw new Error('Invalid condition');
-    };
-
-    return read(value, 1);
+    return readConditionTree(value, id);
 }
 
 function readDataRule(value: unknown): DataRule {
@@ -975,15 +966,58 @@ function readDataRule(value: unknown): DataRule {
     };
 }
 
-function readPrototypeBoolean(value: unknown): PrototypeBoolean {
+function readPrototypeValue(value: unknown): PrototypeValue {
     const item = record(value);
     const name = text(item.name).trim();
     if (!name || name.length > 100) {
         throw new Error('State name must contain 1–100 characters.');
     }
+    if (item.type === 'text') {
+        const initial = text(item.initial);
+        if (initial.length > MAX_CONDITION_TEXT) {
+            throw new Error('A text state starts with up to 1,000 characters.');
+        }
+
+        return { id: id(item.id), name, type: 'text', initial };
+    }
+    if (item.type === 'number') {
+        return { id: id(item.id), name, type: 'number', initial: number(item.initial) };
+    }
+    if (item.type !== undefined && item.type !== 'boolean') {
+        throw new Error('Invalid state type');
+    }
 
     return { id: id(item.id), name, initial: bool(item.initial) };
 }
+
+/**
+ * Before conditions, a binding named one state and the yes/no value that shows the instance;
+ * it reads as that comparison. A legacy value without its state meant nothing and is dropped.
+ */
+function readVisibleWhen(s: Record<string, unknown>): { prototypeVisibleWhen?: Condition } {
+    if (s.prototypeVisibleWhen !== undefined) {
+        return {
+            prototypeVisibleWhen: readConditionTree(s.prototypeVisibleWhen, id, STATE_OPERANDS)
+        };
+    }
+    if (s.prototypeVisibilityStateId === undefined) {
+        return {};
+    }
+
+    return {
+        prototypeVisibleWhen: {
+            kind: 'equals',
+            left: { kind: 'state', stateId: id(s.prototypeVisibilityStateId) },
+            right: {
+                kind: 'value',
+                value:
+                    s.prototypeVisibilityWhen === undefined ? true : bool(s.prototypeVisibilityWhen)
+            }
+        }
+    };
+}
+
+const STATE_OPERANDS = new Set(['state', 'value'] as const);
 
 const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] } = {
     frames: readFrame,
@@ -993,7 +1027,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     components: readComponent,
     links: readLink,
     guides: readGuide,
-    prototypeBooleans: readPrototypeBoolean,
+    prototypeBooleans: readPrototypeValue,
     dataEntities: readDataEntity,
     dataFields: readDataField,
     dataRecords: readDataRecord,
@@ -1279,9 +1313,7 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
         links: repair('links', table(d.links, readLink)),
         guides: table(d.guides, readGuide),
         prototypeBooleans:
-            d.prototypeBooleans === undefined
-                ? {}
-                : table(d.prototypeBooleans, readPrototypeBoolean),
+            d.prototypeBooleans === undefined ? {} : table(d.prototypeBooleans, readPrototypeValue),
         dataEntities: d.dataEntities === undefined ? {} : table(d.dataEntities, readDataEntity),
         dataFields: d.dataFields === undefined ? {} : table(d.dataFields, readDataField),
         dataRecords: d.dataRecords === undefined ? {} : table(d.dataRecords, readDataRecord),

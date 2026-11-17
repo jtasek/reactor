@@ -284,8 +284,14 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 componentId: shape.componentId,
                 variantId: shape.variantId,
                 prototypeVisible: shape.prototypeVisible,
-                prototypeVisibilityStateId: shape.prototypeVisibilityStateId,
-                prototypeVisibilityWhen: shape.prototypeVisibilityWhen,
+                ...(shape.prototypeVisibleWhen
+                    ? {
+                          prototypeVisibleWhen: JSON.parse(
+                              JSON.stringify(shape.prototypeVisibleWhen)
+                          )
+                      }
+                    : {}),
+                ...(shape.stateBindings ? { stateBindings: { ...shape.stateBindings } } : {}),
                 ...(shape.variantMode ? { variantMode: shape.variantMode } : {}),
                 ...(shape.modeOverrides ? { modeOverrides: { ...shape.modeOverrides } } : {}),
                 position: { ...shape.position },
@@ -358,8 +364,8 @@ export function shapeGeometryKey(shape: Shape): string {
     if (geometry.type === 'instance') {
         delete geometry.modeOverrides;
         delete geometry.prototypeVisible;
-        delete geometry.prototypeVisibilityStateId;
-        delete geometry.prototypeVisibilityWhen;
+        delete geometry.prototypeVisibleWhen;
+        delete geometry.stateBindings;
     }
 
     return JSON.stringify(geometry);

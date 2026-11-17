@@ -1067,6 +1067,10 @@
     min-width: 0;
 }
 
+.prototypeStateRow > .stateValue {
+    flex: 0 1 96px;
+}
+
 .prototypeStateRow label {
     align-items: center;
     display: flex;

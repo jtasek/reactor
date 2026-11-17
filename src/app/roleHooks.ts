@@ -13,6 +13,16 @@ import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
 import { screenFrames } from './screens';
 import { effectiveActivation, inheritedActivation } from './screenInteractions';
+import {
+    booleanVisibility,
+    describeCondition,
+    stateEquals,
+    stateType,
+    visibilityProblems,
+    visibilityStates,
+    stateProperty
+} from './prototypeState';
+import type { Condition } from '../shared/conditions';
 
 export const useRoleEditor = (componentId?: string, instanceId?: string) =>
     useAppState((state) => {
@@ -42,30 +52,49 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
             : [];
 
         return {
-            prototypeBooleans: Object.values(document.prototypeBooleans).map((value) => ({
-                ...value
-            })),
-            prototypeVisibilityStateId: instance?.prototypeVisibilityStateId,
+            states: Object.values(document.prototypeBooleans).map((value) => ({ ...value })),
+            visibleWhen: instance?.prototypeVisibleWhen
+                ? (JSON.parse(JSON.stringify(instance.prototypeVisibleWhen)) as Condition)
+                : undefined,
+            visibilityProblems: instance?.prototypeVisibleWhen
+                ? visibilityProblems(document, instance.prototypeVisibleWhen)
+                : [],
+            followed: instance ? booleanVisibility(document, instance) : undefined,
+            visibilityText: instance?.prototypeVisibleWhen
+                ? describeCondition(document, instance.prototypeVisibleWhen)
+                : undefined,
             // States this instance cannot follow without hiding a control that toggles them.
             blockedStateIds: instance
-                ? Object.keys(document.prototypeBooleans).filter((id) =>
-                      bindingHidesControl(document, instance, id)
-                  )
+                ? Object.values(document.prototypeBooleans)
+                      .filter(
+                          (value) =>
+                              stateType(value) === 'boolean' &&
+                              bindingHidesControl(document, instance, stateEquals(value.id, true))
+                      )
+                      .map((value) => value.id)
                 : [],
-            // Only a bound instance has a condition; a new binding starts at True.
-            prototypeVisibilityWhen: instance?.prototypeVisibilityStateId
-                ? (instance.prototypeVisibilityWhen ?? true)
-                : true,
             // A control that hid itself could only come back on Reset.
             visibilityTargets: visibilityTargets
-                .filter(
-                    (target) =>
+                .filter((target) => {
+                    const followed = booleanVisibility(document, target)?.stateId;
+
+                    return (
                         target.id !== instanceId &&
-                        (!instance?.prototypeVisibilityStateId ||
-                            target.prototypeVisibilityStateId !==
-                                instance.prototypeVisibilityStateId)
-                )
+                        !(followed && instance && visibilityStates(instance).includes(followed))
+                    );
+                })
                 .map(({ id, name }) => ({ id, name })),
+            // Text properties a state can show in the prototype; an input's value also takes typing.
+            stateProperties: instance
+                ? (component.props ?? [])
+                      .filter((prop) => stateProperty(document, component.id, prop.id))
+                      .map((prop) => ({
+                          id: prop.id,
+                          label: prop.label,
+                          input: settings.role === 'input' && settings.props.value === prop.id,
+                          stateId: instance.stateBindings?.[prop.id]
+                      }))
+                : [],
             prototypeVisible:
                 instance && visibilityTargets.some((target) => target.id === instance.id)
                     ? (instance.prototypeVisible ?? true)

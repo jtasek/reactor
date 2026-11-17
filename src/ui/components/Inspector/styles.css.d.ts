@@ -47,6 +47,7 @@ declare namespace StylesCssNamespace {
     responsiveRule: string;
     responsiveRules: string;
     sourceChildBreadcrumb: string;
+    stateValue: string;
     variablePicker: string;
     variantActions: string;
     variantSummary: string;

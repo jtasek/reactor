@@ -1,3 +1,4 @@
+import { booleanVisibility, simpleCondition } from 'src/app/prototypeState';
 import { buildStarterTemplate } from 'src/templates/build';
 import { STARTER_TEMPLATES } from 'src/templates/catalog';
 import { createDocument } from 'src/app/factories';
@@ -61,13 +62,10 @@ function hiddenAtStart(document: Document, id: string) {
     if (shape.type !== 'instance') {
         return false;
     }
-    const state = shape.prototypeVisibilityStateId
-        ? document.prototypeBooleans[shape.prototypeVisibilityStateId]
-        : undefined;
+    const followed = booleanVisibility(document, shape);
+    const state = followed ? document.prototypeBooleans[followed.stateId] : undefined;
 
-    return state
-        ? state.initial !== (shape.prototypeVisibilityWhen ?? true)
-        : shape.prototypeVisible === false;
+    return state ? state.initial !== followed!.when : shape.prototypeVisible === false;
 }
 
 /** The canvas after an edit, as a designer would make it to see what Prototype shows. */
@@ -134,7 +132,7 @@ it.each(CONTROLS)(
                         shape.variantId = variantId === shape.componentId ? undefined : variantId;
                         shape.variantMode = undefined;
                     });
-                    const played = nodeMarks(node, screen, drawing.booleans, {
+                    const played = nodeMarks(node, screen, drawing.states, {
                         variants: { [node.variantKey!]: variantId }
                     });
                     expect(played, `${label(store, viewId, shapeId)} › ${variantId}`).toEqual(
@@ -143,9 +141,13 @@ it.each(CONTROLS)(
                     compared += 1;
                 }
                 if (node.visibility) {
-                    const { key, stateKey, when = true } = node.visibility;
-                    const shown = nodeMarks(node, screen, drawing.booleans, {
-                        visibility: { [stateKey ?? key]: stateKey ? when : true }
+                    const { key, condition } = node.visibility;
+                    const simple = simpleCondition(condition);
+                    const shown = nodeMarks(node, screen, drawing.states, {
+                        visibility: { [key]: true },
+                        ...(simple?.kind === 'equals' && simple.value !== null
+                            ? { states: { [simple.stateId]: simple.value } }
+                            : {})
                     });
                     expect(shown, label(store, viewId, shapeId)).toEqual(
                         authored.get(viewId)!.get(shapeId)

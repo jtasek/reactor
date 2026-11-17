@@ -12,7 +12,22 @@ import {
     screenLayouts,
     screenLayoutProblems
 } from '../app/screenLayouts';
-import type { Document, Shape, VariableContext, Size } from '../app/types';
+import type {
+    Component,
+    Document,
+    InstanceShape,
+    Shape,
+    VariableContext,
+    Size
+} from '../app/types';
+import {
+    booleanVisibility,
+    renameConditionStates,
+    stateActionProblem,
+    stateProperty,
+    stateType,
+    visibilityProblems
+} from '../app/prototypeState';
 import { layoutDocument } from '../app/frameLayout';
 import { projectContextualLayout } from '../app/contextualLayout';
 import { screenFrames } from '../app/screens';
@@ -26,7 +41,8 @@ import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '
 import {
     MAX_PREVIEW_NODES,
     type PreviewDrawing,
-    type PreviewNode
+    type PreviewNode,
+    type PreviewStateChange
 } from '../shared/previewProtocol';
 
 export interface PreviewInspection {
@@ -198,7 +214,7 @@ export function projectPreview(
 
     const drawing: PreviewDrawing = {
         documentId: document.id,
-        booleans: Object.fromEntries(
+        states: Object.fromEntries(
             Object.values(document.prototypeBooleans).map((value) => [
                 `state:${value.id}`,
                 value.initial
@@ -353,6 +369,34 @@ export function createArtworkProjector(
     // Errors name the feature the person used; export has no screen set.
     const subject = screenIds ? 'Preview' : 'SVG export';
     const verb = screenIds ? 'previewing' : 'exporting';
+    /** Member text shape ID → the state key its bound property shows. */
+    const boundTexts = (instance: InstanceShape, drawn: Component) => {
+        const shown = new Map<string, string>();
+        for (const [propId, stateId] of Object.entries(instance.stateBindings ?? {})) {
+            const prop = drawn.props?.find((item) => item.id === propId);
+            if (!prop) {
+                continue;
+            }
+            if (!document.prototypeBooleans[stateId]) {
+                const message = `${instance.name}: ${prop.label} shows a state that no longer exists, so it shows its own text.`;
+                if (!warnings.includes(message)) {
+                    warnings.push(message);
+                    diagnostics.push({ kind: 'shape', id: instance.id, message });
+                }
+                continue;
+            }
+            if (stateProperty(document, drawn.id, propId)) {
+                shown.set(prop.shapeId, `state:${stateId}`);
+            }
+        }
+
+        return shown;
+    };
+    const writableState = (stateId: string | undefined) => {
+        const state = stateId ? document.prototypeBooleans[stateId] : undefined;
+
+        return state && stateType(state) !== 'boolean' ? `state:${state.id}` : undefined;
+    };
     const draw = (
         shape: Shape,
         path: string,
@@ -565,6 +609,8 @@ export function createArtworkProjector(
                 attrs.transform = `${shape.rotation ? `rotate(${shape.rotation} ${pivot.x} ${pivot.y}) ` : ''}translate(${shape.position.x - source.box.topLeft.x} ${shape.position.y - source.box.topLeft.y})`;
                 const drawn = instanceComponent(document, shape) ?? component;
                 const next = new Set(ancestors).add(drawn.id);
+                const shownStates =
+                    screenIds && !recordScope ? boundTexts(shape, drawn) : undefined;
                 group.children = source.shapes.flatMap((member) => {
                     const resolved = shape.projectedSource
                         ? themeColors(member, document, context)
@@ -575,10 +621,16 @@ export function createArtworkProjector(
                               document,
                               context
                           );
+                    if (!resolved.visible) {
+                        return [];
+                    }
+                    const node = draw(resolved, key, next, context, screenId, recordScope);
+                    const textState = resolved.type === 'text' && shownStates?.get(member.id);
+                    if (textState) {
+                        node.textState = textState;
+                    }
 
-                    return resolved.visible
-                        ? [draw(resolved, key, next, context, screenId, recordScope)]
-                        : [];
+                    return [node];
                 });
                 if (!screenIds) {
                     break;
@@ -647,11 +699,11 @@ export function createArtworkProjector(
                     activeInstances?.has(shape.id) &&
                     checkVisibilityTarget(shape.id, screenId)
                 ) {
-                    if (
-                        shape.prototypeVisibilityStateId &&
-                        !document.prototypeBooleans[shape.prototypeVisibilityStateId]
-                    ) {
-                        const message = `${shape.name}: visibility state is missing; using its initial visibility.`;
+                    const problems = shape.prototypeVisibleWhen
+                        ? visibilityProblems(document, shape.prototypeVisibleWhen)
+                        : [];
+                    if (problems.length) {
+                        const message = `${shape.name}: ${problems[0]} It uses its initial visibility.`;
                         if (!warnings.includes(message)) {
                             warnings.push(message);
                             diagnostics.push({ kind: 'shape', id: shape.id, message });
@@ -660,34 +712,42 @@ export function createArtworkProjector(
                     group.visibility = {
                         key: JSON.stringify([screenId, shape.id, component.id]),
                         initial: shape.prototypeVisible ?? true,
-                        ...(shape.prototypeVisibilityStateId &&
-                        document.prototypeBooleans[shape.prototypeVisibilityStateId]
+                        ...(shape.prototypeVisibleWhen && !problems.length
                             ? {
-                                  stateKey: `state:${shape.prototypeVisibilityStateId}`,
-                                  when: shape.prototypeVisibilityWhen ?? true
+                                  condition: renameConditionStates(
+                                      shape.prototypeVisibleWhen,
+                                      (id) => `state:${id}`
+                                  )
                               }
                             : {})
                     };
                 }
-                const stateId =
-                    activation?.type === 'toggleState' || activation?.type === 'setState'
-                        ? activation.stateId
-                        : toggleVisibility && visibilityTarget?.type === 'instance'
-                          ? visibilityTarget.prototypeVisibilityStateId
-                          : undefined;
-                const toggleState =
-                    stateId &&
-                    document.prototypeBooleans[stateId] &&
-                    !recordScope &&
-                    (path === screenId || controlKey !== undefined)
-                        ? `state:${stateId}`
+                const followed =
+                    toggleVisibility && visibilityTarget?.type === 'instance'
+                        ? booleanVisibility(document, visibilityTarget)?.stateId
                         : undefined;
-                if (
-                    (activation?.type === 'toggleState' || activation?.type === 'setState') &&
-                    !toggleState
-                ) {
-                    const message = !document.prototypeBooleans[activation.stateId]
-                        ? `${shape.name}: prototype state is missing. Choose a state in Interactions.`
+                const stateAction = activation?.type === 'state' ? activation : undefined;
+                const stateProblem = stateAction && stateActionProblem(document, stateAction);
+                const changeState: PreviewStateChange | undefined =
+                    !recordScope && (path === screenId || controlKey !== undefined)
+                        ? stateAction && !stateProblem
+                            ? stateAction.change === 'set'
+                                ? {
+                                      key: `state:${stateAction.stateId}`,
+                                      change: 'set',
+                                      value: stateAction.value
+                                  }
+                                : {
+                                      key: `state:${stateAction.stateId}`,
+                                      change: stateAction.change
+                                  }
+                            : followed && document.prototypeBooleans[followed]
+                              ? { key: `state:${followed}`, change: 'toggle' }
+                              : undefined
+                        : undefined;
+                if (stateAction && !changeState) {
+                    const message = stateProblem
+                        ? `${shape.name}: ${stateProblem} Choose a state in Interactions.`
                         : recordScope
                           ? `${shape.name}: controls in repeated records cannot change prototype state yet.`
                           : `${shape.name}: this control cannot change prototype state here. Use a control placed on the screen.`;
@@ -696,6 +756,18 @@ export function createArtworkProjector(
                         diagnostics.push({ kind: 'shape', id: shape.id, message });
                     }
                 }
+                const labelBinding = shape.stateBindings?.[settings.props.label ?? ''];
+                const labelState =
+                    shownStates &&
+                    labelBinding &&
+                    document.prototypeBooleans[labelBinding] &&
+                    stateProperty(document, drawn.id, settings.props.label!)
+                        ? `state:${labelBinding}`
+                        : undefined;
+                const valueStateId =
+                    role.role === 'input' && settings.props.value && shownStates
+                        ? writableState(shape.stateBindings?.[settings.props.value])
+                        : undefined;
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
                 if (target && !navigateTo) {
@@ -722,11 +794,9 @@ export function createArtworkProjector(
                         disabled: role.props.disabled === true,
                         navigateTo,
                         ...(changeVariant ? { changeVariant } : {}),
-                        ...(toggleState
-                            ? activation?.type === 'setState'
-                                ? { setState: { key: toggleState, value: activation.value } }
-                                : { toggleState }
-                            : {}),
+                        ...(changeState ? { changeState } : {}),
+                        ...(valueStateId ? { valueState: valueStateId } : {}),
+                        ...(labelState ? { labelState } : {}),
                         ...(toggleVisibility ? { toggleVisibility } : {}),
                         ...(controlKey ? { stateKey: controlKey } : {}),
                         ...(role.role === 'input'

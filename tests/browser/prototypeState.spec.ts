@@ -75,14 +75,16 @@ test('shared sessions isolate named state and preserve hidden input values until
     const document = createDocument(buildInspectorTypography(() => `s${++id}`));
     document.prototypeBooleans.flag = { id: 'flag', name: 'showHelp', initial: false };
     const instances = Object.values(document.shapes).filter((shape) => shape.type === 'instance');
-    instances.find((shape) => shape.name === 'Inspector help')!.prototypeVisibilityStateId = 'flag';
+    instances.find((shape) => shape.name === 'Inspector help')!.prototypeVisibleWhen = {
+        kind: 'equals',
+        left: { kind: 'state', stateId: 'flag' },
+        right: { kind: 'value', value: true }
+    };
     instances.find((shape) => shape.name === 'About these styles')!.interactions = {
-        activate: { type: 'toggleState', stateId: 'flag' }
+        activate: { type: 'state', change: 'toggle', stateId: 'flag' }
     };
     const drawing = projectPreview(document, {});
-    const help = drawing.screens[0].nodes.find(
-        (node) => node.visibility?.stateKey === 'state:flag'
-    )!;
+    const help = drawing.screens[0].nodes.find((node) => node.visibility?.condition)!;
     help.control = { role: 'input', label: 'Notes', value: '', x: 0, y: 0, width: 300, height: 32 };
     const second = structuredClone(help);
     second.key = 'second-help';

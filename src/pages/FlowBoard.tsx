@@ -40,6 +40,7 @@ const EFFECT_ICONS: Partial<Record<Effect['kind'], typeof Eye>> = {
     variant: Replace,
     toggleVisibility: Eye,
     setState: ToggleRight,
+    resetState: ToggleRight,
     toggleState: ToggleRight
 };
 

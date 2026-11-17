@@ -143,7 +143,9 @@ export function parityArtworkDocument() {
         overrides: {},
         rotation: 10,
         opacity: 0.8,
-        interactions: { activate: { type: 'setState', stateId: 'open', value: true } }
+        interactions: {
+            activate: { type: 'state', change: 'set', stateId: 'open', value: true }
+        }
     });
     add('dark-label', {
         type: 'text',
@@ -160,8 +162,11 @@ export function parityArtworkDocument() {
         componentId: 'badge',
         position: { x: 200, y: 490 },
         overrides: {},
-        prototypeVisibilityStateId: 'open',
-        prototypeVisibilityWhen: true
+        prototypeVisibleWhen: {
+            kind: 'equals',
+            left: { kind: 'state', stateId: 'open' },
+            right: { kind: 'value', value: true }
+        }
     });
 
     return createDocument({

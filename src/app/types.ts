@@ -3,6 +3,7 @@ import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
 import type { DataEntity, DataField, DataRecord, DataRule } from './dataTypes';
+import type { Condition } from '../shared/conditions';
 import type { FrameLayout } from './frameLayout';
 import type { FrameState } from './frameState';
 import type { DocumentAccess } from './documentAccess';
@@ -241,8 +242,16 @@ export interface InstanceShape extends ShapeBase {
     interactions?: InteractionSettings;
     /** Local prototype visibility starts here; canvas visibility remains independent. */
     prototypeVisible?: boolean;
-    prototypeVisibilityStateId?: string;
-    prototypeVisibilityWhen?: boolean;
+    /**
+     * In the prototype, shown while this condition over named state values holds. Without one,
+     * or while it names a missing state, `prototypeVisible` decides.
+     */
+    prototypeVisibleWhen?: Condition;
+    /**
+     * Exposed property ID → named state ID. In the prototype the property shows the state's value,
+     * and an input's value property also writes what is typed into it. The canvas stays authored.
+     */
+    stateBindings?: Record<string, string>;
     type: 'instance';
     componentId: string;
     position: Point;
@@ -267,31 +276,36 @@ export interface ToggleVisibilityAction {
     screenId?: never;
 }
 
-export interface ToggleStateAction {
-    type: 'toggleState';
-    stateId: string;
-    screenId?: never;
-}
+export type StateValue = string | number | boolean;
 
-export interface SetStateAction {
-    type: 'setState';
-    stateId: string;
-    value: boolean;
-    screenId?: never;
-}
+/**
+ * Changes a named state value: `set` to a value of its type, `toggle` a yes/no value, `reset` to
+ * its initial value. Older `toggleState` and `setState` actions are read into this shape.
+ */
+export type StateAction =
+    | { type: 'state'; change: 'set'; stateId: string; value: StateValue; screenId?: never }
+    | {
+          type: 'state';
+          change: 'toggle' | 'reset';
+          stateId: string;
+          value?: never;
+          screenId?: never;
+      };
 
-export interface PrototypeBoolean {
-    id: string;
-    name: string;
-    initial: boolean;
-}
+/**
+ * A named value of the player session, with the value it starts with. Without `type` it is a
+ * yes/no value, as every value was before text and number values.
+ */
+export type PrototypeValue =
+    | { id: string; name: string; type?: undefined; initial: boolean }
+    | { id: string; name: string; type: 'text'; initial: string }
+    | { id: string; name: string; type: 'number'; initial: number };
 
 export type ActivationAction =
     | NavigateAction
     | ChangeVariantAction
     | ToggleVisibilityAction
-    | ToggleStateAction
-    | SetStateAction;
+    | StateAction;
 
 export interface InteractionSettings {
     activate?: ActivationAction | null;
@@ -451,7 +465,8 @@ export interface Frame {
 }
 
 export interface Document {
-    prototypeBooleans: HashTable<PrototypeBoolean>;
+    /** Named prototype state values of every type; the collection keeps its first name. */
+    prototypeBooleans: HashTable<PrototypeValue>;
     dataEntities: HashTable<DataEntity>;
     dataFields: HashTable<DataField>;
     dataRecords: HashTable<DataRecord>;

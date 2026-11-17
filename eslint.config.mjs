@@ -150,7 +150,8 @@ export default [
     },
     {
         // Node runs the server's and scripts' TypeScript as it is, so their imports name the files.
-        files: ['server/**/*.ts', 'server*.ts', 'scripts/**/*.ts'],
+        // The server also runs src/shared as it is.
+        files: ['server/**/*.ts', 'server*.ts', 'scripts/**/*.ts', 'src/shared/**/*.ts'],
         rules: { 'import/extensions': ['error', 'ignorePackages'] }
     },
     prettierRecommended

@@ -42,7 +42,7 @@ export function FlowLinkMenu({
                 ? state.currentDocument.shapes[action.instanceId]
                 : undefined;
 
-        return shape?.type === 'instance' && !shape.prototypeVisibilityStateId
+        return shape?.type === 'instance' && !shape.prototypeVisibleWhen
             ? { id: shape.id, name: shape.name, hidden: shape.prototypeVisible === false }
             : undefined;
     });
@@ -59,7 +59,7 @@ export function FlowLinkMenu({
         editInteractions({ target: 'instance', id: instanceId, settings });
     const act = (activate: ActivationAction) => update({ activate });
     const stateName = (id: string) =>
-        data.prototypeBooleans.find((value) => value.id === id)?.name ?? 'a missing state';
+        data.states.find((value) => value.id === id)?.name ?? 'a missing state';
     const describe = (value: ActivationAction | null | undefined) => {
         switch (value?.type) {
             case 'navigate':
@@ -68,17 +68,21 @@ export function FlowLinkMenu({
                 return 'Show variant';
             case 'toggleVisibility':
                 return 'Show or hide';
-            case 'toggleState':
-                return `Switch ${stateName(value.stateId)}`;
-            case 'setState':
-                return `Turn ${stateName(value.stateId)} ${value.value ? 'on' : 'off'}`;
+            case 'state':
+                return value.change === 'toggle'
+                    ? `Switch ${stateName(value.stateId)}`
+                    : value.change === 'reset'
+                      ? `Reset ${stateName(value.stateId)}`
+                      : typeof value.value === 'boolean'
+                        ? `Turn ${stateName(value.stateId)} ${value.value ? 'on' : 'off'}`
+                        : `Set ${stateName(value.stateId)} to ${typeof value.value === 'string' ? `“${value.value}”` : value.value}`;
             default:
                 return 'No action';
         }
     };
-    const follows = data.prototypeVisibilityStateId;
-    const shown = follows
-        ? `When ${stateName(follows)} is ${data.prototypeVisibilityWhen ? 'on' : 'off'}`
+    const follows = data.followed?.stateId;
+    const shown = data.visibilityText
+        ? `When ${data.visibilityText}`
         : data.prototypeVisible === false
           ? 'Hidden at first'
           : 'Always';
@@ -88,7 +92,8 @@ export function FlowLinkMenu({
         keepOpen: true,
         onRun: () => setPage('link')
     };
-    const states = data.prototypeBooleans.filter((value) => value.id !== follows);
+    // The menu turns yes/no states on and off; the Inspector sets text and number states.
+    const states = data.states.filter((value) => !value.type && value.id !== follows);
     const onThisScreen =
         data.variantTargets.length > 0 || data.visibilityTargets.length > 0 || !off;
     const pages: Record<Exclude<Page, 'newState'>, ExplorerMenuItem[]> = {
@@ -220,20 +225,25 @@ export function FlowLinkMenu({
                 {
                     id: `toggle:${value.id}`,
                     label: `Switch ${value.name}`,
-                    checked: explicit?.type === 'toggleState' && explicit.stateId === value.id,
+                    checked:
+                        explicit?.type === 'state' &&
+                        explicit.change === 'toggle' &&
+                        explicit.stateId === value.id,
                     disabled: off,
-                    onRun: () => act({ type: 'toggleState', stateId: value.id })
+                    onRun: () => act({ type: 'state', change: 'toggle', stateId: value.id })
                 },
                 ...[true, false].map(
                     (on): ExplorerMenuItem => ({
                         id: `set:${value.id}:${on}`,
                         label: `Turn ${value.name} ${on ? 'on' : 'off'}`,
                         checked:
-                            explicit?.type === 'setState' &&
+                            explicit?.type === 'state' &&
+                            explicit.change === 'set' &&
                             explicit.stateId === value.id &&
                             explicit.value === on,
                         disabled: off,
-                        onRun: () => act({ type: 'setState', stateId: value.id, value: on })
+                        onRun: () =>
+                            act({ type: 'state', change: 'set', stateId: value.id, value: on })
                     })
                 )
             ]),
@@ -251,7 +261,7 @@ export function FlowLinkMenu({
             {
                 id: 'shown:always',
                 label: 'Always',
-                checked: !follows && data.prototypeVisible !== false,
+                checked: !data.visibleWhen && data.prototypeVisible !== false,
                 disabled: off,
                 onRun: () =>
                     editInteractions({
@@ -265,7 +275,7 @@ export function FlowLinkMenu({
             {
                 id: 'shown:hidden',
                 label: 'Once something shows it',
-                checked: !follows && data.prototypeVisible === false,
+                checked: !data.visibleWhen && data.prototypeVisible === false,
                 disabled: off,
                 onRun: () =>
                     editInteractions({
@@ -276,14 +286,18 @@ export function FlowLinkMenu({
                         visible: false
                     })
             },
-            ...data.prototypeBooleans
-                .filter((value) => value.id === follows || !data.blockedStateIds.includes(value.id))
+            ...data.states
+                .filter(
+                    (value) =>
+                        !value.type &&
+                        (value.id === follows || !data.blockedStateIds.includes(value.id))
+                )
                 .flatMap((value) =>
                     [true, false].map(
                         (when): ExplorerMenuItem => ({
                             id: `shown:${value.id}:${when}`,
                             label: `When ${value.name} is ${when ? 'on' : 'off'}`,
-                            checked: follows === value.id && data.prototypeVisibilityWhen === when,
+                            checked: follows === value.id && data.followed?.when === when,
                             disabled: off,
                             onRun: () =>
                                 editInteractions({

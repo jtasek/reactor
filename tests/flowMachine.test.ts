@@ -107,15 +107,18 @@ describe('flowMachine', () => {
             help: { id: 'help', name: 'Help is open', initial: false }
         };
         instance(document, 'next').interactions = {
-            activate: { type: 'setState', stateId: 'help', value: true }
+            activate: { type: 'state', change: 'set', stateId: 'help', value: true }
         };
         const wide = instance(document, 'wide-next');
-        wide.prototypeVisibilityStateId = 'help';
-        wide.prototypeVisibilityWhen = true;
+        wide.prototypeVisibleWhen = {
+            kind: 'equals',
+            left: { kind: 'state', stateId: 'help' },
+            right: { kind: 'value', value: true }
+        };
         const [setter, guarded] = flowMachine(document).states[0].transitions;
         expect(setter.effect).toEqual({ kind: 'setState', state: 'Help is open', value: true });
         expect(effectText(setter.effect)).toBe('turns Help is open on');
-        expect(guarded.guard).toEqual({ kind: 'state', state: 'Help is open', when: true });
+        expect(guarded.guard).toEqual({ kind: 'state', text: 'Help is open is on' });
         expect(guardText(guarded.guard)).toBe('if Help is open is on');
         expect(sentence(guarded)).toBe('Wide continue goes to Details, if Help is open is on');
     });
