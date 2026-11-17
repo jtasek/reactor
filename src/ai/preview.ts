@@ -37,7 +37,10 @@ export function previewProposal(document: Document, operations: Operation[]) {
         ...Object.keys(draft.groups),
         ...Object.keys(draft.components),
         ...Object.keys(draft.variables),
-        ...Object.keys(draft.dimensions)
+        ...Object.keys(draft.dimensions),
+        ...Object.keys(draft.dataEntities),
+        ...Object.keys(draft.dataFields),
+        ...Object.keys(draft.dataRecords)
     ]);
     let sequence = 0;
     const newId = () => {

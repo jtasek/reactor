@@ -61,6 +61,7 @@ import { instanceSource, instanceBox } from './componentSource';
 import { hydrateComponent, readEntity } from './services/documentStorage';
 import { shapeGeometryKey, shapeGeometry } from './utils';
 import { translateShape } from './geometry';
+import { stageData, writeData, type StagedData } from './dataOperations';
 
 type Referable = 'variables' | 'components' | 'shapes' | 'frames';
 
@@ -97,7 +98,8 @@ const CHANGEABLE_FIELDS = new Set([
     'fontSize',
     'fontWeight',
     'fontColor',
-    'overrides'
+    'overrides',
+    'dataList'
 ]);
 
 /** The fields an update writes into a shape: undefined ones are removed. */
@@ -106,7 +108,7 @@ interface ShapeUpdate {
     fields: Record<string, unknown>;
 }
 
-export interface Staged {
+export interface Staged extends StagedData {
     frames: Frame[];
     updatedFrames: Frame[];
     deletedFrames: string[];
@@ -346,7 +348,19 @@ function stage(
         deletedVariables: [],
         updatedShapes: [],
         deletedShapes: [],
-        deletedGroups: []
+        deletedGroups: [],
+        dataEntities: [],
+        dataFields: [],
+        dataRecords: []
+    };
+    const data = stageData(document, operations, newId, (key) => declared.has(key), problem);
+    Object.assign(staged, data.staged);
+    data.ids.forEach((id, key) => ids.set(key, id));
+    /** Authored lists may name the batch's entities and fields; copies keep theirs as they are. */
+    const linkList = (shape: Shape, index: number) => {
+        if (!retainOverrides && shape.type === 'instance' && shape.dataList) {
+            shape.dataList = data.linkList(document, components, shape, shape.dataList, index);
+        }
     };
 
     const dimensionIds = new Set<string>();
@@ -771,6 +785,7 @@ function stage(
         const shape = createShape({ ...input, name, order, selected: false });
 
         linkShape(shape, input, index);
+        linkList(shape, index);
         if (shape.parentFrameId !== undefined) {
             shape.parentFrameId = frameReference(shape.parentFrameId, index);
         }
@@ -818,6 +833,9 @@ function stage(
         if ('modeOverrides' in changes && current.type !== 'instance') {
             throw new Error('Only an instance can override color modes.');
         }
+        if ('dataList' in changes && current.type !== 'instance') {
+            throw new Error('Only an instance can repeat over records.');
+        }
         const shape = structuredClone(json(current));
         unbindEditedProperties(shape, fields);
         const bindings = shape.bindings ?? {};
@@ -841,6 +859,11 @@ function stage(
         Object.assign(shape, structuredClone(changes));
         if (shape.type === 'instance' && changes.interaction === null) {
             delete shape.interaction;
+        }
+        if (shape.type === 'instance' && changes.dataList === null) {
+            delete shape.dataList;
+        } else if (changes.dataList) {
+            linkList(shape, index);
         }
         if (changes.parentFrameId === null) {
             delete shape.parentFrameId;
@@ -877,8 +900,9 @@ function stage(
         const read: Record<string, unknown> = readEntity('shapes', shape);
         const foreign = fields.find(
             (field) =>
-                !['bindings', 'template', 'parentFrameId', 'interaction'].includes(field) &&
-                !(field in read)
+                !['bindings', 'template', 'parentFrameId', 'interaction', 'dataList'].includes(
+                    field
+                ) && !(field in read)
         );
 
         if (foreign) {
@@ -892,7 +916,8 @@ function stage(
                 'template',
                 'parentFrameId',
                 'layoutOrder',
-                'interaction'
+                'interaction',
+                'dataList'
             ])
         ].filter((field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field)));
 
@@ -1121,6 +1146,8 @@ function stage(
                     return stageShape(operation, index);
                 case 'addGroup':
                     return stageGroup(operation.name, operation.rotation, operation.shapes, index);
+                case 'addEntity':
+                case 'addRecords':
             }
         } catch (error) {
             throw problem(index, error);
@@ -1561,6 +1588,7 @@ export function writeBatch(document: Document, staged: Staged) {
     staged.components.forEach((component) => {
         document.components[component.id] = component;
     });
+    writeData(document, staged);
     staged.updatedShapes.forEach(({ id, fields }) => {
         const shape = document.shapes[id];
         const geometry = shapeGeometryKey(shape);

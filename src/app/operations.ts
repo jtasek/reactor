@@ -6,6 +6,7 @@ import type {
     VariableDimension,
     PackageIdentity
 } from './types';
+import type { DataList, DataType, DataValue } from './dataTypes';
 
 /** Who made a batch: the person using this copy, or an AI request they accepted. */
 export type Provenance = { kind: 'person' } | { kind: 'ai'; model: string; requestId: string };
@@ -84,6 +85,8 @@ type ShapeChanges = ShapeInput extends infer S
         ? Partial<Omit<S, 'parentFrameId' | 'interaction'>> & {
               parentFrameId?: string | null;
               interaction?: import('./types').RoleSettings | null;
+              /** An instance's repeated list; null removes it. */
+              dataList?: DataList | null;
           }
         : never
     : never;
@@ -152,7 +155,47 @@ export interface DeleteFrame {
     frame: string;
 }
 
+/** A field `addEntity` adds. Its key is local to the entity. */
+export interface NewDataField {
+    key: string;
+    name: string;
+    type: DataType;
+    required?: boolean;
+    options?: string[];
+    /** A reference field's entity: an ID, this entity's key, or the key of an earlier one. */
+    targetEntity?: string;
+}
+
+/**
+ * A sample record. Values are by field ID, or by field key for an entity the batch adds; a
+ * reference value is a record ID or the key of a record this or an earlier operation adds.
+ */
+export interface NewDataRecord {
+    key?: string;
+    values: Record<string, DataValue>;
+}
+
+/** Adds an entity with its fields and sample records; every record must pass validation. */
+export interface AddEntity {
+    op: 'addEntity';
+    key: string;
+    name: string;
+    fields: NewDataField[];
+    /** The key of the text field that names its records. */
+    labelField?: string;
+    records?: NewDataRecord[];
+}
+
+/** Adds sample records to an entity the document has or an earlier operation adds. */
+export interface AddRecords {
+    op: 'addRecords';
+    entity: string;
+    records: NewDataRecord[];
+}
+
 export type Operation =
+    | AddEntity
+    | AddRecords
     | AddFrame
     | UpdateFrame
     | DeleteFrame

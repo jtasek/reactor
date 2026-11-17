@@ -17,7 +17,8 @@ import styles from './styles.css';
 import { ProposalPreview } from './ProposalPreview';
 
 const SCROLL_BOTTOM_REACH_PX = 32;
-const MAX_PROMPT_LENGTH = 2000;
+/** As the gateway allows: room for pasted CSV or JSON. */
+const MAX_PROMPT_LENGTH = 20_000;
 
 /** A local chat whose proposed edits reach the document only after Accept. */
 export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {

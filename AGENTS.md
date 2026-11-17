@@ -305,6 +305,11 @@ re-renders.** Components never mutate state directly.
   role links and variant dependencies. Variables retain authored values alongside `describeVariable`
   resolution and its mode provenance. A selected view resolves its inherited modes; shape selections
   describe source context, and whole/multiple selections use document defaults, not local simulation.
+  The context also carries `data`: each entity's fields, runnable rules, record count and up to
+  50 record names. AI `addEntity` and `addRecords` add entities, fields and sample records
+  (`src/app/dataOperations.ts`, staged inside `stageBatch`), each record checked as a form checks
+  it; an instance's `dataList` set by `addShape`/`updateShape` may name the batch's entity and
+  field keys and is checked as Inspector checks it (paste keeps copied lists as they are).
   AI `composeScreen` takes ordered text and labeled controls, padding, gaps and an optional
   bottom footer. `columnComposition.ts` measures wrapped text and computes one-time column
   positions; it does not introduce a durable stack or template. The positioned reader remains
@@ -337,7 +342,7 @@ re-renders.** Components never mutate state directly.
   applying, and a provider's recorded events for each provider (`recordings/anthropic.json`,
   `recordings/openai.json`), which the tests replay through that provider's adapter, the server
   and the editor's code; `pnpm ai:record` asks the provider `AI_PROVIDER` and the rest configure
-  and records its answers. Forty-one cases run for each adapter offline; cases without a provider
+  and records its answers. Forty-four cases run for each adapter offline; cases without a provider
   recording use explicit hand-authored `reference` rounds, never counted as live quality.
   `pnpm ai:eval` runs the configured provider without changing recordings and writes
   `test-results/ai-eval.json` with validity, semantic checks, latency, usage and optional cost

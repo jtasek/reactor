@@ -6,10 +6,13 @@ import { effectiveRoleSettings, resolveComponentRole } from 'src/app/componentRo
 import { resolveModes } from 'src/app/inheritedModes';
 import { describeVariable } from 'src/app/variableDescription';
 import { componentSource, sourceMembers } from 'src/app/componentSource';
+import { dataFields, recordLabels, runnableRules } from 'src/app/data';
 
 /** A transport-size budget, not a provider-specific token count. */
 export const MAX_CONTEXT_BYTES = 32 * 1024;
 const MAX_CONTEXT_RECORDS = 300;
+/** Record names sent per entity, enough to refer to sample records. */
+const MAX_RECORD_NAMES = 50;
 
 /** What a shape keeps for the editor alone, or names elsewhere, as its ID. */
 const EDITOR_FIELDS = new Set([
@@ -257,6 +260,42 @@ export function documentContext(document: Document) {
         selectedFrame !== undefined ||
         dimensionIds.has(id) ||
         [...variables.values()].some((variable) => variable.dimensionId === id);
+    const data = Object.fromEntries(
+        Object.values(document.dataEntities).map((entity) => {
+            reserve();
+            const names = [...recordLabels(document, entity.id)];
+            const rules = runnableRules(document, entity.id).map(({ when, check, message }) => ({
+                ...(when ? { when } : {}),
+                check,
+                message
+            }));
+
+            return [
+                entity.id,
+                {
+                    name: entity.name,
+                    ...(entity.labelFieldId ? { labelFieldId: entity.labelFieldId } : {}),
+                    fields: Object.fromEntries(
+                        dataFields(document, entity.id).map(
+                            ({ id, name, type, required, options, targetEntityId }) => [
+                                id,
+                                {
+                                    name,
+                                    type,
+                                    required,
+                                    ...(type === 'choice' ? { options } : {}),
+                                    ...(type === 'reference' ? { targetEntityId } : {})
+                                }
+                            ]
+                        )
+                    ),
+                    ...(rules.length ? { rules } : {}),
+                    recordCount: names.length,
+                    records: Object.fromEntries(names.slice(0, MAX_RECORD_NAMES))
+                }
+            ];
+        })
+    );
     const context = {
         selection,
         ...(selectedFrame ? { selectedFrameId: selectedFrame.id } : {}),
@@ -285,7 +324,8 @@ export function documentContext(document: Document) {
             ),
             problems: resolution.problems
         },
-        components: Object.fromEntries(components)
+        components: Object.fromEntries(components),
+        data
     };
 
     if (new TextEncoder().encode(JSON.stringify(context)).byteLength > MAX_CONTEXT_BYTES) {

@@ -60,6 +60,24 @@ export function describeOperation(
     const frameLabel = (id: string) => quoted(frameName(document, batch, id));
 
     switch (operation.op) {
+        case 'addEntity': {
+            const count = operation.records?.length ?? 0;
+            const types = operation.fields.map((field) => `${field.name} (${field.type})`);
+
+            return `Add entity ${quoted(operation.name)} with ${types.join(', ')}${count ? ` and ${count} ${count === 1 ? 'record' : 'records'}` : ''}`;
+        }
+        case 'addRecords': {
+            const count = operation.records.length;
+            const entity =
+                document.dataEntities[operation.entity]?.name ??
+                batch.find(
+                    (each): each is Extract<ProposedOperation, { op: 'addEntity' }> =>
+                        each.op === 'addEntity' && each.key === operation.entity
+                )?.name ??
+                operation.entity;
+
+            return `Add ${count} ${count === 1 ? 'record' : 'records'} to ${quoted(entity)}`;
+        }
         case 'addFrame': {
             const frame = operation.frame;
             const kind =
@@ -101,9 +119,12 @@ export function describeOperation(
             const named = shape.name ? ` ${quoted(shape.name)}` : '';
             const placed = shape.parentFrameId ? ` in ${frameLabel(shape.parentFrameId)}` : '';
 
+            const repeats =
+                shape.type === 'instance' && shape.dataList ? ' repeated over records' : '';
+
             return shape.type === 'text'
                 ? `Add text${named}${placed}: ${quoted(shape.value)}`
-                : `Add ${shape.type}${named}${placed}`;
+                : `Add ${shape.type}${named}${placed}${repeats}`;
         }
         case 'addGroup':
             return `Group ${operation.shapes.length} shapes as ${quoted(operation.name)}`;

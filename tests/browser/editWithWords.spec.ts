@@ -1,4 +1,5 @@
 import { operations as responsiveScreenOperations } from '../ai/cases/create-responsive-screen/case';
+import csvCase from '../ai/cases/data-entity-from-csv/case';
 import { createVariable } from './support/variables';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
@@ -265,6 +266,51 @@ test('a change described in words is proposed, then applied once accepted, as on
     await page.locator('svg#surface').click({ position: { x: 500, y: 400 } });
     await page.keyboard.press('ControlOrMeta+z');
     await expect(shapes(page)).toHaveCount(0);
+});
+
+test('pasted CSV becomes an entity with valid records once accepted, as one undo step', async ({
+    page
+}) => {
+    const [entity] = csvCase.reference![0];
+    const requests = await signInWithAi(page, () =>
+        lines(
+            { type: 'start', requestId: 'request-1', model: 'claude-haiku-5-5' },
+            { type: 'operation', operation: entity },
+            { type: 'done' }
+        )
+    );
+
+    await openEditor(page, ['Data View']);
+    await editWithWords(page).click();
+    const chat = page.getByRole('region', { name: 'AI chat', exact: true });
+    const prompt = chat.getByRole('textbox', { name: 'Change to make' });
+    await expect(prompt).toHaveAttribute('maxlength', '20000');
+    await prompt.fill(csvCase.prompt);
+    await prompt.press('Enter');
+
+    await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText(
+        'Add entity “Products” with SKU (text), Name (text), Price (number), In stock (boolean), Category (choice), Released (text) and 20 records'
+    );
+    expect(requests).toEqual([expect.objectContaining({ prompt: csvCase.prompt })]);
+    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveCount(0);
+
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(chat).toContainText('Applied. You can undo this change.');
+    await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveValue(
+        '00042'
+    );
+    await expect(panel.getByRole('textbox', { name: 'Name, record 20', exact: true })).toHaveValue(
+        'Storage bench'
+    );
+    await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
+
+    await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button', { name: 'Undo', exact: true })
+        .click();
+    await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveCount(0);
+    await expect(panel).not.toContainText('Products');
 });
 
 test('cancelling a proposal under way changes nothing and keeps the words', async ({ page }) => {
