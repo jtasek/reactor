@@ -131,6 +131,18 @@ variables with existing names or add another frame/view for the same composed sc
 - Theme and other modeOverrides stay independent of layout width rules; use existing dimension
   and mode IDs from context. Do not create dimensions or modes unless supported and requested.
 - A group needs two or more shapes, each in no other group.
+- data holds the document's entities (tables of sample records) with their fields and record
+  names by ID. For an entity from a description or from pasted CSV or JSON, call addEntity once
+  with every field and record. Choose each field's type from its values: number for amounts,
+  counts and measures (no units or currency symbols in values); boolean for yes/no or true/false;
+  choice when a column repeats a few labels, such as a status, plan or category, with every label
+  as an option; reference when it names records of another entity; text for everything else,
+  including names, emails, phone numbers, codes and dates. Mark a field required only when every
+  record has a value. Without pasted data, make 20 realistic, varied records unless asked for
+  another number; with pasted data keep every row and value, written in the field's type.
+- A list shows records in Prototype: an instance whose dataList names the entity and maps the
+  component's exposed props to fields. Use a component whose props suit the fields, and place it
+  in the screen the person means. When no component has suitable props, say so instead.
 - Do only what was asked, and leave the rest of the document as it is.
 - When the tools cannot make the change, say why in one sentence and call none.`;
 
@@ -286,6 +298,23 @@ const SHAPE = {
                             }
                         ]
                     }
+                },
+                dataList: {
+                    type: 'object',
+                    description:
+                        'Repeats this instance in Prototype, one item per record of the entity, gap pixels apart; mode record shows instead the record a list item opened.',
+                    properties: {
+                        entityId: { type: 'string', description: 'An entity ID or key.' },
+                        fields: {
+                            type: 'object',
+                            description:
+                                'Exposed prop ID to a field ID or key of that entity. Text props take text, choice or reference fields; number and boolean props a field of their type.',
+                            additionalProperties: { type: 'string' }
+                        },
+                        gap: { type: 'number', minimum: 0 },
+                        mode: { type: 'string', enum: ['record'] }
+                    },
+                    required: ['entityId', 'fields', 'gap']
                 }
             },
             ['componentId', 'position'],
@@ -331,6 +360,29 @@ const ADD_SHAPE = {
 };
 
 SHAPE_CHANGES.parentFrameId = { type: ['string', 'null'] };
+SHAPE_CHANGES.dataList = { anyOf: [SHAPE_CHANGES.dataList, { type: 'null' }] };
+
+const records = {
+    type: 'array',
+    minItems: 1,
+    maxItems: 1000,
+    items: {
+        type: 'object',
+        properties: {
+            key: {
+                type: 'string',
+                description: 'Optional; a reference value of this answer may name it.'
+            },
+            values: {
+                type: 'object',
+                description:
+                    'Field key or ID to its value: a number or boolean as JSON, a choice as one of its options, a reference as a record ID or key, text as a string. Leave out unknown optional values.',
+                additionalProperties: { type: ['string', 'number', 'boolean', 'null'] }
+            }
+        },
+        required: ['values']
+    }
+};
 
 const size = {
     type: 'object',
@@ -368,6 +420,63 @@ const frameFields = {
 
 /** One tool per kind of operation, each with a JSON schema of its input. */
 export const TOOLS = [
+    {
+        name: 'addEntity',
+        description:
+            'Adds a data entity, a table of sample records, with all its fields and records. Every record must fit its fields.',
+        parameters: {
+            type: 'object',
+            properties: {
+                key: { type: 'string' },
+                name: { type: 'string', description: 'Plural, unique among entities.' },
+                fields: {
+                    type: 'array',
+                    minItems: 1,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            key: { type: 'string', description: 'Unique within the entity.' },
+                            name: { type: 'string', description: 'Unique within the entity.' },
+                            type: {
+                                type: 'string',
+                                enum: ['text', 'number', 'boolean', 'choice', 'reference']
+                            },
+                            required: { type: 'boolean' },
+                            options: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: 'Choice only: every allowed value, distinct.'
+                            },
+                            targetEntity: {
+                                type: 'string',
+                                description:
+                                    'Reference only: the ID or key of the entity whose records it names.'
+                            }
+                        },
+                        required: ['key', 'name', 'type']
+                    }
+                },
+                labelField: {
+                    type: 'string',
+                    description: 'Key of the text field that names a record, such as its name.'
+                },
+                records
+            },
+            required: ['key', 'name', 'fields']
+        }
+    },
+    {
+        name: 'addRecords',
+        description: 'Adds sample records to an entity the document has, or one added earlier.',
+        parameters: {
+            type: 'object',
+            properties: {
+                entity: { type: 'string', description: 'The entity’s ID or key.' },
+                records
+            },
+            required: ['entity', 'records']
+        }
+    },
     {
         name: 'composeScreen',
         description:

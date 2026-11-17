@@ -20,7 +20,11 @@ const DRAFT_INPUTS = [
     'links',
     'guides',
     'variables',
-    'dimensions'
+    'dimensions',
+    'dataEntities',
+    'dataFields',
+    'dataRecords',
+    'dataRules'
 ] as const;
 
 /**
@@ -69,45 +73,93 @@ export const ProposalPreview: FC<{
         [document, operations, revision]
     );
 
+    // A proposal that only adds data changes nothing a drawing could show.
+    const drawn =
+        preview.valid && (preview.changes.ids.size > 0 || preview.changes.removed.length > 0);
+
     return (
         <>
-            {preview.valid ? (
-                <figure className={styles.preview} aria-label="Proposed result">
-                    <figcaption>
-                        <strong>Proposed result</strong>
-                        <span>
-                            Not applied. Changes are outlined. Updates with your canvas edits.
-                        </span>
-                    </figcaption>
-                    <div className={styles.previewArtwork}>
-                        <DocumentThumbnail
-                            document={preview.document}
-                            changes={preview.changes}
-                            fitChanges
-                        />
-                    </div>
-                    <button type="button" onClick={() => setExpanded(true)}>
-                        Inspect preview
-                    </button>
-                    <Dialog
-                        title="Proposed result"
-                        description="Draft only, with the changes outlined. Close this preview to accept or discard the changes."
-                        visible={expanded}
-                        onClose={() => setExpanded(false)}
+            {preview.valid &&
+                preview.records.map(({ entity, fields, rows, total }) => (
+                    <figure
+                        key={entity}
+                        className={styles.preview}
+                        aria-label={`Proposed records of ${entity}`}
                     >
-                        <div className={styles.expandedArtwork}>
-                            <DocumentThumbnail
-                                document={preview.document}
-                                changes={preview.changes}
-                            />
+                        <figcaption>
+                            <strong>
+                                {entity}: {total} {total === 1 ? 'record' : 'records'}
+                            </strong>
+                            {total > rows.length && (
+                                <span>
+                                    The first {rows.length} are shown; all pass their fields&apos;
+                                    checks.
+                                </span>
+                            )}
+                        </figcaption>
+                        <div className={styles.records}>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        {fields.map((field) => (
+                                            <th key={field} scope="col">
+                                                {field}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rows.map((row, index) => (
+                                        <tr key={index}>
+                                            {row.map((value, column) => (
+                                                <td key={column}>{value}</td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </Dialog>
-                </figure>
-            ) : (
+                    </figure>
+                ))}
+            {!preview.valid ? (
                 <p className={styles.problem} role="status">
                     Preview unavailable: {preview.problem} Discard this proposal and request a new
                     one.
                 </p>
+            ) : (
+                drawn && (
+                    <figure className={styles.preview} aria-label="Proposed result">
+                        <figcaption>
+                            <strong>Proposed result</strong>
+                            <span>
+                                Not applied. Changes are outlined. Updates with your canvas edits.
+                            </span>
+                        </figcaption>
+                        <div className={styles.previewArtwork}>
+                            <DocumentThumbnail
+                                document={preview.document}
+                                changes={preview.changes}
+                                fitChanges
+                            />
+                        </div>
+                        <button type="button" onClick={() => setExpanded(true)}>
+                            Inspect preview
+                        </button>
+                        <Dialog
+                            title="Proposed result"
+                            description="Draft only, with the changes outlined. Close this preview to accept or discard the changes."
+                            visible={expanded}
+                            onClose={() => setExpanded(false)}
+                        >
+                            <div className={styles.expandedArtwork}>
+                                <DocumentThumbnail
+                                    document={preview.document}
+                                    changes={preview.changes}
+                                />
+                            </div>
+                        </Dialog>
+                    </figure>
+                )
             )}
             <div className={styles.actions}>
                 <button type="button" onClick={onDiscard}>

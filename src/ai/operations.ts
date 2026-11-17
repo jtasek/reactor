@@ -1,4 +1,7 @@
 import type {
+    AddEntity,
+    AddRecords,
+    NewDataRecord,
     AddFrame,
     UpdateFrame,
     AddGroup,
@@ -10,7 +13,7 @@ import type {
     UpdateShape,
     UpdateVariable
 } from 'src/app/operations';
-import { readEntity } from 'src/app/services/documentStorage';
+import { readDataList, readEntity } from 'src/app/services/documentStorage';
 import { readCopiedShape } from 'src/app/services/clipboardStorage';
 import { isVariableType } from 'src/app/variables';
 import { screenOperations } from 'src/app/screenAuthoring';
@@ -18,6 +21,8 @@ import { readScreenComposition } from './composition';
 
 /** The operations a model may propose. */
 export type ProposedOperation =
+    | AddEntity
+    | AddRecords
     | AddFrame
     | UpdateFrame
     | AddVariable
@@ -53,6 +58,38 @@ function list(value: unknown, what: string, each: string) {
     return value.map((item) => text(item, each));
 }
 
+/** Values are checked against their fields when the batch is staged. */
+function records(value: unknown): NewDataRecord[] {
+    if (!Array.isArray(value) || value.length === 0) {
+        throw new Error('Its records are not a list of one or more.');
+    }
+
+    return value.map((item) => {
+        const record = fields(item, 'A record');
+        const values = fields(record.values, 'Its values');
+
+        return {
+            ...(record.key === undefined ? {} : { key: text(record.key, 'Its key') }),
+            values: Object.fromEntries(
+                Object.entries(values).map(([field, value]) => {
+                    if (
+                        value !== null &&
+                        typeof value !== 'string' &&
+                        typeof value !== 'boolean' &&
+                        !(typeof value === 'number' && Number.isFinite(value))
+                    ) {
+                        throw new Error(
+                            `The value of ${field} is not text, a number or a boolean.`
+                        );
+                    }
+
+                    return [field, value];
+                })
+            )
+        };
+    });
+}
+
 /**
  * Reads an operation a model proposed, which nothing has checked yet, as
  * `applyOperations` takes it. Throws saying what is wrong with it.
@@ -61,6 +98,47 @@ export function readOperation(value: unknown): ProposedOperation {
     const operation = fields(value, 'The operation');
 
     switch (operation.op) {
+        case 'addEntity': {
+            if (!Array.isArray(operation.fields)) {
+                throw new Error('Its fields are not a list.');
+            }
+
+            return {
+                op: 'addEntity',
+                key: text(operation.key, 'Its key'),
+                name: text(operation.name, 'Its name'),
+                fields: operation.fields.map((value) => {
+                    const field = fields(value, 'A field');
+                    const type = text(field.type, 'Its type');
+                    if (!['text', 'number', 'boolean', 'choice', 'reference'].includes(type)) {
+                        throw new Error(`${type} is not a type of field.`);
+                    }
+
+                    return {
+                        key: text(field.key, 'Its key'),
+                        name: text(field.name, 'Its name'),
+                        type: type as AddEntity['fields'][number]['type'],
+                        required: field.required === true,
+                        ...(field.options === undefined
+                            ? {}
+                            : { options: list(field.options, 'Its options', 'An option') }),
+                        ...(field.targetEntity === undefined
+                            ? {}
+                            : { targetEntity: text(field.targetEntity, 'Its target entity') })
+                    };
+                }),
+                ...(operation.labelField === undefined
+                    ? {}
+                    : { labelField: text(operation.labelField, 'Its label field') }),
+                ...(operation.records === undefined ? {} : { records: records(operation.records) })
+            };
+        }
+        case 'addRecords':
+            return {
+                op: 'addRecords',
+                entity: text(operation.entity, 'Its entity'),
+                records: records(operation.records)
+            };
         case 'addFrame': {
             const frame = fields(operation.frame, 'Its frame');
             const key = text(operation.key, 'Its key');
@@ -199,6 +277,10 @@ export function readOperation(value: unknown): ProposedOperation {
                 Object.values(fields(changes.bindings, 'Its bindings')).forEach((variable) =>
                     text(variable, 'A variable')
                 );
+            }
+
+            if (changes.dataList) {
+                changes.dataList = readDataList(changes.dataList);
             }
 
             // Checked against the shape it changes, which the document holds.

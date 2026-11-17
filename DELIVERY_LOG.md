@@ -721,6 +721,34 @@ are not in the package, as with shared links. Verification: `tests/standalonePac
 and the offline package test in `tests/browser/dataForms.spec.ts` (list to details, input kept
 per record, Restart, font loaded, no requests, no console errors).
 
+## R5.5 AI entities and records
+
+_Recorded 2026-11-17._
+
+Edit with words can make data. Two operations join the batch (`src/app/operations.ts`):
+`addEntity` adds an entity with its fields (any of the five types; a reference names an entity
+the document has, an earlier one of the batch, or itself), the text field that names its records
+and its sample records; `addRecords` adds records to an entity the document has or the batch adds.
+Field keys belong to their entity; entity and record keys are the batch's, and a reference value
+may name a record key of the same or an earlier operation. `src/app/dataOperations.ts` stages them
+inside `stageBatch`: names unique, choice fields with options, the 1,000-record limit, and every
+record checked as a form checks it (field type, required, options, the referenced record exists,
+and the entity's runnable rules), so a proposal with one bad value is refused, naming the record,
+and goes back to the model through the existing single repair. An instance's `dataList` can be
+set by `addShape` or `updateShape` (`null` removes it); in authored batches its entity and field
+references may be keys and it is checked as Inspector checks it, while paste keeps copied lists
+as they are. Accept applies it all as one undo step by the AI request, shared like any batch.
+The model sees each entity's fields, runnable rules, record count and up to 50 record names
+(`context.data`) and has `addEntity`, `addRecords` and `dataList` in its tools, with instructions
+on choosing field types and making 20 records unless asked otherwise. Prompts take up to 20,000
+characters, so CSV or JSON can be pasted. The chat describes the new operations
+(`Add entity “Customers” with Name (text), … and 20 records`). Lists name fields by ID, so
+renaming a field keeps its bindings. Verification: `tests/dataOperations.test.ts` and three
+`data-*` eval cases in `tests/ai/cases/` (description, pasted CSV, references to existing
+records) whose checks are the step's bar: at least 90% of field types right, every record valid,
+the record count asked for and a bound list. Their rounds are hand-authored; no live run has
+scored a model on them yet.
+
 ## S1 step 1: Version check on sync
 
 _Recorded 2026-11-13._

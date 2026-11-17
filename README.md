@@ -647,16 +647,20 @@ separate, independently sourced reference set.
 
 ### AI evaluations
 
-`pnpm test tests/ai/cases.test.ts` runs forty-one edit cases through both provider adapters,
+`pnpm test tests/ai/cases.test.ts` runs forty-four edit cases through both provider adapters,
 the real gateway and two collaborating editor copies. It checks the requested result,
 no changes before acceptance, sharing after acceptance and one-step undo. Separate proposal
 tests check cancellation, refusals, malformed replies and the one-repair limit.
-The original six cases use saved event fixtures; the other thirty-five have explicitly
+The original six cases use saved event fixtures; the other thirty-eight have explicitly
 hand-authored `reference` rounds in their `case.ts`. These exercise the protocol and editor,
 not model quality. A provider recording, when present, takes precedence over a reference.
+The three `data-*` cases (R5.5) build an entity from a description, from pasted CSV and with
+references to existing records; each passes when at least 90% of the expected fields have the
+right type, every record passes validation, the entity has the asked-for records and a list
+is bound to it.
 
 With the provider environment above configured, `pnpm ai:eval` makes live calls on the
-forty-one fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
+forty-four fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
 per-case diagnostics, first-try and after-repair validity, semantic pass rate, first-operation
 p50 and completion p95, and provider-reported tokens across both attempts. These timings
 include the local gateway and validation, exclude test setup, and preserve provider streaming.

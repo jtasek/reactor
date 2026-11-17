@@ -28,7 +28,7 @@ step delivered is in the [delivery log](DELIVERY_LOG.md).
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named boolean state. Data: entities with Text/Number/Boolean fields, sample records, choice and reference fields, the 1,000-record limit, repeated lists, list-to-detail records, session-only record forms and validation rules written as condition trees (R5.1–R5.3b). Not built: dates, and actions on the shared vocabulary. |
+| Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named boolean state. Data: entities with Text/Number/Boolean fields, sample records, choice and reference fields, the 1,000-record limit, repeated lists, list-to-detail records, session-only record forms, validation rules written as condition trees, and Edit with words making entities, records and lists (R5.1–R5.5). Not built: dates, and actions on the shared vocabulary. |
 | Export and runtime | Implemented: sandboxed Preview, the Prototype player (`/prototype`), read-only prototype links on the separate preview domain, SVG export, starter templates and a downloadable standalone web package (R5.4). |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
@@ -656,8 +656,8 @@ expression operators can follow outside users' needs.
    R5.1 built; see the [delivery log](DELIVERY_LOG.md#r51-entities-fields-and-sample-records).
    R5.1b built (choice and reference fields, records named by a text field, 1,000 records per
    entity); see the [delivery log](DELIVERY_LOG.md#r51b-choice-and-reference-fields-and-the-record-limit).
-   Not yet: AI proposing these field types, and a reference shown as more than its record's name
-   (for example the customer's email in an order row).
+   Not yet: a reference shown as more than its record's name (for example the customer's email in
+   an order row).
 2. A list bound to an entity through an item template, and a details screen that receives the
    record.
    R5.2a built; see the [delivery log](DELIVERY_LOG.md#r52a-lists-bound-to-entities).
@@ -677,6 +677,10 @@ expression operators can follow outside users' needs.
     - at least 90% of field types are right;
     - every record passes validation;
     - renaming a field keeps its bindings.
+
+   R5.5 built; see the [delivery log](DELIVERY_LOG.md#r55-ai-entities-and-records). Open: a live
+   `pnpm ai:eval` run to score a model on the three data cases, and an AI-made item component
+   when the document has none that suits the fields.
 
 Steps 1 to 4 are done when `tests/data.test.ts` (schemas, expressions, list keys by record ID)
 and `tests/browser/dataForms.spec.ts` (list, details, rejected and saved edits, the exported

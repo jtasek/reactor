@@ -2,6 +2,7 @@ import { orderAbove } from 'src/app/drawOrder';
 import { createDocument } from 'src/app/factories';
 import { hydrateDocument } from 'src/app/services/documentStorage';
 import type { Component, Document } from 'src/app/types';
+import type { DataEntity, DataField, DataRecord } from 'src/app/dataTypes';
 import type { Send } from 'src/ai/client';
 import type { AiProvider } from '../../server/aiTasks';
 import { DOCUMENT_ID } from '../support/collaboration';
@@ -17,6 +18,12 @@ export interface Fixture {
     shapes?: Record<string, { type: string } & Record<string, unknown>>;
     groups?: Record<string, { name: string; shapes: string[] }>;
     components?: Record<string, Pick<Component, 'name' | 'shapesIds'> & Partial<Component>>;
+    /** Entities with their fields and records, each under its ID. */
+    data?: {
+        entities: Record<string, Omit<DataEntity, 'id'>>;
+        fields: Record<string, Omit<DataField, 'id'>>;
+        records: Record<string, Omit<DataRecord, 'id'>>;
+    };
 }
 
 /**
@@ -44,8 +51,12 @@ export function fixtureDocument({
     variables = {},
     shapes = {},
     groups = {},
-    components = {}
+    components = {},
+    data
 }: Fixture): Document {
+    const withIds = <T>(records: Record<string, T> = {}) =>
+        Object.fromEntries(Object.entries(records).map(([id, record]) => [id, { ...record, id }]));
+
     let order: string | null = null;
     const now = new Date().toISOString();
 
@@ -88,7 +99,10 @@ export function fixtureDocument({
                 id,
                 { ...entity, id, name, shapesIds }
             ])
-        )
+        ),
+        dataEntities: withIds(data?.entities),
+        dataFields: withIds(data?.fields),
+        dataRecords: withIds(data?.records)
     } as unknown as Parameters<typeof hydrateDocument>[0]);
 }
 

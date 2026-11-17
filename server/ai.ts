@@ -35,7 +35,10 @@ export const AI_LIMITS: AiLimits = {
 
 const LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-const MAX_PROMPT_LENGTH = 2000;
+/** Room for pasted CSV or JSON of a few hundred rows. */
+const MAX_PROMPT_LENGTH = 20_000;
+
+const MAX_PROBLEM_LENGTH = 2000;
 
 /** Characters of the document's JSON, about 50,000 tokens. */
 const MAX_CONTEXT_LENGTH = 200_000;
@@ -120,7 +123,7 @@ function readProblem(body: unknown): Problem {
     if (
         typeof problem !== 'string' ||
         problem.length === 0 ||
-        problem.length > MAX_PROMPT_LENGTH ||
+        problem.length > MAX_PROBLEM_LENGTH ||
         (operation !== undefined && !(Number.isInteger(operation) && Number(operation) >= 0))
     ) {
         throw new Refusal(400, 'INVALID_PROBLEM');

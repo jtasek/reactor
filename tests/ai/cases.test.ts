@@ -180,9 +180,9 @@ describe('AI eval cases', () => {
         expect(problems).toEqual([]);
     });
 
-    it('has forty-one distinct cases', () => {
-        expect(cases).toHaveLength(41);
-        expect(new Set(cases.map(({ name }) => name)).size).toBe(41);
+    it('has forty-four distinct cases', () => {
+        expect(cases).toHaveLength(44);
+        expect(new Set(cases.map(({ name }) => name)).size).toBe(44);
     });
 
     it.each(runs)(

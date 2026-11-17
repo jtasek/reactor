@@ -12,6 +12,7 @@ declare namespace StylesCssNamespace {
         problem: string;
         prompt: string;
         proposal: string;
+        records: string;
         speaker: string;
         status: string;
         toolbar: string;
