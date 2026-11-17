@@ -676,6 +676,30 @@ is produced. Public links remain read-only snapshots without the host-side form 
 Authored form controls/actions, expression rules and editable standalone/shared forms remain
 later increments. Verification: `tests/recordForms.test.ts`, `tests/browser/recordForms.spec.ts`.
 
+## R5.3b Validation rules as expressions
+
+_Recorded 2026-11-16._
+
+Schema v33 adds the `dataRules` collection: per entity, a rule holds a `check` condition, an
+optional `when` condition, a message and optionally the field to show it at. Conditions are the
+plan's typed JSON trees (`src/app/expressions.ts`): `equals`, `notEquals`, `less`, `greater`,
+`contains` and `isSet` over a record field, a state value or a literal, combined with `and`,
+`or` and `not`. The reader bounds a tree to depth 8 and 50 nodes. `conditionProblems` checks a
+tree against what its place offers (form rules get the entity's fields and no state), so a
+rule that compares a number with text, names a missing choice option or uses another entity's
+field is refused when written. Any comparison with an unset value is false except `notEquals`;
+`contains` ignores case. Data View has a Rules section: rows of field, comparison and value or
+other field, matched by all or any, with an optional "Only when" group, message and target.
+Shapes the editor can't show (from AI or JSON later) are listed and can be deleted, not
+edited. Prototype record forms check rules after each field's own checks and refuse to save,
+showing each message at its field or for the whole record; a shown message updates while
+typing. Schema edits never rewrite rules: one that uses a deleted or retyped field is listed as
+unable to run and never blocks a form. Sample records that break a rule are listed under Needs
+attention and in their cell. Up to 50 rules per entity. Actions (`set`, `toggle`, `reset`) are
+not built yet; they come with the next typed-state step.
+Verification: `tests/dataRules.test.ts`, `tests/browser/dataForms.spec.ts` (authoring) and
+`tests/browser/recordForms.spec.ts` (refused and saved forms).
+
 ## R5.4 Standalone web package
 
 _Recorded 2026-11-16._

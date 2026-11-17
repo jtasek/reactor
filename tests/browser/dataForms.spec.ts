@@ -146,6 +146,83 @@ test('authors choice and reference fields and names referenced records', async (
     ).toHaveValue(/.+/);
 });
 
+test('authors rules with conditions, lists records that break them, edits and deletes them', async ({
+    page
+}, info) => {
+    await openEditor(page, ['Data View']);
+    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Customers');
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    for (const [name, type] of [
+        ['Name', 'text'],
+        ['Age', 'number']
+    ]) {
+        await panel.getByRole('textbox', { name: 'Field name', exact: true }).fill(name);
+        await panel.getByRole('combobox', { name: 'Field type', exact: true }).selectOption(type);
+        await panel.getByRole('button', { name: 'Add field', exact: true }).click();
+    }
+    await panel.getByRole('button', { name: 'Add record', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Age, record 1', exact: true }).fill('12');
+    await panel.getByRole('button', { name: 'Save Age, record 1', exact: true }).click();
+
+    const rules = panel.getByRole('region', { name: 'Rules', exact: true });
+    await rules.getByRole('button', { name: 'Add rule', exact: true }).click();
+    const form = rules.getByRole('form', { name: 'New rule' });
+    const check = 'Records must have, condition 1';
+    await form.getByRole('combobox', { name: `${check}: field` }).selectOption({ label: 'Age' });
+    await form
+        .getByRole('combobox', { name: `${check}: comparison` })
+        .selectOption({ label: 'is greater than' });
+    await form.getByRole('textbox', { name: `${check}: value` }).fill('17');
+    await form.getByRole('checkbox', { name: 'Only when…' }).check();
+    await form
+        .getByRole('combobox', { name: 'Only when, condition 1: field' })
+        .selectOption({ label: 'Age' });
+    await form
+        .getByRole('textbox', { name: 'Message', exact: true })
+        .fill('Customers must be adults.');
+    await form
+        .getByRole('combobox', { name: 'Show message at', exact: true })
+        .selectOption({ label: 'Age' });
+    await page.screenshot({ path: info.outputPath('rule-form.png') });
+    await form.getByRole('button', { name: 'Add rule', exact: true }).click();
+    await expect(form).toHaveCount(0);
+    await expect(rules).toContainText('When Age is set: Age is greater than “17” · Shown at Age');
+    await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toContainText(
+        'Customers record 1: Customers must be adults.'
+    );
+    await expect(panel.getByRole('cell', { name: /Customers must be adults\./ })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('rules.png'), fullPage: true });
+
+    await rules
+        .getByRole('button', { name: 'Edit rule “Customers must be adults.”', exact: true })
+        .click();
+    const edit = rules.getByRole('form', { name: 'Edit rule Customers must be adults.' });
+    await expect(edit.getByRole('textbox', { name: `${check}: value` })).toHaveValue('17');
+    await edit.getByRole('textbox', { name: `${check}: value` }).fill('10');
+    await edit.getByRole('button', { name: 'Save rule', exact: true }).click();
+    await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
+
+    await rules
+        .getByRole('button', { name: 'Delete rule “Customers must be adults.”', exact: true })
+        .click();
+    await expect(rules).toContainText('No rules yet.');
+    await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button', { name: 'Undo', exact: true })
+        .click();
+    await expect(rules).toContainText('Age is greater than “10”');
+    await panel.getByRole('button', { name: 'Delete Age…', exact: true }).click();
+    await expect(panel.getByRole('alert').filter({ hasText: 'Delete this field' })).toContainText(
+        'A rule uses this field. It stops checking records until edited.'
+    );
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.locator('#status-save')).toHaveText('Saved');
+    await page.reload();
+    await openEditor(page, ['Data View']);
+    await expect(rules).toContainText('Age is greater than “10”');
+});
+
 test('the downloaded package plays list and details offline, as the preview does', async ({
     page,
     browser

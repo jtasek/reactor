@@ -1,9 +1,14 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    condition: string;
+    conditions: string;
     confirmation: string;
     dataView: string;
     field: string;
+    inline: string;
     records: string;
+    rule: string;
+    ruleForm: string;
     valueEditor: string;
   }
 }

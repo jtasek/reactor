@@ -6,14 +6,21 @@ import {
     dataLeftovers,
     dataProblems,
     dataRecords,
+    dataRules,
     dataValueProblem,
     fieldChoices,
+    hasLeftovers,
     labelField,
-    MAX_RECORDS_PER_ENTITY
+    MAX_RECORDS_PER_ENTITY,
+    breaksRule,
+    ruleProblems,
+    ruleTarget
 } from 'src/app/data';
+import { DataRules } from './DataRules';
+import { conditionFields } from 'src/app/expressions';
 import { listsUsing } from 'src/app/dataLists';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
-import type { DataType, DataValue } from 'src/app/dataTypes';
+import type { DataRule, DataType, DataValue } from 'src/app/dataTypes';
 import styles from './styles.css';
 
 const TYPES: DataType[] = ['text', 'number', 'boolean', 'choice', 'reference'];
@@ -144,12 +151,15 @@ function DeleteConfirmation({
     deletion,
     lists,
     references,
+    rules,
     disabled,
     cancel,
     confirm
 }: {
     deletion: DataEdit;
     lists: number;
+    /** Rules that use the field being deleted; they stop running until edited. */
+    rules: number;
     /** Reference fields in other entities that point at the entity being deleted. */
     references: number;
     disabled: boolean;
@@ -185,6 +195,12 @@ function DeleteConfirmation({
                         ? 'A reference field refers'
                         : `${references} reference fields refer`}{' '}
                     to this entity. Their values will need new records.
+                </p>
+            )}
+            {rules > 0 && (
+                <p>
+                    {rules === 1 ? 'A rule uses' : `${rules} rules use`} this field.{' '}
+                    {rules === 1 ? 'It stops' : 'They stop'} checking records until edited.
                 </p>
             )}
             <button ref={cancelButton} type="button" onClick={cancel}>
@@ -230,17 +246,33 @@ function DataEditor() {
                 .filter((field) => field.type === 'choice' || field.type === 'reference')
                 .map((field) => [field.id, fieldChoices(document, field)])
         );
+        // Overmind state is proxied, which structuredClone refuses.
+        const rules = dataRules(document, entity?.id ?? '').map(
+            (rule): DataRule => JSON.parse(JSON.stringify(rule))
+        );
+        const brokenRules = Object.fromEntries(
+            rules.map((rule) => [rule.id, ruleProblems(document, rule)])
+        );
+        const runnable = rules.filter((rule) => !brokenRules[rule.id].length);
+        // A cell shows its value's problem, else the first rule the record breaks there.
         const cellProblems = Object.fromEntries(
-            records.map((record) => [
-                record.id,
-                Object.fromEntries(
-                    fields.flatMap((field) => {
-                        const problem = dataValueProblem(document, field, record.values[field.id]);
+            records.map((record) => {
+                const problems: Record<string, string> = {};
+                for (const field of fields) {
+                    const problem = dataValueProblem(document, field, record.values[field.id]);
+                    if (problem) {
+                        problems[field.id] = problem;
+                    }
+                }
+                for (const rule of runnable) {
+                    const target = ruleTarget(document, rule);
+                    if (!problems[target] && breaksRule(rule, record.values)) {
+                        problems[target] = rule.message;
+                    }
+                }
 
-                        return problem ? [[field.id, problem]] : [];
-                    })
-                )
-            ])
+                return [record.id, problems];
+            })
         );
         const leftovers = dataLeftovers(document);
         const target =
@@ -258,11 +290,22 @@ function DataEditor() {
             entity,
             fields,
             records,
+            rules,
+            brokenRules,
             problems: dataProblems(document),
             choices,
             cellProblems,
             label: entity && labelField(document, entity.id)?.id,
             listsUsingDeletion: target ? listsUsing(document, target) : 0,
+            rulesUsingDeletion:
+                deletion?.kind === 'deleteField'
+                    ? Object.values(document.dataRules).filter((rule) =>
+                          [rule.when, rule.check].some(
+                              (condition) =>
+                                  condition && conditionFields(condition).includes(deletion.id)
+                          )
+                      ).length
+                    : 0,
             referencesToDeletion:
                 deletion?.kind === 'deleteEntity'
                     ? Object.values(document.dataFields).filter(
@@ -272,8 +315,7 @@ function DataEditor() {
                               field.entityId !== deletion.id
                       ).length
                     : 0,
-            hasLeftovers:
-                leftovers.fields.length + leftovers.records.length + leftovers.values.length > 0,
+            hasLeftovers: hasLeftovers(leftovers),
             disabled:
                 document.locked ||
                 isReadOnly(state) ||
@@ -306,6 +348,7 @@ function DataEditor() {
                 deletion={deletion}
                 lists={data.listsUsingDeletion}
                 references={data.referencesToDeletion}
+                rules={data.rulesUsingDeletion}
                 disabled={data.disabled}
                 cancel={() => setDeletion(undefined)}
                 confirm={() => {
@@ -594,6 +637,19 @@ function DataEditor() {
                                     </select>
                                 </label>
                             )}
+                            <DataRules
+                                key={data.entity.id}
+                                rules={data.rules}
+                                fields={data.fields}
+                                choices={data.choices}
+                                problems={data.brokenRules}
+                                disabled={data.disabled}
+                                add={(rule) =>
+                                    edit({ kind: 'addRule', entityId: data.entity!.id, rule })
+                                }
+                                update={(id, rule) => edit({ kind: 'updateRule', id, rule })}
+                                remove={(id) => edit({ kind: 'deleteRule', id })}
+                            />
                             <h3>Sample records</h3>
                             <button
                                 disabled={
@@ -632,7 +688,14 @@ function DataEditor() {
                                     <tbody>
                                         {data.records.map((record, index) => (
                                             <tr key={record.id}>
-                                                <th title={record.id}>{index + 1}</th>
+                                                <th title={record.id}>
+                                                    {index + 1}
+                                                    {data.cellProblems[record.id]?.record && (
+                                                        <small>
+                                                            {data.cellProblems[record.id].record}
+                                                        </small>
+                                                    )}
+                                                </th>
                                                 {data.fields.map((field) => (
                                                     <td key={field.id}>
                                                         <ValueEditor

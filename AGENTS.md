@@ -1340,6 +1340,14 @@ Lists and forms treat both types as text. `MAX_RECORDS_PER_ENTITY` (1,000) is en
 forms and workflows is in APPLICATION_PLAN.md → Decisions; build new state actions and
 conditions on it rather than adding parallel shapes.
 
+Schema v33 adds `dataRules` (validation rules per entity). Conditions live in
+`src/app/expressions.ts`: read stored trees with `readCondition` (bounded), check them with
+`conditionProblems(condition, scope)` where the scope offers only what that place has, and run
+them with `evaluateCondition`. Use `runnableRules`/`breaksRule`/`ruleTarget` from
+`src/app/data.ts` rather than evaluating rules directly, so rules that can't run never block.
+Forms check drafts through `checkRecordDraft` in `src/preview/recordForms.ts`. Overmind state
+is proxied: copy rules for React with JSON, not `structuredClone`, which throws on proxies.
+
 
 ## Bound sample lists
 

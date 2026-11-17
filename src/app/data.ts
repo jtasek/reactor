@@ -1,5 +1,6 @@
 import type { Document } from './types';
-import type { DataField, DataRecord, DataValue } from './dataTypes';
+import type { DataField, DataRecord, DataRule, DataValue } from './dataTypes';
+import { conditionProblems, evaluateCondition, type Operand } from './expressions';
 
 /** Per entity; more slows Data View and the player without helping a prototype. */
 export const MAX_RECORDS_PER_ENTITY = 1000;
@@ -17,6 +18,53 @@ export const dataRecords = (document: Document, entityId: string): DataRecord[] 
     Object.values(document.dataRecords)
         .filter((record) => record.entityId === entityId)
         .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+
+/** An entity's validation rules in the order they were added. */
+export const dataRules = (document: Document, entityId: string): DataRule[] =>
+    Object.values(document.dataRules)
+        .filter((rule) => rule.entityId === entityId)
+        .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+
+/**
+ * What keeps a rule from running: a field it uses was deleted or changed type, for example.
+ * Such a rule is shown in diagnostics and never blocks a form.
+ */
+export function ruleProblems(document: Pick<Document, 'dataFields'>, rule: DataRule): string[] {
+    const scope = {
+        field: (id: string) => {
+            const field = document.dataFields[id];
+
+            return field?.entityId === rule.entityId ? field : undefined;
+        }
+    };
+
+    return [
+        ...new Set([
+            ...(rule.when ? conditionProblems(rule.when, scope) : []),
+            ...conditionProblems(rule.check, scope)
+        ])
+    ];
+}
+
+/** Whether record values break a rule that can run: its `when` holds and its `check` doesn't. */
+export function breaksRule(rule: DataRule, values: Record<string, DataValue>): boolean {
+    const read = (operand: Exclude<Operand, { kind: 'value' }>) =>
+        operand.kind === 'field' ? values[operand.fieldId] : undefined;
+
+    return (
+        (!rule.when || evaluateCondition(rule.when, read)) && !evaluateCondition(rule.check, read)
+    );
+}
+
+/** The rules of an entity that run, so broken ones can be found per record. */
+export const runnableRules = (document: Document, entityId: string) =>
+    dataRules(document, entityId).filter((rule) => !ruleProblems(document, rule).length);
+
+/** Where a rule's message shows: its field when that field is still in the entity. */
+export const ruleTarget = (document: Pick<Document, 'dataFields'>, rule: DataRule) =>
+    rule.fieldId && document.dataFields[rule.fieldId]?.entityId === rule.entityId
+        ? rule.fieldId
+        : 'record';
 
 /** Text, choice and reference values are strings; an empty one counts as not set. */
 const valueType = (field: DataField) =>
@@ -118,6 +166,9 @@ export function dataLeftovers(document: Document) {
     const records = Object.values(document.dataRecords)
         .filter((record) => !document.dataEntities[record.entityId])
         .map((record) => record.id);
+    const rules = Object.values(document.dataRules)
+        .filter((rule) => !document.dataEntities[rule.entityId])
+        .map((rule) => rule.id);
     const values = Object.values(document.dataRecords)
         .filter((record) => document.dataEntities[record.entityId])
         .flatMap((record) =>
@@ -126,8 +177,15 @@ export function dataLeftovers(document: Document) {
                 .map((fieldId) => ({ recordId: record.id, fieldId }))
         );
 
-    return { fields, records, values };
+    return { fields, records, values, rules };
 }
+
+export const hasLeftovers = (leftovers: ReturnType<typeof dataLeftovers>) =>
+    leftovers.fields.length +
+        leftovers.records.length +
+        leftovers.values.length +
+        leftovers.rules.length >
+    0;
 
 /** Schema edits never coerce or discard authored record values. */
 export function dataProblems(document: Document): string[] {
@@ -159,6 +217,14 @@ export function dataProblems(document: Document): string[] {
                 `${entity.name} has ${records.length} records; entities hold up to ${MAX_RECORDS_PER_ENTITY.toLocaleString('en-US')}.`
             );
         }
+        const rules = dataRules(document, entity.id).filter((rule) => {
+            const broken = ruleProblems(document, rule);
+            broken.forEach((problem) =>
+                problems.push(`${entity.name}: rule "${rule.message}" can't run. ${problem}`)
+            );
+
+            return !broken.length;
+        });
         // Rows are named as Data View numbers them.
         records.forEach((record, index) => {
             for (const field of fields) {
@@ -167,12 +233,17 @@ export function dataProblems(document: Document): string[] {
                     problems.push(`${entity.name} record ${index + 1}: ${problem}`);
                 }
             }
+            for (const rule of rules) {
+                if (breaksRule(rule, record.values)) {
+                    problems.push(`${entity.name} record ${index + 1}: ${rule.message}`);
+                }
+            }
         });
     }
     const leftovers = dataLeftovers(document);
-    if (leftovers.fields.length + leftovers.records.length + leftovers.values.length) {
+    if (hasLeftovers(leftovers)) {
         problems.push(
-            `Left over from deleted entities or fields: ${leftovers.fields.length} fields, ${leftovers.records.length} records, ${leftovers.values.length} values.`
+            `Left over from deleted entities or fields: ${leftovers.fields.length} fields, ${leftovers.records.length} records, ${leftovers.values.length} values, ${leftovers.rules.length} rules.`
         );
     }
 

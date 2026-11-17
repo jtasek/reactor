@@ -4,8 +4,17 @@ import type {
     DataRecord,
     DataType,
     DataValue,
-    DataList
+    DataList,
+    DataRule
 } from '../dataTypes';
+import {
+    COMPARISONS,
+    MAX_CONDITION_DEPTH,
+    MAX_CONDITION_NODES,
+    type Comparison,
+    type Condition,
+    type Operand
+} from '../expressions';
 import { extractScreenViews } from '../screenViewMigration';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
@@ -72,7 +81,8 @@ export const COLLECTIONS = [
     'prototypeBooleans',
     'dataEntities',
     'dataFields',
-    'dataRecords'
+    'dataRecords',
+    'dataRules'
 ] as const;
 
 export type Collection = (typeof COLLECTIONS)[number];
@@ -120,6 +130,7 @@ export interface SavedEntities {
     dataEntities: DataEntity;
     dataFields: DataField;
     dataRecords: DataRecord;
+    dataRules: DataRule;
     frames: Frame;
     shapes: ShapeData;
     groups: MemberData;
@@ -867,18 +878,7 @@ function readDataField(value: unknown): DataField {
 function readDataRecord(value: unknown): DataRecord {
     const data = record(value);
     const values = Object.fromEntries(
-        Object.entries(record(data.values)).map(([key, value]) => {
-            if (
-                value !== null &&
-                typeof value !== 'string' &&
-                typeof value !== 'boolean' &&
-                !(typeof value === 'number' && Number.isFinite(value))
-            ) {
-                throw new Error('Invalid record value');
-            }
-
-            return [id(key), value as DataValue];
-        })
+        Object.entries(record(data.values)).map(([key, value]) => [id(key), readDataValue(value)])
     );
 
     return {
@@ -886,6 +886,92 @@ function readDataRecord(value: unknown): DataRecord {
         entityId: id(data.entityId),
         order: data.order === undefined ? 0 : number(data.order),
         values
+    };
+}
+
+function readDataValue(value: unknown): DataValue {
+    if (
+        value !== null &&
+        typeof value !== 'string' &&
+        typeof value !== 'boolean' &&
+        !(typeof value === 'number' && Number.isFinite(value))
+    ) {
+        throw new Error('Invalid record value');
+    }
+
+    return value as DataValue;
+}
+
+function readOperand(value: unknown): Operand {
+    const data = record(value);
+    if (data.kind === 'value') {
+        const literal = readDataValue(data.value);
+        if (typeof literal === 'string' && literal.length > 1000) {
+            throw new Error('Values in conditions have up to 1,000 characters');
+        }
+
+        return { kind: 'value', value: literal };
+    }
+    if (data.kind === 'field') {
+        return { kind: 'field', fieldId: id(data.fieldId) };
+    }
+    if (data.kind === 'state') {
+        return { kind: 'state', stateId: id(data.stateId) };
+    }
+    throw new Error('Invalid operand');
+}
+
+/** A typed condition tree, bounded in depth and size; unknown kinds are refused. */
+export function readCondition(value: unknown): Condition {
+    let nodes = 0;
+    const read = (value: unknown, depth: number): Condition => {
+        if (++nodes > MAX_CONDITION_NODES || depth > MAX_CONDITION_DEPTH) {
+            throw new Error('This condition is too large');
+        }
+        const data = record(value);
+        const kind = data.kind;
+        if (kind === 'and' || kind === 'or') {
+            const conditions = list(data.conditions, (item) => read(item, depth + 1));
+            if (!conditions.length) {
+                throw new Error('Combine at least one condition');
+            }
+
+            return { kind, conditions };
+        }
+        if (kind === 'not') {
+            return { kind, condition: read(data.condition, depth + 1) };
+        }
+        if (kind === 'isSet') {
+            return { kind, operand: readOperand(data.operand) };
+        }
+        if (COMPARISONS.includes(kind as Comparison)) {
+            return {
+                kind: kind as Comparison,
+                left: readOperand(data.left),
+                right: readOperand(data.right)
+            };
+        }
+        throw new Error('Invalid condition');
+    };
+
+    return read(value, 1);
+}
+
+function readDataRule(value: unknown): DataRule {
+    const data = record(value);
+    const message = text(data.message).trim();
+    if (!message || message.length > 200) {
+        throw new Error('A rule message has 1–200 characters');
+    }
+
+    return {
+        id: id(data.id),
+        entityId: id(data.entityId),
+        ...(data.when === undefined ? {} : { when: readCondition(data.when) }),
+        check: readCondition(data.check),
+        message,
+        ...(data.fieldId === undefined ? {} : { fieldId: id(data.fieldId) }),
+        order: data.order === undefined ? 0 : number(data.order)
     };
 }
 
@@ -911,6 +997,7 @@ const entityReaders: { [C in Collection]: (value: unknown) => SavedEntities[C] }
     dataEntities: readDataEntity,
     dataFields: readDataField,
     dataRecords: readDataRecord,
+    dataRules: readDataRule,
     dimensions: readDimension,
     variables: readVariable
 };
@@ -944,6 +1031,7 @@ const referenceRepairs: {
     dataEntities: (entity) => entity,
     dataFields: (field) => field,
     dataRecords: (record) => record,
+    dataRules: (rule) => rule,
     shapes: (shape, exists) => {
         const next = withoutMissingFrame(shape, exists);
 
@@ -1197,6 +1285,7 @@ function readDocument(value: unknown, onRepair = () => {}, legacyScreens = false
         dataEntities: d.dataEntities === undefined ? {} : table(d.dataEntities, readDataEntity),
         dataFields: d.dataFields === undefined ? {} : table(d.dataFields, readDataField),
         dataRecords: d.dataRecords === undefined ? {} : table(d.dataRecords, readDataRecord),
+        dataRules: d.dataRules === undefined ? {} : table(d.dataRules, readDataRule),
         dimensions,
         variables: repair('variables', variables)
     };
@@ -1323,6 +1412,7 @@ const entityHydrators: {
     dataEntities: (entity) => structuredClone(entity),
     dataFields: (field) => structuredClone(field),
     dataRecords: (dataRecord) => structuredClone(dataRecord),
+    dataRules: (rule) => structuredClone(rule),
     frames: (frame) => structuredClone(frame),
     shapes: hydrateShape,
     groups: hydrateMember,

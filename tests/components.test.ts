@@ -635,7 +635,8 @@ it.each([false, true])('detaches at the original stacking position (tied order: 
                 prototypeBooleans: {},
                 dataEntities: {},
                 dataFields: {},
-                dataRecords: {}
+                dataRecords: {},
+                dataRules: {}
             }
         });
     }
