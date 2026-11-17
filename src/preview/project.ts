@@ -22,6 +22,7 @@ import type {
 } from '../app/types';
 import {
     booleanVisibility,
+    conditionDecidesVisibility,
     renameConditionStates,
     stateActionProblem,
     stateProperty,
@@ -685,6 +686,17 @@ export function createArtworkProjector(
                               visibilityTarget.componentId
                           ])
                         : undefined;
+                if (
+                    toggleVisibility &&
+                    visibilityTarget?.type === 'instance' &&
+                    conditionDecidesVisibility(document, visibilityTarget)
+                ) {
+                    const message = `${shape.name}: ${visibilityTarget.name} is shown by a condition, so showing or hiding it does nothing. Set a state the condition uses instead.`;
+                    if (!warnings.includes(message)) {
+                        warnings.push(message);
+                        diagnostics.push({ kind: 'shape', id: shape.id, message });
+                    }
+                }
                 if (visibilityAction && !toggleVisibility) {
                     const message = `${shape.name}: visibility target is unavailable in this screen. Choose another instance in Interactions.`;
                     if (!warnings.includes(message)) {

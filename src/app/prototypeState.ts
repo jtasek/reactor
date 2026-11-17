@@ -241,3 +241,17 @@ export function stateProperty(document: Document, componentId: string, propId: s
 
     return resolved?.source.type === 'text' && resolved.prop.key === 'text';
 }
+
+/**
+ * Whether a working condition other than one yes/no state decides an instance's visibility, so
+ * a Toggle visibility action has nothing it can flip. Set a state the condition reads instead.
+ */
+export const conditionDecidesVisibility = (
+    document: Pick<Document, 'prototypeBooleans'>,
+    instance: Pick<InstanceShape, 'prototypeVisibleWhen'>
+) =>
+    Boolean(
+        instance.prototypeVisibleWhen &&
+        !booleanVisibility(document, instance) &&
+        !visibilityProblems(document, instance.prototypeVisibleWhen).length
+    );

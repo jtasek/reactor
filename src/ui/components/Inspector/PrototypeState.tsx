@@ -110,11 +110,24 @@ export const PrototypeVisibility: FC<{
     const { editInteractions } = useActions();
     const [problem, setProblem] = useState<string>();
     const simple = simpleCondition(condition);
-    const followed = simple && values.find((value) => value.id === simple.stateId);
-    // A condition the editors don't build (from AI, say) is shown and can be replaced.
-    const other = condition && (!simple || !followed);
+    const state = simple && values.find((value) => value.id === simple.stateId);
+    // The editors build one comparison of a kind that suits the state's type; anything else
+    // (from AI, say, or a state value of another type) is shown in words and can be replaced.
+    const followed =
+        state &&
+        simple &&
+        (stateType(state) === 'boolean'
+            ? simple.kind === 'equals' && typeof simple.value === 'boolean'
+            : COMPARISON_NAMES[stateType(state) as 'text' | 'number'].some(
+                  ([kind]) => kind === simple.kind
+              ) &&
+              (simple.kind === 'isSet' ||
+                  typeof simple.value === (stateType(state) === 'text' ? 'string' : 'number')))
+            ? state
+            : undefined;
+    const other = condition && !followed;
     const choices = values.filter(
-        (value) => value.id === simple?.stateId || !blocked.includes(value.id)
+        (value) => value.id === followed?.id || !blocked.includes(value.id)
     );
     const show = (next: Condition) =>
         setProblem(

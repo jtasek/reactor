@@ -24,7 +24,8 @@ import {
     visibilityProblems,
     visibilityStates,
     stateType,
-    stateProperty
+    stateProperty,
+    conditionDecidesVisibility
 } from './prototypeState';
 import { effectiveRoleSettings } from './componentRoles';
 
@@ -136,7 +137,8 @@ export function editInteractions(
         visibilityTarget !== undefined &&
         (!owner ||
             visibilityTarget === instance?.id ||
-            !prototypeTarget(document, visibilityTarget, owner, instance?.parentFrameId))
+            !prototypeTarget(document, visibilityTarget, owner, instance?.parentFrameId) ||
+            conditionDecidesVisibility(document, document.shapes[visibilityTarget] as never))
     ) {
         return;
     }

@@ -171,3 +171,58 @@ test('authors a text state, a Set action and a condition in Inspector', async ({
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(help).toHaveCount(0);
 });
+
+test('a number field keeps what is typed while it reads as the same number', async ({
+    page,
+    context
+}) => {
+    const { previewFixture } = await import('../support/preview');
+    const { createShape } = await import('src/app/factories');
+    const { projectPreview } = await import('src/preview/project');
+    const { PREVIEW_PROTOCOL_VERSION, readPreview } = await import('src/shared/previewProtocol');
+    const document = previewFixture();
+    document.prototypeBooleans = {
+        count: { id: 'count', name: 'Count', type: 'number', initial: 2 }
+    };
+    document.shapes.typed = {
+        ...createShape({
+            type: 'text',
+            name: 'Typed',
+            order: 'a7',
+            value: '',
+            position: { x: 0, y: 48 }
+        }),
+        id: 'typed',
+        selected: false
+    };
+    document.shapesIds.push('typed');
+    document.components.input.shapesIds.push('typed');
+    document.components.input.props!.push({
+        id: 'value',
+        shapeId: 'typed',
+        key: 'text',
+        label: 'Value'
+    });
+    document.components.input.interaction!.props.value = 'value';
+    const field = document.shapes.name;
+    const next = document.shapes.next;
+    if (field.type !== 'instance' || next.type !== 'instance') {
+        throw new Error('Expected instances');
+    }
+    field.stateBindings = { value: 'count' };
+    next.interactions = { activate: { type: 'state', change: 'set', stateId: 'count', value: 7 } };
+    const application = readPreview(projectPreview(document, {}));
+    await context.route('**/api/prototype-links/open', (route) =>
+        route.fulfill({ json: { version: PREVIEW_PROTOCOL_VERSION, application } })
+    );
+    await page.goto(`http://127.0.0.1:4194/share#${'a'.repeat(43)}`);
+    const textbox = page.getByRole('textbox', { name: 'Your name', exact: true });
+    await expect(textbox).toHaveValue('2');
+    await textbox.fill('');
+    await textbox.pressSequentially('1.50');
+    await expect(textbox).toHaveValue('1.50');
+    await expect(textbox).toBeFocused();
+    // A Set shows the new value in place of the typing.
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(textbox).toHaveValue('7');
+});

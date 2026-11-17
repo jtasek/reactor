@@ -40,6 +40,8 @@ const visibilityConditions = new Map<string, Condition>();
 const states = new Map<string, PreviewStateValue>();
 const initialStates = new Map<string, PreviewStateValue>();
 const stateValue = (key: string) => states.get(key) ?? initialStates.get(key);
+/** What was typed into number fields, by input key, so “1.” or “-” isn't rewritten mid-typing. */
+const drafts = new Map<string, string>();
 /** Whether the instance with this visibility key shows now. */
 const isShown = (key: string, initial = initialVisibility.get(key) ?? true) => {
     const condition = visibilityConditions.get(key);
@@ -171,10 +173,17 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     field.type = control.role === 'input' ? 'text' : 'button';
     if (field instanceof HTMLInputElement) {
         const bound = control.valueState;
+        const draft = drafts.get(inputKey);
+        // A draft stands while the state still holds what it reads as, or it reads as no number.
         field.value =
-            bound !== undefined
-                ? formatStateValue(stateValue(bound))
-                : (values.get(inputKey) ?? control.value ?? '');
+            bound === undefined
+                ? (values.get(inputKey) ?? control.value ?? '')
+                : draft !== undefined &&
+                    (!draft.trim() ||
+                        !Number.isFinite(Number(draft.trim())) ||
+                        Number(draft.trim()) === stateValue(bound))
+                  ? draft
+                  : formatStateValue(stateValue(bound));
         if (bound !== undefined && typeof initialStates.get(bound) === 'number') {
             field.inputMode = 'decimal';
         }
@@ -189,10 +198,12 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             const number = Number(field.value.trim());
             if (typeof initialStates.get(bound) !== 'number') {
                 states.set(bound, field.value);
-            } else if (field.value.trim() && Number.isFinite(number)) {
-                states.set(bound, number);
             } else {
-                return;
+                drafts.set(inputKey, field.value);
+                if (!field.value.trim() || !Number.isFinite(number)) {
+                    return;
+                }
+                states.set(bound, number);
             }
             render();
         });
@@ -234,6 +245,10 @@ function activate(control: NonNullable<PreviewNode['control']>) {
     }
     const change = control.changeState;
     toggled = change?.key ?? control.toggleVisibility;
+    if (change) {
+        // Fields show the state as the action leaves it, not what was typed before.
+        drafts.clear();
+    }
     if (change?.change === 'set') {
         states.set(change.key, change.value);
     } else if (change?.change === 'reset') {
@@ -302,6 +317,7 @@ function render() {
         variants.clear();
         visibility.clear();
         states.clear();
+        drafts.clear();
         currentScreen = undefined;
         // Inspected Width and Layout return to the launch view's too.
         port?.postMessage({ type: 'inspect-reset' });
@@ -404,6 +420,7 @@ function receive(value: unknown) {
             variants.clear();
             visibility.clear();
             states.clear();
+            drafts.clear();
             currentScreen = undefined;
         }
         const keys = new Set<string>();

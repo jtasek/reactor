@@ -20,7 +20,8 @@ import {
     stateType,
     visibilityProblems,
     visibilityStates,
-    stateProperty
+    stateProperty,
+    conditionDecidesVisibility
 } from './prototypeState';
 import type { Condition } from '../shared/conditions';
 
@@ -80,6 +81,7 @@ export const useRoleEditor = (componentId?: string, instanceId?: string) =>
 
                     return (
                         target.id !== instanceId &&
+                        !conditionDecidesVisibility(document, target) &&
                         !(followed && instance && visibilityStates(instance).includes(followed))
                     );
                 })

@@ -251,6 +251,29 @@ describe('named text and number states', () => {
     });
 });
 
+it('refuses showing or hiding an instance that a condition shows, and warns about old ones', () => {
+    const { store, actions, shape } = storeWith(fixture());
+    actions.editInteractions({
+        target: 'state',
+        kind: 'show',
+        instanceId: 'name',
+        condition: tabIs('Billing')
+    });
+    actions.editInteractions({
+        target: 'instance',
+        id: 'next',
+        settings: { activate: { type: 'toggleVisibility', instanceId: 'name' } }
+    });
+    expect(shape('next').interactions?.activate?.type).not.toBe('toggleVisibility');
+    const document = plain(store.state.currentDocument);
+    (document.shapes.next as InstanceShape).interactions = {
+        activate: { type: 'toggleVisibility', instanceId: 'name' }
+    };
+    const warnings: string[] = [];
+    projectPreview(document, {}, warnings);
+    expect(warnings.join(' ')).toContain('is shown by a condition');
+});
+
 describe('Flow with typed state', () => {
     it('describes text sets and resets, and reaches a control a set reveals', () => {
         const document = plain(storeWith(fixture()).store.state.currentDocument);
