@@ -749,6 +749,33 @@ records) whose checks are the step's bar: at least 90% of field types right, eve
 the record count asked for and a bound list. Their rounds are hand-authored; no live run has
 scored a model on them yet.
 
+## Typed state and actions
+
+_Recorded 2026-11-17._
+
+Named prototype states now hold yes/no, text or number values (schema v34). Inspector →
+Interactions → Prototype states adds a state with its type and edits its initial value; a state
+keeps its type. One action, `{ type: 'state', change: 'set' | 'toggle' | 'reset' }`, replaces
+`toggleState` and `setState`: Set takes a value of the state's type, Toggle only a yes/no state,
+Reset returns it to its initial value. An instance's prototype visibility is a condition over state
+values (`prototypeVisibleWhen`), from the decided vocabulary in `src/shared/conditions.ts`;
+Inspector builds one comparison (is, is not, contains, is not empty for text; is, is not, less,
+more for numbers; True/False for yes/no), and a condition from elsewhere is shown in words and can
+be replaced. An exposed text property can show a state in Prototype (`stateBindings`), and an
+input's Value property both shows and writes it, so a field typed into updates a greeting on the
+same screen; the canvas keeps the authored text, and surrounding stacks don't reflow. Older
+documents and shared links read into the new forms: a yes/no binding becomes `state equals
+true/false`, and the preview protocol stays version 3 so links shared before still open. Flow
+describes the new actions (“sets Tab to “Profile””, “resets Count”) and conditions, and counts a
+screen reachable once some reachable control can make a hidden control's condition true. Paste
+reuses a state of the same name and type and adds one of another type under its own name.
+Runtime values stay in the player session; no action writes the document. Not yet: actions on a
+field of the player's current record, arithmetic on numbers, binding properties other than text,
+and actions in repeated list items. Verification: `tests/typedState.test.ts`,
+`tests/prototypeState.test.ts` (including reading old documents and links) and
+`tests/browser/typedState.spec.ts` (a shared link that sets, shows, types into and resets text
+state; authoring a text state, a Set action and a condition in Inspector).
+
 ## S1 step 1: Version check on sync
 
 _Recorded 2026-11-13._

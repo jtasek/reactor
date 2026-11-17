@@ -19,6 +19,7 @@
     "moduleResolution": "bundler",
     "noImplicitAny": true,
     "resolveJsonModule": true,
+    "rewriteRelativeImportExtensions": true,
     "noEmit": false,
     "outDir": "./dist",
     "paths": {

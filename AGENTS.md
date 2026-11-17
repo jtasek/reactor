@@ -1353,6 +1353,23 @@ them with `evaluateCondition`. Use `runnableRules`/`breaksRule`/`ruleTarget` fro
 Forms check drafts through `checkRecordDraft` in `src/preview/recordForms.ts`. Overmind state
 is proxied: copy rules for React with JSON, not `structuredClone`, which throws on proxies.
 
+Schema v34 types named prototype state and reads older forms into the new ones. A
+`prototypeBooleans` record (the collection keeps its name) has `type: 'text' | 'number'` or no
+type for yes/no. Actions on state are one `{ type: 'state', change: 'set' | 'toggle' | 'reset' }`
+record; `readInteractions` reads stored `toggleState`/`setState` into it. Instance visibility is
+`prototypeVisibleWhen`, a condition over state values (no record fields); the reader turns the old
+`prototypeVisibilityStateId`/`prototypeVisibilityWhen` pair into `state equals true/false`.
+`stateBindings` maps an exposed text property to a state: Preview shows the value there (an
+input's Value property also writes what is typed), and the canvas stays authored. Helpers live in
+`src/app/prototypeState.ts` (`booleanVisibility`, `visibilityProblems`, `stateActionProblem`,
+`renameInstanceStates`, ...). Condition types, the evaluator and the bounded reader are in
+`src/shared/conditions.ts`, which the preview protocol, the player and the server share;
+`src/shared` files import each other with a `.ts` extension because Node runs them as they are.
+The preview protocol stays version 3: a snapshot carries `states`, `visibility.condition`,
+`control.changeState`, `control.valueState`, `control.labelState` and `textState`, and its reader
+still accepts the older `booleans`, `toggleState`, `setState` and `stateKey`/`when` of links
+shared before.
+
 
 ## Bound sample lists
 

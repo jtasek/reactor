@@ -1,4 +1,4 @@
-import type { Document } from './types';
+import type { Document, StateValue } from './types';
 import { projectFlow, reachableScreens } from './flowProjection';
 import { startScreen } from './screens';
 
@@ -9,11 +9,12 @@ export type Effect =
     | { kind: 'go'; to: string; name: string }
     | { kind: 'variant'; instance: string; variant: string }
     | { kind: 'toggleVisibility'; target: string }
-    | { kind: 'setState'; state: string; value: boolean }
+    | { kind: 'setState'; state: string; value: StateValue }
+    | { kind: 'resetState'; state: string }
     | { kind: 'toggleState'; state: string };
 
-/** When the control is there to act: once something shows it, or while a named state holds. */
-export type Guard = { kind: 'hiddenAtStart' } | { kind: 'state'; state: string; when: boolean };
+/** When the control is there to act: once something shows it, or while a condition holds. */
+export type Guard = { kind: 'hiddenAtStart' } | { kind: 'state'; text: string };
 
 export interface Transition {
     key: string;
@@ -74,6 +75,9 @@ function effectOf(control: Control, names: Map<string, string>): Effect | undefi
     if (control.sets) {
         return { kind: 'setState', state: control.sets.name, value: control.sets.value };
     }
+    if (control.resets) {
+        return { kind: 'resetState', state: control.resets.name };
+    }
     if (control.changes) {
         return { kind: 'variant', ...control.changes };
     }
@@ -126,9 +130,6 @@ export function flowMachine(document: Document): Machine {
                 }
                 continue;
             }
-            const boundState = control.follows
-                ? document.prototypeBooleans[control.follows.id]
-                : undefined;
             const broken = brokenReason(control, effect, names);
             transitions.push({
                 key: control.key,
@@ -136,14 +137,8 @@ export function flowMachine(document: Document): Machine {
                 control: control.name,
                 event: control.enter ? 'enter' : 'tap',
                 effect,
-                ...(boundState && control.follows
-                    ? {
-                          guard: {
-                              kind: 'state',
-                              state: boundState.name,
-                              when: control.follows.when
-                          }
-                      }
+                ...(control.follows
+                    ? { guard: { kind: 'state', text: control.follows } }
                     : control.startsHidden
                       ? { guard: { kind: 'hiddenAtStart' } }
                       : {}),
@@ -211,7 +206,11 @@ export function effectText(effect: Effect): string {
         case 'toggleVisibility':
             return `shows or hides ${effect.target}`;
         case 'setState':
-            return `turns ${effect.state} ${effect.value ? 'on' : 'off'}`;
+            return typeof effect.value === 'boolean'
+                ? `turns ${effect.state} ${effect.value ? 'on' : 'off'}`
+                : `sets ${effect.state} to ${typeof effect.value === 'string' ? `“${effect.value}”` : effect.value}`;
+        case 'resetState':
+            return `resets ${effect.state}`;
         case 'toggleState':
             return `switches ${effect.state}`;
     }
@@ -222,9 +221,7 @@ export function guardText(guard?: Guard): string | undefined {
         return undefined;
     }
 
-    return guard.kind === 'state'
-        ? `if ${guard.state} is ${guard.when ? 'on' : 'off'}`
-        : 'once something shows it';
+    return guard.kind === 'state' ? `if ${guard.text}` : 'once something shows it';
 }
 
 /** A transition in plain words, for screen readers and the list on narrow windows. */

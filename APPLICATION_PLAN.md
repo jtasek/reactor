@@ -28,7 +28,7 @@ step delivered is in the [delivery log](DELIVERY_LOG.md).
 | Undo and redo              | Implemented: each person undoes and redoes their own changes to a document's records, also while others edit ([collaboration.ts](src/app/services/collaboration.ts)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Operations                 | Implemented: paste goes through `applyOperations`, applied whole as one undo step that records its author ([#177](https://github.com/jtasek/reactor/pull/177)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AI                         | Gateway implemented: `/api/ai` streams operations from Claude Haiku 5.5 or any OpenAI-compatible provider, checked and repaired once, with daily limits, and recorded eval cases replayed in CI ([#178](https://github.com/jtasek/reactor/pull/178)). Edit with words has a movable, dockable chat with local conversation history; it proposes added, changed and deleted shapes, variables and groups, applied as one undo step once accepted ([#179](https://github.com/jtasek/reactor/pull/179)). Requests use the selection with its group, variable and component dependencies, or the document when nothing is selected, bounded to 32 KiB of UTF-8 JSON and 300 records ([context.ts](src/ai/context.ts)). |
-| Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named boolean state. Data: entities with Text/Number/Boolean fields, sample records, choice and reference fields, the 1,000-record limit, repeated lists, list-to-detail records, session-only record forms, validation rules written as condition trees, and Edit with words making entities, records and lists (R5.1–R5.5). Not built: dates, and actions on the shared vocabulary. |
+| Screens, data and behavior | Implemented: frames and stacks with hug/fill sizing, explicit screens with equal Screen views, alternate and automatic screen layouts, component variants (manual and responsive by width), roles, Activate → Navigate interactions, Flow (`/flow`), interactive variants, visibility and named yes/no, text and number state with set/toggle/reset actions. Data: entities with Text/Number/Boolean fields, sample records, choice and reference fields, the 1,000-record limit, repeated lists, list-to-detail records, session-only record forms, validation rules written as condition trees, and Edit with words making entities, records and lists (R5.1–R5.5). Not built: dates, and actions on the shared vocabulary. |
 | Export and runtime | Implemented: sandboxed Preview, the Prototype player (`/prototype`), read-only prototype links on the separate preview domain, SVG export, starter templates and a downloadable standalone web package (R5.4). |
 
 The editor surface depends on SVG: input converts through `getScreenCTM`
@@ -565,10 +565,11 @@ team can then send a working prototype link to others.
    [delivery log](DELIVERY_LOG.md#interactive-visualization-increments).
 2. **Local boolean visibility (first increment built).** See the same entry.
 
-   **Remaining typed state and bindings (planned).** Add named local text/number values,
-   set/toggle/reset actions and compatible control/property bindings. Keep runtime values separate
-   from design-system variables and document mutations. Recreate the variable-editor comparison
-   with selection and optional details before adding a general expression language.
+   **Typed state and actions (built).** Named text and number values, `set`/`toggle`/`reset`
+   actions, visibility conditions and text properties bound to state; see the
+   [delivery log](DELIVERY_LOG.md#typed-state-and-actions). Not yet: actions on a field of the
+   player's current record, arithmetic (such as adding one to a number), state-driven property
+   bindings beyond text, and recreating the variable-editor comparison as a starter.
 3. **Portable interactive output (built, R5.4).** See the
    [delivery log](DELIVERY_LOG.md#r54-standalone-web-package). Add a small embedding/event
    bridge only when a concrete host needs it.
@@ -666,8 +667,9 @@ expression operators can follow outside users' needs.
    them on request.
    R5.3a built; see the [delivery log](DELIVERY_LOG.md#r53a-record-forms-in-the-player).
    R5.3b built (rules per entity as condition trees, checked in forms and Data View); see the
-   [delivery log](DELIVERY_LOG.md#r53b-validation-rules-as-expressions). Not yet: typed
-   `set`/`toggle`/`reset` actions, which arrive with the next typed-state step.
+   [delivery log](DELIVERY_LOG.md#r53b-validation-rules-as-expressions). Typed
+   `set`/`toggle`/`reset` actions on state values are built (typed-state step); actions on a
+   record field are not.
 4. Export as a standalone web package.
    R5.4 built; see the [delivery log](DELIVERY_LOG.md#r54-standalone-web-package). Not yet:
    record forms in the package (as in shared links), and a zip with separate files for hosts
@@ -799,7 +801,7 @@ Data and behavior (decided 2026-11-16):
 | --- | --- | --- |
 | Enums and references | A field is Text, Number, Boolean, Choice (one of its listed options) or Reference (a record ID of one target entity). Schema edits never rewrite values; a value that no longer fits is a diagnostic. A record shows as its entity's chosen text field, else the first, else "Entity N". | R5.1b |
 | Record limit | 1,000 sample records per entity, refused when adding; more from concurrent adds is reported, never trimmed. | R5.1b |
-| Actions and expressions | One vocabulary for interactive state, forms and R9 workflows. Actions are typed records `set`, `toggle` and `reset` on a target: a named state value or a field of the player's current record; navigation and variant changes stay their own actions. Conditions and validation rules are typed trees stored as JSON, never formula strings: comparisons (`equals`, `notEquals`, `less`, `greater`, `isSet`, `contains`) between operands (state value, current record field, literal), combined with `and`, `or` and `not`. One checker validates them against the state and entity schemas, and one evaluator runs them in the player. Today's `setState`, `toggleState` and `prototypeVisibilityWhen` are its first cases and are read into it when the next typed-state step lands. No text formula language until users ask for one. Conditions, their checker and evaluator are built (`src/app/expressions.ts`, R5.3b); actions are not yet. | Next typed-state step, R5.3b (conditions built), R9 |
+| Actions and expressions | One vocabulary for interactive state, forms and R9 workflows. Actions are typed records `set`, `toggle` and `reset` on a target: a named state value or a field of the player's current record; navigation and variant changes stay their own actions. Conditions and validation rules are typed trees stored as JSON, never formula strings: comparisons (`equals`, `notEquals`, `less`, `greater`, `isSet`, `contains`) between operands (state value, current record field, literal), combined with `and`, `or` and `not`. One checker validates them against the state and entity schemas, and one evaluator runs them in the player. Today's `setState`, `toggleState` and `prototypeVisibilityWhen` are its first cases and are read into it when the next typed-state step lands. No text formula language until users ask for one. Conditions, their checker and evaluator are built (`src/shared/conditions.ts`, `src/app/expressions.ts`, R5.3b); `set`/`toggle`/`reset` on state values and visibility conditions are built (typed-state step, 2026-11-17); actions on a record field are not yet. | R5.3b, typed-state step, R9 |
 
 ## Keeping this plan current
 

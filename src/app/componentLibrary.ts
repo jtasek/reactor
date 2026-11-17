@@ -148,8 +148,8 @@ function withoutNavigation<
 >(record: T): T {
     if ('type' in record && record.type === 'instance') {
         delete record.dataList;
-        delete record.prototypeVisibilityStateId;
-        delete record.prototypeVisibilityWhen;
+        delete record.prototypeVisibleWhen;
+        delete record.stateBindings;
     }
     if ('interaction' in record && record.interaction) {
         delete record.interaction.navigateTo;

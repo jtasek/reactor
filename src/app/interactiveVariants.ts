@@ -2,6 +2,8 @@ import { layoutTreeRoot } from './screenLayouts';
 import type { Document, ChangeVariantAction, InstanceShape, Shape } from './types';
 import { screenOwners } from './screenViews';
 import { instanceAction, effectiveActivation } from './screenInteractions';
+import { booleanVisibility, visibilityStates } from './prototypeState';
+import type { Condition } from '../shared/conditions';
 
 /**
  * Returns the check behind `prototypeTargets`, for testing single instances without
@@ -149,28 +151,41 @@ export function toggledState(
     instance: InstanceShape,
     activate = effectiveActivation(document.components[instance.componentId], instance)
 ): string | undefined {
-    if (activate?.type === 'toggleState') {
-        return activate.stateId;
+    if (activate?.type === 'state') {
+        return activate.change === 'toggle' ? activate.stateId : undefined;
     }
     const target =
         activate?.type === 'toggleVisibility' ? document.shapes[activate.instanceId] : undefined;
 
-    return target?.type === 'instance' ? target.prototypeVisibilityStateId : undefined;
+    return target?.type === 'instance' ? booleanVisibility(document, target)?.stateId : undefined;
 }
 
 /**
- * Binding `instance` to `stateId` would hide a control that toggles the same state: itself, or one
- * that toggles `instance` and is already bound to `stateId`. Only Reset could show it again.
+ * Showing `instance` while `condition` holds would hide a control that toggles a state it reads:
+ * itself, or one that toggles `instance` and already follows that state. Only Reset could show
+ * it again. Set and reset actions may hide their control: a "Show more" can give way to "Less".
  */
-export function bindingHidesControl(document: Document, instance: InstanceShape, stateId: string) {
-    if (document.components[instance.componentId] && toggledState(document, instance) === stateId) {
+export function bindingHidesControl(
+    document: Document,
+    instance: InstanceShape,
+    condition: Condition
+) {
+    const states = visibilityStates({ prototypeVisibleWhen: condition });
+    const toggled = document.components[instance.componentId]
+        ? toggledState(document, instance)
+        : undefined;
+    if (toggled && states.includes(toggled)) {
         return true;
+    }
+    const followed = booleanVisibility(document, { prototypeVisibleWhen: condition })?.stateId;
+    if (!followed) {
+        return false;
     }
 
     return Object.values(document.shapes).some((shape) => {
         if (
             shape.type !== 'instance' ||
-            shape.prototypeVisibilityStateId !== stateId ||
+            !visibilityStates(shape).includes(followed) ||
             !document.components[shape.componentId]
         ) {
             return false;

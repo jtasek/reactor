@@ -1,4 +1,4 @@
-import type { Component, Document, InstanceShape } from './types';
+import type { Component, Document, InstanceShape, StateValue } from './types';
 import { shownShapesIds } from './membership';
 import { screenOwners } from './screenViews';
 import { screenFrames } from './screens';
@@ -6,6 +6,14 @@ import { isShapeLocked } from './utils';
 import { effectiveActivation, inheritedActivation } from './screenInteractions';
 import { effectiveRoleSettings } from './componentRoles';
 import { prototypeTargetCheck } from './interactiveVariants';
+import { evaluateCondition } from '../shared/conditions';
+import {
+    booleanVisibility,
+    describeCondition,
+    simpleCondition,
+    visibilityProblems,
+    visibilityStates
+} from './prototypeState';
 
 /** Definitions and authored layout controls, independent of canvas placements and geometry. */
 export function projectFlow(document: Document) {
@@ -29,11 +37,14 @@ export function projectFlow(document: Document) {
         toggles?: string;
         toggleTarget?: string;
         toggleStateId?: string;
-        sets?: { id: string; name: string; value: boolean };
+        sets?: { id: string; name: string; value: StateValue };
+        resets?: { id: string; name: string };
         /** The screen instance holding it starts hidden in the prototype. */
         startsHidden?: string;
-        /** The named state the screen instance holding it follows, and the value that shows it. */
-        follows?: { id: string; when: boolean };
+        /** States whose change may reveal it when its condition is more than one comparison. */
+        revealedBy?: string[];
+        /** The condition, in words, that the screen instance holding it is shown under. */
+        follows?: string;
         /** Acts on Enter in a field, not on a press. */
         enter: boolean;
         /** Uses its component's action. */
@@ -54,7 +65,8 @@ export function projectFlow(document: Document) {
             hidden: boolean;
             unusedVariant: boolean;
             startsHidden?: string;
-            follows?: { id: string; when: boolean };
+            revealedBy?: string[];
+            follows?: string;
         }
     ) => {
         const component = document.components[instance.componentId];
@@ -68,8 +80,11 @@ export function projectFlow(document: Document) {
                 : undefined;
         const visibilityState =
             visibilityTarget?.type === 'instance'
-                ? document.prototypeBooleans[visibilityTarget.prototypeVisibilityStateId ?? '']
+                ? document.prototypeBooleans[
+                      booleanVisibility(document, visibilityTarget)?.stateId ?? ''
+                  ]
                 : undefined;
+        const stateName = (id: string) => document.prototypeBooleans[id]?.name ?? 'Missing state';
         controls.push({
             key: path,
             screenId,
@@ -80,21 +95,21 @@ export function projectFlow(document: Document) {
             inherited: inheritedActivation(instance),
             ...state,
             target: activation?.screenId,
-            ...(activation?.type === 'setState'
+            ...(activation?.type === 'state' && activation.change === 'set'
                 ? {
                       sets: {
                           id: activation.stateId,
-                          name:
-                              document.prototypeBooleans[activation.stateId]?.name ??
-                              'Missing state',
+                          name: stateName(activation.stateId),
                           value: activation.value
                       }
                   }
                 : {}),
-            ...(activation?.type === 'toggleState'
+            ...(activation?.type === 'state' && activation.change === 'reset'
+                ? { resets: { id: activation.stateId, name: stateName(activation.stateId) } }
+                : {}),
+            ...(activation?.type === 'state' && activation.change === 'toggle'
                 ? {
-                      toggles:
-                          document.prototypeBooleans[activation.stateId]?.name ?? 'Missing state',
+                      toggles: stateName(activation.stateId),
                       toggleStateId: activation.stateId
                   }
                 : {}),
@@ -140,19 +155,33 @@ export function projectFlow(document: Document) {
     for (const shape of Object.values(document.shapes)) {
         const owner = owners.get(shape.parentFrameId ?? '');
         if (shape.type === 'instance' && owner && !sourceIds.has(shape.id)) {
-            const boundState = document.prototypeBooleans[shape.prototypeVisibilityStateId ?? ''];
-            const when = shape.prototypeVisibilityWhen ?? true;
-            const startsHidden = boundState
-                ? boundState.initial !== when
+            const condition =
+                shape.prototypeVisibleWhen &&
+                !visibilityProblems(document, shape.prototypeVisibleWhen).length
+                    ? shape.prototypeVisibleWhen
+                    : undefined;
+            const startsHidden = condition
+                ? !evaluateCondition(condition, (operand) =>
+                      operand.kind === 'state'
+                          ? document.prototypeBooleans[operand.stateId]?.initial
+                          : undefined
+                  )
                 : shape.prototypeVisible === false;
+            const simple = simpleCondition(condition);
+            const target = isTarget(shape.id, owner);
             visit(shape, owner, shape.id, new Set(), {
                 hidden: !shown.has(shape.id),
                 unusedVariant: false,
-                ...(boundState && isTarget(shape.id, owner)
-                    ? { follows: { id: boundState.id, when } }
-                    : {}),
-                ...(startsHidden && isTarget(shape.id, owner)
-                    ? { startsHidden: boundState ? `state:${boundState.id}:${when}` : shape.id }
+                ...(condition && target ? { follows: describeCondition(document, condition) } : {}),
+                ...(startsHidden && target
+                    ? simple?.kind === 'equals'
+                        ? { startsHidden: stateKey(simple.stateId, simple.value) }
+                        : condition
+                          ? {
+                                startsHidden: `when:${shape.id}`,
+                                revealedBy: visibilityStates(shape)
+                            }
+                          : { startsHidden: shape.id }
                     : {})
             });
         }
@@ -169,6 +198,8 @@ export function projectFlow(document: Document) {
                 missing: Boolean(
                     (control.target && !available.has(control.target)) ||
                     (control.sets !== undefined && !document.prototypeBooleans[control.sets.id]) ||
+                    (control.resets !== undefined &&
+                        !document.prototypeBooleans[control.resets.id]) ||
                     (control.toggleStateId !== undefined &&
                         !document.prototypeBooleans[control.toggleStateId]) ||
                     (control.toggleTarget !== undefined &&
@@ -198,8 +229,10 @@ function drawnSources(document: Document, component: Component, instance: Instan
 export function reachableScreens(graph: ReturnType<typeof projectFlow>, start?: string) {
     const reachable = new Set(start ? [start] : []);
     const revealed = new Set<string>();
+    /** States some reachable control changes. */
+    const changed = new Set<string>();
     for (;;) {
-        const size = reachable.size + revealed.size;
+        const size = reachable.size + revealed.size + changed.size;
         for (const screen of graph) {
             if (!reachable.has(screen.id)) {
                 continue;
@@ -209,7 +242,9 @@ export function reachableScreens(graph: ReturnType<typeof projectFlow>, start?: 
                     control.missing ||
                     control.hidden ||
                     control.unusedVariant ||
-                    (control.startsHidden && !revealed.has(control.startsHidden))
+                    (control.startsHidden &&
+                        !revealed.has(control.startsHidden) &&
+                        !control.revealedBy?.some((id) => changed.has(id)))
                 ) {
                     continue;
                 }
@@ -220,16 +255,24 @@ export function reachableScreens(graph: ReturnType<typeof projectFlow>, start?: 
                     revealed.add(control.toggleTarget);
                 }
                 if (control.sets) {
-                    revealed.add(`state:${control.sets.id}:${control.sets.value}`);
+                    revealed.add(stateKey(control.sets.id, control.sets.value));
+                    changed.add(control.sets.id);
+                }
+                if (control.resets) {
+                    changed.add(control.resets.id);
                 }
                 if (control.toggleStateId) {
-                    revealed.add(`state:${control.toggleStateId}:true`);
-                    revealed.add(`state:${control.toggleStateId}:false`);
+                    revealed.add(stateKey(control.toggleStateId, true));
+                    revealed.add(stateKey(control.toggleStateId, false));
+                    changed.add(control.toggleStateId);
                 }
             }
         }
-        if (reachable.size + revealed.size === size) {
+        if (reachable.size + revealed.size + changed.size === size) {
             return reachable;
         }
     }
 }
+
+/** What a reachable control can make a state hold, as one key. */
+const stateKey = (id: string, value: unknown) => `state:${id}:${JSON.stringify(value)}`;

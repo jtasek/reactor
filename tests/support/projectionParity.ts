@@ -8,7 +8,8 @@ import { serializePersistedState } from 'src/app/services/documentStorage';
 import { previewModes, prototypeModes } from 'src/app/modeEdits';
 import { projectPreview, type PreviewSession } from 'src/preview/project';
 import { projectSvg, serializeSvg } from 'src/export/svg';
-import type { PreviewDrawing, PreviewNode } from 'src/shared/previewProtocol';
+import { evaluateCondition } from 'src/shared/conditions';
+import type { PreviewDrawing, PreviewNode, PreviewStateValue } from 'src/shared/previewProtocol';
 import type { Document } from 'src/app/types';
 import { createTestStore } from './store';
 
@@ -417,26 +418,34 @@ export function canvasShapes(store: ParityStore, x: number, y: number) {
 export interface Player {
     variants?: Record<string, string>;
     visibility?: Record<string, boolean>;
+    /** Named state values the player holds, by key. */
+    states?: Record<string, PreviewStateValue>;
     record?: { entityId: string; id: string };
 }
 
 /** The node the player shows, as `nodeElement` in `src/preview/runtime.ts` chooses it. */
 export function playedNode(
     authored: PreviewNode,
-    booleans: Record<string, boolean>,
+    states: Record<string, PreviewStateValue>,
     player: Player
 ): Element | null {
     const record =
         authored.recordEntity === player.record?.entityId ? player.record?.id : undefined;
     if (record && Object.hasOwn(authored.records ?? {}, record)) {
-        return playedNode(authored.records![record], booleans, player);
+        return playedNode(authored.records![record], states, player);
     }
     const choice = authored.variantKey ? player.variants?.[authored.variantKey] : undefined;
     const node = choice && authored.variants?.[choice] ? authored.variants[choice] : authored;
     if (authored.visibility) {
-        const key = authored.visibility.stateKey ?? authored.visibility.key;
-        const value = player.visibility?.[key] ?? booleans[key] ?? authored.visibility.initial;
-        if (value !== (authored.visibility.stateKey ? (authored.visibility.when ?? true) : true)) {
+        const { key, condition, initial } = authored.visibility;
+        const shown = condition
+            ? evaluateCondition(condition, (operand) =>
+                  operand.kind === 'state'
+                      ? (player.states?.[operand.stateId] ?? states[operand.stateId])
+                      : undefined
+              )
+            : (player.visibility?.[key] ?? initial);
+        if (!shown) {
             return null;
         }
     }
@@ -447,9 +456,7 @@ export function playedNode(
             Object.entries(node.attrs).map(([key, value]) => [key, String(value)])
         ),
         text: node.text,
-        children: (node.children ?? []).flatMap(
-            (child) => playedNode(child, booleans, player) ?? []
-        )
+        children: (node.children ?? []).flatMap((child) => playedNode(child, states, player) ?? [])
     };
 }
 
@@ -457,11 +464,11 @@ export function playedNode(
 export function nodeMarks(
     node: PreviewNode,
     screen: { x: number; y: number },
-    booleans: Record<string, boolean> = {},
+    states: Record<string, PreviewStateValue> = {},
     player: Player = {}
 ) {
     const marks: Mark[] = [];
-    const element = playedNode(node, booleans, player);
+    const element = playedNode(node, states, player);
     if (element) {
         drawingMarks(element, origin(screen.x, screen.y), marks);
     }
@@ -499,7 +506,7 @@ export function previewProjection(
     const shapes: ShapeMarks = new Map(
         screen.nodes.map((node) => [
             node.key.slice(screen.id.length + 1),
-            nodeMarks(node, screen, drawing.booleans, player)
+            nodeMarks(node, screen, drawing.states, player)
         ])
     );
 

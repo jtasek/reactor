@@ -3,8 +3,10 @@ import {
     readPreviewImages,
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
-    type PreviewNode
+    type PreviewNode,
+    type PreviewStateValue
 } from '../shared/previewProtocol';
+import { evaluateCondition, formatStateValue, type Condition } from '../shared/conditions';
 import '../../static/styles/site.css';
 import './runtime.css';
 
@@ -29,9 +31,27 @@ let selectedRecord: { entityId: string; id: string } | undefined;
 const recordScreens = new Map<string, Set<string>>();
 const variants = new Map<string, string>();
 const initialVariants = new Map<string, string>();
+/** Per-instance shown or hidden, for instances that follow no state. */
 const visibility = new Map<string, boolean>();
 const initialVisibility = new Map<string, boolean>();
-const visibilityConditions = new Map<string, boolean>();
+/** The condition each visibility key follows, if any. */
+const visibilityConditions = new Map<string, Condition>();
+/** Named state values of this session, and the values they start with. */
+const states = new Map<string, PreviewStateValue>();
+const initialStates = new Map<string, PreviewStateValue>();
+const stateValue = (key: string) => states.get(key) ?? initialStates.get(key);
+/** What was typed into number fields, by input key, so “1.” or “-” isn't rewritten mid-typing. */
+const drafts = new Map<string, string>();
+/** Whether the instance with this visibility key shows now. */
+const isShown = (key: string, initial = initialVisibility.get(key) ?? true) => {
+    const condition = visibilityConditions.get(key);
+
+    return condition
+        ? evaluateCondition(condition, (operand) =>
+              operand.kind === 'state' ? stateValue(operand.stateId) : undefined
+          )
+        : (visibility.get(key) ?? initial);
+};
 const visibilityId = (key: string) => `visibility-${encodeURIComponent(key)}`;
 /** The visibility the last activation toggled: focus returns to its opener if the control hid. */
 let toggled: string | undefined;
@@ -54,11 +74,7 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const element = document.createElementNS(SVG, node.tag);
     if (authored.visibility) {
         element.id = visibilityId(authored.visibility.key);
-        const key = authored.visibility.stateKey ?? authored.visibility.key;
-        const value =
-            visibility.get(key) ?? initialVisibility.get(key) ?? authored.visibility.initial;
-        const expected = authored.visibility.stateKey ? (authored.visibility.when ?? true) : true;
-        if (value !== expected) {
+        if (!isShown(authored.visibility.key, authored.visibility.initial)) {
             element.setAttribute('display', 'none');
 
             return element;
@@ -73,7 +89,12 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     }
     const control = decorative ? undefined : node.control;
     const isControl = control?.role === 'input' || control?.role === 'button';
-    node.children?.forEach((child) => {
+    // A bound text shows its state on its first line; the canvas keeps the authored text.
+    const children =
+        node.textState !== undefined && node.children?.[0]?.tag === 'text'
+            ? [{ ...node.children[0], text: formatStateValue(stateValue(node.textState)) }]
+            : node.children;
+    children?.forEach((child) => {
         const item = nodeElement(child, decorative || isControl);
         if (control?.role === 'list' && child.tag === 'g') {
             item.setAttribute('role', 'listitem');
@@ -113,7 +134,11 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const inputKey = control.stateKey ?? node.key;
     field.dataset.key = inputKey;
     field.className = control.role;
-    field.setAttribute('aria-label', control.label);
+    // A label bound to a state reads its value; an empty value keeps the authored label.
+    const label =
+        (control.labelState !== undefined && formatStateValue(stateValue(control.labelState))) ||
+        control.label;
+    field.setAttribute('aria-label', label);
     field.disabled = control.disabled ?? false;
     if (control.changeVariant && control.role === 'button') {
         const action = control.changeVariant;
@@ -124,38 +149,22 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             )
         );
     }
-    // A Set control is a plain button: pressing it again does not undo it, so no aria-pressed.
-    // The data attribute lets focus return to it when its own action hides another control.
-    if (control.setState !== undefined) {
-        field.dataset.toggleState = control.setState.key;
+    const change = control.changeState;
+    // A Set or Reset control is a plain button: pressing it again changes nothing, so no
+    // aria-pressed. The data attribute lets focus return to it when its action hides another.
+    if (change && control.role === 'button') {
+        field.dataset.toggleState = change.key;
     }
     // A disclosure whose target follows a state stays a disclosure; plain state toggles are pressed.
     if (
-        control.toggleState !== undefined &&
+        change?.change === 'toggle' &&
         control.toggleVisibility === undefined &&
         control.role === 'button'
     ) {
-        field.setAttribute(
-            'aria-pressed',
-            String(
-                visibility.get(control.toggleState) ??
-                    initialVisibility.get(control.toggleState) ??
-                    false
-            )
-        );
-    }
-    if (control.toggleState !== undefined && control.role === 'button') {
-        field.dataset.toggleState = control.toggleState;
+        field.setAttribute('aria-pressed', String(stateValue(change.key) === true));
     }
     if (control.toggleVisibility !== undefined && control.role === 'button') {
-        const key = control.toggleState ?? control.toggleVisibility;
-        field.setAttribute(
-            'aria-expanded',
-            String(
-                (visibility.get(key) ?? initialVisibility.get(key) ?? true) ===
-                    (visibilityConditions.get(control.toggleVisibility) ?? true)
-            )
-        );
+        field.setAttribute('aria-expanded', String(isShown(control.toggleVisibility)));
         field.setAttribute('aria-controls', visibilityId(control.toggleVisibility));
     }
     if (control.disabled) {
@@ -163,9 +172,41 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     }
     field.type = control.role === 'input' ? 'text' : 'button';
     if (field instanceof HTMLInputElement) {
-        field.value = values.get(inputKey) ?? control.value ?? '';
-        field.placeholder = control.placeholder ?? control.label;
-        field.addEventListener('input', () => values.set(inputKey, field.value));
+        const bound = control.valueState;
+        const draft = drafts.get(inputKey);
+        // A draft stands while the state still holds what it reads as, or it reads as no number.
+        field.value =
+            bound === undefined
+                ? (values.get(inputKey) ?? control.value ?? '')
+                : draft !== undefined &&
+                    (!draft.trim() ||
+                        !Number.isFinite(Number(draft.trim())) ||
+                        Number(draft.trim()) === stateValue(bound))
+                  ? draft
+                  : formatStateValue(stateValue(bound));
+        if (bound !== undefined && typeof initialStates.get(bound) === 'number') {
+            field.inputMode = 'decimal';
+        }
+        field.placeholder = control.placeholder ?? label;
+        field.addEventListener('input', () => {
+            if (bound === undefined) {
+                values.set(inputKey, field.value);
+
+                return;
+            }
+            // A number state changes only when the field holds a number; other text waits.
+            const number = Number(field.value.trim());
+            if (typeof initialStates.get(bound) !== 'number') {
+                states.set(bound, field.value);
+            } else {
+                drafts.set(inputKey, field.value);
+                if (!field.value.trim() || !Number.isFinite(number)) {
+                    return;
+                }
+                states.set(bound, number);
+            }
+            render();
+        });
         field.addEventListener('keydown', (event) => {
             if (
                 event.key !== 'Enter' ||
@@ -173,8 +214,7 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
                 (!control.navigateTo &&
                     !control.changeVariant &&
                     control.toggleVisibility === undefined &&
-                    control.toggleState === undefined &&
-                    control.setState === undefined)
+                    control.changeState === undefined)
             ) {
                 return;
             }
@@ -182,8 +222,8 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
             activate(control);
         });
     } else {
-        field.textContent = control.label;
-        field.title = control.label;
+        field.textContent = label;
+        field.title = label;
         field.addEventListener('click', () => {
             activate(control);
         });
@@ -199,20 +239,24 @@ function activate(control: NonNullable<PreviewNode['control']>) {
         !control.changeVariant &&
         !control.navigateTo &&
         control.toggleVisibility === undefined &&
-        control.toggleState === undefined &&
-        control.setState === undefined
+        control.changeState === undefined
     ) {
         return;
     }
-    toggled = control.toggleState ?? control.toggleVisibility ?? control.setState?.key;
-    if (toggled !== undefined) {
-        const key = toggled;
-        visibility.set(
-            key,
-            control.setState
-                ? control.setState.value
-                : !(visibility.get(key) ?? initialVisibility.get(key) ?? true)
-        );
+    const change = control.changeState;
+    toggled = change?.key ?? control.toggleVisibility;
+    if (change) {
+        // Fields show the state as the action leaves it, not what was typed before.
+        drafts.clear();
+    }
+    if (change?.change === 'set') {
+        states.set(change.key, change.value);
+    } else if (change?.change === 'reset') {
+        states.delete(change.key);
+    } else if (change?.change === 'toggle') {
+        states.set(change.key, stateValue(change.key) !== true);
+    } else if (control.toggleVisibility !== undefined) {
+        visibility.set(control.toggleVisibility, !isShown(control.toggleVisibility));
     }
     if (control.changeVariant) {
         variants.set(control.changeVariant.key, control.changeVariant.variantId);
@@ -272,6 +316,8 @@ function render() {
         selectedRecord = undefined;
         variants.clear();
         visibility.clear();
+        states.clear();
+        drafts.clear();
         currentScreen = undefined;
         // Inspected Width and Layout return to the launch view's too.
         port?.postMessage({ type: 'inspect-reset' });
@@ -373,6 +419,8 @@ function receive(value: unknown) {
             selectedRecord = undefined;
             variants.clear();
             visibility.clear();
+            states.clear();
+            drafts.clear();
             currentScreen = undefined;
         }
         const keys = new Set<string>();
@@ -382,8 +430,9 @@ function receive(value: unknown) {
         initialVariants.clear();
         initialVisibility.clear();
         visibilityConditions.clear();
-        Object.entries(next.booleans ?? {}).forEach(([key, initial]) =>
-            initialVisibility.set(key, initial)
+        initialStates.clear();
+        Object.entries(next.states ?? {}).forEach(([key, initial]) =>
+            initialStates.set(key, initial)
         );
         const collect = (node: PreviewNode) => {
             if (node.control?.record) {
@@ -400,10 +449,9 @@ function receive(value: unknown) {
             }
             if (node.visibility) {
                 initialVisibility.set(node.visibility.key, node.visibility.initial);
-                visibilityConditions.set(
-                    node.visibility.key,
-                    node.visibility.stateKey ? (node.visibility.when ?? true) : true
-                );
+                if (node.visibility.condition) {
+                    visibilityConditions.set(node.visibility.key, node.visibility.condition);
+                }
             }
             if (node.control?.role === 'input') {
                 keys.add(node.control.stateKey ?? node.key);
@@ -451,6 +499,12 @@ function receive(value: unknown) {
         visibility.forEach((_value, key) => {
             if (!initialVisibility.has(key)) {
                 visibility.delete(key);
+            }
+        });
+        // A value keeps only while its state is there with the same type.
+        states.forEach((value, key) => {
+            if (typeof initialStates.get(key) !== typeof value) {
+                states.delete(key);
             }
         });
         application = next;

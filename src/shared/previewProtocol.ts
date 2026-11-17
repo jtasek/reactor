@@ -1,3 +1,18 @@
+import {
+    MAX_CONDITION_TEXT,
+    readConditionTree,
+    conditionOperands,
+    type Condition
+} from './conditions.ts';
+
+/** A named state value in the player: yes/no, text or a number. */
+export type PreviewStateValue = string | number | boolean;
+
+/** Changes the state at `key`: set to `value`, toggle a yes/no value or reset to its start. */
+export type PreviewStateChange =
+    | { key: string; change: 'set'; value: PreviewStateValue }
+    | { key: string; change: 'toggle' | 'reset' };
+
 /** The complete sandbox contract. Contains no document records, user data or executable code. */
 export interface PreviewNode {
     key: string;
@@ -7,7 +22,10 @@ export interface PreviewNode {
     /** SHA-256 key into the application's verified raster image table. */
     image?: string;
     children?: PreviewNode[];
-    visibility?: { key: string; initial: boolean; stateKey?: string; when?: boolean };
+    /** Shown while `condition` holds; its state operands name keys of `states`. */
+    visibility?: { key: string; initial: boolean; condition?: Condition };
+    /** A text node group that shows this state's value instead of its authored lines. */
+    textState?: string;
     variantKey?: string;
     initialVariant?: string;
     variants?: Record<string, PreviewNode>;
@@ -24,9 +42,12 @@ export interface PreviewNode {
         inputRecord?: { entityId: string; id: string };
         changeVariant?: { key: string; variantId: string };
         toggleVisibility?: string;
-        toggleState?: string;
-        setState?: { key: string; value: boolean };
+        changeState?: PreviewStateChange;
         stateKey?: string;
+        /** An input that shows and writes this text or number state. */
+        valueState?: string;
+        /** A label that reads this state's value, when it has one. */
+        labelState?: string;
         x: number;
         y: number;
         width: number;
@@ -36,7 +57,8 @@ export interface PreviewNode {
 
 /** Drawing projected from the graph, before image bytes have been prepared. */
 export interface PreviewDrawing {
-    booleans?: Record<string, boolean>;
+    /** Each named state's starting value, by key. */
+    states?: Record<string, PreviewStateValue>;
     documentId: string;
     screens: {
         id: string;
@@ -63,7 +85,9 @@ export const MAX_PREVIEW_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_PREVIEW_IMAGE_FILE_BYTES = 5 * 1024 * 1024;
 const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/i;
 /** Version 3 supports layout inspection and compatible input identities. Optional variant
- * artwork/actions extend the payload without invalidating existing shared snapshots. */
+ * artwork/actions extend the payload without invalidating existing shared snapshots; older
+ * yes/no state fields (`booleans`, `toggleState`, `setState`, `stateKey`/`when`) are read into
+ * today's typed states, so links shared before them still open. */
 export const PREVIEW_PROTOCOL_VERSION = 3;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
@@ -236,14 +260,24 @@ export function readPreview(
             ) {
                 throw new Error('Invalid prototype visibility.');
             }
+            const condition =
+                visibility.condition !== undefined
+                    ? readConditionTree(visibility.condition, stateKey, STATE_OPERANDS)
+                    : visibility.stateKey !== undefined
+                      ? ({
+                            kind: 'equals',
+                            left: { kind: 'state', stateId: visibility.stateKey as string },
+                            right: { kind: 'value', value: (visibility.when as boolean) ?? true }
+                        } satisfies Condition)
+                      : undefined;
             result.visibility = {
                 key: visibility.key,
-                ...(visibility.when === undefined ? {} : { when: visibility.when as boolean }),
                 initial: visibility.initial,
-                ...(visibility.stateKey === undefined
-                    ? {}
-                    : { stateKey: visibility.stateKey as string })
+                ...(condition ? { condition } : {})
             };
+        }
+        if (node.textState !== undefined) {
+            result.textState = stateKey(node.textState);
         }
         if (node.variants !== undefined) {
             if (!string(node.variantKey)) {
@@ -298,18 +332,34 @@ export function readPreview(
                     'navigateTo',
                     'stateKey',
                     'toggleVisibility',
-                    'toggleState'
+                    'toggleState',
+                    'valueState',
+                    'labelState'
                 ].some((key) => c[key] !== undefined && !string(c[key])) ||
                 (c.disabled !== undefined && typeof c.disabled !== 'boolean')
             ) {
                 throw new Error('Invalid preview control.');
             }
             if (
-                c.setState !== undefined &&
-                (c.toggleState !== undefined || c.toggleVisibility !== undefined)
+                [c.setState, c.toggleState, c.changeState].filter((item) => item !== undefined)
+                    .length > 1 ||
+                ((c.setState !== undefined ||
+                    (c.changeState !== undefined && object(c.changeState).change !== 'toggle')) &&
+                    c.toggleVisibility !== undefined)
             ) {
-                throw new Error('Conflicting boolean actions.');
+                throw new Error('Conflicting state actions.');
             }
+            if (c.valueState !== undefined && c.role !== 'input') {
+                throw new Error('Only inputs may write a state.');
+            }
+            const changeState =
+                c.changeState !== undefined
+                    ? readStateChange(c.changeState)
+                    : c.setState !== undefined
+                      ? readSetState(c.setState)
+                      : c.toggleState !== undefined
+                        ? { key: c.toggleState as string, change: 'toggle' as const }
+                        : undefined;
             const changeVariant =
                 c.changeVariant === undefined ? undefined : object(c.changeVariant);
             if (changeVariant && (!string(changeVariant.key) || !string(changeVariant.variantId))) {
@@ -328,8 +378,9 @@ export function readPreview(
                 ...(c.record === undefined
                     ? {}
                     : { record: readNavigationRecord(c.record, c.navigateTo) }),
-                ...(c.setState === undefined ? {} : { setState: readSetState(c.setState) }),
-                ...(c.toggleState === undefined ? {} : { toggleState: c.toggleState as string }),
+                ...(changeState ? { changeState } : {}),
+                ...(c.valueState === undefined ? {} : { valueState: c.valueState as string }),
+                ...(c.labelState === undefined ? {} : { labelState: c.labelState as string }),
                 ...(c.toggleVisibility === undefined
                     ? {}
                     : { toggleVisibility: c.toggleVisibility as string }),
@@ -415,19 +466,36 @@ export function readPreview(
         throw new Error('Preview images exceed the 8 MiB limit. Remove or reduce some images.');
     }
 
-    const booleans = app.booleans === undefined ? {} : object(app.booleans);
-    if (Object.values(booleans).some((value) => typeof value !== 'boolean')) {
-        throw new Error('Invalid prototype boolean state.');
+    const states = object(app.states ?? app.booleans ?? {});
+    for (const value of Object.values(states)) {
+        if (
+            typeof value !== 'boolean' &&
+            !finite(value) &&
+            !(string(value) && value.length <= MAX_CONDITION_TEXT)
+        ) {
+            throw new Error('Invalid prototype state.');
+        }
     }
+    const has = (key: string) => Object.hasOwn(states, key);
     if (
         nodes.some(
             (node) =>
-                (node.visibility?.stateKey !== undefined &&
-                    !Object.hasOwn(booleans, node.visibility.stateKey)) ||
-                (node.control?.toggleState !== undefined &&
-                    !Object.hasOwn(booleans, node.control.toggleState)) ||
-                (node.control?.setState !== undefined &&
-                    !Object.hasOwn(booleans, node.control.setState.key))
+                (node.visibility?.condition &&
+                    conditionOperands(node.visibility.condition).some(
+                        (operand) => operand.kind === 'state' && !has(operand.stateId)
+                    )) ||
+                (node.textState !== undefined && !has(node.textState)) ||
+                (node.control?.labelState !== undefined && !has(node.control.labelState)) ||
+                (node.control?.valueState !== undefined &&
+                    (!has(node.control.valueState) ||
+                        typeof states[node.control.valueState] === 'boolean')) ||
+                (node.control?.changeState !== undefined &&
+                    (!has(node.control.changeState.key) ||
+                        (node.control.changeState.change === 'toggle' &&
+                            typeof states[node.control.changeState.key] !== 'boolean') ||
+                        (node.control.changeState.change === 'set' &&
+                            typeof states[node.control.changeState.key] !==
+                                typeof node.control.changeState.value)))
         )
     ) {
         throw new Error('Unavailable prototype state.');
@@ -470,17 +538,48 @@ export function readPreview(
         documentId: app.documentId,
         screens,
         images,
-        ...(app.booleans === undefined ? {} : { booleans: booleans as Record<string, boolean> })
+        ...(app.states === undefined && app.booleans === undefined
+            ? {}
+            : { states: states as Record<string, PreviewStateValue> })
     };
 }
 
-function readSetState(value: unknown): { key: string; value: boolean } {
+const STATE_OPERANDS = new Set(['state', 'value'] as const);
+
+function stateKey(value: unknown): string {
+    if (!string(value) || !value) {
+        throw new Error('Invalid prototype state key.');
+    }
+
+    return value;
+}
+
+/** Snapshots before typed states stored a yes/no assignment as its own action. */
+function readSetState(value: unknown): PreviewStateChange {
     const action = object(value);
     if (!string(action.key) || typeof action.value !== 'boolean') {
         throw new Error('Invalid set-state action.');
     }
 
-    return { key: action.key, value: action.value };
+    return { key: action.key, change: 'set', value: action.value };
+}
+
+function readStateChange(value: unknown): PreviewStateChange {
+    const action = object(value);
+    const key = stateKey(action.key);
+    if (action.change === 'toggle' || action.change === 'reset') {
+        return { key, change: action.change };
+    }
+    if (
+        action.change !== 'set' ||
+        (typeof action.value !== 'boolean' &&
+            !finite(action.value) &&
+            !(string(action.value) && action.value.length <= MAX_CONDITION_TEXT))
+    ) {
+        throw new Error('Invalid state action.');
+    }
+
+    return { key, change: 'set', value: action.value as PreviewStateValue };
 }
 
 function readNavigationRecord(value: unknown, target: unknown): { entityId: string; id: string } {
