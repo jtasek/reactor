@@ -61,7 +61,7 @@ function list(value: unknown, what: string, each: string) {
 /** Values are checked against their fields when the batch is staged. */
 function records(value: unknown): NewDataRecord[] {
     if (!Array.isArray(value) || value.length === 0) {
-        throw new Error('Its records are not a list.');
+        throw new Error('Its records are not a list of one or more.');
     }
 
     return value.map((item) => {

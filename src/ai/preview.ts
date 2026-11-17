@@ -4,6 +4,47 @@ import type { Operation } from 'src/app/operations';
 import { copyDocument } from 'src/app/services/documentStorage';
 import type { Box, Document } from 'src/app/types';
 import { rectToBox } from 'src/app/utils';
+import { dataFields, recordLabel } from 'src/app/data';
+import type { DataRecord } from 'src/app/dataTypes';
+
+/** How many of an entity's proposed records the chat shows before Accept. */
+export const SHOWN_PROPOSED_RECORDS = 5;
+
+/** The records a proposal adds to one entity, as the chat shows them: its first rows as text. */
+export interface ProposedRecords {
+    entity: string;
+    fields: string[];
+    rows: string[][];
+    total: number;
+}
+
+function proposedRecords(draft: Document, added: DataRecord[]): ProposedRecords[] {
+    const byEntity = new Map<string, DataRecord[]>();
+    added.forEach((record) =>
+        byEntity.set(record.entityId, [...(byEntity.get(record.entityId) ?? []), record])
+    );
+
+    return [...byEntity].map(([entityId, records]) => {
+        const fields = dataFields(draft, entityId);
+        const shown = (field: (typeof fields)[number], record: DataRecord) => {
+            const value = record.values[field.id];
+            if (value === null || value === undefined) return '';
+            if (field.type === 'reference') return recordLabel(draft, String(value));
+            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+
+            return String(value);
+        };
+
+        return {
+            entity: draft.dataEntities[entityId].name,
+            fields: fields.map(({ name }) => name),
+            rows: records
+                .slice(0, SHOWN_PROPOSED_RECORDS)
+                .map((record) => fields.map((field) => shown(field, record))),
+            total: records.length
+        };
+    });
+}
 
 /** What a proposal adds or changes, by ID, and where the items it deletes were. */
 export interface ProposalChanges {
@@ -78,5 +119,10 @@ export function previewProposal(document: Document, operations: Operation[]) {
 
     writeBatch(draft, staged);
 
-    return { valid: true as const, document: draft, changes };
+    return {
+        valid: true as const,
+        document: draft,
+        changes,
+        records: proposedRecords(draft, staged.dataRecords)
+    };
 }

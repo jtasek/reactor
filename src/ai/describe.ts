@@ -58,6 +58,14 @@ export function describeOperation(
     batch: readonly ProposedOperation[] = []
 ): string {
     const frameLabel = (id: string) => quoted(frameName(document, batch, id));
+    /** An entity's name, from the document or from an entity an earlier call of the batch adds. */
+    const entityName = (id: string) =>
+        document.dataEntities[id]?.name ??
+        batch.find(
+            (each): each is Extract<ProposedOperation, { op: 'addEntity' }> =>
+                each.op === 'addEntity' && each.key === id
+        )?.name ??
+        id;
 
     switch (operation.op) {
         case 'addEntity': {
@@ -68,15 +76,8 @@ export function describeOperation(
         }
         case 'addRecords': {
             const count = operation.records.length;
-            const entity =
-                document.dataEntities[operation.entity]?.name ??
-                batch.find(
-                    (each): each is Extract<ProposedOperation, { op: 'addEntity' }> =>
-                        each.op === 'addEntity' && each.key === operation.entity
-                )?.name ??
-                operation.entity;
 
-            return `Add ${count} ${count === 1 ? 'record' : 'records'} to ${quoted(entity)}`;
+            return `Add ${count} ${count === 1 ? 'record' : 'records'} to ${quoted(entityName(operation.entity))}`;
         }
         case 'addFrame': {
             const frame = operation.frame;
@@ -120,7 +121,9 @@ export function describeOperation(
             const placed = shape.parentFrameId ? ` in ${frameLabel(shape.parentFrameId)}` : '';
 
             const repeats =
-                shape.type === 'instance' && shape.dataList ? ' repeated over records' : '';
+                shape.type === 'instance' && shape.dataList
+                    ? ` repeated over ${quoted(entityName(shape.dataList.entityId))}`
+                    : '';
 
             return shape.type === 'text'
                 ? `Add text${named}${placed}: ${quoted(shape.value)}`
@@ -155,7 +158,15 @@ export function describeOperation(
                 'value' in changes && typeof changes.value === 'string'
                     ? [`text ${quoted(changes.value)}`]
                     : [];
-            const fields = Object.keys(changes).filter((field) => field !== 'value');
+            const fields = Object.keys(changes)
+                .filter((field) => field !== 'value')
+                .map((field) =>
+                    field !== 'dataList'
+                        ? field
+                        : changes.dataList
+                          ? `repeat over ${quoted(entityName(changes.dataList.entityId))}`
+                          : 'stop repeating over records'
+                );
             const changed = `Change ${shapeLabel(document, operation.shape)}: ${[...texted, ...fields].join(', ')}`;
             const shape = document.shapes[operation.shape];
             const unfollowed = shape

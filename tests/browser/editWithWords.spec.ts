@@ -292,8 +292,27 @@ test('pasted CSV becomes an entity with valid records once accepted, as one undo
         'Add entity “Products” with SKU (text), Name (text), Price (number), In stock (boolean), Category (choice), Released (text) and 20 records'
     );
     expect(requests).toEqual([expect.objectContaining({ prompt: csvCase.prompt })]);
+    const records = chat.getByRole('figure', { name: 'Proposed records of Products' });
+    await expect(records).toContainText('Products: 20 records');
+    await expect(records.getByRole('row')).toHaveCount(6);
+    await expect(records.getByRole('row').nth(4)).toHaveText(
+        'ChairsNoBar stool129.52024-01-0800042'
+    );
+    // Data alone changes nothing a drawing of the canvas could show.
+    await expect(chat.getByRole('figure', { name: 'Proposed result' })).toHaveCount(0);
     const panel = page.getByRole('region', { name: 'Data View', exact: true });
     await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveCount(0);
+
+    // A data edit made meanwhile is checked against the proposal again.
+    await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Products');
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    await expect(chat.getByRole('status')).toContainText('the entity name Products is taken.');
+    await expect(chat.getByRole('button', { name: 'Accept' })).toBeDisabled();
+    await page
+        .getByRole('list', { name: 'Commands' })
+        .getByRole('button', { name: 'Undo', exact: true })
+        .click();
+    await expect(chat.getByRole('button', { name: 'Accept' })).toBeEnabled();
 
     await chat.getByRole('button', { name: 'Accept' }).click();
     await expect(chat).toContainText('Applied. You can undo this change.');

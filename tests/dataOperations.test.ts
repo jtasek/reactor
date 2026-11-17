@@ -5,6 +5,7 @@ import { stageBatch } from 'src/app/operationBatches';
 import { readOperation } from 'src/ai/operations';
 import { describeOperation } from 'src/ai/describe';
 import { documentContext } from 'src/ai/context';
+import { previewProposal } from 'src/ai/preview';
 import { projectPreview } from 'src/preview/project';
 import type { PreviewNode } from 'src/shared/previewProtocol';
 import type { Document } from 'src/app/types';
@@ -358,4 +359,51 @@ it('sends the data schema and record names as context', async () => {
             records: { ada: 'Ada', grace: 'Grace' }
         }
     });
+});
+
+it('previews proposed records as text, the first five of each entity, and draws nothing for data alone', async () => {
+    const [copy] = await fixtureCopies();
+    const many = {
+        ...members,
+        records: [
+            ...members.records!,
+            ...Array.from({ length: 4 }, (_, index) => ({
+                values: { name: `Guest ${index}`, active: false }
+            }))
+        ]
+    };
+    const preview = previewProposal(shownDocument(copy), [plans, many]);
+    if (!preview.valid) throw new Error(preview.problem);
+
+    expect(preview.changes.ids.size + preview.changes.removed.length).toBe(0);
+    expect(preview.records).toEqual([
+        { entity: 'Plans', fields: ['Title'], rows: [['Basic'], ['Pro']], total: 2 },
+        {
+            entity: 'Members',
+            fields: ['Active', 'Mentor', 'Name', 'Plan', 'Seats', 'Status'],
+            rows: [
+                ['Yes', '', 'Lin', 'Pro', '3', 'Paid'],
+                ['No', 'Lin', 'Sam', 'Basic', '', 'Trial'],
+                ['No', '', 'Guest 0', '', '', ''],
+                ['No', '', 'Guest 1', '', '', ''],
+                ['No', '', 'Guest 2', '', '', '']
+            ],
+            total: 6
+        }
+    ]);
+});
+
+it('describes a list binding by its entity', () => {
+    const { document } = dataListFixture();
+    const bind = (
+        dataList: { entityId: string; fields: Record<string, string>; gap: number } | null
+    ) =>
+        describeOperation({ op: 'updateShape', shape: 'name', changes: { dataList } }, document, [
+            plans
+        ]);
+
+    expect(bind({ entityId: 'plans', fields: { label: 'title' }, gap: 8 })).toContain(
+        'repeat over “Plans”'
+    );
+    expect(bind(null)).toContain('stop repeating over records');
 });
