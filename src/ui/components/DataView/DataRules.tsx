@@ -37,15 +37,19 @@ const operatorsFor = (field?: DataField): Operator[] => [
     'isNotSet'
 ];
 
-/** Fields whose values compare with this one: the same kind of value, never itself. */
+/**
+ * Fields whose values compare with this one, never itself: the same kind of value, and for a
+ * reference only another reference to the same entity.
+ */
 const comparableFields = (fields: DataField[], field?: DataField) =>
     fields.filter(
         (other) =>
             other.id !== field?.id &&
-            (field?.type === 'number' || field?.type === 'boolean'
-                ? other.type === field.type
-                : other.type === 'text' || other.type === field?.type) &&
-            other.type !== 'reference'
+            (field?.type === 'reference' || other.type === 'reference'
+                ? other.type === field?.type && other.targetEntityId === field.targetEntityId
+                : field?.type === 'number' || field?.type === 'boolean'
+                  ? other.type === field.type
+                  : other.type === 'text' || other.type === field?.type)
     );
 
 const emptyRow = (fields: DataField[]): Row => ({
@@ -259,6 +263,7 @@ export function DataRules({
                             aria-label={`Edit rule “${rule.message}”`}
                             disabled={
                                 disabled ||
+                                editing !== undefined ||
                                 !toGroup(rule.check) ||
                                 Boolean(rule.when && !toGroup(rule.when))
                             }
@@ -327,7 +332,10 @@ function RuleForm({
     );
     const [when, setWhen] = useState<Group | undefined>(() => rule?.when && toGroup(rule.when));
     const [message, setMessage] = useState(rule?.message ?? '');
-    const [fieldId, setFieldId] = useState(rule?.fieldId ?? '');
+    // A message target deleted since keeps no option, so the whole record is shown instead.
+    const [fieldId, setFieldId] = useState(() =>
+        fields.some((field) => field.id === rule?.fieldId) ? rule!.fieldId! : ''
+    );
     const [problem, setProblem] = useState('');
 
     return (

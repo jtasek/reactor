@@ -120,7 +120,15 @@ export function conditionProblems(condition: Condition, scope: ConditionScope): 
             ) {
                 problems.push('Only text can contain text.');
             }
-        } else if (left.type !== right.type) {
+        } else if (
+            left.type !== right.type ||
+            (left.field?.type === 'reference' &&
+                right.field &&
+                right.field.targetEntityId !== left.field.targetEntityId) ||
+            (right.field?.type === 'reference' &&
+                left.field &&
+                left.field.targetEntityId !== right.field.targetEntityId)
+        ) {
             problems.push('Compares values of different types.');
         }
         for (const [side, other] of [
@@ -145,7 +153,8 @@ export function conditionProblems(condition: Condition, scope: ConditionScope): 
 
 /**
  * Runs a condition. Any comparison with an unset value is false, except `notEquals`, which is
- * `not equals`, and `isSet`. Text comparisons ignore surrounding spaces, and `contains` also ignores case.
+ * `not equals`, and `isSet`. Text comparisons ignore surrounding spaces, and `contains` also
+ * ignores case.
  */
 export function evaluateCondition(
     condition: Condition,
@@ -189,4 +198,18 @@ export function evaluateCondition(
     }
 
     return trim(left) === trim(right);
+}
+
+/** The fields a condition reads, for telling what a field delete affects. */
+export function conditionFields(condition: Condition): string[] {
+    if ('conditions' in condition) {
+        return condition.conditions.flatMap(conditionFields);
+    }
+    if (condition.kind === 'not') {
+        return conditionFields(condition.condition);
+    }
+    const operands =
+        condition.kind === 'isSet' ? [condition.operand] : [condition.left, condition.right];
+
+    return operands.flatMap((operand) => (operand.kind === 'field' ? [operand.fieldId] : []));
 }

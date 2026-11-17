@@ -17,6 +17,7 @@ import {
     ruleTarget
 } from 'src/app/data';
 import { DataRules } from './DataRules';
+import { conditionFields } from 'src/app/expressions';
 import { listsUsing } from 'src/app/dataLists';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
 import type { DataRule, DataType, DataValue } from 'src/app/dataTypes';
@@ -150,12 +151,15 @@ function DeleteConfirmation({
     deletion,
     lists,
     references,
+    rules,
     disabled,
     cancel,
     confirm
 }: {
     deletion: DataEdit;
     lists: number;
+    /** Rules that use the field being deleted; they stop running until edited. */
+    rules: number;
     /** Reference fields in other entities that point at the entity being deleted. */
     references: number;
     disabled: boolean;
@@ -191,6 +195,12 @@ function DeleteConfirmation({
                         ? 'A reference field refers'
                         : `${references} reference fields refer`}{' '}
                     to this entity. Their values will need new records.
+                </p>
+            )}
+            {rules > 0 && (
+                <p>
+                    {rules === 1 ? 'A rule uses' : `${rules} rules use`} this field.{' '}
+                    {rules === 1 ? 'It stops' : 'They stop'} checking records until edited.
                 </p>
             )}
             <button ref={cancelButton} type="button" onClick={cancel}>
@@ -287,6 +297,15 @@ function DataEditor() {
             cellProblems,
             label: entity && labelField(document, entity.id)?.id,
             listsUsingDeletion: target ? listsUsing(document, target) : 0,
+            rulesUsingDeletion:
+                deletion?.kind === 'deleteField'
+                    ? Object.values(document.dataRules).filter((rule) =>
+                          [rule.when, rule.check].some(
+                              (condition) =>
+                                  condition && conditionFields(condition).includes(deletion.id)
+                          )
+                      ).length
+                    : 0,
             referencesToDeletion:
                 deletion?.kind === 'deleteEntity'
                     ? Object.values(document.dataFields).filter(
@@ -329,6 +348,7 @@ function DataEditor() {
                 deletion={deletion}
                 lists={data.listsUsingDeletion}
                 references={data.referencesToDeletion}
+                rules={data.rulesUsingDeletion}
                 disabled={data.disabled}
                 cancel={() => setDeletion(undefined)}
                 confirm={() => {

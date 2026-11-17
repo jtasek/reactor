@@ -6,6 +6,7 @@ import type { DataChange, DataEditResult } from 'src/app/dataEdits';
 import { MAX_RULES_PER_ENTITY } from 'src/app/dataEdits';
 import type { DataField } from 'src/app/dataTypes';
 import {
+    conditionFields,
     conditionProblems,
     evaluateCondition,
     MAX_CONDITION_DEPTH,
@@ -113,6 +114,39 @@ describe('conditions', () => {
         expect(run({ kind: 'or', conditions: [adult, free] })).toBe(true);
         expect(run({ kind: 'not', condition: free })).toBe(true);
         expect(run({ kind: 'isSet', operand: { kind: 'state', stateId: 'open' } })).toBe(true);
+    });
+
+    it('compares a reference only with a record of its entity, and lists the fields read', () => {
+        const other: DataField = {
+            id: 'other',
+            entityId: 'e',
+            name: 'Other',
+            type: 'reference',
+            required: false,
+            targetEntityId: 'elsewhere'
+        };
+        const wider = { field: (id: string) => (id === 'other' ? other : fields[id]) };
+        for (const right of [field('name'), field('other')]) {
+            expect(
+                conditionProblems({ kind: 'equals', left: field('owner'), right }, wider)
+            ).toEqual(['Compares values of different types.']);
+        }
+        expect(
+            conditionProblems(
+                { kind: 'notEquals', left: field('owner'), right: value('record-1') },
+                wider
+            )
+        ).toEqual([]);
+        expect(
+            conditionFields({
+                kind: 'or',
+                conditions: [
+                    { kind: 'not', condition: { kind: 'isSet', operand: field('age') } },
+                    { kind: 'less', left: field('age'), right: field('plan') },
+                    { kind: 'isSet', operand: { kind: 'state', stateId: 'open' } }
+                ]
+            })
+        ).toEqual(['age', 'age', 'plan']);
     });
 
     it('reports conditions that can never compare or use what is not there', () => {

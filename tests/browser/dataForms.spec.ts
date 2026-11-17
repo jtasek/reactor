@@ -212,6 +212,11 @@ test('authors rules with conditions, lists records that break them, edits and de
         .getByRole('button', { name: 'Undo', exact: true })
         .click();
     await expect(rules).toContainText('Age is greater than “10”');
+    await panel.getByRole('button', { name: 'Delete Age…', exact: true }).click();
+    await expect(panel.getByRole('alert').filter({ hasText: 'Delete this field' })).toContainText(
+        'A rule uses this field. It stops checking records until edited.'
+    );
+    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await openEditor(page, ['Data View']);
