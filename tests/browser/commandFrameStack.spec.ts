@@ -60,7 +60,7 @@ test('a view command edits its shared stack and undoes both inputs together', as
         .getByRole('button', { name: 'Home · Desktop', exact: true })
         .click();
     const input = page.getByRole('combobox', { name: 'Command' });
-    await expect(page.locator('form', { has: input })).toContainText('active shared layout');
+    await expect(page.locator('form', { has: input })).toContainText('stack of the design it shows');
     await input.fill('Edit stack spacing');
     await input.press('ArrowDown');
     await input.press('Enter');

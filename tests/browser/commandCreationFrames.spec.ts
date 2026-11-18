@@ -53,7 +53,7 @@ for (const kind of ['frame', 'view'] as const) {
             .getByRole('button', { name, exact: true })
             .click();
         const input = page.getByRole('combobox', { name: 'Command' });
-        const prefix = kind === 'view' ? 'View' : 'Frame';
+        const prefix = kind === 'view' ? 'Shown' : 'Frame';
         await input.fill('w=390 h=844');
         await input.press('Enter');
         await expect(
