@@ -93,7 +93,7 @@ it('deletes every view without deleting or resurrecting the screen or its artwor
         size: { width: 390, height: 844 }
     })!;
     expect(projectScreenViews(document)[0].projection?.shapes).toHaveLength(1);
-    expect(screenViewName(document, document.frames[placed])).toBe('Home · 390 px');
+    expect(screenViewName(document, document.frames[placed])).toBe('Home · Mobile');
 });
 
 it('migrates a legacy hybrid placement once while retaining navigation identity and the other views', () => {

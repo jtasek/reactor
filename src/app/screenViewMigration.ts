@@ -8,6 +8,7 @@ export function initialScreenView(screen: Frame, id: string): Frame {
         modeOverrides: {},
         screenId: screen.id,
         name: `${screen.size.width} px`,
+        layoutMode: 'auto',
         position: { ...screen.position },
         size: { ...screen.size },
         visible: screen.visible,

@@ -417,3 +417,27 @@ it('keeps a pasted input identity in another layout and drops it beside its orig
     expect(pasted(null)?.controlId).toBeUndefined();
     expect(pasted('wide')?.controlId).toBe('person-name');
 });
+
+it('places new Screen views on automatic artwork, named by their size', () => {
+    const document = screenLayoutsDocument();
+    document.frames.home.responsiveLayouts = { compact: { minWidth: 1000, layoutId: 'compact' } };
+    const { store } = createTestStore();
+    document.id = store.state.currentDocumentId;
+    store.actions.addDocument(document);
+    const current = store.state.currentDocument;
+    const at = (size: { width: number; height: number }) =>
+        current.frames[
+            store.actions.editFrame({
+                kind: 'addView',
+                screenId: 'home',
+                position: { x: 2000, y: 0 },
+                size
+            })!
+        ];
+    const desktop = at({ width: 1280, height: 800 });
+    const custom = at({ width: 412, height: 800 });
+    expect(desktop).toMatchObject({ name: 'Desktop 2', layoutMode: 'auto' });
+    expect(viewLayoutRoot(current, desktop).id).toBe('compact');
+    expect(custom.name).toBe('412 px');
+    expect(viewLayoutRoot(current, custom).id).toBe('home');
+});

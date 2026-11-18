@@ -1,4 +1,5 @@
 import type { DocumentSizeConfiguration } from './services/documentSizeConfiguration';
+import type { ViewportPreset } from './services/viewportPresets';
 import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
@@ -677,6 +678,8 @@ export type Configuration = {
     documentSize: DocumentSizeConfiguration;
     errorReport: ErrorReportConfiguration;
     panelLayout: Record<string, PanelPlacement>;
+    /** Sizes offered for Screen views and the Prototype viewport. */
+    viewportPresets: ViewportPreset[];
     version: string;
 };
 
