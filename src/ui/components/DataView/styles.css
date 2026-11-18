@@ -137,6 +137,21 @@
     background-color: color-mix(in srgb, var(--error-color) 86%, black);
 }
 
+.dataView .tinted {
+    background-color: var(--dv-tint-soft);
+    color: var(--dv-tint);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dataView .tinted:hover:not(:disabled),
+.dataView .tinted:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--selection-color) 20%, transparent);
+}
+
+.dataView select[data-unset] {
+    color: var(--text-secondary-color);
+}
+
 .dataView .iconButton {
     width: var(--field-height);
     padding: 0;
@@ -199,6 +214,7 @@
 }
 
 .dataView .tree input[type='search'] {
+    flex: none;
     margin-bottom: 6px;
     border-radius: var(--dv-capsule);
     background-color: var(--dv-glass-strong);
@@ -318,15 +334,21 @@
 }
 
 .newEntity {
-    display: grid;
+    display: flex;
+    flex: none;
     gap: 6px;
-    margin-top: auto;
-    padding-top: 12px;
+    margin-bottom: 8px;
 }
 
 .dataView .newEntity input {
+    flex: 1 1 0;
+    border-radius: var(--dv-capsule);
     background-color: var(--dv-glass-strong);
     box-shadow: var(--dv-rim);
+}
+
+.dataView .newEntity button {
+    padding: 0 12px 0 9px;
 }
 
 /* Work area: summary bar, the map, and the sheet of records below it. */
@@ -547,7 +569,6 @@
 
 /* Segmented control: a capsule track with the selected segment raised. */
 .tabs {
-    order: 5;
     display: inline-flex;
     padding: 2px;
     border-radius: var(--dv-capsule);
@@ -649,7 +670,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    padding: 7px 6px;
+    padding: 7px 14px;
     background: var(--documents-background);
     color: var(--text-secondary-color);
     font-size: var(--font-size-caption);
@@ -736,7 +757,9 @@
 }
 
 .valueEditor[data-variant='title'] {
-    flex: 0 1 220px;
+    flex: 1 1 120px;
+    max-width: 260px;
+    margin-left: -10px;
 }
 
 .dataView .valueEditor[data-variant='title'] input {
@@ -1017,21 +1040,27 @@
     }
 
     .tree {
-        max-height: 180px;
+        max-height: 220px;
         border-right: 0;
         border-bottom: 0.5px solid var(--hairline-color);
     }
 
     .workArea {
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
     }
 
-    .map {
+    .map,
+    .commandBar {
         display: none;
     }
 
     .drawer {
-        margin-top: 10px;
+        border-radius: 0;
+    }
+
+    .valueEditor[data-variant='title'] {
+        flex-basis: 100%;
+        max-width: none;
     }
 }
 

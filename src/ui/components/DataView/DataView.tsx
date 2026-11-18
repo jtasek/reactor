@@ -36,6 +36,25 @@ import type { DataRule, DataType, DataValue } from 'src/app/dataTypes';
 import styles from './styles.css';
 
 const TYPES: DataType[] = ['text', 'number', 'boolean', 'choice', 'reference'];
+const TYPE_NAMES: Record<DataType, string> = {
+    text: 'Text',
+    number: 'Number',
+    boolean: 'Yes / No',
+    choice: 'Choice',
+    reference: 'Reference'
+};
+const NEW_ENTITY_NAME = 'Entity';
+
+/** "Entity", then "Entity 2", "Entity 3"… until no entity has the name. */
+function unusedEntityName(entities: { name: string }[]) {
+    const taken = new Set(entities.map((entity) => entity.name.trim().toLowerCase()));
+    for (let number = 1; ; number++) {
+        const name = number === 1 ? NEW_ENTITY_NAME : `${NEW_ENTITY_NAME} ${number}`;
+        if (!taken.has(name.toLowerCase())) {
+            return name;
+        }
+    }
+}
 
 /**
  * A reference column offers every record of its target, and an entity has up to 1,000 rows, so
@@ -137,6 +156,7 @@ function ValueEditor({
             {type === 'boolean' ? (
                 <select
                     aria-label={label}
+                    data-unset={draft === '' || undefined}
                     value={draft}
                     disabled={disabled}
                     onChange={(event) => pick(event.target.value)}
@@ -151,6 +171,7 @@ function ValueEditor({
             ) : choices && offered ? (
                 <select
                     aria-label={label}
+                    data-unset={draft === '' || undefined}
                     value={draft}
                     disabled={disabled}
                     onFocus={() => setUsed(true)}
@@ -716,7 +737,7 @@ function DataEditor() {
                     >
                         {TYPES.map((type) => (
                             <option key={type} value={type}>
-                                {type}
+                                {TYPE_NAMES[type]}
                             </option>
                         ))}
                     </select>
@@ -795,7 +816,7 @@ function DataEditor() {
                                 >
                                     {TYPES.map((type) => (
                                         <option key={type} value={type}>
-                                            {type}
+                                            {TYPE_NAMES[type]}
                                         </option>
                                     ))}
                                 </select>
@@ -903,13 +924,60 @@ function DataEditor() {
     return (
         <section ref={panel} className={styles.dataView} aria-label="Data View">
             <nav className={styles.tree} aria-label="Entities">
-                <input
-                    type="search"
-                    aria-label="Filter entities and fields"
-                    placeholder="Filter entities and fields"
-                    value={filter}
-                    onChange={(event) => setFilter(event.target.value)}
-                />
+                <form
+                    className={styles.newEntity}
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        const typed = name.trim();
+                        const result = edit({
+                            kind: 'addEntity',
+                            name: typed || unusedEntityName(data.entities)
+                        });
+                        if (result.applied) {
+                            setSelectedId(result.id!);
+                            setSelectedField(undefined);
+                            setName('');
+                            setFilter('');
+                            setTab('fields');
+                            if (!typed) {
+                                requestAnimationFrame(() =>
+                                    panel.current
+                                        ?.querySelector<HTMLInputElement>(
+                                            'input[aria-label="Entity name"]'
+                                        )
+                                        ?.select()
+                                );
+                            }
+                        }
+                    }}
+                >
+                    <input
+                        ref={newEntity}
+                        aria-label="New entity"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        disabled={data.disabled}
+                        placeholder="New entity"
+                    />
+                    <button
+                        className={styles.primary}
+                        aria-label="Add entity"
+                        title="Add entity"
+                        disabled={data.disabled}
+                    >
+                        <Plus aria-hidden size={16} />
+                        Add
+                    </button>
+                </form>
+                {data.entities.length > 0 && (
+                    <input
+                        type="search"
+                        aria-label="Filter entities and fields"
+                        placeholder="Filter"
+                        value={filter}
+                        onChange={(event) => setFilter(event.target.value)}
+                    />
+                )}
                 <p className={styles.listHeading}>
                     Entities <span>{data.entities.length}</span>
                 </p>
@@ -1022,32 +1090,6 @@ function DataEditor() {
                         </ul>
                     </>
                 )}
-                <form
-                    className={styles.newEntity}
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        const result = edit({ kind: 'addEntity', name });
-                        if (result.applied) {
-                            setSelectedId(result.id!);
-                            setSelectedField(undefined);
-                            setName('');
-                            setTab('fields');
-                        }
-                    }}
-                >
-                    <input
-                        ref={newEntity}
-                        aria-label="New entity"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        disabled={data.disabled}
-                        placeholder="New entity name"
-                    />
-                    <button disabled={data.disabled || !name.trim()}>
-                        <Plus aria-hidden size={16} />
-                        Add entity
-                    </button>
-                </form>
             </nav>
             <div className={styles.workArea} data-empty={data.entities.length === 0 || undefined}>
                 {data.entities.length > 0 && (
@@ -1124,8 +1166,8 @@ function DataEditor() {
                             <h3>No entities yet.</h3>
                             <p>
                                 An entity is a kind of thing your prototype shows, like Customers or
-                                Orders. Name one under the entity list to define its fields and
-                                sample records.
+                                Orders. Use Add at the top left to create one, then define its
+                                fields and sample records.
                             </p>
                             <p>
                                 To repeat a component over records, select an instance and use
@@ -1197,6 +1239,7 @@ function DataEditor() {
                                 <span className={styles.spacer} />
                                 <button
                                     type="button"
+                                    className={styles.tinted}
                                     title={data.fields.length ? undefined : 'Add a field first'}
                                     disabled={
                                         data.disabled ||

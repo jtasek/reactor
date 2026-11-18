@@ -35,4 +35,13 @@ test('keeps records in added order and confirms deletes beside the button', asyn
     await expect(panel.getByRole('button', { name: 'Delete', exact: true })).toBeInViewport();
     await panel.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(panel.getByText('No entities yet.')).toBeVisible();
+
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    const entities = panel.getByRole('navigation', { name: 'Entities', exact: true });
+    await expect(entities.getByText('Entity', { exact: true })).toBeVisible();
+    await expect(entities.getByText('Entity 2', { exact: true })).toBeVisible();
+    await expect(panel.getByRole('textbox', { name: 'Entity name', exact: true })).toHaveValue(
+        'Entity 2'
+    );
 });

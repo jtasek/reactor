@@ -48,6 +48,7 @@ declare namespace StylesCssNamespace {
     tabPanel: string;
     tableEmpty: string;
     tabs: string;
+    tinted: string;
     tree: string;
     treeField: string;
     treeItem: string;
