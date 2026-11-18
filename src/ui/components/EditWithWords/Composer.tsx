@@ -55,7 +55,7 @@ export const Composer: FC<{
                             ? 'Accept or discard to continue'
                             : 'Describe a change…'
                     }
-                    rows={compact ? 1 : 2}
+                    rows={1}
                     value={draft}
                     readOnly={pending}
                     maxLength={MAX_PROMPT_LENGTH}

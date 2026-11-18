@@ -268,7 +268,7 @@ function propose(prompt: string, context: Context): { operations: Operation[]; t
     const operations = changed.length > 0 ? changed : additions(prompt, words, context);
 
     return operations.length > 0
-        ? { operations, text: 'Here’s a scripted proposal.' }
+        ? { operations, text: '' }
         : { operations, text: LOCAL_MODEL_HELP };
 }
 
@@ -313,7 +313,8 @@ function answer(prompt: string, context: Context): Answer {
     );
     const events = (list: Operation[]): Event[] => [
         start,
-        { type: 'message', text },
+        // A proposal speaks for itself; only an answer without one needs words.
+        ...(text ? [{ type: 'message', text }] : []),
         ...list.map((operation) => ({ type: 'operation', operation })),
         { type: 'done' }
     ];

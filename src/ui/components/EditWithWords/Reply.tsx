@@ -52,11 +52,15 @@ const Outcome: FC<{ turn: ChatTurn }> = ({ turn }) => {
 
     return (
         <>
-            <p className={styles.outcome} role="status">
+            <p
+                className={styles.outcome}
+                role="status"
+                title={accepted ? 'Undo reverts it in one step.' : undefined}
+            >
                 {accepted ? <Check {...ICON} className={styles.applied} /> : <X {...ICON} />}
                 <span>
                     {accepted
-                        ? `Applied ${count(turn.operations)}. Undo reverts it.`
+                        ? `Applied ${count(turn.operations)}.`
                         : turn.status === 'discarded'
                           ? 'Discarded. Nothing changed.'
                           : 'Stopped. Nothing changed.'}
@@ -68,7 +72,7 @@ const Outcome: FC<{ turn: ChatTurn }> = ({ turn }) => {
                         aria-expanded={open}
                         onClick={() => setOpen(!open)}
                     >
-                        {open ? 'Hide' : 'Show'}
+                        {open ? 'Hide changes' : 'Show changes'}
                     </button>
                 )}
             </p>

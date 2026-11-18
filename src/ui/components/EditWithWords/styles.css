@@ -23,7 +23,7 @@
 
     color: var(--text-color);
     font-size: var(--font-size-body);
-    line-height: 1.4;
+    line-height: 1.45;
     user-select: text;
 }
 
@@ -82,7 +82,7 @@
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 14px;
+    gap: 20px;
     min-height: 80px;
     overflow-wrap: anywhere;
     overflow-y: auto;
@@ -236,8 +236,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 20px 4px 4px;
-    text-align: center;
+    padding: 12px 4px 4px;
 }
 
 .empty h3 {
@@ -255,7 +254,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 10px 0 6px;
+    margin: 10px 0;
 }
 
 .suggestions .button {
@@ -264,8 +263,15 @@
 }
 
 .empty .disclosure {
-    color: var(--label-tertiary);
-    font-size: var(--font-size-caption);
+    border-top: 0.5px solid var(--hairline-color);
+    font-size: var(--font-size-callout);
+    padding-top: 10px;
+    text-align: left;
+}
+
+.empty .disclosure + .disclosure {
+    border-top: 0;
+    padding-top: 0;
 }
 
 .form {
@@ -328,9 +334,13 @@
     resize: none;
 }
 
-.form[data-compact] .prompt {
+.prompt {
     field-sizing: content;
-    max-height: 120px;
+    min-height: 20px;
+}
+
+.form:not([data-compact]) .prompt {
+    min-height: 40px;
 }
 
 .prompt::placeholder {
@@ -352,7 +362,8 @@
 }
 
 .send:disabled {
-    background-color: var(--chat-disabled);
+    background-color: var(--field-background);
+    color: var(--label-tertiary);
     cursor: default;
 }
 
@@ -459,7 +470,7 @@
     align-items: center;
     color: var(--text-secondary-color);
     display: flex;
-    font-size: var(--font-size-caption);
+    font-size: var(--font-size-callout);
     gap: 6px;
     justify-content: space-between;
     margin-bottom: 6px;
@@ -531,7 +542,8 @@
 }
 
 .bar .card {
-    background-color: var(--chat-glass-strong);
+    /* Nearly opaque: the card lies over panels, whose text must not show through its own. */
+    background-color: color-mix(in srgb, var(--surface) 96%, transparent);
     backdrop-filter: var(--backdrop-filter);
     box-shadow: var(--chat-float);
     border-radius: 16px;
@@ -560,7 +572,7 @@
 }
 
 .bar .form {
-    background-color: var(--chat-glass);
+    background-color: var(--chat-glass-strong);
     backdrop-filter: var(--backdrop-filter);
     border: 0;
     border-radius: 24px;
