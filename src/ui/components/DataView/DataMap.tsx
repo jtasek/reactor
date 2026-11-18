@@ -253,8 +253,8 @@ export const DataMap = forwardRef<
                                         press.current = undefined;
                                         if (start?.moved && drag) {
                                             dragged.current = true;
-                                        // Like a canvas, the card being moved becomes the selection.
-                                        selectEntity(entity.id);
+                                            // Like a canvas, the card being moved becomes the selection.
+                                            selectEntity(entity.id);
                                             const from = placeOf(entity.id);
                                             move(entity.id, {
                                                 x: from.x + drag.dx,
