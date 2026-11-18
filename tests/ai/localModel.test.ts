@@ -101,12 +101,30 @@ describe('the local test model', () => {
         expect(Object.keys(store.state.currentDocument.shapes)).toHaveLength(1);
     });
 
-    it('fixes a broken first answer with /repair', async () => {
+    it('fixes a broken first answer with /repair, with or without a request', async () => {
         const { store } = createTestStore();
         const { result, events } = await ask(store, '/repair add a circle');
 
         expect(events.some((event) => event.type === 'repairing')).toBe(true);
-        expect(result).toMatchObject({ kind: 'proposed', operations: [{ op: 'addShape' }] });
+        expect(result).toMatchObject({
+            kind: 'proposed',
+            operations: [{ op: 'addShape', shape: { type: 'circle' } }]
+        });
+        expect((await ask(store, '/repair')).result).toMatchObject({
+            kind: 'proposed',
+            operations: [{ op: 'addShape', shape: { type: 'rectangle' } }]
+        });
+    });
+
+    it('reads how far to move before or after the direction', async () => {
+        const { store } = createTestStore();
+        const [{ id, position }] = await accept(store, 'add a square');
+
+        store.actions.selectShape(id);
+        await accept(store, 'move 30 down');
+        const [moved] = await accept(store, 'move left');
+
+        expect(moved.position).toEqual({ x: position.x - 20, y: position.y + 30 });
     });
 
     it.each([
@@ -132,6 +150,10 @@ describe('the local test model', () => {
             problem: 'Hello there'
         });
         expect((await ask(store, 'make a website')).result).toEqual({
+            kind: 'failed',
+            problem: LOCAL_MODEL_HELP
+        });
+        expect((await ask(store, '/fail nonsense')).result).toEqual({
             kind: 'failed',
             problem: LOCAL_MODEL_HELP
         });

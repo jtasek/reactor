@@ -573,8 +573,10 @@ nothing sent anywhere. Any build does the same once opened with `?ai=local` (kep
 tab; `?ai=server` goes back). It understands requests like “add 3 red circles”, “add text
 "Welcome"” and, with shapes selected, “make them green”, “rename to "Card"”, “move right
 40” and “delete”. `/slow …` streams slowly for Stop, `/repair …` sends a broken change first
-so the repair round runs, `/words …` answers in words only, and `/fail limit|busy|off|forbidden|refused|incomplete|network`
-shows each problem the server can report. `/help` lists them.
+so the repair round runs (both take a request, or add a rectangle), `/words …` answers in
+words only, and `/fail limit|busy|off|forbidden|refused|incomplete|network` shows each problem
+the server can report. Anything else, such as `/help`, lists these. New shapes go on Canvas
+below the existing artwork, not into a selected frame.
 
 For single-column screenshot recreation, the AI can call `composeScreen` with ordered text and
 labeled controls, padding, gaps and an optional bottom footer. Reactor measures wrapped text

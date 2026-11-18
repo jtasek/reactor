@@ -206,11 +206,13 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                                         : 'Waiting for AI…'}
                                 </p>
                             )}
-                            {turn.status === 'failed' && (
-                                <p className={styles.problem} role="alert">
-                                    {turn.problem}
-                                </p>
-                            )}
+                            {/* An answer in words only is already shown above as the model's words. */}
+                            {turn.status === 'failed' &&
+                                turn.problem !== turn.messages.join('\n') && (
+                                    <p className={styles.problem} role="alert">
+                                        {turn.problem}
+                                    </p>
+                                )}
                             {turn.status === 'accepted' && (
                                 <p className={styles.status}>Applied. You can undo this change.</p>
                             )}

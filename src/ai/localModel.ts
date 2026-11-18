@@ -35,6 +35,9 @@ const COLORS: Record<string, string> = {
 
 const COUNTS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
 
+/** What `/slow` and `/repair` ask for when nothing follows them. */
+const DEFAULT_REQUEST = 'add a rectangle';
+
 /** The most shapes one request adds. */
 const MAX_ADDED = 10;
 
@@ -51,9 +54,9 @@ export const LOCAL_MODEL_HELP = [
     'This is the local test model: scripted answers made in this browser, with no AI and no server. It understands:',
     '• add a red rectangle, add 3 circles, add text "Hello", add a 200x60 blue square',
     '• with shapes selected: make them green, rename to "Card", move right 40, delete',
-    '• /slow … streams slowly, so you can try Stop',
-    '• /repair … starts with a broken change, so you can watch it be fixed',
-    '• /words … answers in words only',
+    '• /slow add 5 circles: streams slowly, so you can try Stop',
+    '• /repair add a circle: starts with a broken change, so you can watch it be fixed',
+    '• /words Hello: answers in words only',
     `• /fail ${[...Object.keys(FAILURES), 'network'].join(', ')}: the problems the server can report`
 ].join('\n');
 
@@ -73,8 +76,13 @@ interface Answer {
     slow?: boolean;
 }
 
-/** A request's answer still to come: the operations its repair sends. */
-const repairs = new Map<string, Operation[]>();
+/** The one `/repair` request still to be repaired: the operations its repair sends. */
+let awaitingRepair: { requestId: string; operations: Operation[] } | undefined;
+
+let made = 0;
+
+/** An ID no other answer of this page carries; `crypto.randomUUID` needs a secure origin. */
+const localId = () => `local-${Date.now().toString(36)}-${++made}`;
 
 const number = (value: unknown) => (typeof value === 'number' ? value : 0);
 const point = (value: unknown) =>
@@ -173,7 +181,7 @@ function additions(prompt: string, words: string, context: Context): Operation[]
 
         return {
             op: 'addShape',
-            key: `local-${crypto.randomUUID()}`,
+            key: localId(),
             shape: { ...shape, ...(label && kind !== 'text' ? { name: label } : {}) }
         };
     });
@@ -195,9 +203,12 @@ function changes(prompt: string, words: string, context: Context): Operation[] {
         return selection.map((shape) => ({ op: 'updateShape', shape, changes: { name } }));
     }
 
-    const moved = words.match(/\bmove\b.*?\b(left|right|up|down)\b(?:\D*(\d+))?/);
+    const moved = words.match(/\bmove\b.*?\b(left|right|up|down)\b/);
     if (moved) {
-        const distance = Number(moved[2] ?? SIZES.moveStep);
+        // "move right 40" and "move 40 right" both say how far.
+        const distance = Number(
+            words.slice(moved.index).match(/\b\d+(?:\.\d+)?\b/)?.[0] ?? SIZES.moveStep
+        );
         const [dx, dy] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[
             moved[1] as 'left'
         ];
@@ -249,16 +260,22 @@ function propose(prompt: string, context: Context): { operations: Operation[]; t
 }
 
 function answer(prompt: string, context: Context): Answer {
-    const requestId = `local-${crypto.randomUUID()}`;
+    const requestId = localId();
     const start: Event = { type: 'start', requestId, model: LOCAL_MODEL };
     const command = prompt.match(/^\/(\w+)\s*([\s\S]*)$/);
     const [, name = '', rest = prompt] = command ?? [];
 
     if (name === 'fail') {
-        const failure = FAILURES[rest.trim().toLowerCase()];
+        const kind = rest.trim().toLowerCase();
+        const failure = FAILURES[kind];
 
-        if (!failure) {
+        if (kind === 'network') {
             return { status: 0, events: [] };
+        }
+        if (!failure) {
+            return {
+                events: [start, { type: 'message', text: LOCAL_MODEL_HELP }, { type: 'done' }]
+            };
         }
 
         return failure.streamed
@@ -275,8 +292,10 @@ function answer(prompt: string, context: Context): Answer {
         };
     }
 
+    const scripted = name === 'slow' || name === 'repair';
+    // `/slow` and `/repair` alone still need something to propose.
     const { operations, text } = propose(
-        command && name !== 'slow' && name !== 'repair' ? '' : rest,
+        scripted ? rest.trim() || DEFAULT_REQUEST : command ? '' : rest,
         context
     );
     const events = (list: Operation[]): Event[] => [
@@ -287,7 +306,7 @@ function answer(prompt: string, context: Context): Answer {
     ];
 
     if (name === 'repair' && operations.length > 0) {
-        repairs.set(requestId, operations);
+        awaitingRepair = { requestId, operations };
 
         return {
             events: events([
@@ -304,37 +323,44 @@ function answer(prompt: string, context: Context): Answer {
     return { events: events(operations), slow: name === 'slow' };
 }
 
+/** Resolves after `ms`, or rejects as soon as `signal` aborts. */
 const wait = (ms: number, signal: AbortSignal) =>
     new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(resolve, ms);
+        const stop = () => {
+            clearTimeout(timer);
+            reject(signal.reason);
+        };
+        const timer = setTimeout(() => {
+            signal.removeEventListener('abort', stop);
+            resolve();
+        }, ms);
 
-        signal.addEventListener(
-            'abort',
-            () => {
-                clearTimeout(timer);
-                reject(signal.reason);
-            },
-            { once: true }
-        );
+        signal.addEventListener('abort', stop, { once: true });
     });
 
 function stream({ events, slow }: Answer, signal: AbortSignal) {
     const encoder = new TextEncoder();
+    const pace = slow ? LOCAL_MODEL_TIMING.slowEventMs : LOCAL_MODEL_TIMING.eventMs;
+    // Stops the script when the reader gives up without aborting the request.
+    const reading = new AbortController();
+    const stopped = AbortSignal.any([signal, reading.signal]);
 
     return new ReadableStream<Uint8Array>({
         async start(controller) {
             try {
                 for (const event of events) {
-                    await wait(
-                        slow ? LOCAL_MODEL_TIMING.slowEventMs : LOCAL_MODEL_TIMING.eventMs,
-                        signal
-                    );
+                    await wait(pace, stopped);
                     controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
                 }
                 controller.close();
             } catch (error) {
-                controller.error(error);
+                if (!reading.signal.aborted) {
+                    controller.error(error);
+                }
             }
+        },
+        cancel() {
+            reading.abort();
         }
     });
 }
@@ -350,13 +376,15 @@ export const localSend: Send = async (path, body, signal) => {
     let reply: Answer;
 
     if (repair) {
-        const operations = repairs.get(decodeURIComponent(repair[1]));
+        const requestId = decodeURIComponent(repair[1]);
+        const operations =
+            awaitingRepair?.requestId === requestId ? awaitingRepair.operations : undefined;
 
-        repairs.delete(decodeURIComponent(repair[1]));
+        awaitingRepair = undefined;
         reply = operations
             ? {
                   events: [
-                      { type: 'start', requestId: repair[1], model: LOCAL_MODEL },
+                      { type: 'start', requestId, model: LOCAL_MODEL },
                       {
                           type: 'message',
                           text: 'Local test model: fixed by dropping the broken change.'
