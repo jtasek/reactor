@@ -74,8 +74,10 @@ test('lays out fixed stacks, edits controls, hit tests projected positions and p
     await page.getByLabel('Frame alignment', { exact: true }).selectOption('end');
     await page.getByLabel('Frame gap', { exact: true }).fill('25');
     await page.getByLabel('Frame gap', { exact: true }).press('Enter');
-    await page.getByLabel('Frame padding', { exact: true }).fill('15');
-    await page.getByLabel('Frame padding', { exact: true }).press('Enter');
+    for (const axis of ['Padding across', 'Padding down']) {
+        await page.getByLabel(axis, { exact: true }).fill('15');
+        await page.getByLabel(axis, { exact: true }).press('Enter');
+    }
     await expect(rect('A')).toHaveAttribute('x', '315');
     await expect(rect('A')).toHaveAttribute('y', '115');
     await expect(rect('B')).toHaveAttribute('x', '335');
