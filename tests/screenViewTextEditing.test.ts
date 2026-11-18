@@ -115,3 +115,19 @@ it('misses text outside the view it was clicked in', () => {
 
     expect(doubleClick(store, viewId, { x: 780, y: 470 })).toBe(false);
 });
+
+it('edits a focused component child through the view it is placed in', () => {
+    const { store, viewId, textId, screenId } = setup();
+    store.actions.addComponent({ id: 'card', name: 'Card', shapesIds: [textId] });
+    store.actions.selectComponentSource('card');
+    store.actions.events.setScreenView(viewId);
+    store.actions.selectComponentChild({ componentId: 'card', shapeId: textId });
+
+    expect(doubleClick(store, viewId)).toBe(true);
+    expect(store.state.editingText).toMatchObject({ shapeId: textId, viewId });
+    store.actions.setShapesProperty({ shapeIds: [textId], key: 'text', value: 'Hello' });
+    expect(store.state.currentDocument.shapes[textId]).toMatchObject({
+        value: 'Hello',
+        parentFrameId: screenId
+    });
+});
