@@ -6,8 +6,7 @@ import { useLargeSelection } from '../Selectable/LargeSelection';
 import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
-import { TextEditor } from 'src/tools/components/Text';
-import { SHAPE_PROPERTIES } from 'src/app/properties';
+import { ShapeTextEditor } from './ShapeTextEditor';
 import { componentSource, instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
 import { isMeasuringShape, queueMeasuredBounds } from './measuring';
@@ -18,7 +17,6 @@ import { resolveVariable } from 'src/app/variableResolver';
 import {
     isShapeVisible,
     isShapeLocked,
-    DEFAULT_TEXT_FONT_SIZE,
     rectToBox,
     shapeGeometryKey,
     getShapeBounds,
@@ -87,7 +85,8 @@ export const Shape = memo((props: Props) => {
     const authored = document.shapes[shapeId];
     const editingText =
         state.editingText?.documentId === state.currentDocumentId &&
-        state.editingText.shapeId === shapeId;
+        state.editingText.shapeId === shapeId &&
+        !state.editingText.viewId;
     const inLayout = hasLayoutOffset(document, [shapeId]);
     // Measured in context; the DOM box would mix contexts and must not be stored.
     const contextual =
@@ -208,24 +207,7 @@ export const Shape = memo((props: Props) => {
                     Component && createElement(Component, { ...paintedProps, key })
                 )}
             </g>
-            {editingText && shape.type === 'text' && authored?.type === 'text' && (
-                <TextEditor
-                    shapeId={shapeId}
-                    position={shape.position}
-                    fontSize={shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE}
-                    fontWeight={shape.fontWeight}
-                    width={Math.max(
-                        200,
-                        getShapeBounds(shape).width + (shape.fontSize ?? DEFAULT_TEXT_FONT_SIZE) * 4
-                    )}
-                    value={String(
-                        SHAPE_PROPERTIES.find((item) => item.key === 'text')?.read(
-                            authored,
-                            document
-                        ) ?? shape.value
-                    )}
-                />
-            )}
+            {editingText && <ShapeTextEditor shape={shape} document={document} />}
             {shape.active && !shape.selected && !inClosedGroup && (
                 <Active key={`active-${shape.type}-${shape.id}`} shape={shape} />
             )}

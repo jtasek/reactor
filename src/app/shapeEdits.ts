@@ -1,6 +1,6 @@
 import { putShape, selectOnlyShapes, setShapeSelected, setShapesSelected } from './shapeSelection';
 import { json } from 'overmind';
-import { drawingScreen, pointerDocument } from './screenViewEditing';
+import { drawingScreen, pointerDocument, screenViewGestureTarget } from './screenViewEditing';
 import { transformComponentShape } from './componentViewTransform';
 import { initializeStackOrder } from './stackEdits';
 import { measureContextualText } from './textMeasurement';
@@ -561,7 +561,14 @@ export const enterGroupAtPointer: ActionGuard = (context) => {
 
 /** Double-clicking a text shape with the select tool starts changing its words on the canvas. */
 export const editTextAtPointer: ActionGuard = ({ state }) => {
-    if (state.tools.activeToolsIds[0] !== 'select' || state.events.pointer.screenView) {
+    if (state.tools.activeToolsIds[0] !== 'select') {
+        return false;
+    }
+
+    const address = state.events.pointer.screenView;
+    const view = address ? screenViewGestureTarget(state, address) : null;
+
+    if (address && !view) {
         return false;
     }
 
@@ -569,11 +576,20 @@ export const editTextAtPointer: ActionGuard = ({ state }) => {
     const shape = hitId === null ? undefined : state.currentDocument.shapes[hitId];
     const property = SHAPE_PROPERTIES.find((item) => item.key === 'text');
 
-    if (shape?.type !== 'text' || !property || !canEdit(property, shape, state.currentDocument)) {
+    if (
+        shape?.type !== 'text' ||
+        (view && !view.memberIds.has(shape.id)) ||
+        !property ||
+        !canEdit(property, shape, state.currentDocument)
+    ) {
         return false;
     }
 
-    state.editingText = { documentId: state.currentDocumentId, shapeId: shape.id };
+    state.editingText = {
+        documentId: state.currentDocumentId,
+        shapeId: shape.id,
+        ...(address ? { viewId: address.viewId } : {})
+    };
 
     return true;
 };
