@@ -4,14 +4,22 @@ declare namespace StylesCssNamespace {
     badge: string;
     bottomLeft: string;
     bottomRight: string;
+    gripAcross: string;
+    gripDown: string;
     handle: string;
+    marginBands: string;
     middleBottom: string;
     middleLeft: string;
     middleRight: string;
     middleTop: string;
+    paddingBands: string;
     radius: string;
     rotate: string;
     rotateLine: string;
+    spacingBand: string;
+    spacingBands: string;
+    spacingGrip: string;
+    spacingValue: string;
     topLeft: string;
     topRight: string;
   }

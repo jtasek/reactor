@@ -1029,3 +1029,26 @@ outside-user gate. No schema or preview protocol change; stored names (`kind: 's
   concept and size overrides (items 4–8). "View only", "Card view" and "List view" stay: they are
   about access and lists, not pages. The AI eval cases replay recorded answers and still pass;
   their prompts were not re-recorded.
+
+## Box model: margin, padding by side and borders
+
+_Recorded 2026-11-18._
+
+JT asked for a box model with padding, margin and border, Inspector editors and a highlight of
+padding and margin on selection, with four visual directions first
+(`/mnt/project-files/reviews/box-model/directions/`). Direction B, "Grab the space", is built.
+
+- **Model (schema v35).** `margin` on shapes and frames, `StackRules.paddingSides`, `borderWidth`
+  and `borderStyle` on stroked shapes. Padding stays a container's property: a plain shape has no
+  content to pad, so padding is on stack frames, per side.
+- **Layout.** Stacks place, hug, fill and report overflow with margins and per-side padding.
+- **Canvas.** Selected items show margin and padding bands with values and grips; dragging a grip
+  changes that side in whole units, rotated shapes included; Escape restores it.
+- **Inspector.** Spacing (margin) for items in a stack, Padding by side on stack frames, a Border
+  section with Stroke, Thickness and Style.
+- **Budget.** The entry bundle budget goes from 410 to 412 KiB: layout, document reading and
+  border drawing are needed as any document opens.
+- **Tests.** `tests/boxModel.test.ts`, `tests/browser/boxModel.spec.ts`.
+- **Not in this step.** Padding on text and instances (a label's box around its words), dragging
+  a grip from zero (set a first value in the Inspector), Alt to mirror a side and Shift to snap.
+

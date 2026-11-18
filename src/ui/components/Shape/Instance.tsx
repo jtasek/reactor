@@ -1,4 +1,5 @@
 import React, { CSSProperties, FC } from 'react';
+import { borderStyleVariables } from 'src/app/border';
 import type { InstanceShape, Shape, VariableContext } from 'src/app/types';
 import type { ComponentSource } from 'src/app/componentSource';
 import { instanceComponent, instanceSource } from 'src/app/componentSource';
@@ -102,6 +103,7 @@ export const Instance: FC<Props> = ({
                             {
                                 '--shape-fill': shape.fill,
                                 '--shape-stroke': shape.stroke,
+                                ...borderStyleVariables(shape),
                                 pointerEvents: 'none'
                             } as CSSProperties
                         }

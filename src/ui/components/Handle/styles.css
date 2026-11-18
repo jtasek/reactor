@@ -63,3 +63,62 @@
   pointer-events: none;
   user-select: none;
 }
+
+/* Margin and padding bands on a selected item: see SpacingBands. */
+.spacingBand {
+    stroke: none;
+}
+
+.marginBands .spacingBand {
+    fill: var(--margin-band);
+}
+
+.paddingBands .spacingBand {
+    fill: var(--padding-band);
+}
+
+.spacingValue {
+    dominant-baseline: middle;
+    font-family: var(--font-ui);
+    font-size: var(--canvas-label-size);
+    font-weight: var(--font-weight-semibold);
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: var(--canvas-label-halo-width);
+    text-anchor: middle;
+}
+
+.marginBands .spacingValue {
+    fill: var(--margin-color);
+}
+
+.paddingBands .spacingValue {
+    fill: var(--padding-color);
+}
+
+.spacingGrip {
+    fill: var(--surface);
+    pointer-events: all;
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+}
+
+.marginBands .spacingGrip {
+    stroke: var(--margin-color);
+}
+
+.paddingBands .spacingGrip {
+    stroke: var(--padding-color);
+}
+
+.gripAcross {
+    cursor: ew-resize;
+}
+
+.gripDown {
+    cursor: ns-resize;
+}
+
+.spacingBands {
+    pointer-events: none;
+}

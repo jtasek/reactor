@@ -1,3 +1,4 @@
+import { borderStyleVariables } from 'src/app/border';
 import {
     useFrameName,
     useScreenShapeTransformable,
@@ -148,7 +149,8 @@ const ProjectedShape = memo(
                 style={
                     {
                         '--shape-fill': painted.fill,
-                        '--shape-stroke': painted.stroke
+                        '--shape-stroke': painted.stroke,
+                        ...borderStyleVariables(painted)
                     } as CSSProperties
                 }
             >

@@ -1,4 +1,5 @@
-import { Frame, Box, Corner, Point, ResizeHandlerType, Shape, Size } from '../app/types';
+import { Frame, Box, Corner, Point, ResizeHandlerType, Shape, Sides, Size } from '../app/types';
+import type { Side, SpacingBox } from '../app/boxModel';
 import type { GroupFrame } from '../app/membership';
 import type { Gap, SnapLines } from '../app/snapping';
 
@@ -114,6 +115,13 @@ export type Gesture =
                 }
               | { kind: 'rotating'; shapeId: string; shapes: ShapesSnapshot }
               | { kind: 'rounding'; shapeId: string; corner: Corner; shapes: ShapesSnapshot }
+              | ({
+                    kind: 'spacing';
+                    box: SpacingBox;
+                    side: Side;
+                    /** The sides of `box` when the drag began, restored if it is canceled. */
+                    original: Sides;
+                } & ({ shapeId: string } | { frameId: string }))
               | {
                     kind: 'resizingGroup';
                     groupId: string;
@@ -155,7 +163,11 @@ export type HandleOwner = { shapeId: string } | { groupId: string } | { componen
 export type HandleTarget =
     | { frameId: string; type: ResizeHandlerType | 'move' }
     | ({ type: ResizeHandlerType | 'rotate' } & HandleOwner)
-    | { type: 'radius'; shapeId: string; corner: Corner };
+    | { type: 'radius'; shapeId: string; corner: Corner }
+    | ({ type: 'spacing'; box: SpacingBox; side: Side } & (
+          | { shapeId: string }
+          | { frameId: string }
+      ));
 
 export interface Pointer {
     background: boolean;

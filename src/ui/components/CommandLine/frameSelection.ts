@@ -1,3 +1,4 @@
+import { allSides, withStackPadding } from 'src/app/boxModel';
 import type { Context } from 'src/app';
 import type { Frame } from 'src/app/types';
 import type { UpdateFrame } from 'src/app/operations';
@@ -142,11 +143,11 @@ export function frameSelectionOperations(input: string, state: Context['state'])
                     : {}),
                 ...(stacking
                     ? {
-                          stack: {
-                              ...target.stack!,
-                              gap: values.gap ?? target.stack!.gap,
-                              padding: values.padding ?? target.stack!.padding
-                          }
+                          // A typed padding is the same on every side.
+                          stack: withStackPadding(
+                              { ...target.stack!, gap: values.gap ?? target.stack!.gap },
+                              values.padding === undefined ? {} : allSides(values.padding)
+                          )
                       }
                     : {})
             }

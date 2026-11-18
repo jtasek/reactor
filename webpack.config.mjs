@@ -109,11 +109,13 @@ export const config = {
     // The bundle budget: the production build fails beyond it. On 2026-11-16 the entry bundle
     // was 401.4 KiB and the largest file, React DOM, 225.1 KiB. Raise it only for code every page
     // needs as it opens, after checking what grew; editor code loads with `registerEditor`.
+    // 2026-11-18: 410 → 412 KiB for the box model (margins and per-side padding in stack layout,
+    // reading them from saved documents, drawing borders), which every document needs to open.
     performance: isDev
         ? false
         : {
               hints: 'error',
-              maxEntrypointSize: 410 * 1024,
+              maxEntrypointSize: 412 * 1024,
               maxAssetSize: 232 * 1024
           },
     optimization: {

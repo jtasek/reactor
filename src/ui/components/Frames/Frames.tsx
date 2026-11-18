@@ -11,6 +11,8 @@ import { isReadOnly } from 'src/app/documentAccess';
 import { useFramesIds, useFrameLocked } from 'src/app/frameHooks';
 import type { ResizeHandlerType } from 'src/app/types';
 import styles from './styles.css';
+import { stackPadding } from 'src/app/boxModel';
+import { SpacingBands } from '../Handle/SpacingBands';
 
 const HANDLE_RADIUS = 5;
 const LABEL_OFFSET = 8;
@@ -87,6 +89,15 @@ const CanvasFrame: FC<{ id: string; interactive: boolean }> = ({ id, interactive
                     {name}
                 </text>
             </g>
+            {interactive && selected && (
+                <SpacingBands
+                    box={{ ...position, ...size }}
+                    owner={{ frameId: id }}
+                    margin={frame.margin}
+                    padding={frame.stack ? stackPadding(frame.stack) : undefined}
+                    editable={editable && !locked && !drawing}
+                />
+            )}
             {handles &&
                 HANDLES.filter(([type]) => !frameHandleBlocked(frame, type)).map(([type, x, y]) => (
                     <circle

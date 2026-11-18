@@ -1,4 +1,5 @@
 import type { AxisSizing, Document, Size, Sizing, StackRules } from './types';
+import { NO_SIDES, sidesOf, spaceAlong, stackPadding } from './boxModel';
 
 export interface SizingItem {
     id: string;
@@ -188,6 +189,18 @@ export function projectStackSizes(
         (item.kind === 'frame' || supported.has(item.id)) && sizingFor(item, axis).mode === 'fill';
     const value = (item: SizingItem, axis: keyof Size) =>
         resolved.get(key(item, axis)) ?? item[axis];
+    // What a stack item takes up along an axis: its size and its margin; a group keeps none.
+    const margin = (item: SizingItem, axis: keyof Size) =>
+        spaceAlong(
+            item.kind === 'frame'
+                ? sidesOf(document.frames[item.id]?.margin)
+                : item.members.length === 1 && item.members[0] === item.id
+                  ? sidesOf(document.shapes[item.id]?.margin)
+                  : NO_SIDES,
+            axis
+        );
+    const outer = (item: SizingItem, axis: keyof Size) => value(item, axis) + margin(item, axis);
+    const inside = (rules: StackRules, axis: keyof Size) => spaceAlong(stackPadding(rules), axis);
     const allocations = new Map<string, Map<string, number>>();
 
     for (const { item, sizing, parent } of entries) {
@@ -228,11 +241,11 @@ export function projectStackSizes(
                     .map((member) => key(member, axis));
                 node.evaluate = () =>
                     clamp(
-                        2 * ownRules.padding +
+                        inside(ownRules, axis) +
                             (mainAxis(ownRules) === axis
-                                ? members.reduce((sum, member) => sum + value(member, axis), 0) +
+                                ? members.reduce((sum, member) => sum + outer(member, axis), 0) +
                                   Math.max(0, members.length - 1) * ownRules.gap
-                                : Math.max(0, ...members.map((member) => value(member, axis))))
+                                : Math.max(0, ...members.map((member) => outer(member, axis))))
                     );
                 continue;
             }
@@ -245,7 +258,10 @@ export function projectStackSizes(
             const parentKey = key(parentItem, axis);
             if (mainAxis(parentRules) !== axis) {
                 node.dependencies = [parentKey];
-                node.evaluate = () => clamp(resolved.get(parentKey)! - 2 * parentRules.padding);
+                node.evaluate = () =>
+                    clamp(
+                        resolved.get(parentKey)! - inside(parentRules, axis) - margin(item, axis)
+                    );
                 continue;
             }
             const allocationKey = `allocation:${parent}:${axis}`;
@@ -270,9 +286,10 @@ export function projectStackSizes(
                 evaluate: () => {
                     const available =
                         resolved.get(parentKey)! -
-                        2 * parentRules.padding -
+                        inside(parentRules, axis) -
                         Math.max(0, members.length - 1) * parentRules.gap -
-                        fixed.reduce((sum, member) => sum + value(member, axis), 0);
+                        fills.reduce((sum, member) => sum + margin(member, axis), 0) -
+                        fixed.reduce((sum, member) => sum + outer(member, axis), 0);
                     const sizes = fillSizes(
                         available,
                         fills.map((member) => {

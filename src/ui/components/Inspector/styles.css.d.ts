@@ -9,6 +9,7 @@ declare namespace StylesCssNamespace {
     componentHint: string;
     componentPreview: string;
     componentProps: string;
+    eachSide: string;
     exposeButton: string;
     exposureStatus: string;
     frameHint: string;
@@ -47,6 +48,10 @@ declare namespace StylesCssNamespace {
     responsiveRule: string;
     responsiveRules: string;
     sourceChildBreadcrumb: string;
+    space: string;
+    spacing: string;
+    spacingHead: string;
+    spacingLabel: string;
     stateValue: string;
     variablePicker: string;
     variantActions: string;

@@ -3,6 +3,8 @@ import { frameParents } from 'src/app/frameMembership';
 import { renderedFrame, frameLayout } from 'src/app/frameLayout';
 import React, { type FC, memo, useLayoutEffect, useState } from 'react';
 import { useActions, useAppState } from 'src/app/hooks';
+import { sidesOf, stackPadding, withSides, withStackPadding } from 'src/app/boxModel';
+import { SpacingRow } from './SpacingFields';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { ScreenLayouts } from './ScreenLayouts';
 import { isScreenLayout } from 'src/app/screenLayouts';
@@ -151,6 +153,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
         locked,
         layout,
         nested,
+        inStack,
         busy,
         screenLayout,
         hasLayouts
@@ -166,6 +169,13 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
             (child) => child.screenLayout && child.parentFrameId === id
         ),
         nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+        // Margin only acts in a stack, so a frame elsewhere shows it once it has one.
+        inStack:
+            Boolean(
+                state.currentDocument.frames[
+                    frameParents(state.currentDocument.frames).get(id) ?? ''
+                ]?.stack
+            ) || Boolean(state.currentDocument.frames[id]?.margin),
         busy: editedOnCanvas(state.events.pointer.gesture, id),
         layout: frameLayout(state.currentDocument),
         authoredSize: state.currentDocument.frames[id]?.size,
@@ -550,18 +560,16 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                     })
                                 }
                             />
-                            <Field
-                                label="Padding"
-                                value={frame.stack.padding}
-                                minimum={0}
+                            <SpacingRow
+                                key={`padding-${id}`}
+                                box="padding"
+                                value={stackPadding(frame.stack)}
                                 disabled={disabled}
-                                onCommit={(value) =>
+                                onChange={(changes) =>
                                     editFrame({
                                         kind: 'update',
                                         id,
-                                        changes: {
-                                            stack: { ...frame.stack!, padding: Number(value) }
-                                        }
+                                        changes: { stack: withStackPadding(frame.stack!, changes) }
                                     })
                                 }
                             />
@@ -609,6 +617,23 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         </tr>
                     )}
                 </PropertyGroup>
+                {inStack && !screenLayout && (
+                    <PropertyGroup name="Spacing">
+                        <SpacingRow
+                            key={`margin-${id}`}
+                            box="margin"
+                            value={sidesOf(frame.margin)}
+                            disabled={disabled}
+                            onChange={(changes) =>
+                                editFrame({
+                                    kind: 'update',
+                                    id,
+                                    changes: { margin: withSides(frame.margin, changes) ?? null }
+                                })
+                            }
+                        />
+                    </PropertyGroup>
+                )}
                 <FrameVariables id={id} />
             </table>
         </div>

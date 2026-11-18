@@ -1,4 +1,5 @@
 import { hasLayoutOffset, renderedShape } from 'src/app/frameLayout';
+import { borderStyleVariables } from 'src/app/border';
 import React, { CSSProperties, FC, createElement, memo, useLayoutEffect, useRef } from 'react';
 import { Active } from '../Active/Active';
 import { Label } from '../Label';
@@ -7,6 +8,7 @@ import { Resizable } from '../Selectable/Resizable';
 import { Selectable } from '../Selectable/Selectable';
 import { getComponentByType } from 'src/tools/components';
 import { ShapeTextEditor } from './ShapeTextEditor';
+import { SpacingBands } from '../Handle/SpacingBands';
 import { componentSource, instanceComponentId } from 'src/app/componentSource';
 import { Instance } from './Instance';
 import { isMeasuringShape, queueMeasuredBounds } from './measuring';
@@ -195,7 +197,8 @@ export const Shape = memo((props: Props) => {
                     {
                         pointerEvents: 'all',
                         '--shape-fill': painted.fill,
-                        '--shape-stroke': painted.stroke
+                        '--shape-stroke': painted.stroke,
+                        ...borderStyleVariables(shape)
                     } as CSSProperties
                 }
                 onPointerEnter={() => activateShape(shapeId)}
@@ -219,6 +222,7 @@ export const Shape = memo((props: Props) => {
                         <Resizable key={`resizable-${shape.type}-${shape.id}`} shape={shape} />
                     )}
                     <SizeLabel key={`label-${shape.type}-${shape.id}`} shape={shape} />
+                    <ShapeSpacingBands shape={shape} editable={!locked} />
                 </>
             )}
         </g>
@@ -226,6 +230,21 @@ export const Shape = memo((props: Props) => {
 });
 
 Shape.displayName = 'Shape';
+
+/** A selected shape's margin; a large selection shows none. */
+const ShapeSpacingBands: FC<{ shape: ShapeType; editable: boolean }> = ({ shape, editable }) => {
+    const large = useLargeSelection();
+    const bounds = getShapeBounds(shape);
+
+    return large || !shape.margin ? null : (
+        <SpacingBands
+            box={{ ...bounds.topLeft, width: bounds.width, height: bounds.height }}
+            owner={{ shapeId: shape.id }}
+            margin={shape.margin}
+            editable={editable}
+        />
+    );
+};
 
 /** A selected shape's size; a large selection shows one for all: see `LARGE_SELECTION`. */
 const SizeLabel: FC<{ shape: ShapeType }> = ({ shape }) =>

@@ -138,6 +138,8 @@ function attribute(key: string, value: unknown) {
             return /^(?:(?:translate|rotate)\([-+\d.eE ,]+\)\s*)+$/.test(value);
         case 'points':
             return /^[-+\d.eE ,]*$/.test(value);
+        case 'stroke-dasharray':
+            return /^[\d.]+(?: [\d.]+)*$/.test(value);
         case 'preserveAspectRatio':
             return value === 'xMidYMid meet';
         default:

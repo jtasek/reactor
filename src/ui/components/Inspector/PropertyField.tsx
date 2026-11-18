@@ -153,7 +153,7 @@ export const PropertyField: FC<Props> = ({
                         />
                     </button>
                 )}
-                {!variable && property.write && (
+                {!variable && property.write && property.kind !== 'choice' && (
                     <select
                         className={styles.variablePicker}
                         aria-label={`Variable for ${property.label}`}
@@ -234,6 +234,25 @@ export const PropertyField: FC<Props> = ({
                             None
                         </button>
                     </>
+                ) : property.kind === 'choice' ? (
+                    <select
+                        id={id}
+                        aria-label={property.label}
+                        value={mixed ? '' : String(value ?? '')}
+                        disabled={readOnly}
+                        onChange={(event) => onChange(shapeIds, property.key, event.target.value)}
+                    >
+                        {mixed && (
+                            <option value="" disabled>
+                                Mixed
+                            </option>
+                        )}
+                        {property.options.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 ) : (
                     <input
                         ref={input}

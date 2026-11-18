@@ -85,6 +85,9 @@ const CHANGEABLE_FIELDS = new Set([
     'opacity',
     'fill',
     'stroke',
+    'borderWidth',
+    'borderStyle',
+    'margin',
     'bindings',
     'position',
     'size',
@@ -870,6 +873,9 @@ function stage(
         if (shape.type === 'instance' && changes.interaction === null) {
             delete shape.interaction;
         }
+        if (changes.margin === null) {
+            delete shape.margin;
+        }
         if (shape.type === 'instance' && changes.dataList === null) {
             delete shape.dataList;
         } else if (changes.dataList) {
@@ -910,9 +916,14 @@ function stage(
         const read: Record<string, unknown> = readEntity('shapes', shape);
         const foreign = fields.find(
             (field) =>
-                !['bindings', 'template', 'parentFrameId', 'interaction', 'dataList'].includes(
-                    field
-                ) && !(field in read)
+                ![
+                    'bindings',
+                    'template',
+                    'parentFrameId',
+                    'interaction',
+                    'dataList',
+                    'margin'
+                ].includes(field) && !(field in read)
         );
 
         if (foreign) {
@@ -927,7 +938,8 @@ function stage(
                 'parentFrameId',
                 'layoutOrder',
                 'interaction',
-                'dataList'
+                'dataList',
+                'margin'
             ])
         ].filter((field) => JSON.stringify(read[field]) !== JSON.stringify(before.get(field)));
 
@@ -1056,7 +1068,8 @@ function stage(
                         'layoutId',
                         'layoutMode',
                         'responsiveLayouts',
-                        'start'
+                        'start',
+                        'margin'
                     ]);
                     if (Object.keys(operation.changes).some((key) => !allowed.has(key))) {
                         throw new Error('Unsupported frame field.');
@@ -1067,6 +1080,7 @@ function stage(
                         ...operation.changes,
                         ...(parent === null ? { parentFrameId: undefined } : {}),
                         ...(operation.changes.stack === null ? { stack: undefined } : {}),
+                        ...(operation.changes.margin === null ? { margin: undefined } : {}),
                         ...(operation.changes.layoutId === null ? { layoutId: undefined } : {}),
                         ...(operation.changes.layoutMode === null ? { layoutMode: undefined } : {}),
                         ...(operation.changes.start === null ? { start: undefined } : {}),

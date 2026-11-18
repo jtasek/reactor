@@ -1,4 +1,5 @@
 import { variantActionCheck, prototypeTargetCheck } from 'src/app/interactiveVariants';
+import { DEFAULT_BORDER_WIDTH, borderDash } from 'src/app/border';
 import { projectGeometry } from 'src/app/contextualGeometry';
 import { projectDataList, TOO_MANY_RECORDS } from './dataLists';
 import { effectiveActivation } from 'src/app/screenInteractions';
@@ -496,8 +497,9 @@ export function createArtworkProjector(
         const paint = {
             fill: shape.fill ?? 'none',
             stroke: shape.stroke ?? 'var(--shape-stroke-color)',
-            // Matches the canvas's `.shape` stroke width.
-            'stroke-width': 2
+            // Matches the canvas's `.shape` stroke.
+            'stroke-width': shape.borderWidth ?? DEFAULT_BORDER_WIDTH,
+            ...dash(shape)
         };
         const group: PreviewNode = { key, tag: 'g', attrs, children: [] };
         const primitive = (tag: PreviewNode['tag'], attrs: PreviewNode['attrs'], text?: string) => {
@@ -911,4 +913,11 @@ export function createArtworkProjector(
     };
 
     return { draw, identities };
+}
+
+/** A dashed or dotted border's pattern, as the canvas draws it. */
+function dash(shape: Shape): { 'stroke-dasharray'?: string } {
+    const pattern = borderDash(shape.borderStyle, shape.borderWidth ?? DEFAULT_BORDER_WIDTH);
+
+    return pattern ? { 'stroke-dasharray': pattern } : {};
 }
