@@ -11,7 +11,7 @@ export const useAiEdit = () =>
     useAppState((state) => {
         const documentId = state.aiEditDocumentId;
         const currentDocumentId = state.currentDocumentId;
-        const available = state.ai === 'available';
+        const available = state.ai !== 'unavailable';
 
         return available && documentId === currentDocumentId ? documentId : undefined;
     });
