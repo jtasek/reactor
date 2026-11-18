@@ -120,6 +120,41 @@ describe('the local test model', () => {
         expect(Object.keys(store.state.currentDocument.shapes)).toHaveLength(1);
     });
 
+    it('proposes changes the editor accepts: properties, copies, alignment and groups', async () => {
+        const { store } = createTestStore();
+        const [first, second] = await accept(store, 'add two squares');
+
+        await accept(store, 'add text "Title" font size 32 bold');
+        store.actions.selectShape(first.id);
+        await accept(store, 'corner radius 12, opacity 50% and wider by 20');
+        expect(store.state.currentDocument.shapes[first.id]).toMatchObject({
+            cornerRadius: 12,
+            opacity: 0.5,
+            size: { width: 100, height: 80 }
+        });
+
+        const copies = await accept(store, 'duplicate');
+        expect(copies.filter((shape) => shape.type === 'rectangle')).toHaveLength(3);
+
+        // Nothing selected: shapes are found by what the request says.
+        store.actions.unselectShapes();
+        await accept(store, 'move all rectangles down 30');
+        const moved = await accept(store, 'align top all rectangles');
+        const tops = moved
+            .filter((shape) => shape.type === 'rectangle')
+            .map((shape) => shape.position.y);
+        expect(new Set(tops).size).toBe(1);
+
+        store.actions.selectShape(first.id);
+        store.actions.selectShape(second.id);
+        await accept(store, 'group as "Pair"');
+        expect(Object.values(store.state.currentDocument.groups)).toMatchObject([
+            { name: 'Pair', shapesIds: [first.id, second.id] }
+        ]);
+        await accept(store, 'ungroup');
+        expect(Object.values(store.state.currentDocument.groups)).toEqual([]);
+    });
+
     it('fixes a broken first answer with /repair, with or without a request', async () => {
         const { store } = createTestStore();
         const { result, events } = await ask(store, '/repair add a circle');
@@ -168,7 +203,14 @@ describe('the local test model', () => {
             kind: 'failed',
             problem: 'Hello there'
         });
-        expect((await ask(store, 'make a website')).result).toEqual({
+        // An unknown request gets a short answer, not the whole help again.
+        const unknown = await ask(store, 'make a website');
+        expect(unknown.result).toMatchObject({
+            kind: 'failed',
+            problem: expect.stringContaining("I didn't understand “website”")
+        });
+        expect(unknown.result).not.toMatchObject({ problem: LOCAL_MODEL_HELP });
+        expect((await ask(store, 'help')).result).toEqual({
             kind: 'failed',
             problem: LOCAL_MODEL_HELP
         });

@@ -16,6 +16,7 @@ declare namespace StylesCssNamespace {
     disclosure: string;
     dots: string;
     empty: string;
+    example: string;
     expandedArtwork: string;
     field: string;
     fieldControls: string;
@@ -37,9 +38,12 @@ declare namespace StylesCssNamespace {
     send: string;
     suggestions: string;
     toolbar: string;
+    topics: string;
     turn: string;
     userMessage: string;
     visuallyHidden: string;
+    words: string;
+    wordsTitle: string;
     working: string;
   }
 }

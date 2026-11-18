@@ -6,6 +6,7 @@ import type { ProposedOperation } from 'src/ai/operations';
 import { useCurrentDocument } from 'src/app/hooks';
 import { ProposalPreview } from './ProposalPreview';
 import styles from './styles.css';
+import { Words } from './Words';
 
 const ICON = { size: 12, strokeWidth: 2.25, 'aria-hidden': true } as const;
 
@@ -86,16 +87,16 @@ export const Reply: FC<{
     turn: ChatTurn;
     onDiscard: () => void;
     onAccept: () => void;
-}> = ({ turn, onDiscard, onAccept }) => {
+    /** Puts an example from the answer in the prompt; without it, examples are only shown. */
+    onExample?: (example: string) => void;
+}> = ({ turn, onDiscard, onAccept, onExample }) => {
     // An answer in words only is shown once, as the model's words.
     const failedInWords = turn.status === 'failed' && turn.problem === turn.messages.join('\n');
 
     return (
         <section className={styles.reply} aria-label="Proposal">
             {turn.messages.map((message, index) => (
-                <p key={index} className={styles.message}>
-                    {message}
-                </p>
+                <Words key={index} message={message} onExample={onExample} />
             ))}
             {turn.status === 'proposing' && (
                 <p className={styles.working} role="status">
