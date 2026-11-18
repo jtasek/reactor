@@ -340,6 +340,18 @@
     background-size: 16px 16px;
 }
 
+.workArea[data-empty] {
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.workArea[data-empty] .drawer {
+    place-content: center;
+    align-items: center;
+    padding: 24px;
+    background: none;
+    box-shadow: none;
+}
+
 .commandBar {
     display: flex;
     align-items: center;

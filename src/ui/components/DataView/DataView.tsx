@@ -86,8 +86,11 @@ function ValueEditor({
     variant?: 'cell' | 'title' | 'name';
     save: (value: DataValue) => DataEditResult;
 }) {
-    const initial = value === null || value === undefined ? '' : String(value);
-    const [draft, setDraft] = useState(initial);
+    const stored = value === null || value === undefined ? '' : String(value);
+    // Typing is a draft; without one the field shows the stored value, so an edit made
+    // elsewhere appears and saving never remounts the field or drops the keyboard focus.
+    const [typed, setDraft] = useState<string>();
+    const draft = typed ?? stored;
     const [problem, setProblem] = useState('');
     const [used, setUsed] = useState(false);
     const expected = type === 'number' || type === 'boolean' ? type : 'string';
@@ -95,11 +98,13 @@ function ValueEditor({
         choices && (used || choices.length <= DRAWN_CHOICES)
             ? choices
             : choices?.filter((choice) => choice.value === draft);
-    // A value stored as another type is saved again, converted, even when its text is unchanged.
     const needsConversion = value !== null && value !== undefined && typeof value !== expected;
 
-    const commit = (text: string) => {
-        if (disabled || (text === initial && !needsConversion)) {
+    /** `convert` saves an unchanged value again in the field's type; only Enter asks for it. */
+    const commit = (text: string, convert = false) => {
+        if (disabled || (text === stored && !(convert && needsConversion))) {
+            setDraft(undefined);
+
             return;
         }
         if (type === 'boolean' && !['', 'true', 'false'].includes(text)) {
@@ -119,11 +124,9 @@ function ValueEditor({
                       : text;
         const result = save(next);
         setProblem(result.applied ? '' : result.problem);
+        setDraft(result.applied ? undefined : text);
     };
-    const pick = (text: string) => {
-        setDraft(text);
-        commit(text);
-    };
+    const pick = (text: string) => commit(text, true);
 
     return (
         <div
@@ -178,11 +181,11 @@ function ValueEditor({
                             return;
                         }
                         if (event.key === 'Enter') {
-                            commit(draft);
+                            commit(draft, true);
                         }
-                        if (event.key === 'Escape' && draft !== initial) {
+                        if (event.key === 'Escape' && typed !== undefined) {
                             event.stopPropagation();
-                            setDraft(initial);
+                            setDraft(undefined);
                             setProblem('');
                         }
                     }}
@@ -622,7 +625,6 @@ function DataEditor() {
                                             }
                                         >
                                             <ValueEditor
-                                                key={`${field.type}:${JSON.stringify(record.values[field.id])}`}
                                                 value={record.values[field.id]}
                                                 type={field.type}
                                                 choices={data.choices[field.id]}
@@ -766,7 +768,6 @@ function DataEditor() {
                             <div className={styles.fieldLine}>
                                 <TypeIcon type={field.type} />
                                 <ValueEditor
-                                    key={field.name}
                                     variant="name"
                                     label={`Field ${field.name}`}
                                     value={field.name}
@@ -1048,56 +1049,59 @@ function DataEditor() {
                     </button>
                 </form>
             </nav>
-            <div className={styles.workArea}>
-                <div className={styles.commandBar}>
-                    <b>Data model</b>
-                    <span className={styles.muted}>
-                        {data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}{' '}
-                        · {references} {references === 1 ? 'reference' : 'references'}
-                    </span>
-                    {data.entities.length > 0 && (
-                        <span className={styles.zoom} role="group" aria-label="Map zoom">
-                            <button
-                                type="button"
-                                aria-label="Zoom out"
-                                disabled={scale <= MIN_ZOOM}
-                                onClick={() => zoom(scale - ZOOM_STEP)}
-                            >
-                                <Minus aria-hidden size={14} />
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Actual size"
-                                title="Actual size"
-                                onClick={() => zoom(1)}
-                            >
-                                {Math.round(scale * 100)}%
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Zoom in"
-                                disabled={scale >= MAX_ZOOM}
-                                onClick={() => zoom(scale + ZOOM_STEP)}
-                            >
-                                <Plus aria-hidden size={14} />
-                            </button>
-                            <button type="button" onClick={fit}>
-                                Fit
-                            </button>
+            <div className={styles.workArea} data-empty={data.entities.length === 0 || undefined}>
+                {data.entities.length > 0 && (
+                    <div className={styles.commandBar}>
+                        <b>Data model</b>
+                        <span className={styles.muted}>
+                            {data.entities.length}{' '}
+                            {data.entities.length === 1 ? 'entity' : 'entities'} · {references}{' '}
+                            {references === 1 ? 'reference' : 'references'}
                         </span>
-                    )}
-                    {placed && (
-                        <button
-                            type="button"
-                            className={styles.plain}
-                            disabled={data.disabled}
-                            title="Let the map place every entity again"
-                            onClick={() => edit({ kind: 'arrangeEntities' })}
-                        >
-                            Auto layout
-                        </button>
-                    )}
-                </div>
+                        {
+                            <span className={styles.zoom} role="group" aria-label="Map zoom">
+                                <button
+                                    type="button"
+                                    aria-label="Zoom out"
+                                    disabled={scale <= MIN_ZOOM}
+                                    onClick={() => zoom(scale - ZOOM_STEP)}
+                                >
+                                    <Minus aria-hidden size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Actual size"
+                                    title="Actual size"
+                                    onClick={() => zoom(1)}
+                                >
+                                    {Math.round(scale * 100)}%
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Zoom in"
+                                    disabled={scale >= MAX_ZOOM}
+                                    onClick={() => zoom(scale + ZOOM_STEP)}
+                                >
+                                    <Plus aria-hidden size={14} />
+                                </button>
+                                <button type="button" onClick={fit}>
+                                    Fit
+                                </button>
+                            </span>
+                        }
+                        {placed && (
+                            <button
+                                type="button"
+                                className={styles.plain}
+                                disabled={data.disabled}
+                                title="Let the map place every entity again"
+                                onClick={() => edit({ kind: 'arrangeEntities' })}
+                            >
+                                Auto layout
+                            </button>
+                        )}
+                    </div>
+                )}
                 {data.entities.length > 0 && (
                     <DataMap
                         ref={map}
@@ -1132,7 +1136,7 @@ function DataEditor() {
                         <>
                             <div className={styles.drawerHeader}>
                                 <ValueEditor
-                                    key={`${data.entity.id}:${data.entity.name}`}
+                                    key={data.entity.id}
                                     variant="title"
                                     label="Entity name"
                                     value={data.entity.name}

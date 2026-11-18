@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useState } from 'react';
+import React, { forwardRef, useMemo, useRef, useState } from 'react';
 import { Plus, Table2 } from 'lucide-react';
 import type { DataType } from 'src/app/dataTypes';
 import { TypeIcon } from './TypeIcon';
@@ -32,6 +32,8 @@ const ROW_HEIGHT = 26;
 const DRAG_THRESHOLD = 4;
 /** Alt+arrow keys move a card by this much. */
 const KEY_STEP = 16;
+/** How far a line between cards in one column bows out to their right. */
+const LOOP = 48;
 
 /**
  * Places each entity one column right of the entities it refers to, so references read left to
@@ -75,7 +77,7 @@ export function layoutEntities(entities: MapEntity[]) {
     // Cards dragged above or left of the origin shift the drawing so they stay reachable.
     const left = Math.min(0, ...all.map((place) => place.x - MARGIN));
     const top = Math.min(0, ...all.map((place) => place.y - MARGIN));
-    const width = Math.max(0, ...all.map((place) => place.x + CARD_WIDTH)) + MARGIN - left;
+    const width = Math.max(0, ...all.map((place) => place.x + CARD_WIDTH)) + MARGIN + LOOP - left;
     const height = Math.max(0, ...all.map((place) => place.y + place.height)) + MARGIN - top;
 
     return { places, width, height, left, top };
@@ -122,24 +124,26 @@ export const DataMap = forwardRef<
     ref
 ) {
     const [drag, setDrag] = useState<{ id: string; dx: number; dy: number }>();
-    const dragged = useRef(false);
     const press = useRef<{ id: string; x: number; y: number; moved: boolean } | undefined>(
         undefined
     );
-    const layout = layoutEntities(
-        drag
-            ? entities.map((entity) => {
-                  if (entity.id !== drag.id) {
-                      return entity;
-                  }
-                  const place = layoutEntities(entities).places.get(entity.id)!;
-
-                  return { ...entity, position: { x: place.x + drag.dx, y: place.y + drag.dy } };
-              })
-            : entities
-    );
-    const { places, width, height, left, top } = layout;
-    const placeOf = (id: string) => layoutEntities(entities).places.get(id)!;
+    const settled = useMemo(() => layoutEntities(entities), [entities]);
+    const placeOf = (id: string) => settled.places.get(id)!;
+    const { places, width, height, left, top } = drag
+        ? layoutEntities(
+              entities.map((entity) =>
+                  entity.id === drag.id
+                      ? {
+                            ...entity,
+                            position: {
+                                x: placeOf(entity.id).x + drag.dx,
+                                y: placeOf(entity.id).y + drag.dy
+                            }
+                        }
+                      : entity
+              )
+          )
+        : settled;
 
     const byId = new Map(entities.map((entity) => [entity.id, entity]));
     const links = entities.flatMap((entity) =>
@@ -153,15 +157,21 @@ export const DataMap = forwardRef<
             const targetY = to.y + HEADER_HEIGHT / 2;
             const selected =
                 entity.id === selectedEntityId || to === places.get(selectedEntityId ?? '');
+            const curve = (startX: number, endX: number) => {
+                const middle = (startX + endX) / 2;
+
+                return `M${startX} ${rowY} C${middle} ${rowY} ${middle} ${targetY} ${endX} ${targetY}`;
+            };
             let path: string;
-            if (to.x < from.x) {
-                const startX = to.x + CARD_WIDTH;
-                const middle = (startX + from.x) / 2;
-                path = `M${startX} ${targetY} C${middle} ${targetY} ${middle} ${rowY} ${from.x} ${rowY}`;
+            if (to.x + CARD_WIDTH <= from.x) {
+                path = curve(from.x, to.x + CARD_WIDTH);
+            } else if (from.x + CARD_WIDTH <= to.x) {
+                path = curve(from.x + CARD_WIDTH, to.x);
             } else {
-                // Same column, or a cycle: loop out to the right of both cards.
+                // The cards overlap sideways, or the field refers to its own entity: loop out
+                // to the right of both.
                 const edge = Math.max(from.x, to.x) + CARD_WIDTH;
-                path = `M${from.x + CARD_WIDTH} ${rowY} C${edge + 48} ${rowY} ${edge + 48} ${targetY} ${to.x + CARD_WIDTH} ${targetY}`;
+                path = `M${from.x + CARD_WIDTH} ${rowY} C${edge + LOOP} ${rowY} ${edge + LOOP} ${targetY} ${to.x + CARD_WIDTH} ${targetY}`;
             }
 
             return [{ id: field.id, path, selected }];
@@ -251,10 +261,8 @@ export const DataMap = forwardRef<
                                     onPointerUp={() => {
                                         const start = press.current;
                                         press.current = undefined;
+                                        // The click that ends the press selects the card.
                                         if (start?.moved && drag) {
-                                            dragged.current = true;
-                                            // Like a canvas, the card being moved becomes the selection.
-                                            selectEntity(entity.id);
                                             const from = placeOf(entity.id);
                                             move(entity.id, {
                                                 x: from.x + drag.dx,
@@ -267,13 +275,7 @@ export const DataMap = forwardRef<
                                         press.current = undefined;
                                         setDrag(undefined);
                                     }}
-                                    onClick={(event) => {
-                                        // A drag ends with a click; it already chose its place.
-                                        if (event.detail > 0 && drag) {
-                                            return;
-                                        }
-                                        selectEntity(entity.id);
-                                    }}
+                                    onClick={() => selectEntity(entity.id)}
                                     onKeyDown={(event) => {
                                         const step = {
                                             ArrowLeft: [-KEY_STEP, 0],
@@ -318,12 +320,13 @@ export const DataMap = forwardRef<
                                                 (selected && problems[field.id]) || undefined
                                             }
                                         >
-                                            {selected && problems[field.id] ? '⚠ ' : ''}
-                                            {fieldSummary(
-                                                field,
-                                                byId,
-                                                field.id === entity.labelFieldId
-                                            )}
+                                            {selected && problems[field.id]
+                                                ? `⚠ ${problems[field.id]}`
+                                                : fieldSummary(
+                                                      field,
+                                                      byId,
+                                                      field.id === entity.labelFieldId
+                                                  )}
                                         </small>
                                     </button>
                                 ))}
@@ -331,6 +334,7 @@ export const DataMap = forwardRef<
                                     type="button"
                                     className={styles.cardAdd}
                                     aria-label={`Add field to ${entity.name}`}
+                                    disabled={disabled}
                                     onClick={() => addField(entity.id)}
                                 >
                                     <Plus aria-hidden size={12} />
