@@ -589,12 +589,18 @@ short words and words that start differently never do, and the limits are in `MA
 - **By an amount:** `wider by 40`, `bigger`, `increase font size by 4`, `rotate 45`.
 - **Arrange:** `move right 40`, `move to 100, 200`, `align left|right|top|bottom|center|middle`,
   `distribute horizontally|vertically`, `duplicate`, `group as "Header"`, `ungroup`, `delete`.
-- **Ask:** `props` lists what the selection has; `help` lists all of this.
+- **Ask:** `props` lists what the selection has; `help` gives two examples each of adding,
+  changing and arranging, about the selected shapes with their values now; `help all` lists
+  everything, written from the vocabularies.
+
+As you type, the prompt shows the rest of a sentence that fits the selection in grey, and Tab
+takes it (`src/ai/local/complete.ts`, sentences in `COMPLETION`). Only the local model
+completes; the server's AI takes any words.
 
 A request it cannot read gets a short answer: the words it missed, near matches, and what
 the selection can change. A command of the app that is not a document change, such as Zoom in
 or Undo, is named with its shortcut. Answers in words may mark a `# title`, `**topic**` lines
-and examples between backticks (`Words.tsx`); with the local model an example fills the
+(a blank line ends the topic) and examples between backticks (`Words.tsx`); with the local model an example fills the
 prompt when pressed.
 
 `/slow …` streams slowly for Stop, `/repair …` sends a broken change first so the repair

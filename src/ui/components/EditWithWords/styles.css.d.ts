@@ -21,6 +21,8 @@ declare namespace StylesCssNamespace {
     field: string;
     fieldControls: string;
     form: string;
+    ghost: string;
+    hint: string;
     iconButton: string;
     link: string;
     localDot: string;
@@ -32,6 +34,7 @@ declare namespace StylesCssNamespace {
     previewArtwork: string;
     problem: string;
     prompt: string;
+    promptBox: string;
     pulse: string;
     records: string;
     reply: string;

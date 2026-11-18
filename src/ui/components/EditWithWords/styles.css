@@ -15,6 +15,8 @@
     --chat-float:
         inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px rgb(0 0 0 / 10%),
         0 12px 32px -12px rgb(0 0 0 / 30%);
+    --chat-property: var(--component-color);
+    --chat-value: var(--success-color);
     --chat-capsule: 999px;
     --chat-disabled: rgb(0 0 0 / 12%);
     --chat-field-edge: 0 0 0 0.5px rgb(0 0 0 / 14%);
@@ -170,28 +172,41 @@
     border-top: 0.5px solid var(--hairline-color);
 }
 
-.topics dd [data-kind='item'] {
-    color: var(--text-color);
-}
-
 .example {
-    background-color: var(--field-background);
+    background: none;
     border: 0;
-    border-radius: 5px;
     color: var(--text-color);
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-    font-size: var(--font-size-callout);
-    padding: 2px 6px;
-    text-align: left;
+    font: inherit;
+    font-weight: 500;
+    padding: 0;
 }
 
 button.example {
+    color: var(--chat-tint);
     cursor: pointer;
 }
 
+.topics .example {
+    --example: var(--chat-tint);
+
+    background-color: color-mix(in srgb, var(--example) 10%, transparent);
+    border-radius: 7px;
+    color: color-mix(in srgb, var(--example) 80%, var(--text-color));
+    margin-right: 6px;
+    padding: 2px 8px;
+    text-align: left;
+}
+
+.topics dd:nth-of-type(3n + 2) .example {
+    --example: var(--chat-property);
+}
+
+.topics dd:nth-of-type(3n) .example {
+    --example: var(--chat-value);
+}
+
 button.example:hover {
-    background-color: var(--chat-tint-soft);
-    color: var(--chat-tint);
+    background-color: color-mix(in srgb, var(--example, var(--chat-tint)) 18%, transparent);
 }
 
 button.example:focus-visible {
@@ -419,6 +434,40 @@ button.example:focus-visible {
 .prompt {
     field-sizing: content;
     min-height: 20px;
+}
+
+.promptBox {
+    display: grid;
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+}
+
+.ghost {
+    color: var(--label-tertiary);
+    inset: 0;
+    line-height: 20px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    padding: 2px 0;
+    pointer-events: none;
+    position: absolute;
+    white-space: pre-wrap;
+}
+
+.ghost span {
+    visibility: hidden;
+}
+
+.hint {
+    color: var(--label-tertiary);
+    font-size: var(--font-size-callout);
+    margin-right: auto;
+    white-space: nowrap;
+}
+
+.fieldControls .chip:has(+ .hint) {
+    margin-right: 2px;
 }
 
 .form:not([data-compact]) .prompt {

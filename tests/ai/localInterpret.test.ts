@@ -1,5 +1,13 @@
 import { distance, mentions, similarity, suggestions } from 'src/ai/local/fuzzy';
-import { HELP, SELECT_FIRST, interpret, type Context } from 'src/ai/local/interpret';
+import { COMPLETION, complete } from 'src/ai/local/complete';
+import {
+    HELP,
+    SELECT_FIRST,
+    capabilities,
+    help,
+    interpret,
+    type Context
+} from 'src/ai/local/interpret';
 
 const shapes = {
     card: {
@@ -240,12 +248,91 @@ describe('answers without a proposal', () => {
 
         expect(text).toContain("I didn't understand “sparkle”");
         expect(text).toContain('`corner radius`');
-        expect(text.length).toBeLessThan(HELP.length / 2);
+        expect(text).not.toContain('- ');
     });
 
     it('gives the help when asked', () => {
         expect(read('help').text).toBe(HELP);
         expect(read('what can you do').text).toBe(HELP);
         expect(read('?').text).toBe(HELP);
+    });
+});
+
+describe('the help', () => {
+    /** The examples in `text`, as they would be typed. */
+    const examples = (text: string) =>
+        text.split('\n').flatMap((line) => /^- `([^`]+)`/.exec(line)?.[1] ?? []);
+
+    it.each([[['card']], [['dot']], [['title']], [['card', 'plain']], [['card', 'plain', 'dot']]])(
+        'gives two examples of each kind, each of which works for %s',
+        (selection) => {
+            const lines = examples(read('help', selection).text);
+
+            expect(lines).toHaveLength(6);
+            expect(lines.filter((line) => read(line, selection).operations.length === 0)).toEqual(
+                []
+            );
+        }
+    );
+
+    it('is about the selected shape, with its values now', () => {
+        const text = help({ selection: ['card'], shapes });
+
+        expect(text).toContain('**Change** Card');
+        expect(text).toContain('`corner radius 12` now 0');
+        expect(help({ selection: ['title'], shapes })).toContain('`change text to "Hi"`');
+        expect(help({ selection: ['card', 'dot'], shapes })).toContain('**Change** 2 shapes');
+        expect(HELP).toContain('**Change** select a shape first');
+    });
+
+    it('lists everything when asked, with examples that work', () => {
+        const selection = ['card', 'plain', 'dot'];
+
+        expect(read('help all').text).toBe(capabilities());
+        expect(read('help everything').text).toBe(capabilities());
+        expect(capabilities()).toContain('corner radius');
+        expect(capabilities()).toContain('rectangle, square, circle, ellipse, line, text');
+        expect(
+            examples(capabilities()).filter(
+                (line) =>
+                    !/^(\/|props|help)/.test(line) &&
+                    read(line, selection, { row: { name: 'Row', shapes: ['card', 'plain'] } })
+                        .operations.length === 0
+            )
+        ).toEqual([]);
+    });
+});
+
+describe('finishing a sentence', () => {
+    const rest = (draft: string, selection: string[] = []) =>
+        complete(draft, { selection, shapes });
+
+    it('finishes what is typed for the selected shapes', () => {
+        expect(rest('make it wi', ['card'])).toBe('der by 40');
+        expect(rest('Co', ['card'])).toBe('rner radius 12');
+        expect(rest('fo', ['title'])).toBe('nt size 32');
+        expect(rest('al', ['card', 'plain'])).toBe('ign left');
+        expect(rest('ad')).toBe('d a red rectangle');
+    });
+
+    it('offers nothing that needs a selection without one, or from one letter', () => {
+        expect(rest('make it wi')).toBe('');
+        expect(rest('al', ['card'])).toBe('');
+        expect(rest('a')).toBe('');
+        expect(rest('duplicate', ['card'])).toBe('');
+        expect(rest('paint it')).toBe('');
+    });
+
+    it('finishes only sentences that work', () => {
+        const selection = ['card', 'plain', 'dot'];
+        const groups = { row: { name: 'Row', shapes: ['card', 'plain'] } };
+
+        expect(
+            [...COMPLETION.always, ...COMPLETION.selected, ...COMPLETION.several].filter(
+                (sentence) =>
+                    !/^(props|help)/.test(sentence) &&
+                    read(sentence, selection, groups).operations.length === 0
+            )
+        ).toEqual([]);
     });
 });

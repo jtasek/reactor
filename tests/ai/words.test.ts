@@ -11,7 +11,9 @@ it('reads titles, topics with their lines, and loose text', () => {
                 'also lines',
                 '',
                 '**Ask**',
-                '- `props`'
+                '- `props`',
+                '',
+                'After the list.'
             ].join('\n')
         )
     ).toEqual([
@@ -26,7 +28,8 @@ it('reads titles, topics with their lines, and loose text', () => {
                 { kind: 'text', text: 'also lines' }
             ]
         },
-        { kind: 'topic', name: 'Ask', note: '', lines: [{ kind: 'item', text: '`props`' }] }
+        { kind: 'topic', name: 'Ask', note: '', lines: [{ kind: 'item', text: '`props`' }] },
+        { kind: 'text', text: 'After the list.' }
     ]);
 });
 

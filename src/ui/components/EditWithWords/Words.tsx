@@ -9,10 +9,12 @@ type Block =
 
 /**
  * Reads the few marks an answer in words may carry: `# title`, a `**topic**` line that
- * heads the lines after it, `- items`, and examples between backticks.
+ * heads the lines after it up to a blank line, `- items`, and examples between backticks.
  */
 export function readWords(message: string): Block[] {
     const blocks: Block[] = [];
+    // A blank line ends a topic: what follows is said after the list.
+    let heading = false;
 
     message.split('\n').forEach((raw) => {
         const line = raw.trim();
@@ -20,13 +22,16 @@ export function readWords(message: string): Block[] {
         const last = blocks.at(-1);
 
         if (!line) {
+            heading = false;
+
             return;
         }
         if (line.startsWith('# ')) {
             blocks.push({ kind: 'title', text: line.slice(2) });
         } else if (topic) {
             blocks.push({ kind: 'topic', name: topic[1], note: topic[2].trim(), lines: [] });
-        } else if (last?.kind === 'topic') {
+            heading = true;
+        } else if (heading && last?.kind === 'topic') {
             last.lines.push(
                 line.startsWith('- ')
                     ? { kind: 'item', text: line.slice(2) }

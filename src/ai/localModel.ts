@@ -1,6 +1,6 @@
 // Loaded only when the chat uses it, so it adds nothing to the editor's bundle.
 import type { Send } from './client';
-import { HELP, interpret, localId, type Context, type Operation } from './local/interpret';
+import { HELP, help, interpret, localId, type Context, type Operation } from './local/interpret';
 
 /** The name a local answer carries, which document history keeps as its model. */
 export const LOCAL_MODEL = 'local-test-model';
@@ -72,7 +72,7 @@ function answer(prompt: string, context: Context): Answer {
     // An unknown `/command` gets the help rather than a guess at its words.
     const { operations, text } =
         command && !scripted
-            ? { operations: [], text: HELP }
+            ? { operations: [], text: help(context) }
             : interpret(scripted ? rest.trim() || DEFAULT_REQUEST : rest, context);
     const events = (list: Operation[]): Event[] => [
         start,

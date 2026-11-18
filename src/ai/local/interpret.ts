@@ -219,32 +219,133 @@ const FILLER = new Set(
 
 export const SELECT_FIRST = 'Select what to change on the canvas first, then ask again.';
 
-export const HELP = [
-    '# Local test model',
-    'Scripted answers made in this browser: no AI, nothing sent. Typos are fine.',
-    '**Add**',
-    '- `add a red rectangle`',
-    '- `add 3 circles radius 20`',
-    '- `add text "Hello" font size 32`',
-    '**Change**',
-    '- `make it green`',
-    '- `width 200 height 60`',
-    '- `change text to "Hi"`',
-    'also stroke, opacity, corner radius, rotate, bigger, wider by 40, bolder, rename',
-    'works on the selection, a shape you name, or `all circles`',
-    '**Arrange**',
-    '- `move right 40`',
-    '- `align left`',
-    'also distribute, duplicate, group, ungroup, delete',
-    '**Ask**',
-    '- `props`',
-    'what the selection has and what you can change',
-    '**Test**',
-    '- `/slow add 5 circles`',
-    'also `/repair`, `/words Hello`, `/fail limit` for streaming, repairs and server problems'
-].join('\n');
+/** What asks for the whole list rather than a few examples. */
+const EVERYTHING: Term[] = [{ id: 'all', phrases: ['all', 'everything', 'full', 'list'] }];
 
-const HELP_HINT = 'Send `help` to see everything I understand.';
+const HELP_LINES = {
+    intro: 'Say what you want in plain words. As you type, press Tab to finish the sentence.',
+    more: '`help all` lists everything I understand.',
+    selectFirst: 'select a shape first',
+    add: ['`add a red rectangle`', '`add text "Hello"`'],
+    one: ['`move right 40`', '`duplicate`'],
+    several: ['`align left`', '`group`'],
+    test: [
+        '- `/slow add 5 circles` streams slowly, so it can be stopped',
+        '- `/repair add a circle` sends a broken answer first',
+        '- `/words Hello` answers in words only',
+        '- `/fail limit` fails as the server would; also busy, off, refused, incomplete, network'
+    ]
+};
+
+const selectedShapes = (context: Context) =>
+    (context.selection ?? [])
+        .map((id) => context.shapes?.[id])
+        .filter((shape) => shape !== undefined);
+
+/** What can be said to change `selected`, each property with its value when one shape is selected. */
+export function changeExamples(selected: ShapeFields[]): Array<{ example: string; now?: string }> {
+    const has = (id: PropertyId) =>
+        selected.every((shape) => property(id).read(shape) !== undefined);
+    const valued = (id: PropertyId, example: string) =>
+        has(id)
+            ? [
+                  {
+                      example,
+                      now: selected.length === 1 ? shown(property(id), selected[0]) : undefined
+                  }
+              ]
+            : [];
+
+    return [
+        ...(has('value') ? [{ example: 'change text to "Hi"' }] : []),
+        { example: 'make it green' },
+        ...valued('cornerRadius', 'corner radius 12'),
+        ...valued('radius', 'radius 40'),
+        ...valued('fontSize', 'font size 32'),
+        ...valued('width', 'wider by 40'),
+        ...valued('opacity', 'opacity 50%'),
+        ...valued('rotation', 'rotate 45')
+    ];
+}
+
+/**
+ * A few examples from each kind of request. With shapes selected, the changes are
+ * about those shapes.
+ */
+export function help(context: Context = {}): string {
+    const selected = selectedShapes(context);
+    const one = selected.length === 1;
+    const subject =
+        selected.length === 0
+            ? HELP_LINES.selectFirst
+            : one
+              ? String(selected[0].name ?? '')
+              : `${selected.length} shapes`;
+    const items = (lines: string[]) => lines.map((line) => `- ${line}`);
+
+    return [
+        HELP_LINES.intro,
+        '**Add**',
+        ...items(HELP_LINES.add),
+        `**Change** ${subject}`,
+        ...items(
+            changeExamples(selected)
+                .slice(0, 2)
+                .map(({ example, now }) => `\`${example}\`${now ? ` now ${now}` : ''}`)
+        ),
+        `**Arrange** ${selected.length === 0 ? HELP_LINES.selectFirst : ''}`.trim(),
+        ...items(selected.length > 1 ? HELP_LINES.several : HELP_LINES.one),
+        '',
+        HELP_LINES.more
+    ].join('\n');
+}
+
+/** Everything the local model understands, from the words it knows. */
+export function capabilities(): string {
+    const first = (terms: readonly Term[]) => terms.map((term) => term.phrases[0]).join(', ');
+
+    return [
+        '# Everything I understand',
+        'Typos, plurals and short forms are fine.',
+        '**Add** shapes',
+        first(SHAPES),
+        'with a count, a color, a size and a name',
+        '- `add 3 red circles named "Dot"`',
+        '- `add a 200x60 rectangle`',
+        '- `add text "Hello" font size 32 bold`',
+        '**Change** properties',
+        PROPERTIES.map((item) => item.label).join(', '),
+        '- `width 200 height 60`',
+        '- `set stroke to blue`',
+        '- `rename to "Card"`',
+        `by a step: ${first(RELATIVE)}`,
+        '- `make it wider by 40`',
+        `at once: ${first(PRESETS)}`,
+        '**Colors**',
+        `${Object.keys(COLORS).join(', ')}, or a hex like #112233`,
+        '**Arrange**',
+        '- `move right 40`',
+        `- \`align top\` also ${EDGES.filter(({ id }) => id !== 'top')
+            .map(({ id }) => id)
+            .join(', ')}`,
+        '- `distribute horizontally` or vertically',
+        '- `duplicate`',
+        '- `group as "Row"` and `ungroup`',
+        '- `delete it`',
+        '**Which shapes**',
+        'the selection, a shape’s name, or `all circles`',
+        '**Ask**',
+        '- `props` what the selection has',
+        '- `help` a few examples',
+        '**Test** the chat',
+        ...HELP_LINES.test
+    ].join('\n');
+}
+
+/** The help when nothing is selected. */
+export const HELP = help();
+
+const HELP_HINT = 'Send `help` for examples.';
 
 type Token = { raw: string; start: number; end: number; used?: true } & (
     | { kind: 'word'; word: string }
@@ -969,7 +1070,10 @@ export function interpret(prompt: string, context: Context): Reading {
     const says = (text: string): Reading => ({ operations: [], text });
 
     if (request.tokens.length === 0 || prompt.trim() === '?') {
-        return says(HELP);
+        return says(help(context));
+    }
+    if (intents.find(({ id }) => id === 'help')?.at === 0) {
+        return says(request.find(EVERYTHING).length > 0 ? capabilities() : help(context));
     }
     intents.forEach((intent) => request.use(intent));
     readColors(request);
@@ -1090,7 +1194,7 @@ export function interpret(prompt: string, context: Context): Reading {
         });
     }
     if (has('help')) {
-        return says(HELP);
+        return says(help(context));
     }
     if (ids.length === 0 && (changing || has('move') || has('rename'))) {
         return says(SELECT_FIRST);
