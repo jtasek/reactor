@@ -62,3 +62,44 @@ test('?ai=local answers the chat in the browser, with no request to the server',
     await expect(editWithWords(page)).toHaveCount(0);
     expect(sent).toEqual([]);
 });
+
+test('the selection offers the AI bar, which shares its chat with the panel', async ({ page }) => {
+    await page.goto('/?ai=local');
+    await editWithWords(page).click();
+    await ask(page, 'add a red rectangle');
+
+    const chat = page.getByRole('group', { name: 'Chat controls' });
+
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    await page.getByRole('button', { name: 'Close AI chat' }).click();
+
+    const askAi = page.getByRole('button', { name: 'Ask AI about the selection' });
+
+    await expect(askAi).toHaveCount(0);
+    await page.getByRole('button', { name: 'rectangle-1' }).first().click();
+    // Bring the drawing out from under the Explorer, where the button can be pressed.
+    await page.mouse.move(640, 400);
+    await page.mouse.wheel(-420, -260);
+    await askAi.click();
+
+    const bar = page.getByRole('region', { name: 'AI bar' });
+
+    await expect(bar.getByRole('textbox', { name: 'Change to make' })).toBeFocused();
+    await expect(bar).toContainText('rectangle-1');
+    // The button hides while the chat is open.
+    await expect(askAi).toHaveCount(0);
+    await ask(page, 'make it green');
+    await bar.getByRole('button', { name: 'Accept' }).click();
+    await expect(bar).toContainText('Applied 1 change.');
+
+    await bar.getByRole('button', { name: 'Open in chat panel' }).click();
+    await expect(bar).toHaveCount(0);
+    // The panel carries on the bar's conversation; closing the panel earlier ended the first one.
+    await expect(page.getByRole('log', { name: 'AI conversation' })).toContainText('make it green');
+
+    await page.getByRole('button', { name: 'Close AI chat' }).click();
+    await askAi.click();
+    await page.keyboard.press('Escape');
+    await expect(bar).toHaveCount(0);
+    await expect(askAi).toBeVisible();
+});

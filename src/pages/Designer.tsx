@@ -30,7 +30,7 @@ import {
 import { useActions } from 'src/app/hooks';
 import { usePreviewOpen } from 'src/app/previewHooks';
 import { InteractivePreview } from 'src/ui/components/InteractivePreview';
-import { useAiEdit } from 'src/app/aiHooks';
+import { useAiEdit, useAiEditView } from 'src/app/aiHooks';
 import { ResetDocumentDialog } from 'src/ui/components/ResetDocumentDialog';
 import { DocumentHistory } from 'src/ui/components/DocumentHistory';
 import { MoveDocuments } from 'src/ui/components/MoveDocuments';
@@ -44,6 +44,7 @@ registerEditor();
 
 export const Designer: FC = () => {
     const aiEdit = useAiEdit();
+    const aiEditView = useAiEditView();
     const { closeAiEdit, closePreview } = useActions();
     const previewOpen = usePreviewOpen();
     const readOnly = useAppState(isReadOnly);
@@ -79,7 +80,7 @@ export const Designer: FC = () => {
                     id="aiEdit"
                     title="AI chat"
                     docking="vertical"
-                    visible={aiEdit !== undefined}
+                    visible={aiEdit !== undefined && aiEditView === 'panel'}
                     onClose={() => closeAiEdit()}
                 >
                     <EditWithWords />

@@ -1,29 +1,52 @@
 declare namespace StylesCssNamespace {
-    export interface IStylesCss {
-        actions: string;
-        chat: string;
-        conversation: string;
-        expandedArtwork: string;
-        form: string;
-        message: string;
-        operations: string;
-        preview: string;
-        previewArtwork: string;
-        problem: string;
-        prompt: string;
-        proposal: string;
-        records: string;
-        speaker: string;
-        status: string;
-        toolbar: string;
-        turn: string;
-        userMessage: string;
-    }
+  export interface IStylesCss {
+    actions: string;
+    applied: string;
+    bar: string;
+    barHeader: string;
+    barIcon: string;
+    barPrompt: string;
+    button: string;
+    card: string;
+    cardTitle: string;
+    changeDot: string;
+    chat: string;
+    chip: string;
+    conversation: string;
+    disclosure: string;
+    dots: string;
+    empty: string;
+    expandedArtwork: string;
+    field: string;
+    fieldControls: string;
+    form: string;
+    iconButton: string;
+    link: string;
+    localDot: string;
+    message: string;
+    operationKind: string;
+    operations: string;
+    outcome: string;
+    preview: string;
+    previewArtwork: string;
+    problem: string;
+    prompt: string;
+    pulse: string;
+    records: string;
+    reply: string;
+    send: string;
+    suggestions: string;
+    toolbar: string;
+    turn: string;
+    userMessage: string;
+    visuallyHidden: string;
+    working: string;
+  }
 }
 
 declare const StylesCssModule: StylesCssNamespace.IStylesCss & {
-    /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
-    locals: StylesCssNamespace.IStylesCss;
+  /** WARNING: Only available when `css-loader` is used without `style-loader` or `mini-css-extract-plugin` */
+  locals: StylesCssNamespace.IStylesCss;
 };
 
 export = StylesCssModule;

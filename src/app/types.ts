@@ -750,6 +750,8 @@ export type Application = {
     historyDocumentId: string | null;
     /** The document a person is asking AI to change, while its chat is open. */
     aiEditDocumentId: string | null;
+    /** Where that chat is shown: its docked panel, or the bar over the canvas. */
+    aiEditView: 'panel' | 'bar';
     guideDragActive: boolean;
     previewDocumentId: string | null;
     /** Modes captured when Preview opens, independent of later canvas simulation changes. */

@@ -1,4 +1,13 @@
-import React, { type FC, memo, useEffect, useMemo, useReducer, useState } from 'react';
+import { Maximize2 } from 'lucide-react';
+import React, {
+    type FC,
+    type ReactNode,
+    memo,
+    useEffect,
+    useMemo,
+    useReducer,
+    useState
+} from 'react';
 import { previewProposal } from 'src/ai/preview';
 import { useCurrentDocument, useReaction } from 'src/app/hooks';
 import type { Operation } from 'src/app/operations';
@@ -56,12 +65,16 @@ function useSettledRevision(documentId: string) {
     return revision;
 }
 
-/** A proposal's draft result, with Discard and Accept; Accept is offered only while the draft applies. */
+/**
+ * A proposal's card: its draft result, the list of changes (`children`), then Discard and
+ * Accept; Accept is offered only while the draft applies.
+ */
 export const ProposalPreview: FC<{
     operations: Operation[];
     onDiscard: () => void;
     onAccept: () => void;
-}> = memo(function ProposalPreview({ operations, onDiscard, onAccept }) {
+    children?: ReactNode;
+}> = memo(function ProposalPreview({ operations, onDiscard, onAccept, children }) {
     // Only the document's identity is tracked here; its edits arrive through the settled revision.
     const document = useCurrentDocument();
     const revision = useSettledRevision(document.id);
@@ -130,10 +143,16 @@ export const ProposalPreview: FC<{
                 drawn && (
                     <figure className={styles.preview} aria-label="Proposed result">
                         <figcaption>
-                            <strong>Proposed result</strong>
-                            <span>
-                                Not applied. Changes are outlined. Updates with your canvas edits.
-                            </span>
+                            <span>Not applied yet. Changes are outlined.</span>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                aria-label="Inspect preview"
+                                title="Inspect preview"
+                                onClick={() => setExpanded(true)}
+                            >
+                                <Maximize2 aria-hidden="true" size={14} strokeWidth={1.75} />
+                            </button>
                         </figcaption>
                         <div className={styles.previewArtwork}>
                             <DocumentThumbnail
@@ -142,9 +161,6 @@ export const ProposalPreview: FC<{
                                 fitChanges
                             />
                         </div>
-                        <button type="button" onClick={() => setExpanded(true)}>
-                            Inspect preview
-                        </button>
                         <Dialog
                             title="Proposed result"
                             description="Draft only, with the changes outlined. Close this preview to accept or discard the changes."
@@ -161,12 +177,14 @@ export const ProposalPreview: FC<{
                     </figure>
                 )
             )}
+            {children}
             <div className={styles.actions}>
-                <button type="button" onClick={onDiscard}>
+                <button type="button" className={styles.button} onClick={onDiscard}>
                     Discard
                 </button>
                 <button
                     type="button"
+                    className={styles.button}
                     data-variant="primary"
                     disabled={!preview.valid}
                     onClick={onAccept}

@@ -9,6 +9,8 @@ import { GuideGrips, Guides } from './Guides';
 import { Rulers } from '../Rulers';
 import { SelectionMenu } from '../SelectionMenu';
 import { SelectionBadge } from '../SelectionMenu/SelectionBadge';
+import { AiSelectionButton } from '../SelectionMenu/AiSelectionButton';
+import { AiCanvasBar } from '../EditWithWords';
 import { Shapes } from './Shapes';
 import { SnapLines } from '../SnapLines';
 import { Measures } from '../SnapLines/Measures';
@@ -47,6 +49,8 @@ export const Canvas: FC = () => {
             </Surface>
             <SelectionMenu overlay={overlay} />
             <SelectionBadge overlay={overlay} />
+            <AiSelectionButton overlay={overlay} />
+            <AiCanvasBar />
         </>
     );
 };

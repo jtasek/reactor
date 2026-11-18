@@ -9,6 +9,9 @@ const GAP = 38;
 /** How far around the box and the menu the pointer still counts as over them. */
 const REACH = 6;
 
+/** Whether the menu goes under a box whose top is at `top` on screen, for want of room above. */
+export const menuGoesBelow = (top: number) => top - GAP - MENU_HEIGHT < 0;
+
 export type SelectionMenuPlacement = { left: number; shown: boolean } & (
     | { below: false; bottom: number }
     | { below: true; top: number }
@@ -32,7 +35,7 @@ export function placeSelectionMenu(
     const right = extent.bottomRight.x * scale + position.x;
     const top = extent.topLeft.y * scale + position.y;
     const bottom = extent.bottomRight.y * scale + position.y;
-    const below = top - GAP - MENU_HEIGHT < 0;
+    const below = menuGoesBelow(top);
     const x = pointer.current.x * scale + position.x;
     const y = pointer.current.y * scale + position.y;
     const within = (minX: number, maxX: number, minY: number, maxY: number) =>

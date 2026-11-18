@@ -101,6 +101,22 @@ describe('the local test model', () => {
         expect(Object.keys(store.state.currentDocument.shapes)).toHaveLength(1);
     });
 
+    it('changes the selected text, and asks for a selection rather than adding text', async () => {
+        const { store } = createTestStore();
+        const [{ id }] = await accept(store, 'add text "Hello"');
+
+        const unselected = await ask(store, 'change text to "Ahoj"');
+        expect(unselected.result).toMatchObject({ kind: 'failed' });
+        expect(unselected.events).toContainEqual(
+            expect.objectContaining({ type: 'message', text: expect.stringContaining('Select what to change') })
+        );
+
+        store.actions.selectShape(id);
+        const [changed] = await accept(store, 'change text to "Ahoj"');
+        expect(changed).toMatchObject({ id, value: 'Ahoj' });
+        expect(Object.keys(store.state.currentDocument.shapes)).toHaveLength(1);
+    });
+
     it('fixes a broken first answer with /repair, with or without a request', async () => {
         const { store } = createTestStore();
         const { result, events } = await ask(store, '/repair add a circle');
