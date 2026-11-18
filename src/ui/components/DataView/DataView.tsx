@@ -1,14 +1,12 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {
-    Hash,
-    Link2,
-    List,
+    Check,
+    ChevronDown,
+    ChevronRight,
     Plus,
     Table2,
-    ToggleLeft,
     Trash2,
-    TriangleAlert,
-    Type
+    TriangleAlert
 } from 'lucide-react';
 import { useActions, useAppState } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
@@ -28,6 +26,8 @@ import {
     ruleTarget
 } from 'src/app/data';
 import { DataRules } from './DataRules';
+import { DataMap, type MapEntity } from './DataMap';
+import { TypeIcon } from './TypeIcon';
 import { conditionFields } from 'src/app/expressions';
 import { listsUsing } from 'src/app/dataLists';
 import type { DataChange, DataEdit, DataEditResult } from 'src/app/dataEdits';
@@ -50,24 +50,6 @@ const TAB_NAMES: Record<Tab, string> = { records: 'Records', fields: 'Fields', r
 
 /** Needs attention lists this many problems; the count above it says how many there are. */
 const MAX_LISTED_PROBLEMS = 20;
-
-const TYPE_ICONS = {
-    text: Type,
-    number: Hash,
-    boolean: ToggleLeft,
-    choice: List,
-    reference: Link2
-};
-
-const TypeIcon = ({ type }: { type: DataType }) => {
-    const Icon = TYPE_ICONS[type];
-
-    return (
-        <span className={styles.typeIcon} data-type={type} title={type}>
-            <Icon aria-hidden size={12} strokeWidth={2.25} />
-        </span>
-    );
-};
 
 /** One option per line; blank lines are ignored, the rest checked when saved. */
 const optionLines = (draft: string) =>
@@ -299,6 +281,11 @@ function DataEditor() {
     const tabsId = useId();
     const tabList = useRef<HTMLDivElement>(null);
     const newEntity = useRef<HTMLInputElement>(null);
+    const newField = useRef<HTMLInputElement>(null);
+    const panel = useRef<HTMLElement>(null);
+    const [selectedField, setSelectedField] = useState<string>();
+    const [filter, setFilter] = useState('');
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const data = useAppState((state) => {
         const document = state.currentDocument;
         const entities = Object.values(document.dataEntities)
@@ -362,9 +349,32 @@ function DataEditor() {
             fieldCounts[field.entityId] = (fieldCounts[field.entityId] ?? 0) + 1;
         }
 
+        const model: MapEntity[] = entities.map((item) => ({
+            id: item.id,
+            name: item.name,
+            records: recordCounts[item.id] ?? 0,
+            labelFieldId: labelField(document, item.id)?.id,
+            fields: dataFields(document, item.id).map((field) => ({
+                id: field.id,
+                name: field.name,
+                type: field.type,
+                required: field.required,
+                optionCount: field.options?.length ?? 0,
+                targetEntityId: field.targetEntityId
+            }))
+        }));
+        const fieldProblems: Record<string, number> = {};
+        for (const problems of Object.values(cellProblems)) {
+            for (const fieldId of Object.keys(problems)) {
+                fieldProblems[fieldId] = (fieldProblems[fieldId] ?? 0) + 1;
+            }
+        }
+
         return {
             documentId: document.id,
             entities,
+            model,
+            fieldProblems,
             recordCounts,
             fieldCounts,
             entity,
@@ -441,12 +451,47 @@ function DataEditor() {
 
     const entity = data.entity;
     const choose = (id: string) => {
+        if (id !== entityId) {
+            setSelectedField(undefined);
+        }
         setSelectedId(id);
         setDeletion(undefined);
         if (!data.fieldCounts[id]) {
             setTab('fields');
         }
     };
+    const selectField = (owner: string, fieldId: string) => {
+        choose(owner);
+        setSelectedField(fieldId);
+        setTab('fields');
+        requestAnimationFrame(() =>
+            panel.current
+                ?.querySelector(`[data-field-id="${CSS.escape(fieldId)}"]`)
+                ?.scrollIntoView?.({ block: 'nearest' })
+        );
+    };
+    const addFieldTo = (owner: string) => {
+        choose(owner);
+        setTab('fields');
+        requestAnimationFrame(() => newField.current?.focus());
+    };
+    const query = filter.trim().toLocaleLowerCase();
+    const shownEntities = data.model
+        .map((entity) => ({
+            entity,
+            fields: query
+                ? entity.fields.filter((field) => field.name.toLocaleLowerCase().includes(query))
+                : entity.fields
+        }))
+        .filter(
+            ({ entity, fields }) =>
+                !query || fields.length > 0 || entity.name.toLocaleLowerCase().includes(query)
+        );
+    const references = data.model.reduce(
+        (count, entity) =>
+            count + entity.fields.filter((field) => field.type === 'reference').length,
+        0
+    );
     const tabCounts: Record<Tab, number> = {
         records: data.records.length,
         fields: data.fields.length,
@@ -635,6 +680,7 @@ function DataEditor() {
                 <label>
                     Field name
                     <input
+                        ref={newField}
                         value={fieldName}
                         disabled={data.disabled}
                         onChange={(event) => setFieldName(event.target.value)}
@@ -693,7 +739,12 @@ function DataEditor() {
             {data.fields.length > 0 && (
                 <ul className={styles.group} aria-label="Fields">
                     {data.fields.map((field) => (
-                        <li className={styles.field} key={field.id}>
+                        <li
+                            className={styles.field}
+                            key={field.id}
+                            data-field-id={field.id}
+                            data-selected={field.id === selectedField || undefined}
+                        >
                             <div className={styles.fieldLine}>
                                 <TypeIcon type={field.type} />
                                 <ValueEditor
@@ -831,53 +882,127 @@ function DataEditor() {
     );
 
     return (
-        <section className={styles.dataView} aria-label="Data View">
-            {data.entity && (
-                <div className={styles.panelToolbar}>
-                    <div
-                        ref={tabList}
-                        className={styles.tabs}
-                        role="tablist"
-                        aria-label="Entity sections"
-                    >
-                        {TABS.map((section) => (
-                            <button
-                                key={section}
-                                type="button"
-                                role="tab"
-                                id={`${tabsId}-${section}`}
-                                aria-selected={tab === section}
-                                aria-controls={`${tabsId}-panel`}
-                                tabIndex={tab === section ? 0 : -1}
-                                onKeyDown={(event) => {
-                                    const at = TABS.indexOf(section);
-                                    const next =
-                                        event.key === 'ArrowRight'
-                                            ? TABS[(at + 1) % TABS.length]
-                                            : event.key === 'ArrowLeft'
-                                              ? TABS[(at + TABS.length - 1) % TABS.length]
-                                              : undefined;
-                                    if (next) {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        setTab(next);
-                                        tabList.current
-                                            ?.querySelector<HTMLButtonElement>(
-                                                `#${CSS.escape(`${tabsId}-${next}`)}`
-                                            )
-                                            ?.focus();
-                                    }
-                                }}
-                                onClick={() => setTab(section)}
-                            >
-                                {TAB_NAMES[section]}
-                                <span className={styles.count}>{tabCounts[section]}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-            <div className={styles.commandBar}>
+        <section ref={panel} className={styles.dataView} aria-label="Data View">
+            <nav className={styles.tree} aria-label="Entities">
+                <input
+                    type="search"
+                    aria-label="Filter entities and fields"
+                    placeholder="Filter entities and fields"
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value)}
+                />
+                <p className={styles.listHeading}>
+                    Entities <span>{data.entities.length}</span>
+                </p>
+                <ul className={styles.treeList}>
+                    {shownEntities.map(({ entity, fields }) => {
+                        const open =
+                            Boolean(query) || (expanded[entity.id] ?? entity.id === entityId);
+                        const current = entity.id === entityId;
+
+                        return (
+                            <li key={entity.id}>
+                                <div className={styles.treeRow} data-current={current || undefined}>
+                                    <button
+                                        type="button"
+                                        className={styles.twisty}
+                                        aria-label={`${open ? 'Hide' : 'Show'} fields of ${entity.name}`}
+                                        aria-expanded={open}
+                                        onClick={() =>
+                                            setExpanded({ ...expanded, [entity.id]: !open })
+                                        }
+                                    >
+                                        {open ? (
+                                            <ChevronDown aria-hidden size={12} />
+                                        ) : (
+                                            <ChevronRight aria-hidden size={12} />
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.treeItem}
+                                        aria-current={current || undefined}
+                                        onClick={() => choose(entity.id)}
+                                    >
+                                        <Table2 aria-hidden size={14} />
+                                        <span>{entity.name}</span>
+                                        <small>{entity.records}</small>
+                                    </button>
+                                </div>
+                                {open && (
+                                    <ul className={styles.treeList}>
+                                        {fields.map((field) => (
+                                            <li key={field.id}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.treeField}
+                                                    aria-pressed={
+                                                        current && field.id === selectedField
+                                                    }
+                                                    onClick={() => selectField(entity.id, field.id)}
+                                                >
+                                                    <TypeIcon type={field.type} />
+                                                    <span>
+                                                        {field.name}
+                                                        {field.required && (
+                                                            <span className={styles.required}>
+                                                                {' *'}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {current && data.fieldProblems[field.id] ? (
+                                                        <small data-problem>
+                                                            ⚠ {data.fieldProblems[field.id]}
+                                                        </small>
+                                                    ) : (
+                                                        field.id === entity.labelFieldId && (
+                                                            <small>names</small>
+                                                        )
+                                                    )}
+                                                </button>
+                                            </li>
+                                        ))}
+                                        {!query && (
+                                            <li>
+                                                <button
+                                                    type="button"
+                                                    className={styles.treeField}
+                                                    aria-label={`Add field to ${entity.name}`}
+                                                    disabled={data.disabled}
+                                                    onClick={() => addFieldTo(entity.id)}
+                                                >
+                                                    <Plus aria-hidden size={12} />
+                                                    <span className={styles.muted}>Add field</span>
+                                                </button>
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+                {data.entity && data.rules.length > 0 && (
+                    <>
+                        <p className={styles.listHeading}>
+                            Rules <span>{data.rules.length}</span>
+                        </p>
+                        <ul className={styles.treeList}>
+                            {data.rules.map((rule) => (
+                                <li key={rule.id}>
+                                    <button
+                                        type="button"
+                                        className={styles.treeItem}
+                                        onClick={() => setTab('rules')}
+                                    >
+                                        <Check aria-hidden size={14} />
+                                        <span>{rule.message}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
                 <form
                     className={styles.newEntity}
                     onSubmit={(event) => {
@@ -885,6 +1010,7 @@ function DataEditor() {
                         const result = edit({ kind: 'addEntity', name });
                         if (result.applied) {
                             setSelectedId(result.id!);
+                            setSelectedField(undefined);
                             setName('');
                             setTab('fields');
                         }
@@ -903,93 +1029,35 @@ function DataEditor() {
                         Add entity
                     </button>
                 </form>
-                {data.entity && (
-                    <div className={styles.utilities}>
-                        <button
-                            type="button"
-                            title={data.fields.length ? undefined : 'Add a field first'}
-                            disabled={
-                                data.disabled ||
-                                !data.fields.length ||
-                                data.records.length >= MAX_RECORDS_PER_ENTITY
-                            }
-                            onClick={() => {
-                                setTab('records');
-                                edit({ kind: 'addRecord', entityId: data.entity!.id });
-                            }}
-                        >
-                            <Plus aria-hidden size={16} />
-                            Add record
-                        </button>
-                        <button
-                            type="button"
-                            disabled={data.disabled}
-                            onClick={() =>
-                                setDeletion({
-                                    kind: 'deleteEntity',
-                                    id: data.entity!.id,
-                                    documentId: data.documentId
-                                })
-                            }
-                        >
-                            Delete entity…
-                        </button>
-                    </div>
-                )}
-            </div>
-            {data.entities.length > 0 && (
-                <div className={styles.compactPicker}>
-                    <select
-                        aria-label="Selected entity"
-                        value={entityId}
-                        onChange={(event) => choose(event.target.value)}
-                    >
-                        {data.entities.map((entity) => (
-                            <option key={entity.id} value={entity.id}>
-                                {entity.name}
-                            </option>
-                        ))}
-                    </select>
+            </nav>
+            <div className={styles.workArea}>
+                <div className={styles.commandBar}>
+                    <b>Data model</b>
+                    <span className={styles.muted}>
+                        {data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}{' '}
+                        · {references} {references === 1 ? 'reference' : 'references'}
+                    </span>
                 </div>
-            )}
-            <div className={styles.workspace}>
-                <nav className={styles.sidebar} aria-label="Entities">
-                    <p className={styles.listHeading}>
-                        {data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}
-                    </p>
-                    <ul className={styles.itemList}>
-                        {data.entities.map((entity) => {
-                            const count = data.recordCounts[entity.id] ?? 0;
-
-                            return (
-                                <li key={entity.id}>
-                                    <button
-                                        type="button"
-                                        className={styles.item}
-                                        aria-current={entity.id === entityId || undefined}
-                                        onClick={() => choose(entity.id)}
-                                    >
-                                        <Table2 aria-hidden size={16} />
-                                        <span>
-                                            {entity.name}
-                                            <small>
-                                                {count} {count === 1 ? 'record' : 'records'}
-                                            </small>
-                                        </span>
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
-                <div className={styles.detail}>
-                    {notices}
+                {data.entities.length > 0 && (
+                    <DataMap
+                        entities={data.model}
+                        selectedEntityId={entityId}
+                        selectedFieldId={selectedField}
+                        problems={data.fieldProblems}
+                        selectEntity={choose}
+                        selectField={selectField}
+                        addField={addFieldTo}
+                    />
+                )}
+                <div className={styles.drawer}>
                     {!data.entity ? (
                         <div className={styles.emptyState}>
+                            {notices}
                             <h3>No entities yet.</h3>
                             <p>
                                 An entity is a kind of thing your prototype shows, like Customers or
-                                Orders. Name one above to define its fields and sample records.
+                                Orders. Name one under the entity list to define its fields and
+                                sample records.
                             </p>
                             <p>
                                 To repeat a component over records, select an instance and use
@@ -998,8 +1066,7 @@ function DataEditor() {
                         </div>
                     ) : (
                         <>
-                            <div className={styles.formField}>
-                                <span aria-hidden>Name</span>
+                            <div className={styles.drawerHeader}>
                                 <ValueEditor
                                     key={`${data.entity.id}:${data.entity.name}`}
                                     variant="title"
@@ -1014,8 +1081,87 @@ function DataEditor() {
                                         })
                                     }
                                 />
+                                <div
+                                    ref={tabList}
+                                    className={styles.tabs}
+                                    role="tablist"
+                                    aria-label="Entity sections"
+                                >
+                                    {TABS.map((section) => (
+                                        <button
+                                            key={section}
+                                            type="button"
+                                            role="tab"
+                                            id={`${tabsId}-${section}`}
+                                            aria-selected={tab === section}
+                                            aria-controls={`${tabsId}-panel`}
+                                            tabIndex={tab === section ? 0 : -1}
+                                            onKeyDown={(event) => {
+                                                const at = TABS.indexOf(section);
+                                                const next =
+                                                    event.key === 'ArrowRight'
+                                                        ? TABS[(at + 1) % TABS.length]
+                                                        : event.key === 'ArrowLeft'
+                                                          ? TABS[
+                                                                (at + TABS.length - 1) % TABS.length
+                                                            ]
+                                                          : undefined;
+                                                if (next) {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    setTab(next);
+                                                    tabList.current
+                                                        ?.querySelector<HTMLButtonElement>(
+                                                            `#${CSS.escape(`${tabsId}-${next}`)}`
+                                                        )
+                                                        ?.focus();
+                                                }
+                                            }}
+                                            onClick={() => setTab(section)}
+                                        >
+                                            {TAB_NAMES[section]}
+                                            <span className={styles.count}>
+                                                {tabCounts[section]}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <span className={styles.spacer} />
+                                <button
+                                    type="button"
+                                    title={data.fields.length ? undefined : 'Add a field first'}
+                                    disabled={
+                                        data.disabled ||
+                                        !data.fields.length ||
+                                        data.records.length >= MAX_RECORDS_PER_ENTITY
+                                    }
+                                    onClick={() => {
+                                        setTab('records');
+                                        edit({ kind: 'addRecord', entityId: data.entity!.id });
+                                    }}
+                                >
+                                    <Plus aria-hidden size={16} />
+                                    Add record
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.iconButton}
+                                    aria-label="Delete entity…"
+                                    title="Delete entity…"
+                                    disabled={data.disabled}
+                                    onClick={() =>
+                                        setDeletion({
+                                            kind: 'deleteEntity',
+                                            id: data.entity!.id,
+                                            documentId: data.documentId
+                                        })
+                                    }
+                                >
+                                    <Trash2 aria-hidden size={15} />
+                                </button>
                             </div>
                             {confirmation('deleteEntity', data.entity.id)}
+                            {notices}
                             <div
                                 className={styles.tabPanel}
                                 role="tabpanel"
