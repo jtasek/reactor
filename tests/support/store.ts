@@ -30,6 +30,7 @@ import { createAssets } from 'src/app/services/assets';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import type { Accounts } from 'src/app/services/accounts';
 import type { Api, Transport } from 'src/app/services/api';
+import type { LocalAi } from 'src/app/services/localAi';
 import type { AssetServer } from 'src/app/services/assetSync';
 import type { Channel } from 'src/app/services/tabSync';
 import * as alignment from 'src/app/alignment';
@@ -79,6 +80,8 @@ export function createTestStore(
         accounts?: Accounts;
         lastOwner?: string;
         api?: Api;
+        /** Where the chat answers from without the server's AI; never by default. */
+        localAi?: LocalAi;
         assetServer?: AssetServer;
         serverTransport?: Transport;
         /** Local storage shared with other stores, as copies on one device share it. */
@@ -153,6 +156,7 @@ export function createTestStore(
         openChannel: options.openChannel ?? quietChannel,
         accounts: options.accounts ?? noAccounts,
         api: options.api ?? offline,
+        localAi: () => options.localAi ?? 'never',
         serverTransport: () => options.serverTransport ?? { url: 'ws://127.0.0.1:9/sync' },
         assetServer: () => options.assetServer,
         clipboard: createClipboard(systemClipboard),

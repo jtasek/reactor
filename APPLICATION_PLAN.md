@@ -641,9 +641,9 @@ suggest. Do these in order; each is a separate change.
    Built (2026-11-15); see the [delivery log](DELIVERY_LOG.md#s1-step-8-projection-parity-suite).
 9. **First-run path (S–M).** Template, edit, Prototype, share link, with none of the advanced
    concepts required; measure time to the first shared link.
-   Built (2026-11-16); see the [delivery log](DELIVERY_LOG.md#s1-step-9-first-run-path). Not
-   yet: editing a Screen view's text on the canvas, and a fitted camera for a document reopened
-   after the move.
+   Built (2026-11-16); see the [delivery log](DELIVERY_LOG.md#s1-step-9-first-run-path). Page
+   text is edited on the canvas since 2026-11-18 ([delivery log](DELIVERY_LOG.md#page-text-on-the-canvas)).
+   Not yet: a fitted camera for a document reopened after the move.
 10. **Housekeeping (S).** Move code the server shares into one folder copied whole by the
     Dockerfile; load the readers for old schema versions only when an old document opens, to
     bring the entry bundle back under 492 KiB; add a nightly WebKit and PostgreSQL run; give each
@@ -655,7 +655,7 @@ suggest. Do these in order; each is a separate change.
     items 1 and 3: the Glossary's words in the UI, the AI instructions and here, and three traps
     removed (a nested Page, an empty separate design, two width-selected dimensions).
     Built (2026-11-18); see the [delivery log](DELIVERY_LOG.md#s1-step-11-vocabulary). Not yet:
-    editing a page's text on the canvas, and Sizes as a document concept.
+    Sizes as a document concept.
 
 Done when the steps' acceptance specs pass and the outside-user gate has run: at least five
 outside designers have shared a prototype link that someone else opened, and their problems

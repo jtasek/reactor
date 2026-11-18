@@ -161,7 +161,7 @@ test('refuses a stale form after the record changes in another editor', async ({
     await openEditor(other, ['Data']);
     const data = other.getByRole('region', { name: 'Data', exact: true });
     await data.getByRole('textbox', { name: 'Name, record 1', exact: true }).fill('Remote update');
-    await data.getByRole('button', { name: 'Save Name, record 1', exact: true }).click();
+    await data.getByRole('textbox', { name: 'Name, record 1', exact: true }).press('Enter');
     await expect(form.getByRole('alert')).toContainText('This record or its fields changed');
     await expect(form.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await form.getByRole('button', { name: 'Cancel', exact: true }).click();

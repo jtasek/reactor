@@ -654,8 +654,11 @@ export type Account =
     | { kind: 'signedOut' }
     | { kind: 'signedIn'; id: string; name: string; email: string; image?: string | null };
 
-/** Whether the server offers AI to the person signed in; never signed out or without a provider. */
-export type AiAvailability = 'available' | 'unavailable';
+/**
+ * Whether the server offers AI to the person signed in, never signed out or without a
+ * provider; or whether the chat answers from the local test model instead.
+ */
+export type AiAvailability = 'available' | 'local' | 'unavailable';
 
 /** Whether this copy's documents are saved, and signed in synced; `reason` says why they are not saved. */
 export type SaveStatus =
@@ -731,8 +734,8 @@ export type Application = {
     /** The group double-clicked into, whose shapes are selected one by one. */
     enteredGroupId: string | null;
     enteredComponentId: string | null;
-    /** The text shape double-clicked to change its words on the canvas. */
-    editingText?: { documentId: string; shapeId: string } | null;
+    /** The text shape double-clicked to change its words on the canvas, and the view it is in. */
+    editingText?: { documentId: string; shapeId: string; viewId?: string } | null;
     /** Canvas context to restore after editing a component, on this screen only. */
     componentEditingReturn?: {
         documentId: string;

@@ -982,6 +982,23 @@ _Recorded 2026-11-16._
 - **This log.** Implementation paragraphs from R2, R4, the interactive visualization increments,
   S1 and R5 moved here; the plan keeps one line per built step with what is still open.
 
+## Page text on the canvas
+
+_Recorded 2026-11-18._ Priority 2 of the concept-model review.
+
+- **What changed.** Double-clicking text where a page shows it opens the same field as for
+  canvas text. `editingText` carries the view it was opened in (`viewId`), and the view draws the
+  field over its own copy of the text (`src/ui/components/Shape/ShapeTextEditor.tsx`, shared with
+  canvas shapes). `editTextAtPointer` uses the view's hit geometry, so the text found is the one
+  drawn there, at that view's width.
+- **Where the words land.** On the shape the view draws: the page's shared text, so every view of
+  the page shows the change, or, in a view showing a separate design, that design's own text.
+  No schema change.
+- **When it is refused.** The same rules as other edits through a view: a locked, hidden or
+  read-only view or page, a locked document, or another tool than Select. Text bound to a variable
+  or a record follows the Inspector's Text field. Text inside component instances is still
+  changed through the instance's props.
+
 ## S1 step 11: Vocabulary
 
 _Recorded 2026-11-18._
@@ -1008,7 +1025,7 @@ outside-user gate. No schema or preview protocol change; stored names (`kind: 's
   dimension is Sizes; `updateDimension` and AI `setDimension` refuse a second.
 - **Tests.** Unit tests for the copy, the nested refusal and the Sizes rule; tests that select by
   label updated (unit and browser).
-- **Not in this step.** Editing a page's text on the canvas (review item 2), Sizes as a document
+- **Not in this step.** Sizes as a document
   concept and size overrides (items 4–8). "View only", "Card view" and "List view" stay: they are
   about access and lists, not pages. The AI eval cases replay recorded answers and still pass;
   their prompts were not re-recorded.

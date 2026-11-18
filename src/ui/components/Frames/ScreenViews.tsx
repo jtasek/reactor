@@ -27,6 +27,7 @@ import { getComponentByType } from 'src/tools/components';
 import { Label } from '../Label';
 import { Handles } from '../Selectable/Resizable';
 import { Instance } from '../Shape/Instance';
+import { ShapeTextEditor } from '../Shape/ShapeTextEditor';
 import { ScreenViewContainerSelection } from './ScreenViewContainerSelection';
 import styles from './styles.css';
 import { useLargeSelection } from '../Selectable/LargeSelection';
@@ -134,6 +135,10 @@ const ProjectedShape = memo(
                 ? null
                 : (getComponentByType(painted.type) as FC<Omit<Shape, 'key'>>);
         const { key, ...props } = painted;
+        const editingText =
+            state.editingText?.documentId === document.id &&
+            state.editingText.viewId === viewId &&
+            state.editingText.shapeId === shape.id;
 
         return (
             <g
@@ -147,7 +152,8 @@ const ProjectedShape = memo(
                     } as CSSProperties
                 }
             >
-                <g opacity={painted.opacity} data-guide-outline="">
+                {/* The field drawn over it shows the words while they change. */}
+                <g opacity={editingText ? 0 : painted.opacity} data-guide-outline="">
                     {painted.type === 'instance' ? (
                         <>
                             <Instance instance={painted} source={source} context={context} />
@@ -164,6 +170,7 @@ const ProjectedShape = memo(
                         Primitive && createElement(Primitive, { ...props, key, selected: false })
                     )}
                 </g>
+                {editingText && <ShapeTextEditor shape={shape} document={document} />}
                 {interactive && !inSelectedContainer && (
                     <ProjectedSelection
                         shape={shape}

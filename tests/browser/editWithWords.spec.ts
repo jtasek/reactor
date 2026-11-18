@@ -4,6 +4,7 @@ import { createVariable } from './support/variables';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MAX_CONTEXT_BYTES } from '../../src/ai/context';
 import { drawRect, openEditor, shapes } from './support/editor';
+import { showDataTab } from './support/dataView';
 import { buildStarterTemplate } from 'src/templates/build';
 import { createDocument } from 'src/app/factories';
 import { Collaboration } from 'src/app/services/collaboration';
@@ -316,6 +317,7 @@ test('pasted CSV becomes an entity with valid records once accepted, as one undo
 
     await chat.getByRole('button', { name: 'Accept' }).click();
     await expect(chat).toContainText('Applied. You can undo this change.');
+    await showDataTab(panel, 'Records');
     await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveValue(
         '00042'
     );

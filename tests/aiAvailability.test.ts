@@ -1,5 +1,6 @@
 import type { AccountUser, Accounts } from 'src/app/services/accounts';
 import type { Api } from 'src/app/services/api';
+import type { LocalAi } from 'src/app/services/localAi';
 import { createTestStore } from './support/store';
 
 const ADA: AccountUser = { id: 'user-ada', name: 'Ada', email: 'ada@example.com' };
@@ -7,7 +8,7 @@ const ADA: AccountUser = { id: 'user-ada', name: 'Ada', email: 'ada@example.com'
 const unreachable = () => Promise.reject(new Error('The server cannot be reached'));
 
 /** Starts the editor with `user` signed in, or nobody, on a server answering AI with `ai`. */
-async function start(user: AccountUser | null, ai: boolean) {
+async function start(user: AccountUser | null, ai: boolean, localAi: LocalAi = 'never') {
     const accounts: Accounts = {
         session: async () => user,
         signIn: unreachable,
@@ -23,7 +24,7 @@ async function start(user: AccountUser | null, ai: boolean) {
         deleteDocument: unreachable,
         aiAvailable
     };
-    const { store } = createTestStore({}, { accounts, api });
+    const { store } = createTestStore({}, { accounts, api, localAi });
 
     await store.onInitialize();
     // The server is asked once startup has ended.
@@ -46,6 +47,19 @@ describe('AI availability', () => {
 
         expect(ai).toBe('unavailable');
         expect(aiAvailable).not.toHaveBeenCalled();
+    });
+});
+
+describe('the local test model', () => {
+    it('answers when asked for with ?ai=local, even with the server offering AI', async () => {
+        expect((await start(ADA, true, 'always')).ai).toBe('local');
+        expect((await start(null, false, 'always')).ai).toBe('local');
+    });
+
+    it('answers in development only where the server offers no AI', async () => {
+        expect((await start(ADA, true, 'withoutServer')).ai).toBe('available');
+        expect((await start(ADA, false, 'withoutServer')).ai).toBe('local');
+        expect((await start(null, true, 'withoutServer')).ai).toBe('local');
     });
 });
 

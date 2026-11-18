@@ -222,8 +222,8 @@ export function DataRules({
 
     return (
         <section aria-label="Rules">
-            <h3>Rules</h3>
-            <p>
+            <h3 className={styles.visuallyHidden}>Rules</h3>
+            <p className={styles.hint}>
                 A record must follow these rules to be saved from a Prototype form. Sample records
                 that break one are listed under Needs attention.
             </p>
@@ -282,7 +282,7 @@ export function DataRules({
                     </div>
                 )
             )}
-            {!rules.length && <p>No rules yet.</p>}
+            {!rules.length && <p className={styles.tableEmpty}>No rules yet.</p>}
             {editing === 'new' ? (
                 <RuleForm
                     fields={fields}
@@ -301,6 +301,7 @@ export function DataRules({
             ) : (
                 <button
                     type="button"
+                    className={styles.primary}
                     disabled={disabled || !fields.length || editing !== undefined}
                     onClick={() => setEditing('new')}
                 >
@@ -415,12 +416,18 @@ function RuleForm({
                     ))}
                 </select>
             </label>
-            <button type="button" onClick={cancel}>
-                Cancel
-            </button>
-            <button type="submit" disabled={disabled || !message.trim()}>
-                {rule ? 'Save rule' : 'Add rule'}
-            </button>
+            <div className={styles.formActions}>
+                <button type="button" onClick={cancel}>
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    className={styles.primary}
+                    disabled={disabled || !message.trim()}
+                >
+                    {rule ? 'Save rule' : 'Add rule'}
+                </button>
+            </div>
             {problem && <small role="alert">{problem}</small>}
         </form>
     );
@@ -585,6 +592,7 @@ function ConditionRows({
             })}
             <button
                 type="button"
+                className={styles.plain}
                 disabled={disabled}
                 onClick={() => change({ ...group, rows: [...group.rows, emptyRow(fields)] })}
             >
