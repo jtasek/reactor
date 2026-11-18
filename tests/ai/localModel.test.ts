@@ -108,7 +108,10 @@ describe('the local test model', () => {
         const unselected = await ask(store, 'change text to "Ahoj"');
         expect(unselected.result).toMatchObject({ kind: 'failed' });
         expect(unselected.events).toContainEqual(
-            expect.objectContaining({ type: 'message', text: expect.stringContaining('Select what to change') })
+            expect.objectContaining({
+                type: 'message',
+                text: expect.stringContaining('Select what to change')
+            })
         );
 
         store.actions.selectShape(id);
