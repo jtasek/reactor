@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openEditor } from './support/editor';
+import { showDataTab } from './support/dataView';
 
 test('keeps records in added order and confirms deletes beside the button', async ({ page }) => {
     await openEditor(page, ['Data View']);
@@ -22,6 +23,7 @@ test('keeps records in added order and confirms deletes beside the button', asyn
         ).toHaveValue(name);
     }
 
+    await showDataTab(panel, 'Fields');
     await panel.getByRole('button', { name: 'Delete Name…', exact: true }).click();
     const cancel = panel.getByRole('button', { name: 'Cancel', exact: true });
     await expect(cancel).toBeFocused();

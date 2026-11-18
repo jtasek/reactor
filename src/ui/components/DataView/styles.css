@@ -1,126 +1,875 @@
+/*
+ * Content sits on opaque white; only the controls layer (toolbar, segmented control, entity
+ * list) is glass, so records stay readable while scrolling under it.
+ */
 .dataView {
+    --dv-tint: var(--selection-color);
+    --dv-tint-soft: color-mix(in srgb, var(--selection-color) 12%, transparent);
+    --dv-tint-ring: color-mix(in srgb, var(--selection-color) 45%, transparent);
+    --dv-sidebar: color-mix(in srgb, var(--documents-background) 80%, transparent);
+    --dv-glass: color-mix(in srgb, var(--surface) 84%, transparent);
+    --dv-glass-edge: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--hairline-color),
+        0 6px 18px -8px rgb(0 0 0 / 18%);
+    --dv-pill-shadow: 0 0 0 0.5px var(--hairline-color), 0 1px 3px rgb(0 0 0 / 12%);
+    --dv-error-soft: color-mix(in srgb, var(--error-color) 8%, transparent);
+    --dv-row-hover: color-mix(in srgb, var(--label-primary) 3%, transparent);
+    --dv-capsule: 999px;
+    --dv-hairline: 0 0 0 0.5px var(--hairline-color);
+    --dv-focus: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+    --dv-ring: 0 0 0 2px var(--dv-tint-ring);
+
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
     background: var(--panel-content-background);
     color: var(--text-color);
-    padding: 16px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
     font-size: var(--font-size-body);
 }
-.dataView form,
-.field {
-    display: flex;
-    align-items: end;
-    flex-wrap: wrap;
-    gap: var(--panel-gap);
-    margin: 10px 0;
+
+.dataView * {
+    box-sizing: border-box;
 }
-.dataView label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+
 .dataView input,
 .dataView select,
+.dataView textarea,
 .dataView button {
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    background: var(--control-background);
-    color: var(--text-color);
     font: inherit;
-    padding: 6px;
+    color: inherit;
 }
+
+.dataView input,
+.dataView select,
+.dataView textarea {
+    min-height: 26px;
+    padding: 3px 8px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--field-background);
+    outline: none;
+}
+
+.dataView textarea {
+    resize: vertical;
+    padding-block: 6px;
+}
+
 .dataView input:focus-visible,
 .dataView select:focus-visible,
+.dataView textarea:focus-visible,
 .dataView button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    box-shadow: var(--dv-focus);
 }
+
+.dataView button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 26px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--dv-capsule);
+    background: var(--field-background);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dataView button:hover:not(:disabled) {
+    background: var(--menu-hover);
+}
+
 .dataView button:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
+    cursor: default;
 }
-.field {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--hairline-color);
+
+.dataView .primary {
+    background: var(--dv-tint);
+    color: var(--on-selection-color);
+    font-weight: var(--font-weight-medium);
 }
-.records {
+
+.dataView .primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--selection-color) 88%, black);
+}
+
+.dataView .destructive {
+    background: var(--error-color);
+    color: var(--on-selection-color);
+    font-weight: var(--font-weight-medium);
+}
+
+.dataView .destructive:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--error-color) 88%, black);
+}
+
+.dataView .iconButton {
+    width: 26px;
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .plain {
+    align-self: flex-start;
+    background: transparent;
+    color: var(--dv-tint);
+    padding: 0 4px;
+}
+
+.dataView .plain:hover:not(:disabled) {
+    background: var(--dv-tint-soft);
+}
+
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.hint {
+    margin: 10px 2px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+.count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: var(--dv-capsule);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* Sidebar: a source list of entities, with a new-entity field at its foot. */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 10px 8px;
+    border-right: 0.5px solid var(--hairline-color);
+    background: var(--dv-sidebar);
+}
+
+.sidebarTitle {
+    margin: 2px 8px 6px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+}
+
+.entityList {
+    flex: 0 1 auto;
     overflow: auto;
-    margin-top: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
-.records table {
-    border-collapse: collapse;
+
+.dataView .entity {
+    justify-content: flex-start;
+    gap: 8px;
     width: 100%;
-}
-.records th,
-.records td {
+    min-height: var(--list-row-height);
+    padding: 0 8px;
+    border-radius: var(--radius-md);
+    background: transparent;
     text-align: left;
-    padding: 8px;
-    border: 1px solid var(--hairline-color);
-    vertical-align: top;
 }
-.valueEditor input,
-.valueEditor select {
-    min-width: 100px;
-    max-width: 100%;
+
+.entity svg {
+    flex: none;
+    color: var(--text-secondary-color);
 }
-.valueEditor small {
-    flex-basis: 100%;
+
+.entityName {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.confirmation {
-    flex-basis: 100%;
+
+.dataView .entity[aria-current='true'] {
+    background: var(--dv-tint-soft);
+    color: var(--dv-tint);
+    font-weight: var(--font-weight-medium);
+}
+
+.entity[aria-current='true'] svg,
+.entity[aria-current='true'] .count {
+    color: var(--dv-tint);
+}
+
+.newEntity {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.newEntity input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Main column: its own scroller, so the glass toolbar floats over the content. */
+.main {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 12px 16px;
+}
+
+.toolbar {
+    position: sticky;
+    top: 8px;
+    z-index: 2;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--panel-gap);
-    margin: 8px 0;
-    padding: 8px 10px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    gap: 6px;
+    margin: 8px 0 10px;
+    padding: 6px 6px 6px 8px;
+    border-radius: 14px;
+    background: var(--dv-glass);
+    backdrop-filter: var(--backdrop-filter);
+    box-shadow: var(--dv-glass-edge);
 }
+
+.spacer {
+    flex: 1 1 0;
+}
+
+/* The segmented control: a capsule track, the selected segment a raised white pill. */
+.segments {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: var(--dv-capsule);
+    background: var(--field-background);
+}
+
+.dataView .segments button {
+    min-height: 24px;
+    padding: 0 10px;
+    background: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .segments button[aria-selected='true'] {
+    background: var(--surface);
+    color: var(--text-color);
+    font-weight: var(--font-weight-medium);
+    box-shadow: var(--dv-pill-shadow);
+}
+
+.message {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--warning-background);
+    color: var(--warning-color);
+}
+
+.attention {
+    margin: 0 0 10px;
+    border-radius: var(--radius-md);
+    background: var(--warning-background);
+    color: var(--warning-color);
+}
+
+.attention summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}
+
+.attention ul {
+    margin: 0;
+    padding: 0 12px 8px 32px;
+}
+
+.attention button {
+    margin: 0 0 10px 12px;
+}
+
+.tabPanel {
+    min-width: 0;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 360px;
+    margin: 48px auto;
+    color: var(--text-secondary-color);
+    text-align: center;
+}
+
+.emptyState h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: var(--font-size-title-3);
+}
+
+.emptyState p {
+    margin: 0;
+}
+
+/* Records: a grid of quiet cells; a cell shows a field only on hover or focus. */
+.records {
+    overflow: auto;
+    border-radius: 10px;
+    box-shadow: var(--dv-hairline);
+}
+
+.records table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.records th,
+.records td {
+    padding: 2px;
+    border-bottom: 0.5px solid var(--hairline-color);
+    text-align: left;
+    vertical-align: top;
+}
+
+.records td + td,
+.records th + td,
+.records thead th + th {
+    border-left: 0.5px solid var(--hairline-color);
+}
+
+.records thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 8px;
+    background: var(--documents-background);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.records tbody tr:hover {
+    background: var(--dv-row-hover);
+}
+
+.records tbody tr:last-child > * {
+    border-bottom: 0;
+}
+
+.columnName {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.required {
+    color: var(--error-color);
+    text-decoration: none;
+}
+
+.records .rowNumber {
+    width: 1%;
+    min-width: 32px;
+    padding: 8px 6px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-regular);
+    text-align: right;
+}
+
+.rowNumber small {
+    display: block;
+    max-width: 160px;
+    color: var(--error-color);
+    text-align: left;
+    white-space: normal;
+}
+
+.records .rowActions {
+    width: 1%;
+    padding: 2px;
+}
+
+.rowActions button {
+    opacity: 0;
+}
+
+.records tr:hover .rowActions button,
+.rowActions button:focus-visible {
+    opacity: 1;
+}
+
+.records td > small {
+    display: block;
+    padding: 0 8px 4px;
+    color: var(--error-color);
+    font-size: var(--font-size-caption);
+}
+
+.records td > small:empty {
+    display: none;
+}
+
+.records td[data-problem] {
+    background: var(--dv-error-soft);
+}
+
+.tableEmpty {
+    margin: 0;
+    padding: 20px;
+    color: var(--text-secondary-color);
+    text-align: center;
+}
+
+/* One value: borderless until hovered or focused, with a check button once it is changed. */
+.valueEditor {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.valueEditor input,
+.valueEditor select {
+    flex: 1 1 auto;
+    min-width: 72px;
+    background: transparent;
+    transition: background 120ms, box-shadow 120ms;
+}
+
+.valueEditor input:hover:not(:disabled),
+.valueEditor select:hover:not(:disabled) {
+    background: var(--field-background);
+}
+
+.dataView .valueEditor input:focus-visible,
+.dataView .valueEditor select:focus-visible {
+    background: var(--surface);
+    box-shadow: var(--dv-ring);
+}
+
+.valueEditor[data-changed] input,
+.valueEditor[data-changed] select {
+    background: var(--dv-tint-soft);
+}
+
+.dataView .save {
+    width: 22px;
+    min-height: 22px;
+    padding: 0;
+    background: var(--dv-tint);
+    color: var(--on-selection-color);
+}
+
+.dataView .save:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--selection-color) 88%, black);
+}
+
+.valueEditor small {
+    flex-basis: 100%;
+    padding: 0 8px;
+    color: var(--error-color);
+}
+
+.valueEditor[data-variant='title'] {
+    flex: 1 1 100px;
+}
+
+.valueEditor[data-variant='title'] input {
+    min-width: 60px;
+    font-size: var(--font-size-title-3);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-title);
+}
+
+.valueEditor[data-variant='name'] {
+    flex: 1 1 140px;
+}
+
+.valueEditor[data-variant='name'] input {
+    font-weight: var(--font-weight-medium);
+}
+
+/* Fields: an inset grouped list, one row per field and details beneath it. */
+.newField {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--documents-background);
+}
+
+.newField label,
+.setting,
+.optionsEditor label,
+.fieldDetail label,
+.ruleForm > label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+.newField input,
+.newField select,
+.newField textarea {
+    background: var(--surface);
+    color: var(--text-color);
+    font-size: var(--font-size-body);
+}
+
+.newField label:first-child {
+    flex: 1 1 140px;
+}
+
+.newField .wide {
+    flex: 1 1 100%;
+}
+
+.dataView .toggle {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    cursor: pointer;
+}
+
+/* A checkbox drawn as a small switch. */
+.toggle input {
+    appearance: none;
+    position: relative;
+    width: 28px;
+    min-height: 0;
+    height: 16px;
+    padding: 0;
+    border-radius: var(--dv-capsule);
+    background: var(--control-track-color);
+    cursor: pointer;
+    transition: background 150ms;
+}
+
+.toggle input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: var(--dv-pill-shadow);
+    transition: transform 150ms;
+}
+
+.toggle input:checked {
+    background: var(--dv-tint);
+}
+
+.toggle input:checked::after {
+    transform: translateX(12px);
+}
+
+.group {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-radius: 10px;
+    box-shadow: var(--dv-hairline);
+}
+
+.field {
+    padding: 4px 8px 4px 10px;
+}
+
+.field + .field {
+    border-top: 0.5px solid var(--hairline-color);
+}
+
+.fieldLine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.dataView .typeSelect {
+    min-width: 0;
+    padding-inline: 8px;
+    background: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .typeSelect:hover:not(:disabled) {
+    background: var(--field-background);
+}
+
+.typeIcon {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    background: var(--tag-gray-background);
+    color: var(--tag-gray-color);
+}
+
+.typeIcon[data-type='text'] {
+    background: var(--tag-blue-background);
+    color: var(--tag-blue-color);
+}
+
+.typeIcon[data-type='number'] {
+    background: var(--tag-green-background);
+    color: var(--tag-green-color);
+}
+
+.typeIcon[data-type='boolean'] {
+    background: var(--tag-orange-background);
+    color: var(--tag-orange-color);
+}
+
+.typeIcon[data-type='choice'] {
+    background: var(--tag-purple-background);
+    color: var(--tag-purple-color);
+}
+
+.typeIcon[data-type='reference'] {
+    background: var(--tag-teal-background);
+    color: var(--tag-teal-color);
+}
+
+.badge {
+    padding: 1px 6px;
+    border-radius: var(--dv-capsule);
+    background: var(--dv-tint-soft);
+    color: var(--dv-tint);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-medium);
+}
+
+.optionsEditor,
+.fieldDetail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px;
+    margin: 4px 0 6px 26px;
+}
+
+.optionsEditor label {
+    flex: 1 1 220px;
+}
+
+.optionsEditor small {
+    flex-basis: 100%;
+    color: var(--error-color);
+}
+
+.setting {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    box-shadow: var(--dv-hairline);
+}
+
+.setting select {
+    margin-left: auto;
+}
+
+.confirmation {
+    display: flex;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--panel-gap);
+    margin: 6px 0 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--error-background);
+    color: var(--error-color);
+}
+
 .confirmation p {
     flex-basis: 100%;
     margin: 0;
 }
+
+/* Rules */
 .rule {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--panel-gap);
-    padding: 8px 0;
-    border-bottom: 1px solid var(--hairline-color);
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    box-shadow: var(--dv-hairline);
 }
+
 .rule p {
     display: flex;
+    flex: 1 1 240px;
     flex-direction: column;
     gap: 2px;
-    flex: 1 1 240px;
     margin: 0;
 }
+
+.rule span {
+    color: var(--text-secondary-color);
+}
+
+.rule small {
+    color: var(--error-color);
+}
+
 .dataView .ruleForm {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 10px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--documents-background);
 }
+
+.ruleForm input,
+.ruleForm select {
+    background: var(--surface);
+}
+
 .conditions {
     display: flex;
     flex-direction: column;
     gap: var(--panel-gap);
     margin: 0;
-    padding: 8px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    padding: 10px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--dv-hairline);
 }
+
+.conditions legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 2px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-medium);
+}
+
+.conditions label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .condition {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--panel-gap);
+    gap: 6px;
 }
+
+.condition input,
+.condition select {
+    background: var(--field-background);
+}
+
 .dataView .inline {
     flex-direction: row;
     align-items: center;
+    gap: 6px;
 }
-.records th small {
-    display: block;
-    font-weight: normal;
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Narrow panels: the entity list becomes a scrolling row of capsules above the content. */
+@container (width < 560px) {
+    .dataView {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .sidebar {
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-right: 0;
+        border-bottom: 0.5px solid var(--hairline-color);
+    }
+
+    .sidebarTitle {
+        display: none;
+    }
+
+    .entityList li {
+        flex: none;
+    }
+
+    .entityList {
+        display: flex;
+        flex: 1 1 auto;
+        gap: 4px;
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    .dataView .entity {
+        width: auto;
+        border-radius: var(--dv-capsule);
+    }
+
+    .newEntity {
+        flex: 0 0 132px;
+        min-width: 0;
+        margin-top: 0;
+    }
+
+    .main {
+        padding: 0 8px 12px;
+    }
 }

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { dataListFixture } from '../support/dataList';
 import { serializePersistedState } from 'src/app/services/documentStorage';
+import { showDataTab } from './support/dataView';
 import { openEditor } from './support/editor';
 
 test('binds an item template in Inspector, previews records independently and preserves binding after reload', async ({
@@ -76,6 +77,7 @@ test('keeps Preview running while a new record is blank and warns before deletin
     ).toHaveCount(3);
     await expect(preview.getByRole('textbox', { name: 'Grace', exact: true })).toHaveValue('Grace');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await showDataTab(panel, 'Fields');
     await panel.getByRole('button', { name: 'Delete Name…', exact: true }).click();
     await expect(panel.getByRole('alert')).toContainText(
         'A data binding uses this field. Bound properties will show component values instead.'
