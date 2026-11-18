@@ -85,7 +85,7 @@ test('validates a record form, saves into list and detail, cancels drafts and re
     await expect(preview.getByRole('textbox', { name: 'Countess', exact: true })).toHaveValue(
         'Countess'
     );
-    await preview.getByLabel('Preview screen').selectOption('home');
+    await preview.getByLabel('Preview page').selectOption('home');
     await expect(preview.getByRole('button', { name: 'Countess', exact: true })).toBeVisible();
     await preview.getByRole('button', { name: 'Grace', exact: true }).click();
     await expect(preview.getByRole('textbox', { name: 'Grace', exact: true })).toHaveValue('Grace');
@@ -158,8 +158,8 @@ test('refuses a stale form after the record changes in another editor', async ({
     const form = page.getByRole('dialog', { name: 'Edit Customers record' });
     await form.getByLabel('Name', { exact: false }).fill('Stale draft');
     const other = await context.newPage();
-    await openEditor(other, ['Data View']);
-    const data = other.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(other, ['Data']);
+    const data = other.getByRole('region', { name: 'Data', exact: true });
     await data.getByRole('textbox', { name: 'Name, record 1', exact: true }).fill('Remote update');
     await data.getByRole('textbox', { name: 'Name, record 1', exact: true }).press('Enter');
     await expect(form.getByRole('alert')).toContainText('This record or its fields changed');

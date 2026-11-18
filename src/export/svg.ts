@@ -45,7 +45,7 @@ export function projectSvg(state: Context['state']): PreviewDrawing {
                 )
               : undefined));
     if (wholeView && !placed) {
-        throw new Error('The selected Screen or Screen view is unavailable.');
+        throw new Error('The selected page is unavailable.');
     }
     if (placed?.problems.length) {
         throw new Error(placed.problems.join(' '));
@@ -67,7 +67,7 @@ export function projectSvg(state: Context['state']): PreviewDrawing {
                   .filter((id) => selected.has(id))
                   .map((id) => placedShapes.get(id) ?? renderedShape(document, id, layout));
     if (!wholeView && !shapes.length) {
-        throw new Error('Select a Screen, Screen view or visible shapes to export.');
+        throw new Error('Select a page or visible shapes to export.');
     }
     const problems = Object.entries(layout?.problems ?? {}).filter(([id]) => selected.has(id));
     if (problems.length) {

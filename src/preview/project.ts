@@ -268,7 +268,7 @@ export function projectPreview(
             continue;
         }
         warnings.push(
-            'Duplicate input identity in a screen layout. Give each input a unique identity; these inputs reset when layouts change.'
+            'Duplicate input identity in a page design. Give each input a unique identity; these inputs reset when the design changes.'
         );
         for (const node of nodes) {
             if (node.control?.stateKey) {
@@ -664,7 +664,7 @@ export function createArtworkProjector(
                               variantId: variantAction.variantId
                           }
                         : undefined;
-                const unavailable = `${shape.name}: variant target is unavailable in this screen. Choose an available instance and variant.`;
+                const unavailable = `${shape.name}: variant target is unavailable on this page. Choose an available instance and variant.`;
                 if (variantAction && !changeVariant && !warnings.includes(unavailable)) {
                     warnings.push(unavailable);
                 }
@@ -698,7 +698,7 @@ export function createArtworkProjector(
                     }
                 }
                 if (visibilityAction && !toggleVisibility) {
-                    const message = `${shape.name}: visibility target is unavailable in this screen. Choose another instance in Interactions.`;
+                    const message = `${shape.name}: visibility target is unavailable on this page. Choose another instance in Interactions.`;
                     if (!warnings.includes(message)) {
                         warnings.push(message);
                         diagnostics.push({ kind: 'shape', id: shape.id, message });
@@ -762,7 +762,7 @@ export function createArtworkProjector(
                         ? `${shape.name}: ${stateProblem} Choose a state in Interactions.`
                         : recordScope
                           ? `${shape.name}: controls in repeated records cannot change prototype state yet.`
-                          : `${shape.name}: this control cannot change prototype state here. Use a control placed on the screen.`;
+                          : `${shape.name}: this control cannot change prototype state here. Use a control placed on the page.`;
                     if (!warnings.includes(message)) {
                         warnings.push(message);
                         diagnostics.push({ kind: 'shape', id: shape.id, message });
@@ -783,7 +783,7 @@ export function createArtworkProjector(
                 const target = activation?.screenId;
                 const navigateTo = target && screenIds.has(target) ? target : undefined;
                 if (target && !navigateTo) {
-                    const message = `${shape.name} links to an unavailable screen and does nothing. Choose another screen in Interactions.`;
+                    const message = `${shape.name} links to an unavailable page and does nothing. Choose another page in Interactions.`;
                     warnings.push(message);
                     diagnostics.push({ kind: 'shape', id: shape.id, message });
                 }

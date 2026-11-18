@@ -129,7 +129,7 @@ export function projectGeometry(
                 screen: widths.screen,
                 screenProblem: widths.screenProblem,
                 parentProblem:
-                    'Component width depends on its artwork. Use Screen view width for nested responsive instances.'
+                    'Component width depends on its artwork. Use Page width for nested responsive instances.'
             }
         );
     });

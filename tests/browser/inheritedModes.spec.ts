@@ -176,7 +176,7 @@ test('shows two palettes at once, keeps explicit choices ahead of local simulati
     const before = await desktop.locator('[data-cy="Body"]').boundingBox();
     await selectView(page, 'desktop');
     await inspector.getByLabel('Palette mode', { exact: true }).selectOption('day');
-    await expect(inspector).toContainText('Day · View Home · Desktop');
+    await expect(inspector).toContainText('Day · Size Home · Desktop');
     await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Variables', exact: true }).check();
     await openModePreview(page);
@@ -234,7 +234,7 @@ test('persists authored view choices with undo, redo and usable narrow controls'
     await page.setViewportSize({ width: 600, height: 850 });
     await selectView(page, 'mobile');
     await inspector.getByLabel('Palette mode', { exact: true }).selectOption('night');
-    await expect(inspector).toContainText('Night · View Home · Mobile');
+    await expect(inspector).toContainText('Night · Size Home · Mobile');
     await page.screenshot({ path: 'test-results/reactor-inherited-modes-narrow.png' });
 });
 

@@ -999,3 +999,33 @@ _Recorded 2026-11-18._ Priority 2 of the concept-model review.
   or a record follows the Inspector's Text field. Text inside component instances is still
   changed through the instance's props.
 
+## S1 step 11: Vocabulary
+
+_Recorded 2026-11-18._
+
+Items 1 and 3 of the concept-model review: the words a designer meets first, before the
+outside-user gate. No schema or preview protocol change; stored names (`kind: 'screen'`,
+`kind: 'view'`, `screenLayout`, `responsiveLayouts`, `selection: 'width'`) and IDs are as before.
+
+- **Words.** Screen is Page everywhere in the UI (Explorer "Pages", Inspector, Flow, Prototype,
+  player, sharing, errors). A Screen view has no noun: its Inspector is headed by its name
+  ("Home · Mobile") with "Show again on canvas", "Show at size…" and "Remove from canvas"; its
+  fields are labelled "Shown name/x/y/width/height". Alternate layouts are "separate designs"
+  next to the page's "main design"; "Layout" is left to Free/Row/Column. The width-selected
+  dimension is offered as "Page width · Sizes". Data View is "Data". The glossary is in the plan
+  and in the AI instructions (`server/aiTasks.ts`), which keep their data names.
+- **No Page inside a frame.** The Type field is gone from nested frames, and `updateFrame` refuses
+  `kind: 'screen'` on a frame with a parent. A nested Page from an older document is shown and
+  treated as a frame, and becomes a Page again when it moves to Canvas.
+- **A separate design starts as a copy** of the design the view shows (main or separate), without
+  the page's other separate designs, through the frame clipboard (`writeClipboard`'s `leaveOut`).
+  It is one undo step, as before.
+- **One Sizes dimension.** `sizesDimension` is the first width-selected dimension by order; a
+  later one resolves as manual. The Variables page disables "Page width · Sizes" while another
+  dimension is Sizes; `updateDimension` and AI `setDimension` refuse a second.
+- **Tests.** Unit tests for the copy, the nested refusal and the Sizes rule; tests that select by
+  label updated (unit and browser).
+- **Not in this step.** Sizes as a document
+  concept and size overrides (items 4–8). "View only", "Card view" and "List view" stay: they are
+  about access and lists, not pages. The AI eval cases replay recorded answers and still pass;
+  their prompts were not re-recorded.

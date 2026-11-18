@@ -119,7 +119,7 @@ export const LayerManager: FC<{ onClose: () => void }> = ({ onClose }) => {
                     Done
                 </button>
             </div>
-            <p className={styles.layerHint}>Layers group objects across all screens.</p>
+            <p className={styles.layerHint}>Layers group objects across all pages.</p>
             {layersIds.length > 0 && (
                 <ul>
                     {layersIds.map((id) => (

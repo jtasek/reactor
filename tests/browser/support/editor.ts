@@ -46,7 +46,7 @@ export async function expandExplorer(page: Page) {
     await expect(
         explorer
             .locator('[data-explorer-row]')
-            .or(explorer.getByText('Draw a shape or add a screen to start.'))
+            .or(explorer.getByText('Draw a shape or add a page to start.'))
             .first()
     ).toBeAttached();
 

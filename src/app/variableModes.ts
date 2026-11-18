@@ -16,6 +16,15 @@ export const legacyTheme = (): VariableDimension => ({
 export const ordered = <T extends { id: string; order: number }>(items: Record<string, T>): T[] =>
     Object.values(items).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 
+/** The document's Sizes: the first dimension selected by width. Any later one counts as manual. */
+export const sizesDimension = (dimensions: Record<string, VariableDimension>) =>
+    ordered(dimensions).find((dimension) => dimension.selection === 'width');
+
+export const isSizesDimension = (
+    dimensions: Record<string, VariableDimension>,
+    dimensionId: string
+) => sizesDimension(dimensions)?.id === dimensionId;
+
 /**
  * The modes values resolve in: each dimension's selected mode, unless it is the default,
  * whose colors are the base values. Missing or deleted selections use the default locally,

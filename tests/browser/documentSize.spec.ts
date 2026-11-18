@@ -131,7 +131,7 @@ test('explains a document kept in this browser as too large for its first upload
     ).toBeVisible();
 
     await page.getByRole('button', { name: 'Open Large' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Move some screens' })).toContainText(
+    await expect(page.getByRole('alert').filter({ hasText: 'Move some pages' })).toContainText(
         'It is kept only in this browser until it is smaller.'
     );
     expect(created).not.toContain('large');

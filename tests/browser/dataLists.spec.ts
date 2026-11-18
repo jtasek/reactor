@@ -67,8 +67,8 @@ test('keeps Preview running while a new record is blank and warns before deletin
         (value) => localStorage.setItem('reactor', value),
         JSON.stringify(saved)
     );
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     await panel.getByRole('button', { name: 'Add record', exact: true }).click();
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const preview = page.frameLocator('iframe[title="Application preview"]');

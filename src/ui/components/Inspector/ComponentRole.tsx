@@ -202,8 +202,8 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                 {data.settings.role === 'input' && (
                     <p>
                         Input actions run on Enter. Use the same input identity and Value property
-                        across layouts to keep typed input. Each identity must be unique within a
-                        screen layout.
+                        across a page’s designs to keep typed input. Each identity must be unique
+                        within a design.
                     </p>
                 )}
                 {instanceId && (

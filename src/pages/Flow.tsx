@@ -489,7 +489,7 @@ function FlowWorkspace() {
             )}
             {machine.states.length === 0 ? (
                 <p className={styles.empty}>
-                    Create a Screen on the canvas to begin connecting your application.
+                    Create a page on the canvas to begin connecting your application.
                 </p>
             ) : narrow ? (
                 <FlowList
@@ -585,7 +585,7 @@ function FlowWorkspace() {
                     label={
                         menu.kind === 'add'
                             ? `Add link on ${menuScreen.name}`
-                            : `Screen ${menuScreen.name}`
+                            : `Page ${menuScreen.name}`
                     }
                     position={menu.at}
                     sheet={narrow}

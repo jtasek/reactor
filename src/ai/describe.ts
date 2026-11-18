@@ -83,18 +83,18 @@ export function describeOperation(
             const frame = operation.frame;
             const kind =
                 frame.kind === 'view'
-                    ? 'Screen view'
+                    ? 'page size'
                     : frame.kind === 'screen'
-                      ? 'screen'
+                      ? 'page'
                       : frame.screenLayout
-                        ? 'screen layout'
+                        ? 'separate design'
                         : 'frame';
             const owner = frame.screenId ?? (frame.screenLayout ? frame.parentFrameId : undefined);
             const rules = Object.values(frame.responsiveLayouts ?? {}).map(
                 (rule) => `${rule.minWidth}px → ${frameLabel(rule.layoutId)}`
             );
 
-            return `Add ${kind} ${quoted(frame.name)} (${frame.size.width} × ${frame.size.height})${owner ? ` for ${frameLabel(owner)}` : ''}${rules.length ? `; responsive layouts: ${rules.join(', ')}` : ''}`;
+            return `Add ${kind} ${quoted(frame.name)} (${frame.size.width} × ${frame.size.height})${owner ? ` for ${frameLabel(owner)}` : ''}${rules.length ? `; automatic designs: ${rules.join(', ')}` : ''}`;
         }
         case 'updateFrame': {
             const frame = document.frames[operation.frame];
@@ -104,8 +104,8 @@ export function describeOperation(
             if (responsiveLayouts !== undefined) {
                 fields.push(
                     responsiveLayouts === null || Object.keys(responsiveLayouts).length === 0
-                        ? 'remove responsive layout rules'
-                        : `responsive layouts: ${Object.values(responsiveLayouts)
+                        ? 'remove automatic design rules'
+                        : `automatic designs: ${Object.values(responsiveLayouts)
                               .map((rule) => `${rule.minWidth}px → ${frameLabel(rule.layoutId)}`)
                               .join(', ')}`
                 );

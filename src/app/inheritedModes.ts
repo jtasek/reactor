@@ -1,5 +1,6 @@
 import { frameParents } from './frameState';
 import { screenViewName } from './screenViews';
+import { sizesDimension } from './variableModes';
 import type { Document, InstanceShape, VariableContext, VariableDimension } from './types';
 
 /** Greatest inclusive minimum wins. Width is the Screen viewport, never a bound child size. */
@@ -90,17 +91,14 @@ export function resolveModes(document: Document, address: ModeAddress = {}) {
     apply(address.simulation, 'Local simulation');
     const width = view?.size.width ?? (screen?.kind === 'screen' ? screen.size.width : undefined);
     if (width !== undefined && Number.isFinite(width)) {
-        Object.values(document.dimensions).forEach((dimension) => {
-            if (dimension.selection !== 'width') {
-                return;
-            }
-
-            modes[dimension.id] = widthMode(dimension, width);
-            sources[dimension.id] = `Screen width · ${width}px`;
-        });
+        const sizes = sizesDimension(document.dimensions);
+        if (sizes) {
+            modes[sizes.id] = widthMode(sizes, width);
+            sources[sizes.id] = `Page width · ${width}px`;
+        }
     }
-    apply(screen?.modeOverrides, `Screen ${screen?.name}`);
-    apply(view?.modeOverrides, view ? `View ${screenViewName(document, view)}` : 'View');
+    apply(screen?.modeOverrides, `Page ${screen?.name}`);
+    apply(view?.modeOverrides, view ? `Size ${screenViewName(document, view)}` : 'Size');
     if (!address.sessionScreenId || address.sessionScreenId === screenId) {
         apply(address.session, 'Prototype session');
     }

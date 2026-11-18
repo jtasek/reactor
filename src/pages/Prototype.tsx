@@ -8,7 +8,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames, startScreen } from 'src/app/screens';
 import { prototypeModes } from 'src/app/modeEdits';
-import { ordered } from 'src/app/variableModes';
+import { isSizesDimension, ordered } from 'src/app/variableModes';
 import { presetOfSize } from 'src/app/services/viewportPresets';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
@@ -162,9 +162,9 @@ function PrototypeWorkspace() {
                 </header>
                 <div className={styles.controls}>
                     <label>
-                        Start screen
+                        Start page
                         <select
-                            aria-label="Start screen"
+                            aria-label="Start page"
                             value={session.screenId ?? ''}
                             onChange={(event) =>
                                 setSession((previous) => ({
@@ -177,7 +177,7 @@ function PrototypeWorkspace() {
                         >
                             {!screens.some((screen) => screen.id === session.screenId) && (
                                 <option value={session.screenId ?? ''}>
-                                    Choose an available screen
+                                    Choose an available page
                                 </option>
                             )}
                             {screens.map((screen) => (
@@ -219,9 +219,9 @@ function PrototypeWorkspace() {
                                 }
                             >
                                 <option value="">
-                                    {dimension.selection === 'width'
+                                    {isSizesDimension(document.dimensions, dimension.id)
                                         ? 'Auto · Viewport width'
-                                        : 'Inherit from screen'}
+                                        : 'Inherit from page'}
                                 </option>
                                 {session.modes[dimension.id] &&
                                     !dimension.modes[session.modes[dimension.id]] && (
@@ -238,18 +238,18 @@ function PrototypeWorkspace() {
                         </label>
                     ))}
                     <p>
-                        Changes apply only to this session. Restart returns to the start screen and
+                        Changes apply only to this session. Restart returns to the start page and
                         resets input and state.
                     </p>
                 </div>
             </dialog>
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (
                 <p role="status">
-                    The start screen is unavailable. Open Settings to choose another start screen.
+                    The start page is unavailable. Open Settings to choose another start page.
                 </p>
             )}
             {!screens.length ? (
-                <p>Create a screen on the canvas to start a prototype.</p>
+                <p>Create a page on the canvas to start a prototype.</p>
             ) : (
                 <div className={styles.player}>
                     <InteractivePreview

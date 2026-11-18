@@ -37,7 +37,7 @@ test('renders templates in native input values, placeholders and accessible labe
     await expect(input).toHaveValue('Hello Ada');
     await expect(input).toHaveAttribute('placeholder', 'Hello Ada');
     await iframe.getByRole('button', { name: 'Continue Ada', exact: true }).click();
-    await expect(iframe.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(iframe.getByLabel('Preview page')).toHaveValue('details');
 });
 
 test('previews native inputs and navigation in an opaque sandbox, retains valid output after graph errors and resets local state', async ({
@@ -83,8 +83,8 @@ test('previews native inputs and navigation in an opaque sandbox, retains valid 
         })
     ).toBe('blocked');
     await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(iframe.getByLabel('Preview screen')).toHaveValue('details');
-    await iframe.getByLabel('Preview screen').selectOption('home');
+    await expect(iframe.getByLabel('Preview page')).toHaveValue('details');
+    await iframe.getByLabel('Preview page').selectOption('home');
     await expect(iframe.getByLabel('Your name')).toHaveValue('Ada');
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Button', exact: true }).click();
@@ -156,11 +156,11 @@ test('clips screens to their frame and keeps previewing a button whose screen is
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const iframe = page.frameLocator('iframe[title="Application preview"]');
     await expect(
-        page.getByText('Continue button links to an unavailable screen', { exact: false })
+        page.getByText('Continue button links to an unavailable page', { exact: false })
     ).toBeVisible();
     await iframe.getByLabel('Your name').fill('Ada');
     await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(iframe.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(iframe.getByLabel('Preview page')).toHaveValue('home');
     await iframe.getByRole('button', { name: 'Restart preview' }).click({ timeout: 5000 });
     await expect(iframe.getByLabel('Your name')).toHaveValue('');
 });
@@ -201,7 +201,7 @@ test('updates the preview when a drag ends, not on every pointer move', async ({
     await openEditor(page);
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const iframe = page.frameLocator('iframe[title="Application preview"]');
-    await iframe.getByLabel('Preview screen').selectOption('wide');
+    await iframe.getByLabel('Preview page').selectOption('wide');
     const box = iframe.locator('rect[fill="#00ff00"]');
     await expect(box).toHaveAttribute('x', '840');
     const surface = (await page.locator('svg#surface').boundingBox())!;

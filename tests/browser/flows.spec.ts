@@ -155,9 +155,9 @@ test('marks a link to a missing screen and prevents edits to locked controls on 
     await seed(page, document);
     await page.goto('/flow');
     const next = row(page, 'next');
-    await expect(next).toContainText('→ Missing screen');
+    await expect(next).toContainText('→ Missing page');
     await expect(next).toHaveAccessibleDescription(
-        'Continue button goes to a missing screen. The screen it goes to was deleted'
+        'Continue button goes to a missing page. The page it goes to was deleted'
     );
     await next.click();
     const locked = linkMenu(page, 'Continue button');
@@ -207,7 +207,7 @@ test('marks hidden controls and leaves them out of reachability', async ({ page 
     await expect(page.locator('[data-flow-link="next"]')).toHaveAttribute('data-inactive', 'true');
     await expect(screen(page, 'details')).toHaveAttribute('data-dim', 'true');
     await expect(page.getByRole('button', { name: 'Arrange Details' })).toHaveAccessibleDescription(
-        "Nothing leads here No links. Down arrow moves to the screen's menu and links."
+        "Nothing leads here No links. Down arrow moves to the page's menu and links."
     );
 });
 
@@ -383,7 +383,7 @@ test('keeps the start screen with the document, for Flow and the player alike', 
     await expect(screen(page, 'home').getByText('Start', { exact: true })).toBeVisible();
     await expect(page.locator('[data-flow-start="home"]')).toHaveCount(1);
     await page.getByRole('button', { name: 'More for Details', exact: true }).click();
-    const menu = page.getByRole('menu', { name: 'Screen Details', exact: true });
+    const menu = page.getByRole('menu', { name: 'Page Details', exact: true });
     await choice(menu, 'Start here').click();
     await expect(screen(page, 'details').getByText('Start', { exact: true })).toBeVisible();
     await expect(page.locator('[data-flow-start="details"]')).toHaveCount(1);
@@ -395,7 +395,7 @@ test('keeps the start screen with the document, for Flow and the player alike', 
     await page.goto('/flow');
     await expect(screen(page, 'details').getByText('Start', { exact: true })).toBeVisible();
     await page.goto('/prototype');
-    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(page.getByLabel('Preview page')).toHaveValue('details');
 });
 
 test('draws a picture of every screen and outlines the selected control on it', async ({
@@ -430,18 +430,18 @@ test('sets what a control shows or hides, and that it starts hidden, in one menu
     const next = row(page, 'next');
     await next.click();
     const menu = linkMenu(page, 'Continue button');
-    await menu.getByRole('menuitem', { name: /^On this screen/ }).click();
+    await menu.getByRole('menuitem', { name: /^On this page/ }).click();
     await expect(menu.getByText('Show or hide', { exact: true })).toBeVisible();
     await choice(menu, 'Name field').click();
     await expect(next).toHaveAccessibleDescription('Continue button shows or hides Name field');
     await expect(page.locator('[data-flow-link="next"]')).toHaveCount(0);
     await next.click();
-    await menu.getByRole('menuitem', { name: /^On this screen/ }).click();
+    await menu.getByRole('menuitem', { name: /^On this page/ }).click();
     const hidden = choice(menu, 'Name field starts hidden');
     await expect(hidden).toHaveAttribute('aria-checked', 'false');
     await hidden.click();
     await next.click();
-    await menu.getByRole('menuitem', { name: /^On this screen/ }).click();
+    await menu.getByRole('menuitem', { name: /^On this page/ }).click();
     await expect(hidden).toHaveAttribute('aria-checked', 'true');
     await page.keyboard.press('Escape');
     // The target itself now starts hidden: its own "Shown" says so.
@@ -467,7 +467,7 @@ test('adds a named state from the menu and makes the control switch it', async (
     const next = row(page, 'next');
     await next.click();
     const menu = linkMenu(page, 'Continue button');
-    await menu.getByRole('menuitem', { name: /^On this screen/ }).click();
+    await menu.getByRole('menuitem', { name: /^On this page/ }).click();
     await menu.getByRole('menuitem', { name: 'New state…', exact: true }).click();
     const form = page.getByRole('form', { name: 'New state' });
     await expect(form.getByRole('textbox')).toBeFocused();
@@ -768,7 +768,7 @@ test('counts a broken link as a problem, lists an end screen as a note, and offe
     await check(page).click();
     const panel = page.getByRole('dialog', { name: 'Check', exact: true });
     await expect(panel.locator('[data-flow-remark="problem"]')).toHaveText(
-        '“Continue button” on Home: the screen it goes to was deleted.Pick another screen'
+        '“Continue button” on Home: the page it goes to was deleted.Pick another page'
     );
     // Where the flow ends is worth knowing, and is not counted.
     await expect(panel.locator('[data-flow-remark="note"]')).toHaveText('Details ends the flow.');
@@ -779,7 +779,7 @@ test('counts a broken link as a problem, lists an end screen as a note, and offe
     await expect(page.getByRole('button', { name: 'Arrange Details', exact: true })).toBeFocused();
     // The fix opens the link's own menu; one choice there clears the problem.
     await check(page).click();
-    await panel.getByRole('button', { name: 'Pick another screen', exact: true }).click();
+    await panel.getByRole('button', { name: 'Pick another page', exact: true }).click();
     await expect(row(page, 'next')).toHaveAttribute('aria-pressed', 'true');
     await choice(linkMenu(page, 'Continue button'), 'Details').click();
     await expect(check(page)).toHaveAccessibleName('No problems');
@@ -789,7 +789,7 @@ test('counts a broken link as a problem, lists an end screen as a note, and offe
     );
     // The popover also says where the prototype starts, and changes it.
     await check(page).click();
-    const start = panel.getByRole('combobox', { name: 'Start screen', exact: true });
+    const start = panel.getByRole('combobox', { name: 'Start page', exact: true });
     await expect(start).toHaveValue('home');
     await start.selectOption('details');
     await expect(page.locator('[data-flow-start]')).toHaveAttribute('data-flow-start', 'details');
@@ -830,7 +830,7 @@ test('shows the flow as a list below 700px, with menus as bottom sheets', async 
     await expect(page.locator('[data-flow-board]')).toHaveCount(0);
     // One group per screen in the map's order; each link reads as a sentence.
     await expect(list.getByRole('group')).toHaveCount(2);
-    await expect(list.getByRole('group').first()).toHaveAccessibleName('Screen Home');
+    await expect(list.getByRole('group').first()).toHaveAccessibleName('Page Home');
     const next = row(page, 'next');
     await expect(next).toHaveText('Continue button goes to Details');
     await expect(next).toHaveAccessibleName('Continue button');
@@ -864,7 +864,7 @@ test('shows the flow as a list below 700px, with menus as bottom sheets', async 
     await expect(detailsName).toBeFocused();
     // The name says how to reach the links.
     await expect(detailsName).toHaveAccessibleDescription(
-        "No links. Down arrow moves to the screen's menu and links."
+        "No links. Down arrow moves to the page's menu and links."
     );
     // With no empty board to tap, a second tap on a selected screen lets go of it.
     const play = page.getByRole('link', { name: 'Play prototype', exact: true });
@@ -889,7 +889,7 @@ test('moves by keyboard: Tab between screens, arrows along a card, ⌫ removes, 
     const home = page.getByRole('button', { name: 'Arrange Home', exact: true });
     const details = page.getByRole('button', { name: 'Arrange Details', exact: true });
     await expect(home).toHaveAccessibleDescription(
-        "2 links. Down arrow moves to the screen's menu and links."
+        "2 links. Down arrow moves to the page's menu and links."
     );
     await home.focus();
     // One Tab stop per screen.
@@ -928,7 +928,7 @@ test('moves by keyboard: Tab between screens, arrows along a card, ⌫ removes, 
     await home.focus();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
-    const menu = page.getByRole('menu', { name: 'Screen Home', exact: true });
+    const menu = page.getByRole('menu', { name: 'Page Home', exact: true });
     await expect(menu.getByRole('menuitem', { name: 'Tidy up', exact: true })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await home.focus();

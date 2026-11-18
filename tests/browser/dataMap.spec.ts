@@ -4,8 +4,8 @@ import { openEditor } from './support/editor';
 test('drags an entity on the data map, keeps its place after reload, zooms and lays out again', async ({
     page
 }) => {
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     for (const name of ['Companies', 'Customers']) {
         await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill(name);
         await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
@@ -34,7 +34,7 @@ test('drags an entity on the data map, keeps its place after reload, zooms and l
 
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await expect
         .poll(() => card.evaluate((element) => parseFloat((element as HTMLElement).style.left)))
         .toBe(parseFloat(moved) + 16);

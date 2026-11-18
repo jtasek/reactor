@@ -293,9 +293,9 @@ function render() {
     const navigation = document.createElement('nav');
     navigation.setAttribute('aria-label', 'Preview controls');
     const label = document.createElement('label');
-    label.textContent = 'Screen ';
+    label.textContent = 'Page ';
     const select = document.createElement('select');
-    select.setAttribute('aria-label', 'Preview screen');
+    select.setAttribute('aria-label', 'Preview page');
     application.screens.forEach((item) => {
         const option = document.createElement('option');
         option.value = item.id;

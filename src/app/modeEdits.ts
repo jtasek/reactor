@@ -4,6 +4,7 @@ import { isReadOnly } from './documentAccess';
 import { isFrameLocked } from './frameState';
 import { isShapeLocked } from './utils';
 import { resolveModes } from './inheritedModes';
+import { isSizesDimension } from './variableModes';
 
 export type ModeTarget = { frameId: string } | { instanceId: string };
 
@@ -96,7 +97,7 @@ export function previewModes(state: Context['state']) {
     const fixedModes = Object.fromEntries(
         Object.entries(modes).filter(
             ([dimensionId]) =>
-                document.dimensions[dimensionId]?.selection !== 'width' ||
+                !isSizesDimension(document.dimensions, dimensionId) ||
                 Object.hasOwn(screen?.modeOverrides ?? {}, dimensionId) ||
                 Object.hasOwn(view.modeOverrides ?? {}, dimensionId)
         )

@@ -35,6 +35,21 @@ The editor surface depends on SVG: input converts through `getScreenCTM`
 ([helpers.ts](src/events/drivers/helpers.ts)) and shapes are measured with `getBBox`. That
 stays; nothing below replaces the editor surface.
 
+## Glossary
+
+The words the editor, this plan and the AI instructions use. Stored names stay as they were, so
+documents, shared links (preview protocol v3) and AI operations keep working.
+
+| Word | Meaning | Stored as |
+| --- | --- | --- |
+| Page | A destination with one design (was "Screen"). Only a frame on Canvas can be a Page; one nested in another frame is a frame. | `Frame.kind === 'screen'` |
+| Page at a size | A Page shown on the canvas at a size and modes, named like "Home · Mobile". The UI has no noun for it: "Show on canvas", "Show at size…", "Remove from canvas". | `Frame.kind === 'view'` |
+| Main design | A Page's own artwork, shared by every size that shows it. | the Page's frame tree |
+| Separate design | A Page's own tree for some sizes; edits there don't reach the others. Starts as a copy of the design shown. | `screenLayout` frame, rules in `responsiveLayouts` |
+| Layout | Only a frame's stack: Free, Row or Column. | `stack` |
+| Sizes | The one variable dimension selected by page width. A later width-selected dimension counts as manual. | dimension with `selection: 'width'` |
+| Data | Where entities and records are edited (was "Data View"). | `dataEntities`, `dataRecords` |
+
 ## Rules for every milestone
 
 - Existing documents open, edit, save, copy and sync. Signed-out drawing works without a server.
@@ -636,6 +651,11 @@ suggest. Do these in order; each is a separate change.
     from this plan into a dated delivery log so the plan stays short.
     Built (2026-11-16); see the [delivery log](DELIVERY_LOG.md#s1-step-10-housekeeping). The
     entry bundle is 401.4 KiB, met by compiling to ES2022 rather than by moving the old readers.
+11. **Vocabulary (S–M).** From the concept-model review (2026-11-18),
+    items 1 and 3: the Glossary's words in the UI, the AI instructions and here, and three traps
+    removed (a nested Page, an empty separate design, two width-selected dimensions).
+    Built (2026-11-18); see the [delivery log](DELIVERY_LOG.md#s1-step-11-vocabulary). Not yet:
+    Sizes as a document concept.
 
 Done when the steps' acceptance specs pass and the outside-user gate has run: at least five
 outside designers have shared a prototype link that someone else opened, and their problems

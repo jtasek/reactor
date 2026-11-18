@@ -240,14 +240,34 @@ function nestedFrame(store = createTestStore().store) {
     return { store, parentId, childId };
 }
 
+/** Documents from before nested frames lost the Page choice can still hold one. */
+function nestedScreen(store = createTestStore().store) {
+    const { childId } = nestedFrame(store);
+    const document = store.state.currentDocument;
+    const saved = serializePersistedState({
+        currentDocumentId: document.id,
+        documents: { [document.id]: document }
+    });
+    saved.documents[document.id].frames[childId].kind = 'screen';
+    store.actions.addDocument(
+        hydrateDocument(migratePersistedState(saved)!.documents[document.id])
+    );
+
+    return { store, childId };
+}
+
 const views = (frames: Record<string, { kind?: string }>) =>
     Object.values(frames).filter((frame) => frame.kind === 'view');
 
-it('draws a nested screen in place and gives it a view only once it moves to Canvas', () => {
+it('refuses to make a nested frame a page', () => {
     const { store, childId } = nestedFrame();
-    const document = store.state.currentDocument;
     store.actions.editFrame({ kind: 'update', id: childId, changes: { kind: 'screen' } });
-    expect(document.frames[childId].kind).toBe('screen');
+    expect(store.state.currentDocument.frames[childId].kind).toBe('frame');
+});
+
+it('draws a nested screen in place and gives it a view only once it moves to Canvas', () => {
+    const { store, childId } = nestedScreen();
+    const document = store.state.currentDocument;
     expect(views(document.frames)).toHaveLength(0);
     expect(screenOwners(document.frames).get(childId)).toBeUndefined();
     store.actions.editFrame({ kind: 'update', id: childId, changes: { parentFrameId: null } });
@@ -275,8 +295,7 @@ it('leaves legacy nested screens in their parent frame on upgrade', () => {
 
 it('leaves a shared nested screen in its parent frame when another copy opens it', async () => {
     const copies = await createCopies(2, (store) => {
-        const { childId } = nestedFrame(store);
-        store.actions.editFrame({ kind: 'update', id: childId, changes: { kind: 'screen' } });
+        nestedScreen(store);
     });
     settle(copies);
     copies.forEach((copy) => expect(views(shownDocument(copy).frames)).toHaveLength(0));

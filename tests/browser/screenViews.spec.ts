@@ -40,21 +40,19 @@ test('places a second view, resolves its width, edits shared content and deletes
     await openEditor(page, ['Inspector', 'Explorer']);
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByRole('button', { name: 'Create Screen view' }).click();
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
-    await page.getByLabel('View name').fill('Desktop');
-    await page.getByLabel('View name').press('Enter');
+    await page.getByRole('button', { name: 'Show on canvas' }).click();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
+    await page.getByLabel('Shown name').fill('Desktop');
+    await page.getByLabel('Shown name').press('Enter');
     await expect(
         explorer.getByRole('button', { name: 'Home · Desktop', exact: true })
-    ).toHaveAccessibleDescription('Home · 300 × 200 Screen view');
-    await page
-        .getByLabel('Create Screen view at a size')
-        .selectOption({ label: 'Mobile · 390 × 844' });
+    ).toHaveAccessibleDescription('Home · Desktop · 300 × 200');
+    await page.getByLabel('Show at size').selectOption({ label: 'Mobile · 390 × 844' });
     await expect(
         explorer.getByRole('button', { name: 'Home · Mobile', exact: true })
-    ).toHaveAccessibleDescription('Home · 390 × 844 Screen view');
-    await expect(page.getByLabel('Screen view layout')).toHaveValue('__auto');
-    await page.getByRole('button', { name: 'Delete Screen view' }).click();
+    ).toHaveAccessibleDescription('Home · Mobile · 390 × 844');
+    await expect(page.getByLabel('Design at this size')).toHaveValue('__auto');
+    await page.getByRole('button', { name: 'Remove from canvas' }).click();
     await explorer.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
 
     const original = page.locator(
@@ -76,10 +74,10 @@ test('places a second view, resolves its width, edits shared content and deletes
     });
     await pointer(page, 'pointermove', { x: 470, y: 140 });
     await pointer(page, 'pointercancel', { x: 470, y: 140 });
-    await expect(page.getByLabel('View x')).toHaveValue('440');
+    await expect(page.getByLabel('Shown x')).toHaveValue('440');
     await expectPlacedCoordinate(projected, 'x', '450');
-    await page.getByLabel('View width').fill('500');
-    await page.getByLabel('View width').press('Enter');
+    await page.getByLabel('Shown width').fill('500');
+    await page.getByLabel('Shown width').press('Enter');
     await expect(projected).toHaveAttribute('width', '480');
     await expect(original).toHaveAttribute('width', '280');
 
@@ -105,9 +103,9 @@ test('places a second view, resolves its width, edits shared content and deletes
     await explorer.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
     await page.screenshot({ path: '/tmp/reactor-screen-views.png' });
     await page.setViewportSize({ width: 600, height: 850 });
-    await expect(page.getByLabel('View width')).toBeVisible();
+    await expect(page.getByLabel('Shown width')).toBeVisible();
     await page.screenshot({ path: '/tmp/reactor-screen-views-narrow.png' });
-    await page.getByRole('button', { name: 'Delete Screen view' }).click();
+    await page.getByRole('button', { name: 'Remove from canvas' }).click();
     await expect(projected).toHaveCount(0);
     await expect(page.locator('svg#surface #screen-views [data-shape-id]')).toHaveCount(1);
     await expect(explorer.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
@@ -195,10 +193,10 @@ test('selects projected instances and ignores secondary presses during a gesture
         y: 110,
         target: '#screen-views > [data-screen-view="view"] [data-view-instance-hit]'
     });
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
     await pointer(page, 'pointercancel', { x: 400, y: 150 });
     await hit.dispatchEvent('pointerdown', { button: 2, bubbles: true });
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
 });
 
 test('draws and drags source artwork through a Screen view, cancels a drag and retains it after reload', async ({
@@ -289,8 +287,8 @@ test('draws and drags source artwork through a Screen view, cancels a drag and r
         .getByRole('region', { name: 'Explorer' })
         .getByRole('button', { name: 'Home · Wide', exact: true })
         .click();
-    await page.getByLabel('View x').fill('650');
-    await page.getByLabel('View x').press('Enter');
+    await page.getByLabel('Shown x').fill('650');
+    await page.getByLabel('Shown x').press('Enter');
     await expectPlacedCoordinate(page.locator('#tools foreignObject'), 'x', '720');
     await text.press('Enter');
     await expectPlacedCoordinate(
@@ -335,13 +333,13 @@ test('moves a view from just inside its edge, and lets presses through a locked 
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
     // Placed beside the first view, clear of the panels.
-    await page.getByRole('button', { name: 'Create Screen view', exact: true }).click();
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
+    await page.getByRole('button', { name: 'Show on canvas', exact: true }).click();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
     const viewId = await page
         .locator('svg#surface #frames > [data-frame]')
         .filter({ hasText: 'Home · 300 px 2' })
         .getAttribute('data-frame');
-    const x = Number(await page.getByLabel('View x').inputValue());
+    const x = Number(await page.getByLabel('Shown x').inputValue());
     const grip = page.locator(`#frame-grips [data-frame-id="${viewId}"]`);
     // The grip's box includes its 12px stroke: 6px outside the edge, 6px inside.
     const box = (await grip.boundingBox())!;
@@ -361,7 +359,7 @@ test('moves a view from just inside its edge, and lets presses through a locked 
     await page.mouse.down();
     await page.mouse.move(inside.x + 40, inside.y, { steps: 5 });
     await page.mouse.up();
-    await expect(page.getByLabel('View x')).toHaveValue(String(x + 40));
+    await expect(page.getByLabel('Shown x')).toHaveValue(String(x + 40));
 
     const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     expect((await pressed(center)).view).toBe(true);

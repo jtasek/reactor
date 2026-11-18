@@ -281,7 +281,7 @@ test('pasted CSV becomes an entity with valid records once accepted, as one undo
         )
     );
 
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await editWithWords(page).click();
     const chat = page.getByRole('region', { name: 'AI chat', exact: true });
     const prompt = chat.getByRole('textbox', { name: 'Change to make' });
@@ -301,7 +301,7 @@ test('pasted CSV becomes an entity with valid records once accepted, as one undo
     );
     // Data alone changes nothing a drawing of the canvas could show.
     await expect(chat.getByRole('figure', { name: 'Proposed result' })).toHaveCount(0);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveCount(0);
 
     // A data edit made meanwhile is checked against the proposal again.
@@ -528,7 +528,7 @@ test('accepts AI screens and responsive views together, with correct artwork and
         .fill('Create responsive Home views');
     await chat.getByRole('button', { name: 'Send' }).click();
     await expect(chat.getByRole('region', { name: 'Proposal' })).toContainText(
-        'Add Screen view “Desktop”'
+        'Add page size “Desktop”'
     );
     await expect(page.locator('#screen-views > g')).toHaveCount(0);
     await chat.getByRole('button', { name: 'Accept' }).click();

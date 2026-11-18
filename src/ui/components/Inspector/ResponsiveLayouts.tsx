@@ -23,7 +23,7 @@ function RuleWidth({
     return (
         <input
             id={`layout-width-${index}`}
-            aria-label={`Layout rule ${index + 1} minimum width`}
+            aria-label={`Design rule ${index + 1} minimum width`}
             type="number"
             min={0}
             value={draft}
@@ -57,7 +57,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
         return {
             rules: screenLayoutRules(document, screenId),
             choices: [
-                { id: screenId, name: 'Default layout' },
+                { id: screenId, name: 'Main design' },
                 ...screenLayouts(document, screenId)
             ].map(({ id, name }) => ({ id, name })),
             problems: screenLayoutProblems(document, screenId)
@@ -81,12 +81,12 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
         });
 
     return (
-        <PropertyGroup name="Automatic layouts">
+        <PropertyGroup name="Automatic design">
             <tr>
                 <td colSpan={2}>
                     <small className={styles.frameHint}>
-                        Shared by this screen’s Auto views. The greatest minimum width wins; below
-                        all rules, use Default. Manual choices stay unchanged.
+                        Used by every size of this page set to Auto. The greatest minimum width
+                        wins; below all rules, the main design shows. Manual choices stay unchanged.
                     </small>
                 </td>
             </tr>
@@ -106,7 +106,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                     <td>
                         <select
                             className={styles.layoutChoice}
-                            aria-label={`Layout rule ${index + 1} layout`}
+                            aria-label={`Design rule ${index + 1} design`}
                             value={rule.layoutId}
                             disabled={disabled}
                             onChange={(event) =>
@@ -117,7 +117,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                             }
                         >
                             {!choices.some(({ id }) => id === rule.layoutId) && (
-                                <option value={rule.layoutId}>Missing layout</option>
+                                <option value={rule.layoutId}>Missing design</option>
                             )}
                             {choices.map(({ id, name }) => (
                                 <option key={id} value={id}>
@@ -128,7 +128,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                         <button
                             type="button"
                             disabled={disabled}
-                            aria-label={`Remove layout rule ${index + 1}`}
+                            aria-label={`Remove design rule ${index + 1}`}
                             onClick={() => update(rule.id, undefined)}
                         >
                             Remove rule

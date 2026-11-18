@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useActions, useCurrentDocument, useVariableContext } from 'src/app/hooks';
-import { ordered } from 'src/app/variableModes';
+import { isSizesDimension, ordered } from 'src/app/variableModes';
 import { NUMBER_MODE_SUPPORT } from 'src/app/contextualLayout';
 import styles from './styles.css';
 
@@ -85,7 +85,7 @@ export function ModePreview() {
             >
                 <h3>Canvas preview</h3>
                 <p className={styles.resolution}>
-                    Your preview only. Screen view settings stay unchanged.
+                    Your preview only. Pages on the canvas keep their settings.
                 </p>
                 {dimensions.map((dimension) => (
                     <label className={styles.formField} key={dimension.id}>
@@ -106,9 +106,9 @@ export function ModePreview() {
                                 </option>
                             ))}
                         </select>
-                        {dimension.selection === 'width' && (
+                        {isSizesDimension(document.dimensions, dimension.id) && (
                             <span className={styles.resolution}>
-                                Inside Screens, the Screen view width picks this mode.
+                                On pages, the width of each size picks this mode.
                             </span>
                         )}
                     </label>

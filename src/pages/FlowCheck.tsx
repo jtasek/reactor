@@ -14,7 +14,7 @@ function fixFor(machine: Machine, ref: FlowRef, problem: boolean): string | unde
         return !link?.editable || link.shared
             ? undefined
             : link.effect.kind === 'go'
-              ? 'Pick another screen'
+              ? 'Pick another page'
               : 'Change link';
     }
     // A reachable Screen with a remark of its own is one the flow ends on.
@@ -104,7 +104,7 @@ export function FlowCheck({
                     <label>
                         Starts on
                         <select
-                            aria-label="Start screen"
+                            aria-label="Start page"
                             value={machine.initial ?? ''}
                             disabled={disabled}
                             onChange={(event) => onStart(event.target.value)}

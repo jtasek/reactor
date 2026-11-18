@@ -19,7 +19,8 @@ import { bindingEdit, shapeBindingChanges } from './bindings';
 export const SELECTION_PATTERN = /^(?:(?:move|bind|unbind)\s+\w+\s*=|[a-z-]+=)/i;
 export const SELECTION_HELP =
     'Edit selection: w=240 h=48 · r=12 · fill=#3366ff · text="Continue" fs=18 · move x=16 y=-8. Bind: bind property=fill variable="brand/primary".';
-export const SHARED_ARTWORK_HELP = 'Edits in this view change the shared Screen artwork.';
+export const SHARED_ARTWORK_HELP =
+    'Edits here change the page’s design for every size that shows it.';
 
 /** Compile the complete selection before committing a single undoable batch. */
 export function selectionOperations(
@@ -75,13 +76,13 @@ export function selectionOperations(
     const document = state.currentDocument;
     const ids = document.selectedShapesIds;
     if (!ids.length) {
-        throw new Error('Select shapes, a frame or a Screen view to edit.');
+        throw new Error('Select shapes, a frame or a page to edit.');
     }
 
     const address = state.events.pointer.screenView;
     const placed = address ? editableScreenView(state, address) : null;
     if (address && !placed) {
-        throw new Error('This Screen view is unavailable for editing.');
+        throw new Error('This page is unavailable for editing.');
     }
 
     const shown = new Set(placed?.projection.shapes.map(({ id }) => id));

@@ -57,7 +57,7 @@ it('retains a missing choice and shows the default with a diagnostic', () => {
     document.frames.mobile.layoutId = 'missing';
     const projection = projectScreen(document, 'home', document.frames.mobile)!;
     expect(projection.shapes.map((shape) => shape.id)).toEqual(['body']);
-    expect(projection.problems.join()).toContain('chosen layout is unavailable');
+    expect(projection.problems.join()).toContain('chosen design is unavailable');
     expect(document.frames.mobile.layoutId).toBe('missing');
 });
 
@@ -96,7 +96,7 @@ it('draws into the chosen layout and refuses transforms on artwork from another 
     ).toBe('compact');
 });
 
-it('creates and selects an empty layout in one shared undo step', async () => {
+it('creates a separate design as a copy of the shown one in one shared undo step', async () => {
     const copies = await createCopies(2, (store) =>
         store.actions.addDocument(screenLayoutsDocument(DOCUMENT_ID))
     );
@@ -109,9 +109,18 @@ it('creates and selects an empty layout in one shared undo step', async () => {
         screenLayout: true,
         parentFrameId: 'home'
     });
+    const copied = projectScreen(shownDocument(a), 'home', shownDocument(a).frames.desktop)!.shapes;
+    expect(copied).toHaveLength(1);
+    expect(copied[0]).toMatchObject({ position: { x: 110, y: 90 }, size: { width: 280 } });
+    expect(copied[0].id).not.toBe('body');
+    expect(shownDocument(b).shapes[copied[0].id].name).toBe('Default body');
+    expect(shownDocument(b).shapes[copied[0].id]).toMatchObject({ parentFrameId: id });
     expect(
-        projectScreen(shownDocument(a), 'home', shownDocument(a).frames.desktop)!.shapes
-    ).toEqual([]);
+        Object.values(shownDocument(b).shapes).some((shape) => shape.id === 'compact-body')
+    ).toBe(true);
+    expect(
+        Object.values(shownDocument(b).shapes).filter((shape) => shape.parentFrameId === id)
+    ).toHaveLength(1);
     edit(b, (actions) =>
         actions.editFrame({ kind: 'update', id: 'home', changes: { name: 'Welcome' } })
     );
@@ -248,7 +257,7 @@ it('explains a missing layout when Preview falls back to default artwork', () =>
         viewport: document.frames.mobile.size
     });
     expect(preview.screens[0].nodes.map((node) => node.key)).toEqual(['home/body']);
-    expect(warnings.join()).toContain('layout is unavailable');
+    expect(warnings.join()).toContain('design is unavailable');
 });
 
 it('converts a layout released by screen deletion into a new screen', () => {
@@ -298,4 +307,17 @@ it('refuses a layout name another layout of the same screen already has', () => 
     expect(store.state.currentDocument.frames[id].name).toBe('Wide');
     store.actions.editFrame({ kind: 'update', id, changes: { name: 'Tablet' } });
     expect(store.state.currentDocument.frames[id].name).toBe('Tablet');
+});
+
+it('copies the separate design a view shows, leaving the other designs out', () => {
+    const { store } = createTestStore();
+    store.actions.addDocument(screenLayoutsDocument(store.state.currentDocumentId));
+    const id = store.actions.editFrame({ kind: 'addLayout', viewId: 'mobile', name: 'Tablet' })!;
+    const document = store.state.currentDocument;
+    const copied = Object.values(document.shapes).filter((shape) => shape.parentFrameId === id);
+    expect(copied).toHaveLength(1);
+    expect(copied[0]).toMatchObject({ type: 'rectangle', size: { width: 200, height: 30 } });
+    expect(
+        projectScreen(document, 'home', document.frames.mobile)!.shapes.map((shape) => shape.id)
+    ).toEqual([copied[0].id]);
 });

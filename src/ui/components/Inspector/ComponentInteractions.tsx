@@ -114,7 +114,7 @@ export const ComponentInteractions: FC<{
                                                     : sourceTarget
                                                       ? (data.screens.find(
                                                             (screen) => screen.id === sourceTarget
-                                                        )?.name ?? 'Unavailable screen')
+                                                        )?.name ?? 'Unavailable page')
                                                       : 'No action'}
                                         </option>
                                     )}
@@ -247,7 +247,7 @@ export const ComponentInteractions: FC<{
                                     ))}
                                     {unavailable && (
                                         <option value={JSON.stringify(target)}>
-                                            Unavailable screen
+                                            Unavailable page
                                         </option>
                                     )}
                                     {data.screens.map((screen) => (
@@ -316,7 +316,7 @@ export const ComponentInteractions: FC<{
                                     {data.actionFamily !== undefined &&
                                         `Action managed by ${data.actionFamily}. `}
                                     {unavailable &&
-                                        'Choose an available screen to restore navigation.'}
+                                        'Choose an available page to restore navigation.'}
                                 </small>
                             </td>
                         </tr>

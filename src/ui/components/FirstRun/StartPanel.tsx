@@ -14,7 +14,7 @@ export default function StartPanel({ onBlank }: { onBlank: () => void }) {
         <section className={styles.start} aria-labelledby="start-heading">
             <h2 id="start-heading">Start a prototype</h2>
             <p>
-                Pick a starter with connected screens, change it, play it and share a link. It is
+                Pick a starter with connected pages, change it, play it and share a link. It is
                 yours to edit.
             </p>
             <div className={styles.templates}>

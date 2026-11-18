@@ -129,7 +129,7 @@ describe('flowMachine', () => {
             activate: { type: 'navigate', screenId: 'deleted-screen' }
         };
         const machine = flowMachine(document);
-        expect(machine.states[0].transitions[0].broken).toBe('The screen it goes to was deleted');
+        expect(machine.states[0].transitions[0].broken).toBe('The page it goes to was deleted');
         expect(machine.problems.map((problem) => problem.key)).toEqual(['next', 'wide-next']);
         expect(machine.notes.map((note) => note.text)).toContain('Nothing leads to Details.');
     });

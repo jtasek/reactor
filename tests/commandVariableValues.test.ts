@@ -87,7 +87,7 @@ it('resolves responsive width modes after resizing a Screen view', () => {
     });
     const result = variableValues(store.state, variables)[0];
     expect(result.resolvedValue).toBe('#ddeeff');
-    expect(result.provenance).toContain('Screen width · 500px');
+    expect(result.provenance).toContain('Page width · 500px');
 });
 
 it('resolves selected artwork in its Screen view and distinguishes mixed contexts', () => {

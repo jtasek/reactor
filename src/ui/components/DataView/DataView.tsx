@@ -922,7 +922,7 @@ function DataEditor() {
     );
 
     return (
-        <section ref={panel} className={styles.dataView} aria-label="Data View">
+        <section ref={panel} className={styles.dataView} aria-label="Data">
             <nav className={styles.tree} aria-label="Entities">
                 <form
                     className={styles.newEntity}

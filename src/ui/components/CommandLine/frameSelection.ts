@@ -14,7 +14,7 @@ import { resolveVariable } from 'src/app/variableResolver';
 export const FRAME_SELECTION_HELP =
     'Edit frame: w=390 h=844 · move x=24 y=-8 · gap=16 padding=24. Gap and padding require an existing stack.';
 export const VIEW_SELECTION_HELP =
-    'Edit view: w=390 h=844 · move x=24 y=-8. gap=16 padding=24 edits its active shared layout’s existing stack. Resize first, then edit the stack.';
+    'Edit page size: w=390 h=844 · move x=24 y=-8. gap=16 padding=24 edits the existing stack of the design it shows. Resize first, then edit the stack.';
 
 /** View geometry stays local; stack inputs belong to the currently displayed source layout. */
 export function frameSelectionOperations(input: string, state: Context['state']): UpdateFrame[] {
@@ -26,7 +26,7 @@ export function frameSelectionOperations(input: string, state: Context['state'])
         !isFrameVisible(document, frame.id) ||
         isFrameLocked(document, frame.id)
     ) {
-        throw new Error('Select an editable frame or Screen view.');
+        throw new Error('Select an editable frame or page.');
     }
 
     const binding = bindingEdit(input);
@@ -49,7 +49,7 @@ export function frameSelectionOperations(input: string, state: Context['state'])
             !acceptsFrameNumber(target, key, value)
         ) {
             throw new Error(
-                'This property needs a compatible number variable, fixed sizing, and an existing stack for gap or padding. Screen view dimensions cannot be bound.'
+                'This property needs a compatible number variable, fixed sizing, and an existing stack for gap or padding. A page’s size on Canvas cannot be bound.'
             );
         }
         const bindings = { ...target.bindings };
@@ -88,12 +88,12 @@ export function frameSelectionOperations(input: string, state: Context['state'])
     const stacking = 'gap' in values || 'padding' in values;
     if ((moving || sizing) && isScreenLayout(document.frames, frame.id)) {
         throw new Error(
-            'This layout follows its Screen view. Select a Screen view to resize or move it.'
+            'This design follows the page’s size on Canvas. Select the page to resize or move it.'
         );
     }
     if (frame.kind === 'view' && sizing && stacking) {
         throw new Error(
-            'Resize the Screen view first, then edit its active layout’s stack in a separate command.'
+            'Resize the page first, then edit its design’s stack in a separate command.'
         );
     }
     if (moving) {
@@ -164,7 +164,7 @@ function stackTarget(state: Context['state'], frame: Frame): Frame {
         viewId: frame.id
     });
     if (!placed || placed.projection.exceedsNodeLimit) {
-        throw new Error('This Screen view’s shared layout is unavailable for editing.');
+        throw new Error('The design this page shows is unavailable for editing.');
     }
 
     return placed.screen;

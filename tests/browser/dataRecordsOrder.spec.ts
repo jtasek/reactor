@@ -3,8 +3,8 @@ import { openEditor } from './support/editor';
 import { showDataTab } from './support/dataView';
 
 test('keeps records in added order and confirms deletes beside the button', async ({ page }) => {
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Customers');
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
     await panel.getByRole('textbox', { name: 'Field name', exact: true }).fill('Name');

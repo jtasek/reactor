@@ -108,7 +108,7 @@ export const Designer: FC = () => {
                 <DockablePanel id="documentInfo" title="Document Info">
                     <DocumentInfo />
                 </DockablePanel>
-                <DockablePanel id="dataView" title="Data View" docking="vertical">
+                <DockablePanel id="dataView" title="Data" docking="vertical">
                     <DataView />
                 </DockablePanel>
                 <DockablePanel id="stats" title="Stats" docking="vertical">

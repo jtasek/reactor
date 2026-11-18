@@ -25,7 +25,7 @@ test('one outline, with no view switch and creation in menus', async ({ page }) 
     await expect(explorer(page).getByRole('button', { name: 'Objects', exact: true })).toHaveCount(
         0
     );
-    await expect(explorer(page).getByText('Draw a shape or add a screen to start.')).toBeVisible();
+    await expect(explorer(page).getByText('Draw a shape or add a page to start.')).toBeVisible();
 
     await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
     await expect(

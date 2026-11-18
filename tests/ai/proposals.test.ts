@@ -225,7 +225,7 @@ describe.each(PROVIDERS)('proposals from $provider', (each) => {
         );
         expect(result).toMatchObject({
             kind: 'failed',
-            problem: expect.stringContaining('could not finish the screen from this screenshot')
+            problem: expect.stringContaining('could not finish the page from this screenshot')
         });
     });
 

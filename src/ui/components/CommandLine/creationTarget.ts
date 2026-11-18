@@ -26,9 +26,7 @@ export function creationTarget(state: Context['state'], canvasCenter: Point) {
         const placed = editableScreenView(state, { documentId: document.id, viewId: id });
 
         if (!placed || placed.projection.exceedsNodeLimit) {
-            throw new Error(
-                'The selected Screen view cannot be edited. Check its screen and layout.'
-            );
+            throw new Error('The selected page cannot be edited. Check the page and its design.');
         }
 
         // A view wider or taller than its Screen still centers inside the Screen,

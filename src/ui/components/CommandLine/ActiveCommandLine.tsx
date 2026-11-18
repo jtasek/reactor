@@ -178,7 +178,7 @@ const ActiveCommandLine: FC = () => {
     const placement = !frame
         ? undefined
         : frame.kind === 'view'
-          ? "Center of the view, kept inside its Screen. Optional x/y are relative to the Screen's top-left; stack layout controls placement where applicable. Edits update the shared Screen layout."
+          ? "Center of the page, kept inside it. Optional x/y are relative to the page's top-left; stack layout controls placement where applicable. Edits update the design this size shows."
           : 'Frame center. Optional x/y are relative to its top-left; stack layout controls placement where applicable.';
 
     const layout = frame?.kind === 'view' ? viewLayoutRoot(document, frame) : frame;
@@ -261,14 +261,14 @@ const ActiveCommandLine: FC = () => {
         unavailable:
             item.id === 'edit stack' && frame && !layout?.stack
                 ? frame.kind === 'view'
-                    ? 'Its active layout has no stack. Choose Row or Column in the Inspector first.'
+                    ? 'Its design has no stack. Choose Row or Column in the Inspector first.'
                     : 'This frame has no stack. Choose Row or Column in the Inspector first.'
                 : item.id === 'edit colors' && !frame && selectedShapes.length && !colorable
                   ? 'Some selected shapes have no fill or stroke. Text color is in Edit text.'
                   : undefined,
         description:
             item.id === 'edit stack' && frame?.kind === 'view'
-                ? 'Edit the active shared layout; resize the view separately'
+                ? 'Edit the shown design; resize the page separately'
                 : item.description
     }));
 
@@ -296,7 +296,7 @@ const ActiveCommandLine: FC = () => {
             targetKey={targetKey}
             stackContext={
                 frame?.kind === 'view' && layout
-                    ? `${layout.name} · Shared stack · affects every view using this layout`
+                    ? `${layout.name} · Shared stack · affects every size showing this design`
                     : undefined
             }
             selectionHelp={

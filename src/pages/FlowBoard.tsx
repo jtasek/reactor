@@ -66,7 +66,7 @@ export function walkScreen(event: React.KeyboardEvent<HTMLElement>, scroll = fal
 
 /** How a screen's name tells the keyboard where its links are: Tab stops only on the name. */
 export function keysHint(links: number) {
-    return `${links === 0 ? 'No links' : links === 1 ? '1 link' : `${links} links`}. Down arrow moves to the screen's menu and links.`;
+    return `${links === 0 ? 'No links' : links === 1 ? '1 link' : `${links} links`}. Down arrow moves to the page's menu and links.`;
 }
 
 /** A row's keys: ↑ and ↓ walk, ⌫ removes its link. */
@@ -631,7 +631,7 @@ export function FlowBoard({
         <div
             ref={board}
             className={styles.board}
-            aria-label="Screen flow"
+            aria-label="Page flow"
             data-flow-board=""
             onContextMenu={(event) => {
                 if (event.target === event.currentTarget && canTidy) {
@@ -794,7 +794,7 @@ export function FlowBoard({
                     )?.instanceId;
                     const isStart = machine.initial === state.id;
                     const note = !state.available
-                        ? 'Hidden or inside another screen, so nothing can go here'
+                        ? 'Hidden or inside another page, so nothing can go here'
                         : !state.reachable
                           ? 'Nothing leads here'
                           : undefined;
@@ -821,7 +821,7 @@ export function FlowBoard({
                                 width: card.width
                             }}
                             role="group"
-                            aria-label={`Screen ${state.name}`}
+                            aria-label={`Page ${state.name}`}
                         >
                             {/* A pointer shortcut; the name below is the keyboard's way in. */}
                             <button

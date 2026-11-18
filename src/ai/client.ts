@@ -233,7 +233,7 @@ function checkScreenshotArtwork(operations: ProposedOperation[]): OperationsChec
 
 /** Shown to the person when a screenshot repair drops the screen it was asked to fix. */
 const ABANDONED_SCREEN =
-    'The AI could not finish the screen from this screenshot, and its retry added unrelated artwork instead. Nothing was changed. Try again, or describe the screen in more detail.';
+    'The AI could not finish the page from this screenshot, and its retry added unrelated artwork instead. Nothing was changed. Try again, or describe the page in more detail.';
 
 /**
  * Whether a repair of a failed screenshot composition adds new artwork without the screen it

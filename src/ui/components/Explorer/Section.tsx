@@ -64,7 +64,7 @@ export function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
     }
 }
 
-/** A titled part of the outline: Screens, Canvas or Components. */
+/** A titled part of the outline: Pages, Canvas or Components. */
 export const Section: FC<{
     title: string;
     onDrop?: (dragged: Dragged) => void;

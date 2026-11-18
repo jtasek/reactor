@@ -158,7 +158,7 @@ it('keeps dimensions opt-in and resolves each dimension independently from broad
     setInstance(nested.id, 'brand', 'accent');
     const root = resolveModes(document, { simulation: { palette: 'day' }, viewId });
     expect(root.modes).toEqual({ palette: 'day', brand: 'accent' });
-    expect(root.sources.palette).toContain('View');
+    expect(root.sources.palette).toContain('Size');
     const child = resolveModes(document, { viewId, frameId, instances: [instance, nested] });
     expect(child.modes).toEqual({ palette: 'night', brand: 'accent' });
     expect(child.sources.brand).toBe(`Instance ${nested.name}`);

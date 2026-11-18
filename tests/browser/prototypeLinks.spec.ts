@@ -133,10 +133,10 @@ test('shares the chosen context as an independent snapshot, plays without cookie
         });
     });
     await openAuthor(page);
-    await setPrototypeSetting(page, 'Start screen', 'details');
+    await setPrototypeSetting(page, 'Start page', 'details');
     await setPrototypeSetting(page, 'Prototype width', '640');
     await setPrototypeSetting(page, 'Prototype Theme', 'dark');
-    await page.getByLabel('Preview screen').selectOption('home');
+    await page.getByLabel('Preview page').selectOption('home');
     await page.getByLabel('Preview layout').selectOption(JSON.stringify('home'));
     await expect(page.getByLabel('Preview layout')).toHaveValue(JSON.stringify('home'));
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
@@ -160,19 +160,17 @@ test('shares the chosen context as an independent snapshot, plays without cookie
     ]);
     const recipient = await context.newPage();
     await recipient.goto(shareURL);
-    await expect(recipient.getByRole('combobox', { name: 'Preview screen' })).toHaveValue(
-        'details'
-    );
+    await expect(recipient.getByRole('combobox', { name: 'Preview page' })).toHaveValue('details');
     await expect(recipient.locator('svg')).toHaveAttribute('width', '640');
     await expect(recipient.locator('svg text').first()).toHaveCSS('fill', 'rgb(221, 238, 255)');
     await expect(recipient.getByLabel('Preview width')).toHaveCount(0);
     await expect(recipient.getByLabel('Preview layout')).toHaveCount(0);
-    await recipient.getByLabel('Preview screen').selectOption('home');
+    await recipient.getByLabel('Preview page').selectOption('home');
     await recipient.getByRole('textbox', { name: 'Your name' }).fill('Recipient only');
     await recipient.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(recipient.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(recipient.getByLabel('Preview page')).toHaveValue('details');
     await recipient.getByRole('button', { name: 'Restart prototype' }).click();
-    await recipient.getByLabel('Preview screen').selectOption('home');
+    await recipient.getByLabel('Preview page').selectOption('home');
     await expect(recipient.getByRole('textbox', { name: 'Your name' })).toHaveValue('Your name');
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
     await sharing.getByRole('button', { name: 'Revoke Mobile dark' }).click();

@@ -37,11 +37,11 @@ test('resizes each Screen view independently, keeps Theme and explicit overrides
     await expect(desktop.locator('[data-cy="Button"]')).toHaveAttribute('width', '240');
     await expect(desktop.locator('[data-cy="Button"]')).toHaveCSS('fill', 'rgb(17, 34, 51)');
     await page.locator('#frames > [data-frame="mobile"]').press('Enter');
-    await expect(inspector).toContainText('xs · Screen width · 360px');
-    await inspector.getByLabel('View width', { exact: true }).fill('600');
-    await inspector.getByLabel('View width', { exact: true }).press('Enter');
+    await expect(inspector).toContainText('xs · Page width · 360px');
+    await inspector.getByLabel('Shown width', { exact: true }).fill('600');
+    await inspector.getByLabel('Shown width', { exact: true }).press('Enter');
     await expect(button).toHaveAttribute('width', '240');
-    await expect(inspector).toContainText('lg · Screen width · 600px');
+    await expect(inspector).toContainText('lg · Page width · 600px');
     await expect(button).toHaveCSS('fill', 'rgb(221, 238, 255)');
     await inspector.getByLabel('MediaSize mode', { exact: true }).selectOption('sm');
     await expect(button).toHaveAttribute('width', '120');
@@ -66,12 +66,12 @@ test('authors optional rules without changing values, rejects duplicate widths a
     await panel.getByRole('button', { name: 'Edit dimension MediaSize', exact: true }).click();
     await expect(panel.getByLabel('Select modes by')).toHaveValue('manual');
     await panel.getByLabel('Select modes by').selectOption('width');
-    await panel.getByLabel('Minimum screen width for xs', { exact: true }).fill('0');
-    await panel.getByLabel('Minimum screen width for sm', { exact: true }).fill('400');
-    await panel.getByLabel('Minimum screen width for lg', { exact: true }).fill('400');
+    await panel.getByLabel('Minimum page width for xs', { exact: true }).fill('0');
+    await panel.getByLabel('Minimum page width for sm', { exact: true }).fill('400');
+    await panel.getByLabel('Minimum page width for lg', { exact: true }).fill('400');
     await panel.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(panel.getByRole('alert')).toContainText('different minimum width');
-    await panel.getByLabel('Minimum screen width for lg', { exact: true }).fill('600');
+    await panel.getByLabel('Minimum page width for lg', { exact: true }).fill('600');
     await panel.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(mobile.locator('[data-cy="Button"]')).toHaveAttribute('width', '80');
     await expect(desktop.locator('[data-cy="Button"]')).toHaveAttribute('width', '240');
@@ -79,7 +79,7 @@ test('authors optional rules without changing values, rejects duplicate widths a
     await page.screenshot({ path: 'test-results/responsive-modes-wide.png' });
     await page.setViewportSize({ width: 390, height: 800 });
     await expect(panel.getByLabel('Select modes by')).toBeVisible();
-    await panel.getByLabel('Minimum screen width for lg', { exact: true }).scrollIntoViewIfNeeded();
+    await panel.getByLabel('Minimum page width for lg', { exact: true }).scrollIntoViewIfNeeded();
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true
     );
@@ -89,9 +89,7 @@ test('authors optional rules without changing values, rejects duplicate widths a
     await expect(mobile.locator('[data-cy="Button"]')).toHaveAttribute('width', '120');
     await expect(desktop.locator('[data-cy="Button"]')).toHaveAttribute('width', '120');
     await panel.getByLabel('Select modes by').selectOption('width');
-    await expect(panel.getByLabel('Minimum screen width for lg', { exact: true })).toHaveValue(
-        '600'
-    );
+    await expect(panel.getByLabel('Minimum page width for lg', { exact: true })).toHaveValue('600');
     await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
     await panel.getByLabel('Selected dimension').selectOption('theme');
     await expect(panel.getByLabel('Select modes by')).toHaveValue('manual');

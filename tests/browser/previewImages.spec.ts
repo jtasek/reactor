@@ -115,7 +115,7 @@ test('shows real stored images with canvas geometry and no editor requests from 
     });
     await iframe.getByLabel('Your name').fill('Ada');
     await iframe.getByRole('button', { name: 'Continue', exact: true }).click();
-    await iframe.getByLabel('Preview screen').selectOption('home');
+    await iframe.getByLabel('Preview page').selectOption('home');
     await expect(iframe.getByLabel('Your name')).toHaveValue('Ada');
     await page.screenshot({ path: '/tmp/reactor-preview-images-normal.png' });
     await page.setViewportSize({ width: 600, height: 850 });
@@ -173,7 +173,7 @@ test('keeps the last valid preview when an image is lost, then recovers on retry
     const menu = explorer.getByRole('button', { name: 'Home', exact: true }).locator('..');
     await home.hover();
     await menu.getByRole('button', { name: 'Hide', exact: true }).click();
-    await expect(iframe.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(iframe.getByLabel('Preview page')).toHaveValue('details');
     await page.evaluate(async (hash) => {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
             const request = indexedDB.open('reactor', 2);
@@ -199,7 +199,7 @@ test('keeps the last valid preview when an image is lost, then recovers on retry
     await keepImage(page, asset);
     await page.getByRole('button', { name: 'Retry preview', exact: true }).click();
     await expect(page.getByText('Showing the last valid preview.')).toHaveCount(0);
-    await iframe.getByLabel('Preview screen').selectOption('home');
+    await iframe.getByLabel('Preview page').selectOption('home');
     await expect(iframe.locator('svg image')).toHaveCount(2);
 });
 

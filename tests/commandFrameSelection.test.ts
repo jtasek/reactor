@@ -188,8 +188,8 @@ it('refuses stack-managed frame movement and layout-definition geometry edits', 
         name: 'Other'
     })!;
     other.store.actions.editFrame({ kind: 'select', id: layoutId });
-    expect(() => other.run('w=400')).toThrow(/follows its Screen view/);
-    expect(() => other.run('move x=10')).toThrow(/follows its Screen view/);
+    expect(() => other.run('w=400')).toThrow(/follows the page’s size on Canvas/);
+    expect(() => other.run('move x=10')).toThrow(/follows the page’s size on Canvas/);
 });
 
 it.each(['move x=0', 'move x=0 y=0'])(

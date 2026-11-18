@@ -49,7 +49,7 @@ export function variantWidths(
             screen?.sizing?.width?.mode === 'hug' ? undefined : (viewWidth ?? screen?.size.width),
         screenProblem:
             screen?.sizing?.width?.mode === 'hug'
-                ? 'Screen width depends on its contents. Use a fixed screen viewport.'
+                ? 'Page width depends on its contents. Give the page a fixed width.'
                 : undefined,
         parent:
             parent && !dependsOnContent
@@ -60,7 +60,7 @@ export function variantWidths(
                   )
                 : undefined,
         parentProblem: dependsOnContent
-            ? 'Parent width depends on its contents. Give the parent a fixed width or use Screen view width.'
+            ? 'Parent width depends on its contents. Give the parent a fixed width or use Page width.'
             : undefined
     };
 }
@@ -97,8 +97,8 @@ export function responsiveVariant(
         return fallback(
             settings.source === 'parent'
                 ? (widths.parentProblem ??
-                      'No layout parent width. Place the instance in a frame or choose Screen view width.')
-                : (widths.screenProblem ?? 'No Screen view width. Place the instance in a screen.')
+                      'No layout parent width. Place the instance in a frame or choose Page width.')
+                : (widths.screenProblem ?? 'No page width. Place the instance on a page.')
         );
     }
     if (new Set(settings.rules.map((rule) => rule.minWidth)).size !== settings.rules.length) {
@@ -109,7 +109,7 @@ export function responsiveVariant(
     const rule = settings.rules
         .filter((item) => item.minWidth <= width)
         .sort((a, b) => b.minWidth - a.minWidth)[0];
-    const label = `${settings.source === 'screen' ? 'Screen view' : 'Parent inner'} width ${width}px`;
+    const label = `${settings.source === 'screen' ? 'Page' : 'Parent inner'} width ${width}px`;
     if (!rule) {
         return { ...fallback(), explanation: `Auto · ${label} · default below all thresholds` };
     }

@@ -60,10 +60,10 @@ function GuideCard({ guide, page }: { guide: FirstRunGuide; page: 'editor' | 'pr
             </header>
             <ol>
                 <Step done={guide.edited} title="Make it yours">
-                    <span>Click any text on a screen, then change its Text in the Inspector.</span>
+                    <span>Click any text on a page, then change its Text in the Inspector.</span>
                 </Step>
                 <Step done={guide.played} title="Play it">
-                    <span>Click through the screens as people will.</span>
+                    <span>Click through the pages as people will.</span>
                     {page === 'editor' && (
                         <button type="button" onClick={() => navigate('/prototype')}>
                             Play prototype

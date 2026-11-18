@@ -693,7 +693,7 @@ export function drawingScreen(state: Context['state'], address: ScreenViewAddres
 
 /** Why a keyboard command did nothing in a view that became locked, hidden or deleted. */
 export const UNAVAILABLE_VIEW_MESSAGE =
-    'That Screen view is locked, hidden or deleted. Click the canvas or another view, then try again.';
+    'That page is locked, hidden or deleted on the canvas. Click the canvas or another page, then try again.';
 
 /** Explains the refusal once, rather than on every repeat of a held key. */
 export function reportUnavailableView({ state, actions }: Pick<Context, 'state' | 'actions'>) {

@@ -93,7 +93,7 @@ it('keeps authored targets through demotion, nesting, rename and deletion instea
     const warnings: string[] = [];
     const output = projectPreview(document, {}, warnings);
     expect(output.screens.map((screen) => screen.id)).toEqual(['home']);
-    expect(warnings[0]).toContain('unavailable screen');
+    expect(warnings[0]).toContain('unavailable page');
     expect(document.components.button.interaction?.navigateTo).toBe('details');
     document.frames.details.kind = 'screen';
     document.frames.details.parentFrameId = 'home';

@@ -6,7 +6,7 @@ export const OpenFlowCommand: Command = {
     id: 'open-flow',
     name: 'Open flow',
     category: 'document',
-    description: 'Connect screens and edit navigation actions',
+    description: 'Connect pages and edit navigation actions',
     icon: { component: Workflow, size: 24 },
     places: [],
     canExecute: ({ state }) => takesEditorInput(state),

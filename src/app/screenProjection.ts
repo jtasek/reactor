@@ -68,7 +68,7 @@ export function projectScreen(
             screen: source,
             frames: [],
             shapes: [],
-            problems: [`Screen view exceeds ${MAX_PROJECTED_NODES} projected nodes.`],
+            problems: [`This page size exceeds ${MAX_PROJECTED_NODES} projected nodes.`],
             layoutOffsets: new Set()
         };
     }
@@ -146,7 +146,7 @@ export function projectScreenViews(
                 return {
                     view,
                     projection: null,
-                    problem: `Screen views exceed ${MAX_PROJECTED_NODES} projected nodes.`
+                    problem: `Pages on the canvas exceed ${MAX_PROJECTED_NODES} projected nodes.`
                 };
             }
 
@@ -170,10 +170,10 @@ export function projectScreenViews(
             const blocked =
                 !projection || projection.exceedsNodeLimit || nodes + count > MAX_PROJECTED_NODES;
             const problem =
-                (!projection ? 'Source screen is unavailable.' : undefined) ??
+                (!projection ? 'Its page is unavailable.' : undefined) ??
                 (projection?.exceedsNodeLimit ? projection.problems[0] : undefined) ??
                 (nodes + count > MAX_PROJECTED_NODES
-                    ? `Screen views exceed ${MAX_PROJECTED_NODES} projected nodes.`
+                    ? `Pages on the canvas exceed ${MAX_PROJECTED_NODES} projected nodes.`
                     : undefined) ??
                 projection?.problems[0];
 

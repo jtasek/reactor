@@ -6,6 +6,7 @@ import { useActions, useAppState } from 'src/app/hooks';
 import { useFrameMoveProblem, useFrameLocked } from 'src/app/frameHooks';
 import { ScreenLayouts } from './ScreenLayouts';
 import { isScreenLayout } from 'src/app/screenLayouts';
+import { screenViewName } from 'src/app/screenViews';
 import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
 import { PropertyGroup } from './PropertyGroup';
@@ -92,8 +93,8 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
         return (
             problem ??
             (source?.kind === 'screen'
-                ? `${source.name} · ${frame.name}. Artwork is shared by views using the same layout.`
-                : 'The source screen is missing. Delete this view or restore its screen.')
+                ? 'Every size that shows the same design shares its artwork.'
+                : 'Its page is missing. Remove this from the canvas or restore the page.')
         );
     });
 
@@ -104,7 +105,7 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
     );
 });
 
-/** Places another Screen view of the screen at one of the configured sizes, right of `from`. */
+/** Shows the page on the canvas again at one of the configured sizes, right of `from`. */
 const CreateViewAtSize: FC<{ screenId: string; from: Frame; disabled: boolean }> = ({
     screenId,
     from,
@@ -115,7 +116,7 @@ const CreateViewAtSize: FC<{ screenId: string; from: Frame; disabled: boolean }>
 
     return (
         <select
-            aria-label="Create Screen view at a size"
+            aria-label="Show at size"
             value=""
             disabled={disabled}
             onChange={(event) => {
@@ -131,7 +132,7 @@ const CreateViewAtSize: FC<{ screenId: string; from: Frame; disabled: boolean }>
                 });
             }}
         >
-            <option value="">Create at size…</option>
+            <option value="">Show at size…</option>
             {presets.map((preset) => (
                 <option key={preset.id} value={preset.id}>
                     {preset.name} · {preset.size.width} × {preset.size.height}
@@ -142,20 +143,34 @@ const CreateViewAtSize: FC<{ screenId: string; from: Frame; disabled: boolean }>
 };
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
-    const { frame, source, authoredSize, locked, layout, nested, busy, screenLayout, hasLayouts } =
-        useAppState((state) => ({
-            frame: renderedFrame(state.currentDocument, id),
-            source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
-            screenLayout: isScreenLayout(state.currentDocument.frames, id),
-            hasLayouts: Object.values(state.currentDocument.frames).some(
-                (child) => child.screenLayout && child.parentFrameId === id
-            ),
-            nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
-            busy: editedOnCanvas(state.events.pointer.gesture, id),
-            layout: frameLayout(state.currentDocument),
-            authoredSize: state.currentDocument.frames[id]?.size,
-            locked: state.currentDocument.locked
-        }));
+    const {
+        frame,
+        viewName,
+        source,
+        authoredSize,
+        locked,
+        layout,
+        nested,
+        busy,
+        screenLayout,
+        hasLayouts
+    } = useAppState((state) => ({
+        frame: renderedFrame(state.currentDocument, id),
+        viewName:
+            state.currentDocument.frames[id]?.kind === 'view'
+                ? screenViewName(state.currentDocument, state.currentDocument.frames[id])
+                : '',
+        source: state.currentDocument.frames[state.currentDocument.frames[id]?.screenId ?? ''],
+        screenLayout: isScreenLayout(state.currentDocument.frames, id),
+        hasLayouts: Object.values(state.currentDocument.frames).some(
+            (child) => child.screenLayout && child.parentFrameId === id
+        ),
+        nested: Boolean(frameParents(state.currentDocument.frames).get(id)),
+        busy: editedOnCanvas(state.events.pointer.gesture, id),
+        layout: frameLayout(state.currentDocument),
+        authoredSize: state.currentDocument.frames[id]?.size,
+        locked: state.currentDocument.locked
+    }));
     const { editFrame } = useActions();
     const moveProblem = useFrameMoveProblem(id);
     const inheritedLocked = useFrameLocked(id);
@@ -165,24 +180,26 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     }
 
     const disabled = locked || inheritedLocked || busy;
+    // A Page nested in another frame is drawn as part of it, so it is treated as a frame.
+    const page = frame.kind === 'screen' && !nested && !screenLayout;
 
     if (frame.kind === 'view') {
         return (
-            <div className={styles.inspector} aria-label="Screen view properties">
+            <div className={styles.inspector} aria-label="Page on canvas properties">
                 <header className={styles.inspectorHeader}>
-                    <strong>Screen view</strong>
+                    <strong>{viewName}</strong>
                 </header>
                 <table>
                     <ScreenLayouts key={id} viewId={id} disabled={disabled} />
                     <ModeFields target={{ frameId: id }} />
-                    <PropertyGroup name="Screen view">
+                    <PropertyGroup name="On canvas">
                         <tr>
                             <td colSpan={2}>
                                 <ScreenViewStatus id={id} />
                             </td>
                         </tr>
                         <Field
-                            prefix="View"
+                            prefix="Shown"
                             label="Name"
                             value={frame.name}
                             disabled={disabled}
@@ -193,7 +210,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         {(['x', 'y'] as const).map((key) => (
                             <Field
                                 key={key}
-                                prefix="View"
+                                prefix="Shown"
                                 label={key.toUpperCase()}
                                 value={frame.position[key]}
                                 disabled={disabled}
@@ -211,7 +228,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         {(['width', 'height'] as const).map((key) => (
                             <Field
                                 key={key}
-                                prefix="View"
+                                prefix="Shown"
                                 label={key === 'width' ? 'Width' : 'Height'}
                                 value={frame.size[key]}
                                 minimum={MIN_FRAME_SIZE}
@@ -232,7 +249,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                         type="button"
                                         onClick={() => editFrame({ kind: 'select', id: source.id })}
                                     >
-                                        Edit screen
+                                        Edit page
                                     </button>
                                 )}
                             </td>
@@ -255,7 +272,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                             })
                                         }
                                     >
-                                        Create Screen view
+                                        Show again on canvas
                                     </button>
                                 )}
                             </td>
@@ -278,7 +295,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                     disabled={disabled}
                                     onClick={() => editFrame({ kind: 'delete', id })}
                                 >
-                                    Delete Screen view
+                                    Remove from canvas
                                 </button>
                             </td>
                         </tr>
@@ -291,53 +308,57 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     return (
         <div className={styles.inspector} aria-label="Frame properties">
             <header className={styles.inspectorHeader}>
-                <strong>
-                    {screenLayout ? 'Screen layout' : frame.kind === 'screen' ? 'Screen' : 'Frame'}
-                </strong>
+                <strong>{screenLayout ? 'Separate design' : page ? 'Page' : 'Frame'}</strong>
             </header>
             <table>
                 <ModeFields target={{ frameId: id }} />
                 <PropertyGroup name="Frame">
-                    <tr>
-                        <th scope="row">
-                            <label htmlFor="frame-kind">Type</label>
-                        </th>
-                        <td>
-                            <select
-                                id="frame-kind"
-                                aria-label="Frame type"
-                                disabled={disabled || screenLayout}
-                                value={frame.kind ?? 'frame'}
-                                onChange={(event) =>
-                                    editFrame({
-                                        kind: 'update',
-                                        id,
-                                        changes: {
-                                            kind:
-                                                event.target.value === 'screen' ? 'screen' : 'frame'
-                                        }
-                                    })
-                                }
-                            >
-                                <option value="frame">Frame</option>
-                                <option value="screen">Screen</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colSpan={2}>
-                            <small className={styles.frameHint} role="status">
-                                {screenLayout
-                                    ? 'Separate artwork for this screen. Choose it in a Screen view to draw or edit its contents.'
-                                    : frame.kind !== 'screen'
-                                      ? 'Choose Screen to make this frame a prototype destination.'
-                                      : nested
-                                        ? 'Move this screen to Canvas to use it as a prototype destination.'
-                                        : 'Shared artwork and layout. Place Screen views on Canvas.'}
-                            </small>
-                        </td>
-                    </tr>
-                    {frame.kind === 'screen' && !nested && (
+                    {!nested && (
+                        <tr>
+                            <th scope="row">
+                                <label htmlFor="frame-kind">Type</label>
+                            </th>
+                            <td>
+                                <select
+                                    id="frame-kind"
+                                    aria-label="Frame type"
+                                    disabled={disabled}
+                                    value={frame.kind ?? 'frame'}
+                                    onChange={(event) =>
+                                        editFrame({
+                                            kind: 'update',
+                                            id,
+                                            changes: {
+                                                kind:
+                                                    event.target.value === 'screen'
+                                                        ? 'screen'
+                                                        : 'frame'
+                                            }
+                                        })
+                                    }
+                                >
+                                    <option value="frame">Frame</option>
+                                    <option value="screen">Page</option>
+                                </select>
+                            </td>
+                        </tr>
+                    )}
+                    {(screenLayout || !nested) && (
+                        <tr>
+                            <td colSpan={2}>
+                                <small className={styles.frameHint} role="status">
+                                    {screenLayout
+                                        ? 'A separate design for this page: edits here don’t reach its other sizes. Choose it on the page at a size to draw or edit its contents.'
+                                        : page
+                                          ? hasLayouts
+                                              ? 'Its main design is shared by every size that shows it. Show it on the canvas at a size to see and edit it.'
+                                              : 'One design shared by every size. Show it on the canvas at a size to see and edit it.'
+                                          : 'Choose Page to make this frame a prototype destination.'}
+                                </small>
+                            </td>
+                        </tr>
+                    )}
+                    {page && (
                         <tr>
                             <td colSpan={2}>
                                 <button
@@ -355,12 +376,12 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                         })
                                     }
                                 >
-                                    Create Screen view
+                                    Show on canvas
                                 </button>
                             </td>
                         </tr>
                     )}
-                    {frame.kind === 'screen' && !nested && (
+                    {page && (
                         <tr>
                             <td colSpan={2}>
                                 <CreateViewAtSize
@@ -371,7 +392,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </td>
                         </tr>
                     )}
-                    {frame.kind === 'screen' && (
+                    {page && (
                         <tr>
                             <td colSpan={2}>
                                 <button
@@ -379,7 +400,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                     disabled={disabled}
                                     onClick={() => editFrame({ kind: 'delete', id })}
                                 >
-                                    Delete screen
+                                    Delete page
                                 </button>
                             </td>
                         </tr>
@@ -388,8 +409,8 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         <FrameParent
                             frameId={id}
                             canvasOnly={
-                                frame.kind === 'screen' && hasLayouts
-                                    ? 'A screen with alternate layouts stays on Canvas.'
+                                page && hasLayouts
+                                    ? 'A page with separate designs stays on Canvas.'
                                     : undefined
                             }
                         />
@@ -404,8 +425,8 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         <tr>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
-                                    Size and position follow each Screen view that shows this
-                                    layout.
+                                    Size and position follow each size of the page that shows this
+                                    design.
                                 </small>
                             </td>
                         </tr>

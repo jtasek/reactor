@@ -242,7 +242,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
             >
                 <p className={styles.status}>
                     {selectedFrameId
-                        ? 'Using the selected frame or Screen view, its screen’s artwork and views, and the document’s variables and components.'
+                        ? 'Using the selected frame or page, its page’s designs and sizes, and the document’s variables and components.'
                         : selected.length > 0
                           ? 'Using selected items, their groups, owning frames and the variables and components they use.'
                           : 'Using this document. Select items first to share a smaller part.'}

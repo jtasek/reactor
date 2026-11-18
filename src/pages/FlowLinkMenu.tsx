@@ -63,7 +63,7 @@ export function FlowLinkMenu({
     const describe = (value: ActivationAction | null | undefined) => {
         switch (value?.type) {
             case 'navigate':
-                return `Go to ${data.screens.find((screen) => screen.id === value.screenId)?.name ?? 'a missing screen'}`;
+                return `Go to ${data.screens.find((screen) => screen.id === value.screenId)?.name ?? 'a missing page'}`;
             case 'changeVariant':
                 return 'Show variant';
             case 'toggleVisibility':
@@ -122,7 +122,7 @@ export function FlowLinkMenu({
                 ? [
                       {
                           id: 'here',
-                          label: 'On this screen',
+                          label: 'On this page',
                           detail:
                               explicit && explicit.type !== 'navigate'
                                   ? `${describe(explicit)} ›`

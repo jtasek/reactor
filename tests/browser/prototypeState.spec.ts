@@ -114,12 +114,10 @@ test('shared sessions isolate named state and preserve hidden input values until
     await expect(notes).toHaveCount(0);
     await toggle.press('Space');
     await expect(notes).toHaveValue('Retain my note');
-    await page
-        .getByRole('combobox', { name: 'Preview screen', exact: true })
-        .selectOption('second');
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('second');
     await expect(notes).toBeVisible();
     await page
-        .getByRole('combobox', { name: 'Preview screen', exact: true })
+        .getByRole('combobox', { name: 'Preview page', exact: true })
         .selectOption(drawing.screens[0].id);
     await expect(notes).toHaveValue('Retain my note');
     await expect(other.getByRole('textbox', { name: 'Notes', exact: true })).toHaveCount(0);
