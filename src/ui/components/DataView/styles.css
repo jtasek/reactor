@@ -1,129 +1,114 @@
-/*
- * Content sits on opaque white; only the controls layer (toolbar, segmented control, entity
- * list) is glass, so records stay readable while scrolling under it.
- */
+/* Follows the Variables editor: underline tabs, a command bar, a list beside the details. */
 .dataView {
-    --dv-tint: var(--selection-color);
-    --dv-tint-soft: color-mix(in srgb, var(--selection-color) 12%, transparent);
-    --dv-tint-ring: color-mix(in srgb, var(--selection-color) 45%, transparent);
-    --dv-sidebar: color-mix(in srgb, var(--documents-background) 80%, transparent);
-    --dv-glass: color-mix(in srgb, var(--surface) 84%, transparent);
-    --dv-glass-edge: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--hairline-color),
-        0 6px 18px -8px rgb(0 0 0 / 18%);
-    --dv-pill-shadow: 0 0 0 0.5px var(--hairline-color), 0 1px 3px rgb(0 0 0 / 12%);
-    --dv-error-soft: color-mix(in srgb, var(--error-color) 8%, transparent);
-    --dv-row-hover: color-mix(in srgb, var(--label-primary) 3%, transparent);
-    --dv-capsule: 999px;
-    --dv-hairline: 0 0 0 0.5px var(--hairline-color);
-    --dv-focus: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
-    --dv-ring: 0 0 0 2px var(--dv-tint-ring);
-
-    display: grid;
-    grid-template-columns: 160px minmax(0, 1fr);
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
+    --field-height: 32px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
     min-height: 0;
-    box-sizing: border-box;
     background: var(--panel-content-background);
     color: var(--text-color);
     font-size: var(--font-size-body);
 }
 
-.dataView * {
-    box-sizing: border-box;
-}
-
+.dataView button,
 .dataView input,
 .dataView select,
-.dataView textarea,
-.dataView button {
+.dataView textarea {
+    color: var(--text-color-hover);
     font: inherit;
-    color: inherit;
+    min-width: 0;
 }
 
-.dataView input,
+.dataView input:not([type='checkbox']),
 .dataView select,
 .dataView textarea {
-    min-height: 26px;
-    padding: 3px 8px;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: var(--field-background);
-    outline: none;
+    background-color: var(--field-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    height: var(--field-height);
+    padding: 0 8px;
+    width: 100%;
 }
 
 .dataView textarea {
+    height: auto;
+    padding: 6px 8px;
     resize: vertical;
-    padding-block: 6px;
+}
+
+.dataView input[type='checkbox'] {
+    accent-color: var(--selection-color);
+    flex: none;
+}
+
+.dataView button {
+    align-items: center;
+    background-color: var(--field-background);
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    gap: 6px;
+    justify-content: center;
+    min-height: var(--field-height);
+    padding: 5px 10px;
+    white-space: nowrap;
+}
+
+.dataView button:hover:not(:disabled) {
+    background-color: var(--menu-hover);
+}
+
+.dataView button:active:not(:disabled) {
+    background-color: var(--menu-pressed);
+}
+
+.dataView button:disabled {
+    cursor: default;
+    opacity: 0.5;
 }
 
 .dataView input:focus-visible,
 .dataView select:focus-visible,
 .dataView textarea:focus-visible,
-.dataView button:focus-visible {
-    box-shadow: var(--dv-focus);
-}
-
-.dataView button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    min-height: 26px;
-    padding: 0 12px;
-    border: 0;
-    border-radius: var(--dv-capsule);
-    background: var(--field-background);
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.dataView button:hover:not(:disabled) {
-    background: var(--menu-hover);
-}
-
-.dataView button:disabled {
-    opacity: 0.45;
-    cursor: default;
+.dataView button:focus-visible,
+.dataView summary:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
 }
 
 .dataView .primary {
-    background: var(--dv-tint);
-    color: var(--on-selection-color);
-    font-weight: var(--font-weight-medium);
+    background-color: var(--selection-color);
+    color: var(--panel-content-background);
+    font-weight: var(--font-weight-semibold);
 }
 
-.dataView .primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--selection-color) 88%, black);
+.dataView .primary:hover:not(:disabled),
+.dataView .primary:active:not(:disabled) {
+    background-color: var(--selection-color);
+    opacity: 0.85;
 }
 
 .dataView .destructive {
-    background: var(--error-color);
-    color: var(--on-selection-color);
-    font-weight: var(--font-weight-medium);
+    background-color: var(--error-color);
+    color: var(--panel-content-background);
+    font-weight: var(--font-weight-semibold);
 }
 
 .dataView .destructive:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--error-color) 88%, black);
+    background-color: var(--error-color);
+    opacity: 0.85;
 }
 
 .dataView .iconButton {
-    width: 26px;
     padding: 0;
-    background: transparent;
-    color: var(--text-secondary-color);
+    width: var(--field-height);
 }
 
 .dataView .plain {
     align-self: flex-start;
-    background: transparent;
-    color: var(--dv-tint);
-    padding: 0 4px;
-}
-
-.dataView .plain:hover:not(:disabled) {
-    background: var(--dv-tint-soft);
 }
 
 .visuallyHidden {
@@ -135,167 +120,186 @@
     white-space: nowrap;
 }
 
-.hint {
-    margin: 10px 2px;
+.hint,
+.listHeading {
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
+    line-height: 1.5;
+}
+
+.hint {
+    margin: 12px 0 0;
+}
+
+.listHeading {
+    margin: 0;
+}
+
+.panelToolbar {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
+    display: flex;
+    flex-shrink: 0;
+    padding: 0 var(--panel-gap);
+}
+
+.tabs {
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dataView .tabs button {
+    background-color: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 10px 12px;
+}
+
+.dataView .tabs button[aria-selected='true'] {
+    border-bottom-color: var(--selection-color);
+    color: var(--selection-color);
+    font-weight: var(--font-weight-semibold);
 }
 
 .count {
-    min-width: 18px;
-    padding: 0 5px;
-    border-radius: var(--dv-capsule);
     color: var(--text-secondary-color);
-    font-size: var(--font-size-caption);
+    font-size: var(--font-size-callout);
     font-variant-numeric: tabular-nums;
-    text-align: center;
+    font-weight: var(--font-weight-regular);
 }
 
-/* Sidebar: a source list of entities, with a new-entity field at its foot. */
-.sidebar {
+.commandBar {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
     display: flex;
-    flex-direction: column;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    padding: var(--panel-gap);
+}
+
+.newEntity {
+    display: flex;
+    flex: 1 1 220px;
+    gap: 6px;
+    max-width: 320px;
+}
+
+.utilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.compactPicker {
+    border-bottom: 1px solid var(--hairline-color);
+    flex-shrink: 0;
+    min-width: 0;
+    padding: var(--panel-gap);
+}
+
+.workspace {
+    display: grid;
+    flex: 1;
     min-height: 0;
-    padding: 10px 8px;
-    border-right: 0.5px solid var(--hairline-color);
-    background: var(--dv-sidebar);
-}
-
-.sidebarTitle {
-    margin: 2px 8px 6px;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-caption);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-}
-
-.entityList {
-    flex: 0 1 auto;
+    min-width: 0;
     overflow: auto;
+}
+
+.sidebar {
+    display: none;
+}
+
+.itemList {
+    display: grid;
+    gap: 4px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.dataView .entity {
+.dataView .item {
+    background-color: transparent;
+    border-color: transparent;
     justify-content: flex-start;
-    gap: 8px;
-    width: 100%;
-    min-height: var(--list-row-height);
-    padding: 0 8px;
-    border-radius: var(--radius-md);
-    background: transparent;
+    padding: 8px;
     text-align: left;
-}
-
-.entity svg {
-    flex: none;
-    color: var(--text-secondary-color);
-}
-
-.entityName {
-    flex: 1 1 auto;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.dataView .entity[aria-current='true'] {
-    background: var(--dv-tint-soft);
-    color: var(--dv-tint);
-    font-weight: var(--font-weight-medium);
-}
-
-.entity[aria-current='true'] svg,
-.entity[aria-current='true'] .count {
-    color: var(--dv-tint);
-}
-
-.newEntity {
-    display: flex;
-    gap: 4px;
-    margin-top: 8px;
-}
-
-.newEntity input {
-    flex: 1 1 auto;
     width: 100%;
-    min-width: 0;
 }
 
-/* Main column: its own scroller, so the glass toolbar floats over the content. */
-.main {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    overflow: auto;
-    padding: 0 12px 16px;
-}
-
-.toolbar {
-    position: sticky;
-    top: 8px;
-    z-index: 2;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin: 8px 0 10px;
-    padding: 6px 6px 6px 8px;
-    border-radius: 14px;
-    background: var(--dv-glass);
-    backdrop-filter: var(--backdrop-filter);
-    box-shadow: var(--dv-glass-edge);
-}
-
-.spacer {
-    flex: 1 1 0;
-}
-
-/* The segmented control: a capsule track, the selected segment a raised white pill. */
-.segments {
-    display: inline-flex;
-    padding: 2px;
-    border-radius: var(--dv-capsule);
-    background: var(--field-background);
-}
-
-.dataView .segments button {
-    min-height: 24px;
-    padding: 0 10px;
-    background: transparent;
+.item > svg {
     color: var(--text-secondary-color);
 }
 
-.dataView .segments button[aria-selected='true'] {
-    background: var(--surface);
-    color: var(--text-color);
-    font-weight: var(--font-weight-medium);
-    box-shadow: var(--dv-pill-shadow);
+.item > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.item small {
+    color: var(--text-secondary-color);
+    display: block;
+    font-size: var(--font-size-callout);
+}
+
+.dataView .item[aria-current='true'] {
+    background-color: var(--tag-blue-background);
+    color: var(--selection-color);
+}
+
+.item[aria-current='true'] > svg {
+    color: var(--selection-color);
+}
+
+.detail {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    min-width: 0;
+    padding: 16px;
+}
+
+.formField,
+.newField label,
+.optionsEditor label,
+.fieldDetail label,
+.setting,
+.ruleForm > label {
+    color: var(--text-secondary-color);
+    display: grid;
+    font-size: var(--font-size-callout);
+    gap: 7px;
+    min-width: 0;
+}
+
+.formField input {
+    color: var(--text-color-hover);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+}
+
+.message,
+.attention {
+    border-radius: var(--radius-sm);
+    background: var(--warning-background);
+    color: var(--warning-color);
+    margin: 0;
 }
 
 .message {
-    margin: 0 0 10px;
     padding: 8px 12px;
-    border-radius: var(--radius-md);
-    background: var(--warning-background);
-    color: var(--warning-color);
-}
-
-.attention {
-    margin: 0 0 10px;
-    border-radius: var(--radius-md);
-    background: var(--warning-background);
-    color: var(--warning-color);
 }
 
 .attention summary {
-    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-weight: var(--font-weight-medium);
     cursor: pointer;
+    display: flex;
+    gap: 6px;
+    font-weight: var(--font-weight-semibold);
+    padding: 8px 12px;
 }
 
 .attention ul {
@@ -312,419 +316,220 @@
 }
 
 .emptyState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    max-width: 360px;
-    margin: 48px auto;
     color: var(--text-secondary-color);
-    text-align: center;
+    display: grid;
+    gap: 8px;
+    max-width: 420px;
 }
 
 .emptyState h3 {
-    margin: 0;
-    color: var(--text-color);
+    color: var(--text-color-hover);
     font-size: var(--font-size-title-3);
+    margin: 0;
 }
 
 .emptyState p {
     margin: 0;
 }
 
-/* Records: a grid of quiet cells; a cell shows a field only on hover or focus. */
+/* Records: one plain field per value; it saves on Enter or when it loses focus. */
 .records {
     overflow: auto;
-    border-radius: 10px;
-    box-shadow: var(--dv-hairline);
 }
 
 .records table {
-    width: max-content;
+    border-collapse: collapse;
     min-width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    width: max-content;
 }
 
 .records th,
 .records td {
-    padding: 2px;
-    border-bottom: 0.5px solid var(--hairline-color);
+    border-bottom: 1px solid var(--hairline-color);
+    padding: 4px;
     text-align: left;
     vertical-align: top;
 }
 
-.records td + td,
-.records th + td,
-.records thead th + th {
-    border-left: 0.5px solid var(--hairline-color);
-}
-
 .records thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    padding: 6px 8px;
-    background: var(--documents-background);
+    background: var(--panel-content-background);
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-regular);
+    padding: 6px 4px;
+    position: sticky;
+    top: 0;
     white-space: nowrap;
-}
-
-.records tbody tr:hover {
-    background: var(--dv-row-hover);
-}
-
-.records tbody tr:last-child > * {
-    border-bottom: 0;
+    z-index: 1;
 }
 
 .columnName {
-    display: inline-flex;
     align-items: center;
+    display: inline-flex;
     gap: 6px;
 }
 
 .required {
-    color: var(--error-color);
     text-decoration: none;
 }
 
 .records .rowNumber {
-    width: 1%;
-    min-width: 32px;
-    padding: 8px 6px;
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
     font-variant-numeric: tabular-nums;
     font-weight: var(--font-weight-regular);
+    line-height: var(--field-height);
+    min-width: 24px;
+    padding-inline: 4px 8px;
     text-align: right;
+    width: 1%;
 }
 
 .rowNumber small {
-    display: block;
-    max-width: 160px;
     color: var(--error-color);
+    display: block;
+    line-height: 1.4;
+    max-width: 160px;
     text-align: left;
     white-space: normal;
 }
 
 .records .rowActions {
     width: 1%;
-    padding: 2px;
-}
-
-.rowActions button {
-    opacity: 0;
-}
-
-.records tr:hover .rowActions button,
-.rowActions button:focus-visible {
-    opacity: 1;
 }
 
 .records td > small {
-    display: block;
-    padding: 0 8px 4px;
     color: var(--error-color);
+    display: block;
     font-size: var(--font-size-caption);
+    padding: 2px 2px 0;
 }
 
 .records td > small:empty {
     display: none;
 }
 
-.records td[data-problem] {
-    background: var(--dv-error-soft);
+.records td[data-problem] input,
+.records td[data-problem] select {
+    border-color: var(--error-color);
 }
 
 .tableEmpty {
-    margin: 0;
-    padding: 20px;
     color: var(--text-secondary-color);
-    text-align: center;
+    margin: 12px 0 0;
 }
 
-/* One value: borderless until hovered or focused, with a check button once it is changed. */
 .valueEditor {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
+    display: grid;
+    gap: 2px;
     min-width: 0;
 }
 
-.valueEditor input,
-.valueEditor select {
-    flex: 1 1 auto;
-    min-width: 72px;
-    background: transparent;
-    transition: background 120ms, box-shadow 120ms;
-}
-
-.valueEditor input:hover:not(:disabled),
-.valueEditor select:hover:not(:disabled) {
-    background: var(--field-background);
-}
-
-.dataView .valueEditor input:focus-visible,
-.dataView .valueEditor select:focus-visible {
-    background: var(--surface);
-    box-shadow: var(--dv-ring);
-}
-
-.valueEditor[data-changed] input,
-.valueEditor[data-changed] select {
-    background: var(--dv-tint-soft);
-}
-
-.dataView .save {
-    width: 22px;
-    min-height: 22px;
-    padding: 0;
-    background: var(--dv-tint);
-    color: var(--on-selection-color);
-}
-
-.dataView .save:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--selection-color) 88%, black);
+.records .valueEditor input,
+.records .valueEditor select {
+    min-width: 120px;
 }
 
 .valueEditor small {
-    flex-basis: 100%;
-    padding: 0 8px;
     color: var(--error-color);
+    font-size: var(--font-size-caption);
 }
 
-.valueEditor[data-variant='title'] {
-    flex: 1 1 100px;
+.valueEditor[data-problem] input {
+    border-color: var(--error-color);
 }
 
-.valueEditor[data-variant='title'] input {
-    min-width: 60px;
-    font-size: var(--font-size-title-3);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: var(--tracking-title);
-}
-
-.valueEditor[data-variant='name'] {
-    flex: 1 1 140px;
-}
-
-.valueEditor[data-variant='name'] input {
-    font-weight: var(--font-weight-medium);
-}
-
-/* Fields: an inset grouped list, one row per field and details beneath it. */
+/* Fields */
 .newField {
+    align-items: end;
+    border-bottom: 1px solid var(--hairline-color);
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
     gap: 8px;
-    margin-bottom: 12px;
-    padding: 10px;
-    border-radius: 10px;
-    background: var(--documents-background);
-}
-
-.newField label,
-.setting,
-.optionsEditor label,
-.fieldDetail label,
-.ruleForm > label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
-}
-
-.newField input,
-.newField select,
-.newField textarea {
-    background: var(--surface);
-    color: var(--text-color);
-    font-size: var(--font-size-body);
+    margin-bottom: 4px;
+    padding-bottom: 12px;
 }
 
 .newField label:first-child {
-    flex: 1 1 140px;
+    flex: 1 1 160px;
 }
 
 .newField .wide {
     flex: 1 1 100%;
 }
 
-.dataView .toggle {
-    display: inline-flex;
-    flex-direction: row;
+.dataView .checkbox {
     align-items: center;
-    gap: 6px;
-    min-height: 26px;
     color: var(--text-secondary-color);
+    display: inline-flex;
     font-size: var(--font-size-callout);
-    cursor: pointer;
-}
-
-/* A checkbox drawn as a small switch. */
-.toggle input {
-    appearance: none;
-    position: relative;
-    width: 28px;
-    min-height: 0;
-    height: 16px;
-    padding: 0;
-    border-radius: var(--dv-capsule);
-    background: var(--control-track-color);
-    cursor: pointer;
-    transition: background 150ms;
-}
-
-.toggle input::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--surface);
-    box-shadow: var(--dv-pill-shadow);
-    transition: transform 150ms;
-}
-
-.toggle input:checked {
-    background: var(--dv-tint);
-}
-
-.toggle input:checked::after {
-    transform: translateX(12px);
+    gap: 6px;
+    min-height: var(--field-height);
 }
 
 .group {
     margin: 0;
     padding: 0;
     list-style: none;
-    border-radius: 10px;
-    box-shadow: var(--dv-hairline);
 }
 
 .field {
-    padding: 4px 8px 4px 10px;
-}
-
-.field + .field {
-    border-top: 0.5px solid var(--hairline-color);
+    border-bottom: 1px solid var(--hairline-color);
+    padding: 8px 0;
 }
 
 .fieldLine {
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: 8px;
 }
 
-.dataView .typeSelect {
-    min-width: 0;
-    padding-inline: 8px;
-    background: transparent;
-    color: var(--text-secondary-color);
+.fieldLine > .valueEditor {
+    flex: 1 1 140px;
 }
 
-.dataView .typeSelect:hover:not(:disabled) {
-    background: var(--field-background);
+.dataView .typeSelect {
+    flex: 0 0 120px;
+    width: 120px;
 }
 
 .typeIcon {
+    color: var(--text-secondary-color);
     display: inline-grid;
-    place-items: center;
     flex: none;
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-sm);
-    background: var(--tag-gray-background);
-    color: var(--tag-gray-color);
-}
-
-.typeIcon[data-type='text'] {
-    background: var(--tag-blue-background);
-    color: var(--tag-blue-color);
-}
-
-.typeIcon[data-type='number'] {
-    background: var(--tag-green-background);
-    color: var(--tag-green-color);
-}
-
-.typeIcon[data-type='boolean'] {
-    background: var(--tag-orange-background);
-    color: var(--tag-orange-color);
-}
-
-.typeIcon[data-type='choice'] {
-    background: var(--tag-purple-background);
-    color: var(--tag-purple-color);
-}
-
-.typeIcon[data-type='reference'] {
-    background: var(--tag-teal-background);
-    color: var(--tag-teal-color);
-}
-
-.badge {
-    padding: 1px 6px;
-    border-radius: var(--dv-capsule);
-    background: var(--dv-tint-soft);
-    color: var(--dv-tint);
-    font-size: var(--font-size-caption);
-    font-weight: var(--font-weight-medium);
+    place-items: center;
+    width: 16px;
 }
 
 .optionsEditor,
 .fieldDetail {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 8px;
-    margin: 4px 0 6px 26px;
-}
-
-.optionsEditor label {
-    flex: 1 1 220px;
+    display: grid;
+    gap: 4px;
+    margin: 8px 0 0 24px;
+    max-width: 360px;
 }
 
 .optionsEditor small {
-    flex-basis: 100%;
     color: var(--error-color);
 }
 
 .setting {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
     margin-top: 12px;
-    padding: 6px 10px;
-    border-radius: 10px;
-    box-shadow: var(--dv-hairline);
-}
-
-.setting select {
-    margin-left: auto;
+    max-width: 360px;
 }
 
 .confirmation {
+    align-items: center;
+    background: var(--error-background);
+    border-radius: var(--radius-sm);
+    color: var(--error-color);
     display: flex;
     flex-basis: 100%;
     flex-wrap: wrap;
-    align-items: center;
     gap: var(--panel-gap);
-    margin: 6px 0 10px;
+    margin: 8px 0;
     padding: 10px 12px;
-    border-radius: 10px;
-    background: var(--error-background);
-    color: var(--error-color);
 }
 
 .confirmation p {
@@ -734,14 +539,12 @@
 
 /* Rules */
 .rule {
+    align-items: center;
+    border-bottom: 1px solid var(--hairline-color);
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: var(--panel-gap);
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    box-shadow: var(--dv-hairline);
+    padding: 10px 0;
 }
 
 .rule p {
@@ -761,45 +564,35 @@
 }
 
 .dataView .ruleForm {
+    align-items: stretch;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 12px;
+    margin: 12px 0;
     padding: 12px;
-    border-radius: 10px;
-    background: var(--documents-background);
-}
-
-.ruleForm input,
-.ruleForm select {
-    background: var(--surface);
 }
 
 .conditions {
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-sm);
     display: flex;
     flex-direction: column;
     gap: var(--panel-gap);
     margin: 0;
     padding: 10px;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    box-shadow: var(--dv-hairline);
 }
 
 .conditions legend {
-    float: left;
-    width: 100%;
-    margin-bottom: 2px;
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
-    font-weight: var(--font-weight-medium);
+    padding: 0 4px;
 }
 
 .conditions label {
-    display: flex;
     align-items: center;
+    display: flex;
     gap: 6px;
 }
 
@@ -809,67 +602,55 @@
     gap: 6px;
 }
 
-.condition input,
-.condition select {
-    background: var(--field-background);
+.condition > select,
+.condition > input {
+    flex: 1 1 120px;
+    width: auto;
 }
 
 .dataView .inline {
-    flex-direction: row;
     align-items: center;
+    display: flex;
+    flex-direction: row;
     gap: 6px;
 }
 
 .formActions {
     display: flex;
-    justify-content: flex-end;
     gap: 8px;
+    justify-content: flex-end;
 }
 
-/* Narrow panels: the entity list becomes a scrolling row of capsules above the content. */
-@container (width < 560px) {
-    .dataView {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
+@container (min-width: 560px) {
+    .workspace {
+        grid-template-columns: 190px minmax(0, 1fr);
     }
 
     .sidebar {
-        flex-direction: row;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 8px;
-        border-right: 0;
-        border-bottom: 0.5px solid var(--hairline-color);
+        border-right: 1px solid var(--hairline-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 10px;
     }
 
-    .sidebarTitle {
+    .compactPicker {
         display: none;
     }
 
-    .entityList li {
-        flex: none;
+    .detail {
+        padding: 16px 24px 24px;
+    }
+}
+
+@media (pointer: coarse) {
+    .dataView {
+        --field-height: 44px;
     }
 
-    .entityList {
-        display: flex;
-        flex: 1 1 auto;
-        gap: 4px;
-        min-width: 0;
-        overflow-x: auto;
-    }
-
-    .dataView .entity {
-        width: auto;
-        border-radius: var(--dv-capsule);
-    }
-
-    .newEntity {
-        flex: 0 0 132px;
-        min-width: 0;
-        margin-top: 0;
-    }
-
-    .main {
-        padding: 0 8px 12px;
+    .dataView input,
+    .dataView select,
+    .dataView textarea {
+        font-size: var(--font-size-touch-input);
     }
 }

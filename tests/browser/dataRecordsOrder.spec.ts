@@ -15,7 +15,7 @@ test('keeps records in added order and confirms deletes beside the button', asyn
         const label = `Name, record ${index + 1}`;
         await expect(panel.getByRole('textbox', { name: label, exact: true })).toHaveValue('');
         await panel.getByRole('textbox', { name: label, exact: true }).fill(name);
-        await panel.getByRole('button', { name: `Save ${label}`, exact: true }).click();
+        await panel.getByRole('textbox', { name: label, exact: true }).press('Enter');
     }
     for (const [index, name] of names.entries()) {
         await expect(

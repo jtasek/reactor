@@ -1,31 +1,35 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     attention: string;
-    badge: string;
+    checkbox: string;
     columnName: string;
+    commandBar: string;
+    compactPicker: string;
     condition: string;
     conditions: string;
     confirmation: string;
     count: string;
     dataView: string;
     destructive: string;
+    detail: string;
     emptyState: string;
-    entity: string;
-    entityList: string;
-    entityName: string;
     field: string;
     fieldDetail: string;
     fieldLine: string;
     formActions: string;
+    formField: string;
     group: string;
     hint: string;
     iconButton: string;
     inline: string;
-    main: string;
+    item: string;
+    itemList: string;
+    listHeading: string;
     message: string;
     newEntity: string;
     newField: string;
     optionsEditor: string;
+    panelToolbar: string;
     plain: string;
     primary: string;
     records: string;
@@ -34,21 +38,18 @@ declare namespace StylesCssNamespace {
     rowNumber: string;
     rule: string;
     ruleForm: string;
-    save: string;
-    segments: string;
     setting: string;
     sidebar: string;
-    sidebarTitle: string;
-    spacer: string;
     tabPanel: string;
     tableEmpty: string;
-    toggle: string;
-    toolbar: string;
+    tabs: string;
     typeIcon: string;
     typeSelect: string;
+    utilities: string;
     valueEditor: string;
     visuallyHidden: string;
     wide: string;
+    workspace: string;
   }
 }
 

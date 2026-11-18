@@ -1,7 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {
-    Check,
-    Database,
     Hash,
     Link2,
     List,
@@ -78,7 +76,11 @@ const optionLines = (draft: string) =>
         .map((line) => line.trim())
         .filter(Boolean);
 
-/** Drafts stay local until saved with Enter or the check button; Escape puts the value back. */
+/**
+ * A value whose typing is a draft, saved on Enter or when the field loses focus and dropped on
+ * Escape, as in the Inspector. A choice saves as soon as it is picked. A rejected value keeps its
+ * draft and says why.
+ */
 function ValueEditor({
     value,
     label,
@@ -106,51 +108,48 @@ function ValueEditor({
         choices && (used || choices.length <= DRAWN_CHOICES)
             ? choices
             : choices?.filter((choice) => choice.value === draft);
+    // A value stored as another type is saved again, converted, even when its text is unchanged.
     const needsConversion = value !== null && value !== undefined && typeof value !== expected;
-    const changed = draft !== initial || needsConversion;
-    const revert = (event: React.KeyboardEvent) => {
-        if (event.key === 'Escape' && changed) {
-            event.preventDefault();
-            event.stopPropagation();
-            setDraft(initial);
-            setProblem('');
+
+    const commit = (text: string) => {
+        if (disabled || (text === initial && !needsConversion)) {
+            return;
         }
+        if (type === 'boolean' && !['', 'true', 'false'].includes(text)) {
+            setProblem('Choose True, False or Not set.');
+
+            return;
+        }
+        const next =
+            type === 'text'
+                ? text
+                : text.trim() === ''
+                  ? null
+                  : type === 'number'
+                    ? Number(text)
+                    : type === 'boolean'
+                      ? text === 'true'
+                      : text;
+        const result = save(next);
+        setProblem(result.applied ? '' : result.problem);
+    };
+    const pick = (text: string) => {
+        setDraft(text);
+        commit(text);
     };
 
     return (
-        <form
+        <div
             className={styles.valueEditor}
             data-variant={variant}
-            data-changed={changed || undefined}
             data-problem={problem ? true : undefined}
-            onSubmit={(event) => {
-                event.preventDefault();
-                if (type === 'boolean' && !['', 'true', 'false'].includes(draft)) {
-                    setProblem('Choose True, False or Not set.');
-
-                    return;
-                }
-                const next =
-                    type === 'text'
-                        ? draft
-                        : draft.trim() === ''
-                          ? null
-                          : type === 'number'
-                            ? Number(draft)
-                            : type === 'boolean'
-                              ? draft === 'true'
-                              : draft;
-                const result = save(next);
-                setProblem(result.applied ? '' : result.problem);
-            }}
         >
             {type === 'boolean' ? (
                 <select
                     aria-label={label}
                     value={draft}
                     disabled={disabled}
-                    onKeyDown={revert}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => pick(event.target.value)}
                 >
                     <option value="">Not set</option>
                     <option value="true">True</option>
@@ -164,10 +163,9 @@ function ValueEditor({
                     aria-label={label}
                     value={draft}
                     disabled={disabled}
-                    onKeyDown={revert}
                     onFocus={() => setUsed(true)}
                     onPointerDown={() => setUsed(true)}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => pick(event.target.value)}
                 >
                     <option value="">Not set</option>
                     {offered.map((choice) => (
@@ -182,27 +180,29 @@ function ValueEditor({
             ) : (
                 <input
                     aria-label={label}
+                    aria-invalid={problem ? true : undefined}
                     value={draft}
                     disabled={disabled}
-                    onKeyDown={revert}
-                    placeholder={variant === 'cell' ? '—' : undefined}
                     inputMode={type === 'number' ? 'decimal' : undefined}
                     onChange={(event) => setDraft(event.target.value)}
+                    onBlur={() => commit(draft)}
+                    onKeyDown={(event) => {
+                        if (event.nativeEvent.isComposing) {
+                            return;
+                        }
+                        if (event.key === 'Enter') {
+                            commit(draft);
+                        }
+                        if (event.key === 'Escape' && draft !== initial) {
+                            event.stopPropagation();
+                            setDraft(initial);
+                            setProblem('');
+                        }
+                    }}
                 />
             )}
-            {changed && (
-                <button
-                    type="submit"
-                    className={styles.save}
-                    disabled={disabled}
-                    aria-label={`Save ${label}`}
-                    title="Save (Enter) · Escape to undo"
-                >
-                    <Check aria-hidden size={14} strokeWidth={2.5} />
-                </button>
-            )}
             {problem && <small role="alert">{problem}</small>}
-        </form>
+        </div>
     );
 }
 
@@ -440,6 +440,13 @@ function DataEditor() {
         );
 
     const entity = data.entity;
+    const choose = (id: string) => {
+        setSelectedId(id);
+        setDeletion(undefined);
+        if (!data.fieldCounts[id]) {
+            setTab('fields');
+        }
+    };
     const tabCounts: Record<Tab, number> = {
         records: data.records.length,
         fields: data.fields.length,
@@ -669,10 +676,9 @@ function DataEditor() {
                         change={setTarget}
                     />
                 )}
-                <label className={styles.toggle}>
+                <label className={styles.checkbox}>
                     <input
                         type="checkbox"
-                        role="switch"
                         checked={required}
                         disabled={data.disabled}
                         onChange={(event) => setRequired(event.target.checked)}
@@ -680,7 +686,7 @@ function DataEditor() {
                     Required
                 </label>
                 <button className={styles.primary} disabled={data.disabled || !fieldName.trim()}>
-                    <Plus aria-hidden size={14} strokeWidth={2.25} />
+                    <Plus aria-hidden size={16} />
                     Add field
                 </button>
             </form>
@@ -704,11 +710,6 @@ function DataEditor() {
                                         })
                                     }
                                 />
-                                {field.id === data.label && (
-                                    <span className={styles.badge} title="Names records">
-                                        Record name
-                                    </span>
-                                )}
                                 <select
                                     className={styles.typeSelect}
                                     aria-label={`Type for ${field.name}`}
@@ -728,10 +729,9 @@ function DataEditor() {
                                         </option>
                                     ))}
                                 </select>
-                                <label className={styles.toggle}>
+                                <label className={styles.checkbox}>
                                     <input
                                         type="checkbox"
-                                        role="switch"
                                         aria-label={`Require ${field.name}`}
                                         checked={field.required}
                                         disabled={data.disabled}
@@ -832,37 +832,52 @@ function DataEditor() {
 
     return (
         <section className={styles.dataView} aria-label="Data View">
-            <nav className={styles.sidebar} aria-label="Entities">
-                <h3 className={styles.sidebarTitle}>Entities</h3>
-                {data.entities.length > 0 && (
-                    <ul className={styles.entityList}>
-                        {data.entities.map((entity) => (
-                            <li key={entity.id}>
-                                <button
-                                    type="button"
-                                    className={styles.entity}
-                                    aria-current={entity.id === entityId || undefined}
-                                    onClick={() => {
-                                        setSelectedId(entity.id);
-                                        setDeletion(undefined);
-                                        if (!data.fieldCounts[entity.id]) {
-                                            setTab('fields');
-                                        }
-                                    }}
-                                >
-                                    <Table2 aria-hidden size={14} />
-                                    <span className={styles.entityName}>{entity.name}</span>
-                                    <span
-                                        className={styles.count}
-                                        aria-label={`${data.recordCounts[entity.id] ?? 0} records`}
-                                    >
-                                        {data.recordCounts[entity.id] ?? 0}
-                                    </span>
-                                </button>
-                            </li>
+            {data.entity && (
+                <div className={styles.panelToolbar}>
+                    <div
+                        ref={tabList}
+                        className={styles.tabs}
+                        role="tablist"
+                        aria-label="Entity sections"
+                    >
+                        {TABS.map((section) => (
+                            <button
+                                key={section}
+                                type="button"
+                                role="tab"
+                                id={`${tabsId}-${section}`}
+                                aria-selected={tab === section}
+                                aria-controls={`${tabsId}-panel`}
+                                tabIndex={tab === section ? 0 : -1}
+                                onKeyDown={(event) => {
+                                    const at = TABS.indexOf(section);
+                                    const next =
+                                        event.key === 'ArrowRight'
+                                            ? TABS[(at + 1) % TABS.length]
+                                            : event.key === 'ArrowLeft'
+                                              ? TABS[(at + TABS.length - 1) % TABS.length]
+                                              : undefined;
+                                    if (next) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setTab(next);
+                                        tabList.current
+                                            ?.querySelector<HTMLButtonElement>(
+                                                `#${CSS.escape(`${tabsId}-${next}`)}`
+                                            )
+                                            ?.focus();
+                                    }
+                                }}
+                                onClick={() => setTab(section)}
+                            >
+                                {TAB_NAMES[section]}
+                                <span className={styles.count}>{tabCounts[section]}</span>
+                            </button>
                         ))}
-                    </ul>
-                )}
+                    </div>
+                </div>
+            )}
+            <div className={styles.commandBar}>
                 <form
                     className={styles.newEntity}
                     onSubmit={(event) => {
@@ -881,163 +896,159 @@ function DataEditor() {
                         value={name}
                         onChange={(event) => setName(event.target.value)}
                         disabled={data.disabled}
-                        placeholder="New entity"
+                        placeholder="New entity name"
                     />
-                    <button
-                        className={styles.iconButton}
-                        aria-label="Add entity"
-                        title="Add entity"
-                        disabled={data.disabled || !name.trim()}
-                    >
-                        <Plus aria-hidden size={14} strokeWidth={2.25} />
+                    <button disabled={data.disabled || !name.trim()}>
+                        <Plus aria-hidden size={16} />
+                        Add entity
                     </button>
                 </form>
-            </nav>
-            <div className={styles.main}>
-                {!data.entity ? (
-                    <div className={styles.emptyState}>
-                        {notices}
-                        <Database aria-hidden size={28} strokeWidth={1.5} />
-                        <h3>No entities yet.</h3>
-                        <p>
-                            An entity is a kind of thing your prototype shows, like Customers or
-                            Orders. Add one to define fields and sample records.
-                        </p>
+                {data.entity && (
+                    <div className={styles.utilities}>
                         <button
                             type="button"
-                            className={styles.primary}
-                            disabled={data.disabled}
-                            onClick={() => newEntity.current?.focus()}
+                            title={data.fields.length ? undefined : 'Add a field first'}
+                            disabled={
+                                data.disabled ||
+                                !data.fields.length ||
+                                data.records.length >= MAX_RECORDS_PER_ENTITY
+                            }
+                            onClick={() => {
+                                setTab('records');
+                                edit({ kind: 'addRecord', entityId: data.entity!.id });
+                            }}
                         >
-                            <Plus aria-hidden size={14} strokeWidth={2.25} />
-                            Create an entity
+                            <Plus aria-hidden size={16} />
+                            Add record
                         </button>
-                        <p className={styles.hint}>
-                            To repeat a component over records, select an instance and use Inspector
-                            → Repeat with data.
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        <header className={styles.toolbar}>
-                            <ValueEditor
-                                key={`${data.entity.id}:${data.entity.name}`}
-                                variant="title"
-                                label="Entity name"
-                                value={data.entity.name}
-                                disabled={data.disabled}
-                                save={(name) =>
-                                    edit({
-                                        kind: 'renameEntity',
-                                        id: data.entity!.id,
-                                        name: String(name)
-                                    })
-                                }
-                            />
-                            <div
-                                ref={tabList}
-                                className={styles.segments}
-                                role="tablist"
-                                aria-label="Entity sections"
-                            >
-                                {TABS.map((section) => (
-                                    <button
-                                        key={section}
-                                        type="button"
-                                        role="tab"
-                                        id={`${tabsId}-${section}`}
-                                        aria-selected={tab === section}
-                                        aria-controls={`${tabsId}-panel`}
-                                        tabIndex={tab === section ? 0 : -1}
-                                        onKeyDown={(event) => {
-                                            const at = TABS.indexOf(section);
-                                            const next =
-                                                event.key === 'ArrowRight'
-                                                    ? TABS[(at + 1) % TABS.length]
-                                                    : event.key === 'ArrowLeft'
-                                                      ? TABS[(at + TABS.length - 1) % TABS.length]
-                                                      : undefined;
-                                            if (next) {
-                                                event.preventDefault();
-                                                event.stopPropagation();
-                                                setTab(next);
-                                                tabList.current
-                                                    ?.querySelector<HTMLButtonElement>(
-                                                        `#${CSS.escape(`${tabsId}-${next}`)}`
-                                                    )
-                                                    ?.focus();
-                                            }
-                                        }}
-                                        onClick={() => setTab(section)}
-                                    >
-                                        {TAB_NAMES[section]}
-                                        <span className={styles.count}>{tabCounts[section]}</span>
-                                    </button>
-                                ))}
-                            </div>
-                            <span className={styles.spacer} />
-                            <button
-                                type="button"
-                                className={styles.primary}
-                                title={data.fields.length ? undefined : 'Add a field first'}
-                                disabled={
-                                    data.disabled ||
-                                    !data.fields.length ||
-                                    data.records.length >= MAX_RECORDS_PER_ENTITY
-                                }
-                                onClick={() => {
-                                    setTab('records');
-                                    edit({ kind: 'addRecord', entityId: data.entity!.id });
-                                }}
-                            >
-                                <Plus aria-hidden size={14} strokeWidth={2.25} />
-                                Add record
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                aria-label="Delete entity…"
-                                title="Delete entity…"
-                                disabled={data.disabled}
-                                onClick={() =>
-                                    setDeletion({
-                                        kind: 'deleteEntity',
-                                        id: data.entity!.id,
-                                        documentId: data.documentId
-                                    })
-                                }
-                            >
-                                <Trash2 aria-hidden size={14} />
-                            </button>
-                        </header>
-                        {confirmation('deleteEntity', data.entity.id)}
-                        {notices}
-                        <div
-                            className={styles.tabPanel}
-                            role="tabpanel"
-                            id={`${tabsId}-panel`}
-                            aria-labelledby={`${tabsId}-${tab}`}
+                        <button
+                            type="button"
+                            disabled={data.disabled}
+                            onClick={() =>
+                                setDeletion({
+                                    kind: 'deleteEntity',
+                                    id: data.entity!.id,
+                                    documentId: data.documentId
+                                })
+                            }
                         >
-                            {tab === 'records' && records}
-                            {tab === 'fields' && fieldsPanel}
-                            {tab === 'rules' && (
-                                <DataRules
-                                    key={data.entity.id}
-                                    rules={data.rules}
-                                    fields={data.fields}
-                                    choices={data.choices}
-                                    problems={data.brokenRules}
-                                    disabled={data.disabled}
-                                    add={(rule) =>
-                                        edit({ kind: 'addRule', entityId: data.entity!.id, rule })
-                                    }
-                                    update={(id, rule) => edit({ kind: 'updateRule', id, rule })}
-                                    remove={(id) => edit({ kind: 'deleteRule', id })}
-                                />
-                            )}
-                        </div>
-                    </>
+                            Delete entity…
+                        </button>
+                    </div>
                 )}
+            </div>
+            {data.entities.length > 0 && (
+                <div className={styles.compactPicker}>
+                    <select
+                        aria-label="Selected entity"
+                        value={entityId}
+                        onChange={(event) => choose(event.target.value)}
+                    >
+                        {data.entities.map((entity) => (
+                            <option key={entity.id} value={entity.id}>
+                                {entity.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+            <div className={styles.workspace}>
+                <nav className={styles.sidebar} aria-label="Entities">
+                    <p className={styles.listHeading}>
+                        {data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}
+                    </p>
+                    <ul className={styles.itemList}>
+                        {data.entities.map((entity) => {
+                            const count = data.recordCounts[entity.id] ?? 0;
+
+                            return (
+                                <li key={entity.id}>
+                                    <button
+                                        type="button"
+                                        className={styles.item}
+                                        aria-current={entity.id === entityId || undefined}
+                                        onClick={() => choose(entity.id)}
+                                    >
+                                        <Table2 aria-hidden size={16} />
+                                        <span>
+                                            {entity.name}
+                                            <small>
+                                                {count} {count === 1 ? 'record' : 'records'}
+                                            </small>
+                                        </span>
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </nav>
+                <div className={styles.detail}>
+                    {notices}
+                    {!data.entity ? (
+                        <div className={styles.emptyState}>
+                            <h3>No entities yet.</h3>
+                            <p>
+                                An entity is a kind of thing your prototype shows, like Customers or
+                                Orders. Name one above to define its fields and sample records.
+                            </p>
+                            <p>
+                                To repeat a component over records, select an instance and use
+                                Inspector → Repeat with data.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className={styles.formField}>
+                                <span aria-hidden>Name</span>
+                                <ValueEditor
+                                    key={`${data.entity.id}:${data.entity.name}`}
+                                    variant="title"
+                                    label="Entity name"
+                                    value={data.entity.name}
+                                    disabled={data.disabled}
+                                    save={(name) =>
+                                        edit({
+                                            kind: 'renameEntity',
+                                            id: data.entity!.id,
+                                            name: String(name)
+                                        })
+                                    }
+                                />
+                            </div>
+                            {confirmation('deleteEntity', data.entity.id)}
+                            <div
+                                className={styles.tabPanel}
+                                role="tabpanel"
+                                id={`${tabsId}-panel`}
+                                aria-labelledby={`${tabsId}-${tab}`}
+                            >
+                                {tab === 'records' && records}
+                                {tab === 'fields' && fieldsPanel}
+                                {tab === 'rules' && (
+                                    <DataRules
+                                        key={data.entity.id}
+                                        rules={data.rules}
+                                        fields={data.fields}
+                                        choices={data.choices}
+                                        problems={data.brokenRules}
+                                        disabled={data.disabled}
+                                        add={(rule) =>
+                                            edit({
+                                                kind: 'addRule',
+                                                entityId: data.entity!.id,
+                                                rule
+                                            })
+                                        }
+                                        update={(id, rule) =>
+                                            edit({ kind: 'updateRule', id, rule })
+                                        }
+                                        remove={(id) => edit({ kind: 'deleteRule', id })}
+                                    />
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </section>
     );
@@ -1077,7 +1088,7 @@ function EntitySelect({
     );
 }
 
-/** Saves the whole list at once; a rejected list (duplicates, too long) keeps the draft. */
+/** Saves the whole list when the field loses focus; a rejected list (duplicates, too long) keeps the draft. */
 function OptionsEditor({
     label,
     options,
@@ -1094,15 +1105,7 @@ function OptionsEditor({
     const [problem, setProblem] = useState('');
 
     return (
-        <form
-            className={styles.optionsEditor}
-            data-changed={draft !== initial || undefined}
-            onSubmit={(event) => {
-                event.preventDefault();
-                const result = save(optionLines(draft));
-                setProblem(result.applied ? '' : result.problem);
-            }}
-        >
+        <div className={styles.optionsEditor}>
             <label>
                 {label}
                 <textarea
@@ -1110,19 +1113,22 @@ function OptionsEditor({
                     rows={Math.min(6, Math.max(2, options.length))}
                     disabled={disabled}
                     onChange={(event) => setDraft(event.target.value)}
+                    onBlur={() => {
+                        if (draft !== initial) {
+                            const result = save(optionLines(draft));
+                            setProblem(result.applied ? '' : result.problem);
+                        }
+                    }}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Escape' && draft !== initial) {
+                            event.stopPropagation();
+                            setDraft(initial);
+                            setProblem('');
+                        }
+                    }}
                 />
             </label>
-            {draft !== initial && (
-                <button
-                    type="submit"
-                    className={styles.primary}
-                    disabled={disabled}
-                    aria-label={`Save ${label}`}
-                >
-                    Save options
-                </button>
-            )}
             {problem && <small role="alert">{problem}</small>}
-        </form>
+        </div>
     );
 }

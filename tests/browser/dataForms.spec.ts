@@ -16,10 +16,10 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     await panel.getByRole('button', { name: 'Add field', exact: true }).click();
     await panel.getByRole('button', { name: 'Add record', exact: true }).click();
     await panel.getByRole('textbox', { name: 'Name, record 1', exact: true }).fill('Ada');
-    await panel.getByRole('button', { name: 'Save Name, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Name, record 1', exact: true }).press('Enter');
     await showDataTab(panel, 'Fields');
     await panel.getByRole('textbox', { name: 'Field Name', exact: true }).fill('Full name');
-    await panel.getByRole('button', { name: 'Save Field Name', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Field Name', exact: true }).press('Enter');
     await showDataTab(panel, 'Records');
     await expect(
         panel.getByRole('textbox', { name: 'Full name, record 1', exact: true })
@@ -36,10 +36,10 @@ test('authors typed data, preserves values when fields change, reloads and undoe
         panel.getByRole('textbox', { name: 'Full name, record 1', exact: true })
     ).toHaveValue('Ada');
     await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).fill('invalid');
-    await panel.getByRole('button', { name: 'Save Full name, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).press('Enter');
     await expect(panel.getByRole('alert')).toContainText('must be number');
     await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).fill('42');
-    await panel.getByRole('button', { name: 'Save Full name, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).press('Enter');
     await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
     await page
         .getByRole('list', { name: 'Commands' })
@@ -60,16 +60,14 @@ test('authors typed data, preserves values when fields change, reloads and undoe
         .selectOption('text');
     await showDataTab(panel, 'Records');
     await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).fill('42');
-    await panel.getByRole('button', { name: 'Save Full name, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).press('Enter');
     await showDataTab(panel, 'Fields');
     await panel
         .getByRole('combobox', { name: 'Type for Full name', exact: true })
         .selectOption('number');
     await showDataTab(panel, 'Records');
-    await expect(
-        panel.getByRole('button', { name: 'Save Full name, record 1', exact: true })
-    ).toBeEnabled();
-    await panel.getByRole('button', { name: 'Save Full name, record 1', exact: true }).click();
+    // Enter saves an unchanged value again, converted to the field's new type.
+    await panel.getByRole('textbox', { name: 'Full name, record 1', exact: true }).press('Enter');
     await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
     await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Zed');
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
@@ -77,7 +75,7 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     await page.reload();
     await openEditor(page, ['Data View']);
     await panel.getByRole('textbox', { name: 'Entity name', exact: true }).fill('ZZZ Customers');
-    await panel.getByRole('button', { name: 'Save Entity name', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Entity name', exact: true }).press('Enter');
     await expect(panel.getByRole('navigation', { name: 'Entities' })).toContainText(
         'ZZZ Customers'
     );
@@ -104,7 +102,7 @@ test('authors choice and reference fields and names referenced records', async (
     await panel.getByRole('button', { name: 'Add field', exact: true }).click();
     await panel.getByRole('button', { name: 'Add record', exact: true }).click();
     await panel.getByRole('textbox', { name: 'Name, record 1', exact: true }).fill('Ada');
-    await panel.getByRole('button', { name: 'Save Name, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Name, record 1', exact: true }).press('Enter');
 
     await addEntity('Orders');
     await panel.getByRole('textbox', { name: 'Field name', exact: true }).fill('Status');
@@ -125,11 +123,9 @@ test('authors choice and reference fields and names referenced records', async (
 
     const status = panel.getByRole('combobox', { name: 'Status, record 1', exact: true });
     await status.selectOption('Shipped');
-    await panel.getByRole('button', { name: 'Save Status, record 1', exact: true }).click();
     const customer = panel.getByRole('combobox', { name: 'Customer, record 1', exact: true });
     await expect(customer.getByRole('option')).toHaveText(['Not set', 'Ada']);
     await customer.selectOption({ label: 'Ada' });
-    await panel.getByRole('button', { name: 'Save Customer, record 1', exact: true }).click();
     await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toHaveCount(0);
 
     // Removing the chosen option keeps the value and reports it.
@@ -137,7 +133,7 @@ test('authors choice and reference fields and names referenced records', async (
     await panel
         .getByRole('textbox', { name: 'Options for Status', exact: true })
         .fill('Open\nSent');
-    await panel.getByRole('button', { name: 'Save Options for Status', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Options for Status', exact: true }).blur();
     await expect(panel.getByRole('region', { name: 'Data diagnostics' })).toContainText(
         'Status must be one of its options.'
     );
@@ -176,7 +172,7 @@ test('authors rules with conditions, lists records that break them, edits and de
     }
     await panel.getByRole('button', { name: 'Add record', exact: true }).click();
     await panel.getByRole('textbox', { name: 'Age, record 1', exact: true }).fill('12');
-    await panel.getByRole('button', { name: 'Save Age, record 1', exact: true }).click();
+    await panel.getByRole('textbox', { name: 'Age, record 1', exact: true }).press('Enter');
 
     const rules = panel.getByRole('region', { name: 'Rules', exact: true });
     await showDataTab(panel, 'Rules');
