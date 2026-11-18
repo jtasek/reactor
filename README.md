@@ -566,6 +566,16 @@ is too large, nothing is sent: select fewer items or shorten their text. Context
 whole rather than being silently truncated. These are transport limits, not a count of any
 provider's tokens; the gateway still accounts for provider-reported token use.
 
+**Trying the chat without the server.** With no AI on the server (no database, no
+`AI_PROVIDER`, or signed out), `pnpm start` answers the chat from a local test model
+instead (`src/ai/localModel.ts`): scripted proposals made in the browser, with no AI and
+nothing sent anywhere. Any build does the same once opened with `?ai=local` (kept for the
+tab; `?ai=server` goes back). It understands requests like “add 3 red circles”, “add text
+"Welcome"” and, with shapes selected, “make them green”, “rename to "Card"”, “move right
+40” and “delete”. `/slow …` streams slowly for Stop, `/repair …` sends a broken change first
+so the repair round runs, `/words …` answers in words only, and `/fail limit|busy|off|forbidden|refused|incomplete|network`
+shows each problem the server can report. `/help` lists them.
+
 For single-column screenshot recreation, the AI can call `composeScreen` with ordered text and
 labeled controls, padding, gaps and an optional bottom footer. Reactor measures wrapped text
 and calculates vertical positions rather than asking the model to guess baselines. This is

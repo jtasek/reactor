@@ -145,12 +145,20 @@ export const onInitializeOvermind = async (
         return;
     }
 
-    if (state.account.kind === 'signedIn') {
+    const local = effects.localAi();
+
+    if (local === 'always') {
+        instance.actions.setAiAvailability('local');
+    } else if (state.account.kind === 'signedIn') {
         void effects.api
             .aiAvailable()
             .then((available) =>
-                instance.actions.setAiAvailability(available ? 'available' : 'unavailable')
+                instance.actions.setAiAvailability(
+                    available ? 'available' : local === 'withoutServer' ? 'local' : 'unavailable'
+                )
             );
+    } else if (local === 'withoutServer') {
+        instance.actions.setAiAvailability('local');
     }
 
     // Once startup has ended; an action run while it runs counts as part of it.

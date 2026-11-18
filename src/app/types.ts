@@ -654,8 +654,11 @@ export type Account =
     | { kind: 'signedOut' }
     | { kind: 'signedIn'; id: string; name: string; email: string; image?: string | null };
 
-/** Whether the server offers AI to the person signed in; never signed out or without a provider. */
-export type AiAvailability = 'available' | 'unavailable';
+/**
+ * Whether the server offers AI to the person signed in, never signed out or without a
+ * provider; or whether the chat answers from the local test model instead.
+ */
+export type AiAvailability = 'available' | 'local' | 'unavailable';
 
 /** Whether this copy's documents are saved, and signed in synced; `reason` says why they are not saved. */
 export type SaveStatus =

@@ -7,10 +7,11 @@ import React, {
     useSyncExternalStore
 } from 'react';
 import { chatFor } from 'src/ai/chat';
+import type { Send } from 'src/ai/client';
 import { ContextTooLarge, documentContext } from 'src/ai/context';
 import { describeOperation } from 'src/ai/describe';
 import { AI_DISCLOSURE } from 'src/ai/disclosure';
-import { useActions, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
+import { useActions, useAppState, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { authoringKeys } from 'src/app/screenAuthoring';
 import styles from './styles.css';
@@ -20,12 +21,17 @@ const SCROLL_BOTTOM_REACH_PX = 32;
 /** As the gateway allows: room for pasted CSV or JSON. */
 const MAX_PROMPT_LENGTH = 20_000;
 
+/** The local test model, loaded only when the chat uses it. */
+const sendToLocalModel: Send = (path, body, signal) =>
+    import('src/ai/localModel').then(({ localSend }) => localSend(path, body, signal));
+
 /** A local chat whose proposed edits reach the document only after Accept. */
 export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
     const document = useCurrentDocument();
     const selected = useSelectedShapesIds();
     const selectedFrameId = useSelectedFrameId();
     const { applyOperations, checkOperations, closeAiEdit } = useActions();
+    const local = useAppState((state) => state.ai === 'local');
     const chat = chatFor(documentId);
     const { draft, turns, problem } = useSyncExternalStore(chat.subscribe, chat.getSnapshot);
     const current = turns.at(-1);
@@ -98,6 +104,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
         void chat.send({
             context,
             reservedKeys: authoringKeys(document),
+            send: local ? sendToLocalModel : undefined,
             check: (operations) => checkOperations({ documentId, operations })
         });
     };
@@ -122,7 +129,11 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
     return (
         <div className={styles.chat} ref={chatRoot} role="group" aria-label="Chat controls">
             <div className={styles.toolbar}>
-                <span>Review each change before applying it.</span>
+                <span>
+                    {local
+                        ? 'Local test model. Review each change before applying it.'
+                        : 'Review each change before applying it.'}
+                </span>
                 <button
                     type="button"
                     onClick={() => {
@@ -152,8 +163,14 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                         <p className={styles.status}>
                             Describe a change to get a proposal. Your canvas stays editable.
                         </p>
-                        <p className={styles.status}>{AI_DISCLOSURE.sent}</p>
-                        <p className={styles.status}>{AI_DISCLOSURE.kept}</p>
+                        {local ? (
+                            <p className={styles.status}>{AI_DISCLOSURE.local}</p>
+                        ) : (
+                            <>
+                                <p className={styles.status}>{AI_DISCLOSURE.sent}</p>
+                                <p className={styles.status}>{AI_DISCLOSURE.kept}</p>
+                            </>
+                        )}
                     </>
                 )}
                 {turns.map((turn) => (

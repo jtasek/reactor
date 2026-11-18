@@ -14,6 +14,7 @@ export { deleteDocumentDatabase, openDocumentDatabase } from './services/documen
 export { openChannel } from './services/tabSync';
 export { accounts, forgetOwner, lastOwner, recordSignedOut, shareOwner } from './services/accounts';
 export { api, serverTransport } from './services/api';
+export { localAi } from './services/localAi';
 export { clipboard } from './services/clipboard';
 export { assets } from './services/assets';
 
