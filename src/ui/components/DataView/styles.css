@@ -364,8 +364,48 @@
     overflow: auto;
 }
 
-.mapCanvas {
+.mapSize {
     position: relative;
+}
+
+.mapCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+}
+
+.card[data-dragging] {
+    z-index: 2;
+    cursor: grabbing;
+    box-shadow: var(--dv-card-selected);
+    opacity: 0.94;
+}
+
+.dataView .cardHeader {
+    cursor: grab;
+    touch-action: none;
+}
+
+.zoom {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px;
+    border-radius: var(--dv-capsule);
+    background: var(--field-background);
+}
+
+.dataView .zoom button {
+    min-width: 26px;
+    min-height: 22px;
+    padding: 0 8px;
+    background: transparent;
+    font-size: var(--font-size-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.dataView .zoom button:hover:not(:disabled) {
+    background: var(--surface);
 }
 
 .links {
@@ -419,6 +459,7 @@
 
 .dataView .cardHeader {
     min-height: 36px;
+    cursor: grab;
     margin-bottom: 2px;
     border-bottom: 0.5px solid var(--hairline-color);
     font-weight: var(--font-weight-semibold);

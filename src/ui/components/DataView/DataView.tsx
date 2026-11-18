@@ -3,6 +3,7 @@ import {
     Check,
     ChevronDown,
     ChevronRight,
+    Minus,
     Plus,
     Table2,
     Trash2,
@@ -26,7 +27,7 @@ import {
     ruleTarget
 } from 'src/app/data';
 import { DataRules } from './DataRules';
-import { DataMap, type MapEntity } from './DataMap';
+import { DataMap, layoutEntities, type MapEntity } from './DataMap';
 import { TypeIcon } from './TypeIcon';
 import { conditionFields } from 'src/app/expressions';
 import { listsUsing } from 'src/app/dataLists';
@@ -47,6 +48,10 @@ type Choice = { value: string; label: string };
 const TABS = ['records', 'fields', 'rules'] as const;
 type Tab = (typeof TABS)[number];
 const TAB_NAMES: Record<Tab, string> = { records: 'Records', fields: 'Fields', rules: 'Rules' };
+
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 1.5;
+const ZOOM_STEP = 0.1;
 
 /** Needs attention lists this many problems; the count above it says how many there are. */
 const MAX_LISTED_PROBLEMS = 20;
@@ -286,6 +291,8 @@ function DataEditor() {
     const [selectedField, setSelectedField] = useState<string>();
     const [filter, setFilter] = useState('');
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+    const [scale, setScale] = useState(1);
+    const map = useRef<HTMLDivElement>(null);
     const data = useAppState((state) => {
         const document = state.currentDocument;
         const entities = Object.values(document.dataEntities)
@@ -354,6 +361,7 @@ function DataEditor() {
             name: item.name,
             records: recordCounts[item.id] ?? 0,
             labelFieldId: labelField(document, item.id)?.id,
+            ...(item.mapPosition && { position: { ...item.mapPosition } }),
             fields: dataFields(document, item.id).map((field) => ({
                 id: field.id,
                 name: field.name,
@@ -487,6 +495,16 @@ function DataEditor() {
             ({ entity, fields }) =>
                 !query || fields.length > 0 || entity.name.toLocaleLowerCase().includes(query)
         );
+    const zoom = (next: number) =>
+        setScale(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(next * 100) / 100)));
+    const fit = () => {
+        const { width, height } = layoutEntities(data.model);
+        const box = map.current;
+        if (box && width && height) {
+            zoom(Math.min(1, box.clientWidth / width, box.clientHeight / height));
+        }
+    };
+    const placed = data.model.some((entity) => entity.position);
     const references = data.model.reduce(
         (count, entity) =>
             count + entity.fields.filter((field) => field.type === 'reference').length,
@@ -1037,9 +1055,55 @@ function DataEditor() {
                         {data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}{' '}
                         · {references} {references === 1 ? 'reference' : 'references'}
                     </span>
+                    {data.entities.length > 0 && (
+                        <span className={styles.zoom} role="group" aria-label="Map zoom">
+                            <button
+                                type="button"
+                                aria-label="Zoom out"
+                                disabled={scale <= MIN_ZOOM}
+                                onClick={() => zoom(scale - ZOOM_STEP)}
+                            >
+                                <Minus aria-hidden size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Actual size"
+                                title="Actual size"
+                                onClick={() => zoom(1)}
+                            >
+                                {Math.round(scale * 100)}%
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Zoom in"
+                                disabled={scale >= MAX_ZOOM}
+                                onClick={() => zoom(scale + ZOOM_STEP)}
+                            >
+                                <Plus aria-hidden size={14} />
+                            </button>
+                            <button type="button" onClick={fit}>
+                                Fit
+                            </button>
+                        </span>
+                    )}
+                    {placed && (
+                        <button
+                            type="button"
+                            className={styles.plain}
+                            disabled={data.disabled}
+                            title="Let the map place every entity again"
+                            onClick={() => edit({ kind: 'arrangeEntities' })}
+                        >
+                            Auto layout
+                        </button>
+                    )}
                 </div>
                 {data.entities.length > 0 && (
                     <DataMap
+                        ref={map}
+                        scale={scale}
+                        disabled={data.disabled}
+                        move={(id, position) => edit({ kind: 'moveEntity', id, position })}
                         entities={data.model}
                         selectedEntityId={entityId}
                         selectedFieldId={selectedField}

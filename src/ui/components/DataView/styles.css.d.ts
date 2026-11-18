@@ -29,6 +29,7 @@ declare namespace StylesCssNamespace {
     listHeading: string;
     map: string;
     mapCanvas: string;
+    mapSize: string;
     message: string;
     muted: string;
     newEntity: string;
@@ -59,6 +60,7 @@ declare namespace StylesCssNamespace {
     visuallyHidden: string;
     wide: string;
     workArea: string;
+    zoom: string;
   }
 }
 

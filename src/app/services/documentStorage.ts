@@ -872,12 +872,32 @@ function readName(data: Record<string, unknown>) {
     return { id: id(data.id), name };
 }
 
+/** Map positions stay within this distance of the origin, so a card can always be found. */
+export const MAX_MAP_COORDINATE = 100_000;
+
+export function readMapPosition(value: unknown): { x: number; y: number } {
+    const data = record(value);
+    const coordinate = (item: unknown) => {
+        const result = number(item, -MAX_MAP_COORDINATE);
+        if (result > MAX_MAP_COORDINATE) {
+            throw new Error('Invalid number');
+        }
+
+        return Math.round(result);
+    };
+
+    return { x: coordinate(data.x), y: coordinate(data.y) };
+}
+
 function readDataEntity(value: unknown): DataEntity {
     const data = record(value);
 
     return {
         ...readName(data),
-        ...(data.labelFieldId === undefined ? {} : { labelFieldId: id(data.labelFieldId) })
+        ...(data.labelFieldId === undefined ? {} : { labelFieldId: id(data.labelFieldId) }),
+        ...(data.mapPosition === undefined
+            ? {}
+            : { mapPosition: readMapPosition(data.mapPosition) })
     };
 }
 

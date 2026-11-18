@@ -18,6 +18,8 @@ interface Named {
 export interface DataEntity extends Named {
     /** The text field that names a record wherever a reference shows it; else the first. */
     labelFieldId?: string;
+    /** Where the Data View's map shows the entity; without one the map places it. */
+    mapPosition?: { x: number; y: number };
 }
 /**
  * Choice values are one of `options`; reference values are a record ID of `targetEntityId`.
