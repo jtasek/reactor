@@ -1,4 +1,4 @@
-import { screenLayouts } from './screenLayouts';
+import { screenLayouts, viewLayoutRoot } from './screenLayouts';
 import { screenFrames, startScreen } from './screens';
 import { editableScreenView, sourceOffset } from './screenViewEditing';
 import { initializeStackOrder } from './stackEdits';
@@ -302,25 +302,48 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
             return;
         }
 
+        // A separate design starts as a copy of the design the view shows now.
+        const shown = viewLayoutRoot(document, view) ?? screen;
+        const copied = readClipboard(
+            writeClipboard(
+                shown,
+                document,
+                screenLayouts(document, screen.id)
+                    .map((layout) => layout.id)
+                    .filter((id) => id !== shown.id)
+            )
+        );
+        const layout = orUndefined(() =>
+            readEntity('frames', {
+                id: context.effects.newId(),
+                kind: 'frame',
+                screenLayout: true,
+                parentFrameId: screen.id,
+                name,
+                position: { ...screen.position },
+                size: { ...view.size },
+                ...(shown.stack ? { stack: shown.stack } : {}),
+                bindings: {},
+                visible: true,
+                locked: false
+            })
+        );
+
+        if (!copied || !layout) {
+            return;
+        }
+
         const result = actions.applyOperations({
             documentId: document.id,
             by: { kind: 'person' },
+            retainOverrides: true,
             operations: [
-                {
-                    op: 'addFrame',
-                    key: 'layout',
-                    frame: {
-                        kind: 'frame',
-                        screenLayout: true,
-                        parentFrameId: screen.id,
-                        name,
-                        position: { ...screen.position },
-                        size: { ...view.size },
-                        visible: true,
-                        locked: false
-                    }
-                },
-                { op: 'updateFrame', frame: view.id, changes: { layoutId: 'layout' } }
+                ...framePasteOperations(
+                    { kind: 'paste', frame: layout, copied, target: null },
+                    layout,
+                    document
+                ),
+                { op: 'updateFrame', frame: view.id, changes: { layoutId: 'frame' } }
             ]
         });
 
@@ -332,7 +355,7 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
         state.events.pointer.screenView = null;
         document.selectedFrameId = view.id;
 
-        return result.ids.layout;
+        return result.ids.frame;
     }
 
     if (input.kind === 'add' || input.kind === 'paste') {
@@ -739,7 +762,31 @@ export interface CopiedFrame {
     artwork: import('./clipboard').Copied;
 }
 
-export function writeClipboard(frame: Frame, document?: Context['state']['currentDocument']) {
+function withoutFrames(
+    document: Pick<Context['state']['currentDocument'], 'frames' | 'shapes'>,
+    contents: { frames: string[]; shapes: string[] },
+    leaveOut: readonly string[]
+) {
+    if (!leaveOut.length) {
+        return contents;
+    }
+
+    const omitted = new Set(leaveOut.flatMap((id) => [id, ...frameContents(document, id).frames]));
+
+    return {
+        frames: contents.frames.filter((id) => !omitted.has(id)),
+        shapes: contents.shapes.filter(
+            (id) => !omitted.has(document.shapes[id]?.parentFrameId ?? '')
+        )
+    };
+}
+
+/** Frames in `leaveOut`, and everything inside them, are not copied. */
+export function writeClipboard(
+    frame: Frame,
+    document?: Context['state']['currentDocument'],
+    leaveOut: readonly string[] = []
+) {
     const authored = document;
     if (document) {
         document = layoutDocument(document);
@@ -747,7 +794,7 @@ export function writeClipboard(frame: Frame, document?: Context['state']['curren
     }
 
     const contents = document
-        ? frameContents(untracked(document), frame.id)
+        ? withoutFrames(untracked(document), frameContents(untracked(document), frame.id), leaveOut)
         : { frames: [], shapes: [] };
     const shapes = document
         ? document.shapesIds

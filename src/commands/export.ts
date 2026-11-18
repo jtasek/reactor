@@ -6,7 +6,7 @@ import { exportableFrame } from 'src/app/screens';
 export const ExportSvgCommand: Command = {
     id: 'export-svg',
     name: 'Export SVG',
-    description: 'Download the selected Screen, Screen view or objects as SVG',
+    description: 'Download the selected page or objects as SVG',
     category: 'document',
     icon: { component: ImageDown, size: 24 },
     canExecute: ({ state }) =>

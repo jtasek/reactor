@@ -28,7 +28,7 @@ export const state: UI = {
     },
     dataView: {
         id: 'dataView',
-        name: 'Data View',
+        name: 'Data',
         visible: false
     },
     documentInfo: {

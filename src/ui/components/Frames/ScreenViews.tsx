@@ -325,7 +325,7 @@ const ScreenViewPlacement: FC<{
 
     return (
         <g
-            aria-label={`Screen view ${name}`}
+            aria-label={`Page ${name}`}
             data-screen-view={editable ? id : undefined}
             pointerEvents={editable ? undefined : 'none'}
             transform={position ? `translate(${position.x} ${position.y})` : undefined}

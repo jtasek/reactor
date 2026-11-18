@@ -7,8 +7,8 @@ import { openEditor } from './support/editor';
 test('authors typed data, preserves values when fields change, reloads and undoes', async ({
     page
 }, testInfo) => {
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Customers');
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
     await panel.getByRole('textbox', { name: 'Field name', exact: true }).fill('Name');
@@ -45,7 +45,7 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     ).toHaveValue('Ada');
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await expect(
         panel.getByRole('textbox', { name: 'Full name, record 1', exact: true })
     ).toHaveValue('Ada');
@@ -66,7 +66,7 @@ test('authors typed data, preserves values when fields change, reloads and undoe
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await panel.getByRole('textbox', { name: 'Entity name', exact: true }).fill('ZZZ Customers');
     await panel.getByRole('button', { name: 'Save Entity name', exact: true }).click();
     await expect(panel.getByRole('combobox', { name: 'Entity', exact: true })).toContainText(
@@ -84,8 +84,8 @@ test('authors typed data, preserves values when fields change, reloads and undoe
 });
 
 test('authors choice and reference fields and names referenced records', async ({ page }) => {
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     const addEntity = async (name: string) => {
         await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill(name);
         await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
@@ -136,7 +136,7 @@ test('authors choice and reference fields and names referenced records', async (
 
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await panel
         .getByRole('combobox', { name: 'Entity', exact: true })
         .selectOption({ label: 'Orders' });
@@ -149,8 +149,8 @@ test('authors choice and reference fields and names referenced records', async (
 test('authors rules with conditions, lists records that break them, edits and deletes them', async ({
     page
 }, info) => {
-    await openEditor(page, ['Data View']);
-    const panel = page.getByRole('region', { name: 'Data View', exact: true });
+    await openEditor(page, ['Data']);
+    const panel = page.getByRole('region', { name: 'Data', exact: true });
     await panel.getByRole('textbox', { name: 'New entity', exact: true }).fill('Customers');
     await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
     for (const [name, type] of [
@@ -219,7 +219,7 @@ test('authors rules with conditions, lists records that break them, edits and de
     await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
-    await openEditor(page, ['Data View']);
+    await openEditor(page, ['Data']);
     await expect(rules).toContainText('Age is greater than “10”');
 });
 
@@ -261,19 +261,19 @@ test('the downloaded package plays list and details offline, as the preview does
     await played.goto(`file://${file}`);
     await expect(played).toHaveTitle('Customers </script> app');
     await played.getByRole('button', { name: 'Ada', exact: true }).click();
-    await expect(played.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(played.getByLabel('Preview page')).toHaveValue('details');
     await played.getByRole('textbox', { name: 'Ada', exact: true }).fill('Edited Ada');
-    await played.getByLabel('Preview screen').selectOption('home');
+    await played.getByLabel('Preview page').selectOption('home');
     await played.getByRole('button', { name: 'Grace', exact: true }).click();
     await expect(played.getByRole('textbox', { name: 'Grace', exact: true })).toHaveValue('Grace');
-    await played.getByLabel('Preview screen').selectOption('home');
+    await played.getByLabel('Preview page').selectOption('home');
     await played.getByRole('button', { name: 'Ada', exact: true }).click();
     await expect(played.getByRole('textbox', { name: 'Ada', exact: true })).toHaveValue(
         'Edited Ada'
     );
     await played.getByRole('button', { name: 'Restart prototype' }).click();
-    await expect(played.getByLabel('Preview screen')).toHaveValue('home');
-    await played.getByLabel('Preview screen').selectOption('details');
+    await expect(played.getByLabel('Preview page')).toHaveValue('home');
+    await played.getByLabel('Preview page').selectOption('details');
     await expect(played.getByRole('textbox', { name: 'Your name', exact: true })).toHaveValue(
         'Your name'
     );

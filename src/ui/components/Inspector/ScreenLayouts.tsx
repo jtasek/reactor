@@ -31,16 +31,16 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
 
     return (
         <>
-            <PropertyGroup name="Layout">
+            <PropertyGroup name="Design">
                 <tr>
                     <th scope="row">
-                        <label htmlFor="screen-view-layout">Artwork</label>
+                        <label htmlFor="screen-view-layout">Shows</label>
                     </th>
                     <td>
                         <select
                             id="screen-view-layout"
                             className={styles.layoutChoice}
-                            aria-label="Screen view layout"
+                            aria-label="Design at this size"
                             value={view.layoutId ?? (view.layoutMode === 'auto' ? '__auto' : '')}
                             disabled={disabled || locked}
                             onChange={(event) =>
@@ -58,10 +58,10 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                             }
                         >
                             <option value="__auto">Auto · Width</option>
-                            <option value="">Default layout</option>
+                            <option value="">Main design</option>
                             {unavailable && (
                                 <option value={view.layoutId}>
-                                    Missing layout — showing default
+                                    Missing design — showing the main design
                                 </option>
                             )}
                             {layouts.map((layout) => (
@@ -76,9 +76,9 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                     <td colSpan={2}>
                         <small className={styles.frameHint}>
                             {root?.screenLayout
-                                ? `Edits belong to “${root.name}”. Other layouts stay unchanged.`
-                                : 'Edits belong to the default layout.'}{' '}
-                            All layouts share this screen’s navigation destination.
+                                ? `Edits belong to the separate design “${root.name}” and don’t reach other sizes.`
+                                : 'Edits belong to the main design, shared by every size that shows it.'}{' '}
+                            Every design is the same page for navigation.
                         </small>
                     </td>
                 </tr>
@@ -89,21 +89,21 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                             disabled={!root}
                             onClick={() => root && editFrame({ kind: 'select', id: root.id })}
                         >
-                            Edit layout settings
+                            Edit design settings
                         </button>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label htmlFor="screen-layout-name">New layout</label>
+                        <label htmlFor="screen-layout-name">Separate design</label>
                     </th>
                     <td>
                         <input
                             id="screen-layout-name"
                             type="text"
-                            aria-label="New layout name"
+                            aria-label="Separate design name"
                             value={name}
-                            placeholder="e.g. Compact"
+                            placeholder="e.g. Mobile"
                             disabled={disabled || locked}
                             onChange={(event) => setName(event.target.value)}
                         />
@@ -126,7 +126,7 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                                 }
                             }}
                         >
-                            Create empty layout
+                            Create separate design
                         </button>
                     </td>
                 </tr>

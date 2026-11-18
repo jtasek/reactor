@@ -87,7 +87,7 @@ export const DocumentSize: FC = () => {
         return (
             <div className={`${styles.notice} ${styles.error}`} role="alert">
                 <span>
-                    {tooLargeMessage(name, heldBack)} Move some screens into another document, or
+                    {tooLargeMessage(name, heldBack)} Move some pages into another document, or
                     remove content it no longer needs.
                 </span>
             </div>
@@ -109,7 +109,7 @@ export const DocumentSize: FC = () => {
             <span>
                 This document is {formatSize(bytes)}. Over {formatSize(limits.uploadBytes)}, a
                 document cannot be moved into an account, and large changes to it may not sync. Move
-                some screens into another document to keep it smaller.
+                some pages into another document to keep it smaller.
             </span>
             <button
                 type="button"

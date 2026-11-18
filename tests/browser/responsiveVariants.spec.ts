@@ -39,7 +39,7 @@ test('resolves each view, explains Auto and preserves content through explicit c
         .click({ force: true });
     const variant = inspector.getByRole('combobox', { name: 'Component variant' });
     await expect(variant).toHaveValue('__auto');
-    await expect(inspector).toContainText('Screen view width 800px');
+    await expect(inspector).toContainText('Page width 800px');
     await expect(inspector).toContainText('≥ 600px → Button Wide');
     await expect(inspector.getByRole('textbox', { name: 'Label', exact: true })).toHaveValue(
         'Continue'
@@ -67,8 +67,8 @@ test('resolves each view, explains Auto and preserves content through explicit c
         '32px'
     );
     await page.locator('#frames > [data-frame="mobile"]').press('Enter');
-    await inspector.getByLabel('View width', { exact: true }).fill('600');
-    await inspector.getByLabel('View width', { exact: true }).press('Enter');
+    await inspector.getByLabel('Shown width', { exact: true }).fill('600');
+    await inspector.getByLabel('Shown width', { exact: true }).press('Enter');
     await expect(mobile.locator('text').filter({ hasText: /^Continue$/ })).toHaveCSS(
         'font-size',
         '32px'

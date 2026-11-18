@@ -180,7 +180,7 @@ it.each([
     expect(button.control?.role).toBe('button');
     expect(button.control?.navigateTo).toBeUndefined();
     expect(warnings).toEqual([
-        'Continue button links to an unavailable screen and does nothing. Choose another screen in Interactions.'
+        'Continue button links to an unavailable page and does nothing. Choose another page in Interactions.'
     ]);
 });
 
@@ -266,7 +266,7 @@ it('provides authored record diagnostics for broken navigation and invalid seman
         expect.objectContaining({
             kind: 'shape',
             id: 'next',
-            message: expect.stringContaining('unavailable screen')
+            message: expect.stringContaining('unavailable page')
         })
     );
     document.components.button.interaction = { role: 'button', props: {} };

@@ -318,7 +318,7 @@ function stage(
             document.frames[id]?.kind === 'view' ||
             staged.frames.some((frame) => frame.id === id && frame.kind === 'view')
         ) {
-            throw new Error(`${ref} is a screen view, not a container.`);
+            throw new Error(`${ref} is a page shown at a size, not a container.`);
         }
 
         if (frameStates[id]?.lockedBy !== undefined) {
@@ -373,6 +373,16 @@ function stage(
             if (dimensionIds.has(dimension.id)) throw new Error('Dimension changed twice.');
             dimensionIds.add(dimension.id);
             const before = dimensions[dimension.id];
+            if (
+                dimension.selection === 'width' &&
+                before?.selection !== 'width' &&
+                Object.values(dimensions).some(
+                    (other) => other.id !== dimension.id && other.selection === 'width'
+                )
+            )
+                throw new Error(
+                    'A document has one Sizes dimension selected by page width. Select this one manually.'
+                );
             if (
                 before &&
                 before.defaultModeId !== dimension.defaultModeId &&
@@ -1069,7 +1079,7 @@ function stage(
                         ...(operation.changes.kind === 'screen' ? { screenLayout: undefined } : {})
                     });
                     if (operation.changes.start === true && frame.kind !== 'screen') {
-                        throw new Error('Only a Screen can be the start.');
+                        throw new Error('Only a page can be the start.');
                     }
                     if (frame.layoutId && 'layoutId' in operation.changes) {
                         frame.layoutId = reference(frame.layoutId, 'frames', index);
@@ -1312,7 +1322,7 @@ function stage(
             authoredFrame?.screenLayout &&
             !isScreenLayout(frames, authoredFrame.id)
         ) {
-            throw problem(index, 'An alternate layout must belong to a Canvas screen.');
+            throw problem(index, 'A separate design must belong to a page on Canvas.');
         }
 
         if (
@@ -1327,7 +1337,7 @@ function stage(
                     !staged.deletedFrames.includes(frame.id)
             )
         ) {
-            throw problem(index, 'Another layout of this screen already has this name.');
+            throw problem(index, 'Another design of this page already has this name.');
         }
 
         const authorsRules =
@@ -1360,7 +1370,7 @@ function stage(
                 ) {
                     throw problem(
                         index,
-                        'A responsive rule must target this screen or one of its layouts.'
+                        'An automatic design rule must target this page or one of its separate designs.'
                     );
                 }
                 if (
@@ -1378,7 +1388,7 @@ function stage(
                 frames[authoredFrame.layoutId].parentFrameId !== authoredFrame.screenId ||
                 staged.deletedFrames.includes(authoredFrame.layoutId))
         ) {
-            throw problem(index, 'Choose a layout owned by this Screen view’s screen.');
+            throw problem(index, 'Choose a design of this page.');
         }
 
         const changedFrame = operation.op === 'updateFrame' ? frames[operation.frame] : undefined;
@@ -1390,7 +1400,7 @@ function stage(
             (!isScreenLayout(frames, changedFrame.layoutId) ||
                 frames[changedFrame.layoutId].parentFrameId !== changedFrame.screenId)
         ) {
-            throw problem(index, 'Choose a layout owned by this Screen view’s screen.');
+            throw problem(index, 'Choose a design of this page.');
         }
 
         if (changedFrame && operation.op === 'updateFrame') {
@@ -1406,7 +1416,11 @@ function stage(
                 frames[changedFrame.parentFrameId ?? ''] &&
                 layouts.some((frame) => frame.parentFrameId === changedFrame.id)
             ) {
-                throw problem(index, 'A screen with alternate layouts stays on Canvas.');
+                throw problem(index, 'A page with separate designs stays on Canvas.');
+            }
+
+            if (changes.kind === 'screen' && frames[changedFrame.parentFrameId ?? '']) {
+                throw problem(index, 'Only a frame on Canvas can become a page.');
             }
 
             if (
@@ -1418,7 +1432,7 @@ function stage(
                         frame.name === changedFrame.name
                 )
             ) {
-                throw problem(index, 'Another layout of this screen already has this name.');
+                throw problem(index, 'Another design of this page already has this name.');
             }
         }
 
@@ -1438,7 +1452,7 @@ function stage(
             frames[id].kind === 'view' &&
             frames[frames[id].screenId ?? '']?.kind !== 'screen'
         ) {
-            throw problem(index, 'A screen view must reference a screen in this document.');
+            throw problem(index, 'A page shown at a size must refer to a page in this document.');
         }
     });
 
@@ -1483,7 +1497,10 @@ function stage(
                 changed.has(record('frames', view.id)) ||
                 frameStates[view.id]?.lockedBy !== undefined
             ) {
-                throw problem(index, `the screen view ${view.id} is locked or changed separately.`);
+                throw problem(
+                    index,
+                    `its size ${view.name} on Canvas is locked or changed separately.`
+                );
             }
 
             staged.deletedFrames.push(view.id);

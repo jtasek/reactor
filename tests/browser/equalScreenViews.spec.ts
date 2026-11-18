@@ -48,14 +48,14 @@ test('treats Mobile and Desktop as equal Screen views and preserves a screen wit
     await page.getByRole('button', { name: 'More panels' }).click();
     const explorer = page.getByRole('region', { name: 'Explorer' });
     await explorer.getByRole('button', { name: 'Home · 390 px', exact: true }).click();
-    await page.getByLabel('View name').fill('Mobile');
-    await page.getByLabel('View name').press('Enter');
+    await page.getByLabel('Shown name').fill('Mobile');
+    await page.getByLabel('Shown name').press('Enter');
     await expect(
         explorer.getByRole('button', { name: 'Home · Mobile', exact: true })
-    ).toHaveAccessibleDescription('Home · 390 × 240 Screen view');
+    ).toHaveAccessibleDescription('Home · Mobile · 390 × 240');
     await expect(
         explorer.getByRole('button', { name: 'Home · Desktop', exact: true })
-    ).toHaveAccessibleDescription('Home · 400 × 240 Screen view');
+    ).toHaveAccessibleDescription('Home · Desktop · 400 × 240');
     const mobile = page.locator(
         'svg#surface #screen-views > [data-screen-view="home:view"] rect[data-cy="Body"]'
     );
@@ -65,17 +65,17 @@ test('treats Mobile and Desktop as equal Screen views and preserves a screen wit
     await expect(page.locator('svg#surface #frames > [data-frame="home"]')).toHaveCount(0);
     await expectPlacedCoordinate(mobile, 'x', '100');
     await expectPlacedCoordinate(desktop, 'x', '540');
-    await page.getByLabel('View x').fill('180');
-    await page.getByLabel('View x').press('Enter');
-    await page.getByLabel('View width').fill('430');
-    await page.getByLabel('View width').press('Enter');
+    await page.getByLabel('Shown x').fill('180');
+    await page.getByLabel('Shown x').press('Enter');
+    await page.getByLabel('Shown width').fill('430');
+    await page.getByLabel('Shown width').press('Enter');
     await expectPlacedCoordinate(mobile, 'x', '200');
     await expectPlacedCoordinate(desktop, 'x', '540');
-    await page.getByRole('button', { name: 'Delete Screen view', exact: true }).click();
+    await page.getByRole('button', { name: 'Remove from canvas', exact: true }).click();
     await expect(mobile).toHaveCount(0);
     await expect(desktop).toBeVisible();
     await explorer.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
-    await page.getByRole('button', { name: 'Delete Screen view', exact: true }).click();
+    await page.getByRole('button', { name: 'Remove from canvas', exact: true }).click();
     await expect(desktop).toHaveCount(0);
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
@@ -83,10 +83,10 @@ test('treats Mobile and Desktop as equal Screen views and preserves a screen wit
     await expect(page.locator('svg#surface #screen-views [data-shape-id]')).toHaveCount(0);
     await expect(explorer.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
     await explorer.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByRole('button', { name: 'Create Screen view', exact: true }).click();
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
-    await page.getByLabel('View name').fill('Mobile');
-    await page.getByLabel('View name').press('Enter');
+    await page.getByRole('button', { name: 'Show on canvas', exact: true }).click();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
+    await page.getByLabel('Shown name').fill('Mobile');
+    await page.getByLabel('Shown name').press('Enter');
     await expect(page.locator('svg#surface #screen-views rect[data-cy="Body"]')).toBeVisible();
     await expect(
         explorer.getByRole('button', { name: 'Home · Mobile', exact: true })

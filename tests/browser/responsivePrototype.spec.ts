@@ -45,7 +45,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '1000 0 800 480');
     await expect(input).toHaveValue('Ada');
     await expect(runtime.getByLabel('Preview width')).toHaveCount(0);
-    await expect(runtime.getByLabel('Preview screen')).toHaveCount(0);
+    await expect(runtime.getByLabel('Preview page')).toHaveCount(0);
     await expect(runtime.getByLabel('Preview layout')).toHaveCount(0);
     const bounds = await runtime.locator('svg').boundingBox();
     const stage = await page.locator('iframe').boundingBox();
@@ -55,7 +55,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(page.getByLabel('Prototype width', { exact: true })).toHaveValue('800');
     await setPrototypeSetting(page, 'Prototype height', '900');
     await runtime.getByRole('button', { name: 'Continue', exact: true }).press('Enter');
-    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(page.getByLabel('Preview page')).toHaveValue('details');
     await expect(runtime.locator('svg')).toHaveAttribute('height', '900');
     await expect(runtime.locator('text')).toHaveAttribute('fill', '#ddeeff');
     await expect(runtime.locator('text')).toHaveAttribute('font-size', '20');
@@ -68,7 +68,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await width(page, '800');
     await setPrototypeSetting(page, 'Prototype Theme', 'light');
     await expect(runtime.locator('text')).toHaveAttribute('fill', '#112233');
-    await page.getByLabel('Preview screen').selectOption('home');
+    await page.getByLabel('Preview page').selectOption('home');
     await expect(input).toHaveValue('Ada');
     await page.getByLabel('Preview layout').selectOption('"home"');
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '0 0 800 900');
@@ -83,16 +83,16 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await page.screenshot({ path: 'test-results/prototype-narrow.png' });
     await page.getByRole('button', { name: 'Done', exact: true }).click();
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
-    await expect(page.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(page.getByLabel('Preview page')).toHaveValue('home');
     await expect(input).toHaveValue('Your name');
     await expect(runtime.locator('svg')).toHaveAttribute('viewBox', '1000 0 800 900');
     await input.fill('Grace');
-    await setPrototypeSetting(page, 'Start screen', 'details');
-    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
+    await setPrototypeSetting(page, 'Start page', 'details');
+    await expect(page.getByLabel('Preview page')).toHaveValue('details');
     await page.getByRole('link', { name: 'Canvas', exact: true }).click();
     await expect(page.locator('iframe')).toHaveCount(0);
     await expect(
-        page.locator('[data-panel="inspector"]').getByLabel('View width', { exact: true })
+        page.locator('[data-panel="inspector"]').getByLabel('Shown width', { exact: true })
     ).toHaveValue('320');
     await page.getByRole('link', { name: 'Open prototype' }).click();
     await expect(input).toHaveValue('Your name');
@@ -187,10 +187,10 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await page.getByRole('button', { name: 'More for Details', exact: true }).click();
     await page.getByRole('menuitemradio', { name: 'Start here', exact: true }).click();
     await page.getByRole('link', { name: 'Play prototype', exact: true }).click();
-    await expect(page.getByLabel('Start screen')).toHaveValue('details');
-    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(page.getByLabel('Start page')).toHaveValue('details');
+    await expect(page.getByLabel('Preview page')).toHaveValue('details');
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
-    await expect(page.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(page.getByLabel('Preview page')).toHaveValue('details');
 });
 
 test('keeps setup out of the player, restores settings focus and preserves input when changing presets', async ({
@@ -202,9 +202,9 @@ test('keeps setup out of the player, restores settings focus and preserves input
     const settings = page.getByRole('button', { name: 'Prototype settings', exact: true });
     await expect(page.getByRole('dialog', { name: 'Prototype settings' })).not.toBeVisible();
     await expect(runtime.getByRole('navigation', { name: 'Preview controls' })).toHaveCount(0);
-    await expect(page.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(page.getByLabel('Preview page')).toHaveValue('home');
     const header = page.locator('main > header');
-    await expect(header.getByLabel('Preview screen')).toBeVisible();
+    await expect(header.getByLabel('Preview page')).toBeVisible();
     await expect(header.getByLabel('Preview layout')).toBeVisible();
     await expect(header.getByLabel('Viewport preset')).toBeVisible();
     await expect(header.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
@@ -245,7 +245,7 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(page.getByRole('button', { name: 'Restart prototype', exact: true })).toHaveText(
         'Restart'
     );
-    await expect(page.getByLabel('Preview screen')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByLabel('Preview page')).toBeInViewport({ ratio: 1 });
     await expect(page.getByLabel('Viewport preset')).toBeInViewport({ ratio: 1 });
     await expect(settings).toBeInViewport({ ratio: 1 });
     await expect(header.getByLabel('Preview layout')).toBeInViewport({ ratio: 1 });
@@ -281,7 +281,7 @@ test('keeps navigation in an older runtime without sending unsupported player co
     await page.route('http://127.0.0.1:4194/?player=prototype', (route) =>
         route.fulfill({
             contentType: 'text/html',
-            body: `<html><body><label>Screen <select aria-label="Preview screen"><option>Home</option></select></label><p></p><script>
+            body: `<html><body><label>Page <select aria-label="Preview page"><option>Home</option></select></label><p></p><script>
                 window.addEventListener('message', (event) => {
                     const port = event.ports[0];
                     port.onmessage = (message) => {
@@ -298,10 +298,10 @@ test('keeps navigation in an older runtime without sending unsupported player co
     );
     await page.goto('/prototype');
     // Until the runtime answers, the picker holds its place so the toolbar doesn't shift.
-    await expect(page.getByLabel('Preview screen')).toBeDisabled();
+    await expect(page.getByLabel('Preview page')).toBeDisabled();
     await expect(player(page).getByText('Drawing received')).toBeVisible();
-    await expect(player(page).getByLabel('Preview screen')).toBeVisible();
-    await expect(page.getByLabel('Preview screen')).toHaveCount(0);
+    await expect(player(page).getByLabel('Preview page')).toBeVisible();
+    await expect(page.getByLabel('Preview page')).toHaveCount(0);
     await expect(player(page).getByText('Unsupported command')).toHaveCount(0);
     await expect(
         page.getByRole('button', { name: 'Prototype settings', exact: true })

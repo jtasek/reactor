@@ -103,7 +103,7 @@ export const FrameVariables: FC<{ id: string }> = ({ id }) => {
                             ))}
                         </select>
                         <small className={styles.frameHint}>
-                            Base {frameNumber(frame, key)} · mode values resolve per Screen view.
+                            Base {frameNumber(frame, key)} · mode values resolve per page size.
                         </small>
                     </td>
                 </tr>

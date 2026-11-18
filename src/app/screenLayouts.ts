@@ -1,8 +1,7 @@
 import type { Document, Frame, RoleSettings, Size } from './types';
 import { frameParents } from './frameState';
 
-export const MISSING_SCREEN_LAYOUT =
-    'The chosen layout is unavailable. Showing the default layout.';
+export const MISSING_SCREEN_LAYOUT = 'The chosen design is unavailable. Showing the main design.';
 
 /** Invalid links retain their artwork as ordinary frames, rather than hiding it. */
 export function isScreenLayout(
@@ -87,12 +86,12 @@ export function screenLayoutProblems(document: Pick<Document, 'frames'>, screenI
     return ordered.flatMap((rule, index) => {
         if (index > 0 && ordered[index - 1].minWidth === rule.minWidth) {
             return [
-                `A layout rule at ${rule.minWidth}px is unreachable because another rule has the same minimum width.`
+                `A design rule at ${rule.minWidth}px is unreachable because another rule has the same minimum width.`
             ];
         }
         if (screenLayoutRoot(document, screenId, rule.layoutId)?.id !== rule.layoutId) {
             return [
-                `The layout rule at ${rule.minWidth}px references a missing layout. It uses the default.`
+                `The design rule at ${rule.minWidth}px refers to a missing design. The main design shows instead.`
             ];
         }
 

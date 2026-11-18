@@ -192,7 +192,7 @@ export function readPreview(
     }
     if (!string(app.documentId) || !Array.isArray(app.screens) || !app.screens.length) {
         throw new Error(
-            'Choose Screen in a frame’s Type field and keep it visible on Canvas to preview.'
+            'Choose Page in a frame’s Type field and keep it visible on Canvas to preview.'
         );
     }
     const available = (hash: string) =>
@@ -458,7 +458,7 @@ export function readPreview(
         };
     });
     if (nodes.some((node) => node.control?.navigateTo && !screenIds.has(node.control.navigateTo))) {
-        throw new Error('A button refers to a missing or hidden screen. Choose another target.');
+        throw new Error('A button refers to a missing or hidden page. Choose another target.');
     }
 
     const imageTotal = Object.values(images).reduce((total, url) => total + imageBytes(url)!, 0);

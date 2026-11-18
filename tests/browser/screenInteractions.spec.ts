@@ -39,14 +39,14 @@ test('edits source and instance actions independently, preserves them on reload,
     await expect(page.locator('iframe[title="Application preview"]')).toHaveCount(0);
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const preview = page.frameLocator('iframe[title="Application preview"]');
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('home');
     await action.selectOption('none');
     await expect(preview.getByRole('button', { name: 'Continue button', exact: true })).toHaveCount(
         0
     );
     await action.selectOption({ label: 'Navigate to Details' });
     await preview.getByRole('button', { name: 'Continue button', exact: true }).press('Enter');
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('details');
     await action.selectOption('inherit');
     await expect(
         page.getByLabel(/^On (activation|Enter): action$/).locator('option:checked')
@@ -88,10 +88,10 @@ test('activates an input on Enter without navigating on focus and retains typed 
     const preview = page.frameLocator('iframe[title="Application preview"]');
     const input = preview.getByRole('textbox', { name: 'Your name', exact: true });
     await input.fill('Ada');
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('home');
     await input.press('Enter');
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('details');
-    await preview.getByLabel('Preview screen').selectOption('home');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('details');
+    await preview.getByLabel('Preview page').selectOption('home');
     await expect(input).toHaveValue('Ada');
     await preview.getByLabel('Preview width').fill('800');
     await preview.getByLabel('Preview width').press('Tab');
@@ -100,5 +100,5 @@ test('activates an input on Enter without navigating on focus and retains typed 
     await expect(input).toHaveValue('Ada');
     // The alternate's legacy role override remains independent of the source action.
     await input.press('Enter');
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('home');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('home');
 });

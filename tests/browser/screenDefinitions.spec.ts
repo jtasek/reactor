@@ -21,11 +21,11 @@ test('creates an ordinary frame and explicitly makes it a screen on the shared c
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
     await expect(
         explorer(page)
-            .getByRole('region', { name: 'Screens' })
+            .getByRole('region', { name: 'Pages' })
             .getByRole('button', { name: 'Frame', exact: true })
     ).toBeVisible();
-    await expect(page.getByLabel('View width', { exact: true })).toHaveValue('300');
-    await expect(page.getByLabel('View height', { exact: true })).toHaveValue('200');
+    await expect(page.getByLabel('Shown width', { exact: true })).toHaveValue('300');
+    await expect(page.getByLabel('Shown height', { exact: true })).toHaveValue('200');
 });
 
 test('keeps multiple screens and ordinary frames visible, persists conversion, and diagnoses demoted navigation targets', async ({
@@ -48,12 +48,12 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
     await expect(
         explorer(page)
-            .getByRole('region', { name: 'Screens' })
+            .getByRole('region', { name: 'Pages' })
             .getByRole('button', { name: 'Home', exact: true })
     ).toBeVisible();
     await expect(
         explorer(page)
-            .getByRole('region', { name: 'Screens' })
+            .getByRole('region', { name: 'Pages' })
             .getByRole('button', { name: 'Details', exact: true })
     ).toBeVisible();
     await expect(row(page, 'Artwork frame')).not.toHaveAttribute('aria-describedby');
@@ -67,20 +67,20 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(4);
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     await expect(
-        page.getByText('Continue button links to an unavailable screen', { exact: false })
+        page.getByText('Continue button links to an unavailable page', { exact: false })
     ).toBeVisible();
     const preview = page.frameLocator('iframe[title="Application preview"]');
-    await expect(preview.getByLabel('Preview screen').locator('option')).toHaveCount(1);
+    await expect(preview.getByLabel('Preview page').locator('option')).toHaveCount(1);
     await row(page, 'Checkout').click();
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
-    await expect(preview.getByLabel('Preview screen').locator('option')).toHaveCount(2);
+    await expect(preview.getByLabel('Preview page').locator('option')).toHaveCount(2);
     await preview.getByRole('button', { name: 'Continue', exact: true }).click();
-    await expect(preview.getByLabel('Preview screen')).toHaveValue('details');
+    await expect(preview.getByLabel('Preview page')).toHaveValue('details');
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
     await page.getByRole('button', { name: 'Close Preview', exact: true }).press('Enter');
     await page.screenshot({ path: '/tmp/reactor-screen-identity.png' });
     await page.setViewportSize({ width: 600, height: 850 });
     await row(page, 'Checkout · 320 px').click();
-    await expect(page.getByLabel('Screen view properties')).toBeVisible();
+    await expect(page.getByLabel('Page on canvas properties')).toBeVisible();
     await page.screenshot({ path: '/tmp/reactor-screen-identity-narrow.png' });
 });

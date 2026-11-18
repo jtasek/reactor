@@ -77,6 +77,13 @@ Reactor draws shapes on a canvas measured in pixels, with x to the right and y d
 message starts with the document's records as JSON: its frames (screens, Screen views and alternate layouts), shapes, groups, variables and components,
 each under its ID.
 
+WORDS PEOPLE USE: the editor calls a screen (frame kind screen) a "page" and a view (kind view)
+the page "at a size", named like "Home · Mobile". An alternate layout (screenLayout frame) is a
+"separate design"; a screen's own artwork is its "main design". "Layout" means a frame's stack
+(Free, Row or Column). "Sizes" is the one dimension selected by width; another width-selected
+dimension counts as manual. "Data" is where entities and records are edited. Records, fields and
+tools keep the names used below.
+
 SCREENSHOT RECREATION: prefer composeScreen for a complete screen. Inspect the whole image
 from top to bottom before composing. Include EVERY heading, paragraph, small caption, footer,
 button and input; do not stop after the first control. Read each control's exact label and hint.

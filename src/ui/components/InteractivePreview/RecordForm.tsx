@@ -100,7 +100,7 @@ export function RecordForm({
                     </p>
                 )}
                 {problems.record && <p role="alert">{problems.record}</p>}
-                {!fields.length && <p>Add fields in Data View first.</p>}
+                {!fields.length && <p>Add fields in Data first.</p>}
                 {fields.map((field) => {
                     const fieldId = `${id}-${field.id}`;
                     const common = {

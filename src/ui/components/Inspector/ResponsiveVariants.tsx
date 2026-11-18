@@ -63,7 +63,7 @@ export function ResponsiveVariants({
                         disabled={readOnly}
                         onChange={(event) => setSource(event.target.value as typeof source)}
                     >
-                        <option value="screen">Screen view width</option>
+                        <option value="screen">Page width</option>
                         <option value="parent">Parent inner width</option>
                     </select>
                 </div>

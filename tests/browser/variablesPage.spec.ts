@@ -122,11 +122,9 @@ test('protects drafts on canvas return and keeps dimension mode editing availabl
     await page.getByLabel('Search dimensions').fill('Media');
     await page.getByRole('button', { name: 'Edit dimension MediaSize', exact: true }).click();
     await expect(page.getByLabel('Select modes by')).toHaveValue('width');
-    await page.getByLabel('Minimum screen width for lg', { exact: true }).fill('700');
+    await page.getByLabel('Minimum page width for lg', { exact: true }).fill('700');
     await page.getByRole('button', { name: 'Save changes', exact: true }).click();
-    await expect(page.getByLabel('Minimum screen width for lg', { exact: true })).toHaveValue(
-        '700'
-    );
+    await expect(page.getByLabel('Minimum page width for lg', { exact: true })).toHaveValue('700');
     await page.getByRole('button', { name: 'Export', exact: true }).click();
     await expect(
         page.getByRole('dialog', { name: 'Export design system', exact: true })
@@ -141,7 +139,7 @@ test('protects unfinished dimensions on browser Back without losing history', as
     await page.getByRole('link', { name: 'Variables', exact: true }).click();
     await page.getByRole('tab', { name: 'Dimensions', exact: true }).click();
     await page.getByRole('button', { name: 'Edit dimension MediaSize', exact: true }).click();
-    const minimum = page.getByLabel('Minimum screen width for lg', { exact: true });
+    const minimum = page.getByLabel('Minimum page width for lg', { exact: true });
     await minimum.fill('750');
     page.once('dialog', (dialog) => dialog.dismiss());
     await page.goBack();

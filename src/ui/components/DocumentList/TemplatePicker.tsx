@@ -35,7 +35,7 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                 </button>
             </header>
             <p>
-                Editable screens, reusable controls and connected journeys. Open Prototype to try
+                Editable pages, reusable controls and connected journeys. Open Prototype to try
                 them.
             </p>
             <p>
@@ -57,8 +57,8 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                         </span>
                         <small id={`template-${template.id}-contents`}>
                             {template.id === 'inspector-typography'
-                                ? '1 Screen view · Four interactive styles'
-                                : '3 Screen views · Includes an empty state'}
+                                ? '1 page · Four interactive styles'
+                                : '3 pages · Includes an empty state'}
                         </small>
                     </button>
                 ))}

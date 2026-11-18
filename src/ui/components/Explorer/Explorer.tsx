@@ -793,13 +793,12 @@ export const Explorer = memo(function Explorer() {
                 chips={
                     <span className={styles.chips}>
                         {screenViews.length === 0 ? (
-                            <span className={`${styles.chip} ${styles.muted}`}>Not placed</span>
+                            <span className={`${styles.chip} ${styles.muted}`}>Not on canvas</span>
                         ) : (
                             screenViews.map((view) => (
                                 <ViewChip
                                     key={view.id}
                                     view={view}
-                                    screenName={screen.name}
                                     label={document.frames[view.id]?.name ?? view.name}
                                     current={screenViews.length > 1 && view.id === shownView?.id}
                                     selected={selectedFrameId === view.id}
@@ -829,7 +828,7 @@ export const Explorer = memo(function Explorer() {
                 menuItems={
                     screenViews.length > 0
                         ? [
-                              { heading: 'Edit in view' },
+                              { heading: 'Edit at size' },
                               ...screenViews.map((view) => ({
                                   id: `view:${view.id}`,
                                   label: view.name,
@@ -999,10 +998,10 @@ export const Explorer = memo(function Explorer() {
                 <div ref={outline} className={styles.outline} data-explorer-outline>
                     {empty && (
                         <p className={styles.empty}>
-                            {narrowed ? 'No matches' : 'Draw a shape or add a screen to start.'}
+                            {narrowed ? 'No matches' : 'Draw a shape or add a page to start.'}
                         </p>
                     )}
-                    {screenRows.length > 0 && <Section title="Screens">{screenRows}</Section>}
+                    {screenRows.length > 0 && <Section title="Pages">{screenRows}</Section>}
                     {hasCanvasRows && (
                         <Section title="Canvas" onDrop={(dragged) => moveIntoFrame(dragged, null)}>
                             {canvasFrames.map((frame) => frameItem(frame))}
@@ -1104,13 +1103,12 @@ const ViewChip: FC<{
         locked: boolean;
         shown: boolean;
     };
-    screenName: string;
     label: string;
     current: boolean;
     selected: boolean;
     actions: ItemMenuAction[];
     onChoose: () => void;
-}> = ({ view, screenName, label, current, selected, actions, onChoose }) => {
+}> = ({ view, label, current, selected, actions, onChoose }) => {
     const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
     return (
@@ -1128,7 +1126,7 @@ const ViewChip: FC<{
                     .join(' ')}
                 aria-label={view.name}
                 aria-pressed={selected}
-                title={`${screenName} · ${view.size.width} × ${view.size.height} Screen view${
+                title={`${view.name} · ${view.size.width} × ${view.size.height}${
                     view.locked ? ' · locked' : ''
                 }`}
                 onClick={(event) => {

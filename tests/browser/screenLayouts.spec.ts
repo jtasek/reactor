@@ -31,9 +31,9 @@ test('chooses separate artwork, previews the same destination and retains choice
     await expect(mobile.locator('[data-cy="Compact body"]')).toHaveAttribute('width', '200');
     await expect(mobile.locator('[data-cy="Default body"]')).toHaveCount(0);
     await selectView(page, 'mobile');
-    const choice = inspector.getByLabel('Screen view layout', { exact: true });
+    const choice = inspector.getByLabel('Design at this size', { exact: true });
     await expect(choice).toHaveValue('compact');
-    await expect(inspector).toContainText('Edits belong to “Compact”');
+    await expect(inspector).toContainText('Edits belong to the separate design “Compact”');
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const runtime = page.frameLocator('iframe[title="Application preview"]');
     await expect(runtime.locator('rect[width="200"]')).toHaveCount(1);
@@ -60,16 +60,16 @@ test('chooses separate artwork, previews the same destination and retains choice
     await page.screenshot({ path: 'test-results/screen-layouts-narrow.png' });
 });
 
-test('creates a named empty layout and draws into it without modifying the default', async ({
+test('creates a separate design as a copy and draws into it without modifying the others', async ({
     page
 }) => {
     const { mobile, desktop, inspector } = await openLayouts(page);
     await selectView(page, 'mobile');
-    await inspector.getByLabel('New layout name').fill('Tablet');
-    await inspector.getByRole('button', { name: 'Create empty layout', exact: true }).click();
-    await expect(inspector.getByLabel('Screen view layout')).not.toHaveValue('compact');
-    await expect(inspector).toContainText('Edits belong to “Tablet”');
-    await expect(mobile.locator('g[data-shape-id]')).toHaveCount(0);
+    await inspector.getByLabel('Separate design name').fill('Tablet');
+    await inspector.getByRole('button', { name: 'Create separate design', exact: true }).click();
+    await expect(inspector.getByLabel('Design at this size')).not.toHaveValue('compact');
+    await expect(inspector).toContainText('Edits belong to the separate design “Tablet”');
+    await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
     await selectTool(page, 'Draws a rectangle or square');
     await pointer(page, 'pointerdown', {
         x: 540,
@@ -78,14 +78,14 @@ test('creates a named empty layout and draws into it without modifying the defau
     });
     await pointer(page, 'pointermove', { x: 600, y: 190 });
     await pointer(page, 'pointerup', { x: 600, y: 190 });
-    await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
+    await expect(mobile.locator('g[data-shape-id]')).toHaveCount(2);
     await expect(desktop.locator('[data-cy="Default body"]')).toHaveAttribute('width', '280');
     await selectView(page, 'mobile');
-    await inspector.getByLabel('Screen view layout').selectOption('compact');
+    await inspector.getByLabel('Design at this size').selectOption('compact');
     await expect(mobile.locator('[data-cy="Compact body"]')).toHaveCount(1);
     await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
-    await inspector.getByRole('button', { name: 'Edit layout settings', exact: true }).click();
-    await expect(inspector).toContainText('Size and position follow each Screen view');
+    await inspector.getByRole('button', { name: 'Edit design settings', exact: true }).click();
+    await expect(inspector).toContainText('Size and position follow each size of the page');
     await expect(inspector.getByLabel('Width', { exact: true })).toHaveCount(0);
     await expect(inspector.getByLabel('Frame parent', { exact: true })).toHaveCount(0);
 });

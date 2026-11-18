@@ -27,7 +27,7 @@ describe('AI document context', () => {
             usesBaseValue: false
         });
         expect(mobile.variables.ink.resolved.value).toBe('#ddeeff');
-        expect(mobile.resolution.sources.media).toBe('Screen width · 360px');
+        expect(mobile.resolution.sources.media).toBe('Page width · 360px');
         expect(desktop.variables.font.resolved.value).toBe(20);
         expect(desktop.variables.ink.resolved).toMatchObject({
             value: '#112233',

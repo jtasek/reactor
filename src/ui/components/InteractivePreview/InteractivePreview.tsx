@@ -366,9 +366,9 @@ export default function InteractivePreview({
                         {/* Kept (disabled) until the runtime answers so the toolbar doesn't shift on load. */}
                         {(hostControls || !ready) && (
                             <label>
-                                <span>Screen</span>
+                                <span>Page</span>
                                 <select
-                                    aria-label="Preview screen"
+                                    aria-label="Preview page"
                                     disabled={!ready || !currentScreen}
                                     value={shown?.id ?? ''}
                                     onChange={(event) => {

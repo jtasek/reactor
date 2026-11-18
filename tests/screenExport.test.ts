@@ -89,7 +89,7 @@ it('exports selected rotated artwork with escaping and stroke bounds, excluding 
 
 it('rejects empty selections and unsafe attributes rather than creating partial files', async () => {
     const store = await open(createDocument());
-    expect(() => projectSvg(store.state)).toThrow('Select a Screen, Screen view');
+    expect(() => projectSvg(store.state)).toThrow('Select a page or visible shapes');
     expect(() =>
         serializeSvg({
             documentId: 'test',

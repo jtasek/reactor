@@ -79,5 +79,5 @@ export function screenViewName(document: Pick<Document, 'frames'>, view: Frame |
 
     const screen = document.frames[view.screenId ?? ''];
 
-    return `${screen?.name ?? 'Missing screen'} · ${view.name}`;
+    return `${screen?.name ?? 'Missing page'} · ${view.name}`;
 }

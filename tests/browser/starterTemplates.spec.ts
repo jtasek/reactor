@@ -39,7 +39,7 @@ test('fits narrow screens and restores focus when dismissed', async ({ page }) =
     await expect(
         dialog.getByRole('button', { name: 'Use Settings template' })
     ).toHaveAccessibleDescription(
-        'Edit a profile, review a saved state and manage connections. 3 Screen views · Includes an empty state'
+        'Edit a profile, review a saved state and manage connections. 3 pages · Includes an empty state'
     );
     await page.screenshot({ path: 'test-results/starter-picker-narrow.png' });
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(

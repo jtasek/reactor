@@ -276,7 +276,7 @@ function showWhen(
     }
     const shape = prototypeTarget(document, edit.instanceId);
     if (!shape || isShapeLocked(document, shape.id)) {
-        return 'Choose an unlocked instance on a screen.';
+        return 'Choose an unlocked instance on a page.';
     }
     let condition: Condition | null = null;
     if (edit.kind === 'show') {

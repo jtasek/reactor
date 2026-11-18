@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { ActionsMenu } from './ActionsMenu';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
-import { minWidthProblem, ordered, readDimension } from 'src/app/variableModes';
+import { minWidthProblem, ordered, readDimension, sizesDimension } from 'src/app/variableModes';
 import type { VariableDimension } from 'src/app/types';
 import styles from './styles.css';
 
@@ -47,6 +47,8 @@ export function DimensionEditor({
     const changedElsewhere = Boolean(dimension && original !== JSON.stringify(dimension));
     const dirty = original !== JSON.stringify(draft);
     const modes = ordered(draft.modes);
+    const sizes = sizesDimension(document.dimensions);
+    const otherSizes = sizes && sizes.id !== draft.id ? sizes : undefined;
 
     useEffect(() => {
         if (!dimension) {
@@ -226,7 +228,7 @@ export function DimensionEditor({
                 </div>
                 {dimension ? (
                     <div className={styles.metadata}>
-                        <span>Dimension</span>
+                        <span>{sizes?.id === dimension.id ? 'Sizes' : 'Dimension'}</span>
                         <span>
                             {modes.length} {modes.length === 1 ? 'mode' : 'modes'}
                         </span>
@@ -251,15 +253,26 @@ export function DimensionEditor({
                             }
                         >
                             <option value="manual">Manual selection</option>
-                            <option value="width">Screen view width</option>
+                            <option
+                                value="width"
+                                disabled={Boolean(otherSizes) && draft.selection !== 'width'}
+                            >
+                                Page width · Sizes
+                            </option>
                         </select>
                     </label>
-                    {draft.selection === 'width' && (
+                    {otherSizes && (
                         <p className={styles.resolution}>
-                            The mode with the highest minimum at or below the Screen view’s width
-                            wins. Below all minimums, the default applies. Leave a minimum empty to
-                            keep that mode manual. Explicit mode overrides still win; other
-                            dimensions stay independent.
+                            {otherSizes.name} is this document’s Sizes. A document has one Sizes
+                            dimension, so this one is selected manually.
+                        </p>
+                    )}
+                    {draft.selection === 'width' && !otherSizes && (
+                        <p className={styles.resolution}>
+                            These modes are the document’s Sizes. On each page, the mode with the
+                            highest minimum at or below the page’s width wins. Below all minimums,
+                            the default applies. Leave a minimum empty to keep that mode manual.
+                            Explicit mode overrides still win; other dimensions stay independent.
                         </p>
                     )}
                     <div className={styles.sectionHeading}>
@@ -348,12 +361,12 @@ export function DimensionEditor({
                             </ActionsMenu>
                             {draft.selection === 'width' && (
                                 <label className={`${styles.formField} ${styles.widthRule}`}>
-                                    Minimum screen width (px)
+                                    Minimum page width (px)
                                     <input
                                         type="number"
                                         min="0"
                                         step="any"
-                                        aria-label={`Minimum screen width for ${mode.name}`}
+                                        aria-label={`Minimum page width for ${mode.name}`}
                                         placeholder="Manual only"
                                         value={mode.minWidth ?? ''}
                                         onChange={(event) =>

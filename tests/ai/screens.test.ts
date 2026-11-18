@@ -185,19 +185,17 @@ it('names records added earlier in the same proposal instead of showing their ke
     const lines = batch.map((operation) => describeOperation(operation, document, batch));
 
     expect(lines[0]).toContain('600px → “Wide”');
-    expect(lines[1]).toContain('Add screen layout “Wide” (700 × 300) for “Shop”');
-    expect(lines[2]).toContain('Add Screen view “Tablet” (700 × 300) for “Shop”');
+    expect(lines[1]).toContain('Add separate design “Wide” (700 × 300) for “Shop”');
+    expect(lines[2]).toContain('Add page size “Tablet” (700 × 300) for “Shop”');
     expect(lines[3]).toBe('Add text in “Shop”: “Hi”');
     expect(describeOperation(batch[3], document)).toBe('Add text in “shop”: “Hi”');
 });
 
 it('describes frame identity and responsive changes and exposes both tools to providers', () => {
     const document = screenLayoutsDocument();
-    expect(describeOperation(readOperation(operations[0]), document)).toContain(
-        'Add screen “Home”'
-    );
+    expect(describeOperation(readOperation(operations[0]), document)).toContain('Add page “Home”');
     expect(describeOperation(readOperation(operations[4]), document)).toContain(
-        'Add Screen view “Mobile”'
+        'Add page size “Mobile”'
     );
     expect(
         describeOperation(

@@ -360,7 +360,7 @@ function DataEditor() {
         );
 
     return (
-        <section className={styles.dataView} aria-label="Data View">
+        <section className={styles.dataView} aria-label="Data">
             <p>
                 Define your data, then add sample records. To repeat a component over records,
                 select an instance and use Inspector → Repeat with data.

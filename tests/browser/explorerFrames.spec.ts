@@ -105,8 +105,8 @@ test('each screen is listed once, with its views as chips', async ({ page }) => 
         await expect(name(page, viewName(text))).toHaveText('500 px');
     }
 
-    await expect(explorer(page).getByRole('region', { name: 'Screens' })).toBeVisible();
-    await expect(explorer(page).getByText('Screen view', { exact: true })).toHaveCount(0);
+    await expect(explorer(page).getByRole('region', { name: 'Pages' })).toBeVisible();
+    await expect(explorer(page).getByText('Page size', { exact: true })).toHaveCount(0);
 
     await name(page, viewName('Home')).click();
     await expect(name(page, viewName('Home'))).toHaveAttribute('aria-pressed', 'true');
@@ -298,7 +298,7 @@ test('screen identity is explicit, and a nested screen stays in its parent', asy
     await expect(name(page, 'Card').locator('svg.lucide-frame')).toHaveCount(1);
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
     await expect(
-        explorer(page).getByRole('region', { name: 'Screens' }).getByRole('button', {
+        explorer(page).getByRole('region', { name: 'Pages' }).getByRole('button', {
             name: 'Card',
             exact: true
         })
@@ -310,7 +310,8 @@ test('screen identity is explicit, and a nested screen stays in its parent', asy
     await expect(
         branch(page, 'Home').getByRole('button', { name: 'Card', exact: true })
     ).toBeVisible();
-    await expect(page.getByText('Move this screen to Canvas', { exact: false })).toBeVisible();
+    // Nested, it is a frame: no Page choice until it moves back to Canvas.
+    await expect(page.getByLabel('Frame type', { exact: true })).toHaveCount(0);
     await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('Shared layer');
     await expect(explorer(page).getByText('No matches')).toBeVisible();
 });

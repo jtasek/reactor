@@ -5,7 +5,7 @@ import type {
     Document,
     VariableDimension
 } from './types';
-import { minWidthProblem, readDimension, ordered } from './variableModes';
+import { minWidthProblem, readDimension, ordered, sizesDimension } from './variableModes';
 import { isHexColor } from './utils';
 import { applyVariableChanges, templateWithIds } from './variables';
 
@@ -72,6 +72,14 @@ export const updateDimension: ActionWithParam<VariableDimension> = ({ state }, i
         return;
     }
     if (minWidthProblem(dimension)) {
+        return;
+    }
+    const sizes = sizesDimension(document.dimensions);
+    if (
+        dimension.selection === 'width' &&
+        document.dimensions[dimension.id].selection !== 'width' &&
+        sizes
+    ) {
         return;
     }
     if (

@@ -37,14 +37,14 @@ export function FlowList({
     const states = new Map(machine.states.map((state) => [state.id, state]));
 
     return (
-        <div className={styles.list} aria-label="Screen flow" data-flow-list="">
+        <div className={styles.list} aria-label="Page flow" data-flow-list="">
             {order.map((id) => {
                 const state = states.get(id);
                 if (!state) {
                     return null;
                 }
                 const note = !state.available
-                    ? 'Hidden or inside another screen, so nothing can go here'
+                    ? 'Hidden or inside another page, so nothing can go here'
                     : !state.reachable
                       ? 'Nothing leads here'
                       : undefined;
@@ -56,7 +56,7 @@ export function FlowList({
                         data-flow-screen={id}
                         data-dim={!state.available || !state.reachable}
                         role="group"
-                        aria-label={`Screen ${state.name}`}
+                        aria-label={`Page ${state.name}`}
                     >
                         <h2>
                             <button

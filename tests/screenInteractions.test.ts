@@ -128,7 +128,7 @@ it('retains screen IDs across renames and diagnoses deleted targets without chan
     expect(
         output.screens[0].nodes.find((node) => node.key === 'home/next')!.control?.navigateTo
     ).toBeUndefined();
-    expect(warnings.join()).toContain('unavailable screen');
+    expect(warnings.join()).toContain('unavailable page');
     expect(resolve()).toEqual(navigate('details').activate);
     change('instance', navigate('missing'));
     expect(resolve()).toEqual(navigate('details').activate);

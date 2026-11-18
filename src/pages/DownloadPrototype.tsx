@@ -35,7 +35,7 @@ export function DownloadPrototype({
         try {
             const drawing = projectPreview(document, {}, [], session, inspection);
             if (!drawing.screens.length || drawing.screens[0].id !== session.screenId) {
-                throw new Error('Choose an available start screen before downloading.');
+                throw new Error('Choose an available start page before downloading.');
             }
             const [application, template] = await Promise.all([
                 createPreviewResources(assets)(drawing, controller.signal),

@@ -77,7 +77,7 @@ it('keeps missing rules repairable and resolves duplicate widths deterministical
         b: { minWidth: 200, layoutId: 'compact' }
     };
     expect(selectScreenLayout(document, 'home', choice)).toBe('home');
-    expect(screenLayoutProblems(document, 'home').join(' ')).toMatch(/missing layout.*unreachable/);
+    expect(screenLayoutProblems(document, 'home').join(' ')).toMatch(/missing design.*unreachable/);
     const projected = projectScreen(document, 'home', {
         ...choice,
         position: { x: 0, y: 0 },
@@ -85,8 +85,8 @@ it('keeps missing rules repairable and resolves duplicate widths deterministical
     })!;
     expect(projected.screen.id).toBe('home');
     // The rule's own problem explains the missing layout; no second, generic warning.
-    expect(projected.problems.join()).toContain('references a missing layout');
-    expect(projected.problems.join()).not.toContain('chosen layout is unavailable');
+    expect(projected.problems.join()).toContain('refers to a missing design');
+    expect(projected.problems.join()).not.toContain('chosen design is unavailable');
 });
 
 it('persists rules, Auto and explicit choices and rejects invalid durable settings', () => {

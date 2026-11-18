@@ -219,12 +219,12 @@ export function DataList({ instanceId }: { instanceId: string }) {
                     )}
                 </PropertyGroup>
             </table>
-            {!data.entities.length && <p>Add an entity and sample records in Data View first.</p>}
+            {!data.entities.length && <p>Add an entity and sample records in Data first.</p>}
             {data.list && (
                 <p>
                     {data.list.mode === 'record'
                         ? 'Shows the record opened from a list in Prototype. Without a selected record, shows the component values.'
-                        : `${data.count} items in Prototype. Set an Activate action to open a detail screen with the clicked record.`}
+                        : `${data.count} items in Prototype. Set an Activate action to open a detail page with the clicked record.`}
                 </p>
             )}
             {data.list && !data.properties.length && (

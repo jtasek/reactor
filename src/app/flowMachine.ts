@@ -97,10 +97,10 @@ function brokenReason(control: Control, effect: Effect, names: Map<string, strin
     switch (effect.kind) {
         case 'go':
             return names.has(effect.to)
-                ? `${effect.name} is hidden or inside another screen`
-                : 'The screen it goes to was deleted';
+                ? `${effect.name} is hidden or inside another page`
+                : 'The page it goes to was deleted';
         case 'toggleVisibility':
-            return 'What it shows or hides is no longer on this screen';
+            return 'What it shows or hides is no longer on this page';
         default:
             return 'The state it uses was deleted';
     }
@@ -200,7 +200,7 @@ export function flowMachine(document: Document): Machine {
 export function effectText(effect: Effect): string {
     switch (effect.kind) {
         case 'go':
-            return `→ ${effect.name || 'Missing screen'}`;
+            return `→ ${effect.name || 'Missing page'}`;
         case 'variant':
             return `shows ${effect.variant}`;
         case 'toggleVisibility':
@@ -229,7 +229,7 @@ export function sentence(transition: Transition): string {
     const { effect } = transition;
     const does =
         effect.kind === 'go'
-            ? `goes to ${effect.name || 'a missing screen'}`
+            ? `goes to ${effect.name || 'a missing page'}`
             : effect.kind === 'variant'
               ? `changes ${effect.instance} to ${effect.variant}`
               : effectText(effect);

@@ -82,9 +82,10 @@ bar, side bar, panels and other parts of the editor.
 
 The Explorer has two views. **Objects** shows actual containment: Canvas holds top-level
 frames and loose artwork, and frames contain their child frames, groups and shapes.
-Frames explicitly designated as screens carry a **Screen** badge. Draw with **Frame** (`f`),
-then select **Screen** in Inspector’s **Type** field. Names, geometry and artwork stay in place;
-many screens and ordinary frames can coexist on the same canvas.
+Pages are listed under **Pages**. Draw with **Frame** (`f`), then select **Page** in
+Inspector’s **Type** field; only a frame on Canvas can be a page. Names, geometry and artwork
+stay in place; many pages and ordinary frames can coexist on the same canvas. The words the
+editor uses are listed in the [glossary](APPLICATION_PLAN.md#glossary).
 Component definitions stay under Components, separate from scene objects.
 To create a manual component variant, select a source under **Components** and choose
 **Inspector → Variants → Create variant**. Its artwork is copied into an independently
@@ -286,20 +287,21 @@ Images retain intrinsic aspect ratio, while text, groups and instances keep thei
 sizes; new sizing rules on these or rotated rectangles are not exposed. Drag-to-reorder,
 clipping and interactive screen behavior remain later increments.
 
-### Alternate screen layouts
+### Separate designs
 
-Select a **Screen view**, then use **Inspector → Layout → Artwork** to choose its layout.
-The existing artwork is the **Default layout**. Enter a **New layout** name and choose
-**Create empty layout** to start a separate tree, then draw or paste into that view.
-**Edit layout settings** opens the layout's name, stack and padding controls; its size follows the Screen view.
-Views choosing the same layout share its artwork; other layouts stay separate. Place reusable
+Select a page at a size (for example **Home · Mobile**), then use **Inspector → Design → Shows**
+to choose its design. The page's own artwork is its **Main design**. Enter a **Separate design**
+name and choose **Create separate design** to start a separate tree as a copy of the design
+shown, then edit it there; edits don't reach the other designs.
+**Edit design settings** opens the design's name, stack and padding controls; its size follows the page at that size.
+Sizes showing the same design share its artwork; other designs stay separate. Place reusable
 component instances in each tree to share component definitions while keeping instance values.
 
-All layouts belong to one screen and retain its navigation destination. Preview starts with
-its launch view's selected layout and viewport. Choose **Auto · Width** on a view and add
-rules under **Automatic layouts**. Each rule names a layout and its minimum width in pixels.
-The greatest minimum at or below the view's width wins; below all rules, Default is used.
-Rules can also select Default explicitly. Existing views keep their manual choices.
+All designs belong to one page and retain its navigation destination. Preview starts with
+its launch size's selected design and viewport. Choose **Auto · Width** on a size and add
+rules under **Automatic design**. Each rule names a design and its minimum width in pixels.
+The greatest minimum at or below the page's width wins; below all rules, the main design is used.
+Rules can also select the main design explicitly. Existing sizes keep their manual choices.
 Duplicate thresholds resolve by layout ID and show an unreachable-rule diagnostic.
 
 Preview's **Width** changes the viewport for every navigation destination. Its **Layout**
@@ -847,9 +849,10 @@ dedicated dialogs with format selection and import review. These tools do not pu
 down. Escape dismisses them and returns focus to their toolbar button.
 
 For responsive sizing, open **Dimensions**, select your size dimension,
-and set **Select modes by → Screen view width**. Enter a minimum width in pixels for each
+and set **Select modes by → Page width · Sizes**. A document has one Sizes dimension; another
+width-selected one counts as manual. Enter a minimum width in pixels for each
 automatic mode (for example xs: 0, sm: 400, lg: 600). The greatest minimum at or below the
-Screen view's width wins, including exact boundaries. Below every threshold the dimension's
+page's width wins, including exact boundaries. Below every threshold the dimension's
 default applies; an empty minimum leaves that mode available for manual selection only.
 Each Screen view resolves independently as it resizes, including bound font sizes and button
 widths. Theme stays manual unless you explicitly configure width rules for it too.

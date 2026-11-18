@@ -101,11 +101,11 @@ export function SharePrototype({
             }
             const drawing = projectPreview(document, {}, [], session, inspection);
             if (!drawing.screens.length || drawing.screens[0].id !== session.screenId) {
-                throw new Error('Choose an available start screen before sharing.');
+                throw new Error('Choose an available start page before sharing.');
             }
             const application = await createPreviewResources(assets)(drawing, controller.signal);
             // Start screen and viewport tell links apart when one is revoked later.
-            const start = document.frames[session.screenId!]?.name ?? 'Screen';
+            const start = document.frames[session.screenId!]?.name ?? 'Page';
             const name =
                 `${document.name} · ${start} · ${session.viewport?.width} × ${session.viewport?.height}`.slice(
                     0,
@@ -163,8 +163,8 @@ export function SharePrototype({
                     </header>
                     <p>
                         Anyone with the link can play this snapshot without signing in. It includes
-                        all prototype screens and images, using the current start screen, viewport
-                        and modes. Later edits stay private.
+                        all prototype pages and images, using the current start page, viewport and
+                        modes. Later edits stay private.
                     </p>
                     <p>
                         Links expire after 30 days. Revoking a link prevents future loads; it cannot

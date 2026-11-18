@@ -329,3 +329,35 @@ it.each(['screen', 'mobile'])(
         ).toBe(14);
     }
 );
+
+it('keeps one Sizes dimension: a later width-selected dimension counts as manual and none is added', () => {
+    const document = responsiveDocument();
+    document.dimensions.density = {
+        id: 'density',
+        name: 'Density',
+        order: 2,
+        defaultModeId: 'roomy',
+        selection: 'width',
+        modes: {
+            roomy: { id: 'roomy', name: 'Roomy', order: 0 },
+            compact: { id: 'compact', name: 'Compact', order: 1, minWidth: 0 }
+        }
+    };
+    expect(resolveModes(document, { viewId: 'mobile' }).modes).toMatchObject({
+        media: 'xs',
+        density: 'roomy'
+    });
+
+    const { store } = createTestStore();
+    store.actions.addDocument(responsiveDocument(store.state.currentDocumentId));
+    const theme = json(store.state.currentDocument.dimensions.theme);
+    store.actions.updateDimension({ ...theme, selection: 'width' });
+    expect(store.state.currentDocument.dimensions.theme.selection).toBeUndefined();
+    expect(
+        store.actions.applyOperations({
+            documentId: store.state.currentDocumentId,
+            by: { kind: 'person' },
+            operations: [{ op: 'setDimension', dimension: { ...theme, selection: 'width' } }]
+        }).applied
+    ).toBe(false);
+});

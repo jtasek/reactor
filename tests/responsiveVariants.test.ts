@@ -151,7 +151,7 @@ it('uses stable default with a repairable diagnostic for hug dependencies, inclu
 it('reports missing rules, width, variants and conflicting thresholds without deleting authored data', () => {
     const document = responsiveVariantsDocument();
     const button = document.shapes.button as InstanceShape;
-    expect(responsiveVariant(document, button, {}).problem).toContain('No Screen view width');
+    expect(responsiveVariant(document, button, {}).problem).toContain('No page width');
     document.components.family.responsiveVariants!.rules.push({ minWidth: 600, variantId: 'wide' });
     expect(responsiveVariant(document, button, { screen: 800 }).problem).toContain('Duplicate');
     document.components.family.responsiveVariants!.rules.pop();
