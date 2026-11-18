@@ -728,8 +728,8 @@ export type Application = {
     /** The group double-clicked into, whose shapes are selected one by one. */
     enteredGroupId: string | null;
     enteredComponentId: string | null;
-    /** The text shape double-clicked to change its words on the canvas. */
-    editingText?: { documentId: string; shapeId: string } | null;
+    /** The text shape double-clicked to change its words on the canvas, and the view it is in. */
+    editingText?: { documentId: string; shapeId: string; viewId?: string } | null;
     /** Canvas context to restore after editing a component, on this screen only. */
     componentEditingReturn?: {
         documentId: string;
