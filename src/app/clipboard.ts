@@ -594,7 +594,8 @@ export function pasteOperations(
     copied: Copied,
     document: Document,
     target: Point | null,
-    translation?: Point
+    translation?: Point,
+    keepNames = false
 ): Operation[] {
     const { operations: dimensions, remapModes } = pasteDimensions(copied, document);
 
@@ -710,9 +711,11 @@ export function pasteOperations(
         const name =
             input.name === undefined
                 ? nameShape(input.type)
-                : input.type === 'instance'
-                  ? instanceName(input.name, taken)
-                  : copyName(input.name, input.type, taken, nameShape);
+                : keepNames
+                  ? input.name
+                  : input.type === 'instance'
+                    ? instanceName(input.name, taken)
+                    : copyName(input.name, input.type, taken, nameShape);
 
         taken.add(name);
         remapShape(input);

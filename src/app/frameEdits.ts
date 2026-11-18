@@ -152,10 +152,12 @@ function addFrame(context: Context, input: Extract<FrameEdit, { kind: 'add' | 'p
     return actions.editFrame({ kind: 'select', id: result.ids.frame });
 }
 
+/** `keepNames` copies into a separate tree, such as a separate design, where names can repeat. */
 function framePasteOperations(
     input: Extract<FrameEdit, { kind: 'paste' }>,
     frame: Frame,
-    document: Context['state']['currentDocument']
+    document: Context['state']['currentDocument'],
+    keepNames = false
 ): import('./operations').Operation[] {
     const copied = input.copied;
 
@@ -190,7 +192,8 @@ function framePasteOperations(
         frame.name
     ]);
     const children = ordered.map((child): import('./operations').AddFrame => {
-        const name = taken.has(child.name) ? numberedName(child.name, taken) : child.name;
+        const name =
+            keepNames || !taken.has(child.name) ? child.name : numberedName(child.name, taken);
         taken.add(name);
 
         return {
@@ -243,7 +246,7 @@ function framePasteOperations(
             : {})
     });
 
-    const operations = clipboard.pasteOperations(artwork, document, null, delta);
+    const operations = clipboard.pasteOperations(artwork, document, null, delta, keepNames);
     const variableOperation = (operation: import('./operations').Operation) =>
         operation.op === 'addVariable' || operation.op === 'setDimension';
 
@@ -341,7 +344,8 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
                 ...framePasteOperations(
                     { kind: 'paste', frame: layout, copied, target: null },
                     layout,
-                    document
+                    document,
+                    true
                 ),
                 { op: 'updateFrame', frame: view.id, changes: { layoutId: 'frame' } }
             ]

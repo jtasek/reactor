@@ -69,6 +69,7 @@ test('creates a separate design as a copy and draws into it without modifying th
     await inspector.getByRole('button', { name: 'Create separate design', exact: true }).click();
     await expect(inspector.getByLabel('Design at this size')).not.toHaveValue('compact');
     await expect(inspector).toContainText('Edits belong to the separate design “Tablet”');
+    await expect(mobile.locator('[data-cy="Compact body"]')).toHaveCount(1);
     await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
     await selectTool(page, 'Draws a rectangle or square');
     await pointer(page, 'pointerdown', {

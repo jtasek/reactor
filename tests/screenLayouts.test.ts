@@ -113,6 +113,7 @@ it('creates a separate design as a copy of the shown one in one shared undo step
     expect(copied).toHaveLength(1);
     expect(copied[0]).toMatchObject({ position: { x: 110, y: 90 }, size: { width: 280 } });
     expect(copied[0].id).not.toBe('body');
+    expect(shownDocument(b).shapes[copied[0].id].name).toBe('Default body');
     expect(shownDocument(b).shapes[copied[0].id]).toMatchObject({ parentFrameId: id });
     expect(
         Object.values(shownDocument(b).shapes).some((shape) => shape.id === 'compact-body')

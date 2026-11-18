@@ -93,7 +93,7 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
         return (
             problem ??
             (source?.kind === 'screen'
-                ? `${screenViewName(document, frame)}. Every size that shows the same design shares its artwork.`
+                ? 'Every size that shows the same design shares its artwork.'
                 : 'Its page is missing. Remove this from the canvas or restore the page.')
         );
     });
@@ -350,7 +350,9 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                     {screenLayout
                                         ? 'A separate design for this page: edits here don’t reach its other sizes. Choose it on the page at a size to draw or edit its contents.'
                                         : page
-                                          ? 'One design shared by every size. Show it on the canvas at a size to see and edit it.'
+                                          ? hasLayouts
+                                              ? 'Its main design is shared by every size that shows it. Show it on the canvas at a size to see and edit it.'
+                                              : 'One design shared by every size. Show it on the canvas at a size to see and edit it.'
                                           : 'Choose Page to make this frame a prototype destination.'}
                                 </small>
                             </td>
