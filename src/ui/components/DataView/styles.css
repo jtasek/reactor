@@ -1,126 +1,1077 @@
+/*
+ * Liquid Glass: content (cards, tables, fields) is opaque; the controls layer above it (entity
+ * sidebar, bars, segmented control) is translucent glass with a light rim. Controls are capsules,
+ * shapes are concentric, and the selection tint is the one accent colour.
+ */
 .dataView {
+    --field-height: 30px;
+    --dv-tint: var(--selection-color);
+    --dv-tint-soft: color-mix(in srgb, var(--selection-color) 12%, transparent);
+    --dv-tint-ring: color-mix(in srgb, var(--selection-color) 40%, transparent);
+    --dv-glass: color-mix(in srgb, var(--surface) 70%, transparent);
+    --dv-glass-strong: color-mix(in srgb, var(--surface) 86%, transparent);
+    --dv-sidebar: color-mix(in srgb, var(--documents-background) 72%, transparent);
+    --dv-rim: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--hairline-color);
+    --dv-float: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--hairline-color),
+        0 8px 24px -10px rgb(0 0 0 / 22%);
+    --dv-card: 0 0 0 0.5px var(--hairline-color), 0 1px 2px rgb(0 0 0 / 6%),
+        0 6px 16px -8px rgb(0 0 0 / 14%);
+    --dv-card-selected: 0 0 0 2px var(--dv-tint-ring), 0 8px 22px -10px rgb(26 93 219 / 35%);
+    --dv-sheet: 0 -0.5px 0 var(--hairline-color), 0 -10px 30px -18px rgb(0 0 0 / 30%);
+    --dv-pill: 0 0 0 0.5px var(--hairline-color), 0 1px 3px rgb(0 0 0 / 12%);
+    --dv-ring: 0 0 0 3px var(--dv-tint-ring);
+    --dv-error-ring: 0 0 0 1.5px var(--error-color);
+    --dv-capsule: 999px;
+    --dv-hairline: 0 0 0 0.5px var(--hairline-color);
+    --dv-under: 0 0.5px 0 var(--hairline-color);
+    --dv-dots: radial-gradient(rgb(0 0 0 / 10%) 1px, transparent 1px);
+
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
     background: var(--panel-content-background);
     color: var(--text-color);
-    padding: 16px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
     font-size: var(--font-size-body);
+    letter-spacing: -0.003em;
 }
-.dataView form,
-.field {
-    display: flex;
-    align-items: end;
-    flex-wrap: wrap;
-    gap: var(--panel-gap);
-    margin: 10px 0;
+
+.dataView * {
+    box-sizing: border-box;
 }
-.dataView label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+
+.dataView button,
 .dataView input,
 .dataView select,
-.dataView button {
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    background: var(--control-background);
+.dataView textarea {
     color: var(--text-color);
     font: inherit;
-    padding: 6px;
+    min-width: 0;
 }
-.dataView input:focus-visible,
+
+.dataView input:not([type='checkbox']),
+.dataView select,
+.dataView textarea {
+    width: 100%;
+    height: var(--field-height);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background-color: var(--field-background);
+    transition: box-shadow 120ms, background-color 120ms;
+}
+
+.dataView textarea {
+    height: auto;
+    padding: 6px 10px;
+    resize: vertical;
+}
+
+.dataView input[type='checkbox'] {
+    accent-color: var(--dv-tint);
+    flex: none;
+}
+
+.dataView input:not([type='checkbox']):focus-visible,
 .dataView select:focus-visible,
-.dataView button:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+.dataView textarea:focus-visible {
+    outline: none;
+    background-color: var(--surface);
+    box-shadow: var(--dv-ring);
 }
+
+.dataView button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: var(--field-height);
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--dv-capsule);
+    background-color: var(--field-background);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dataView button:hover:not(:disabled) {
+    background-color: var(--menu-hover);
+}
+
+.dataView button:active:not(:disabled) {
+    background-color: var(--menu-pressed);
+}
+
 .dataView button:disabled {
-    opacity: 0.5;
+    cursor: default;
+    opacity: 0.45;
 }
-.field {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--hairline-color);
+
+.dataView button:focus-visible,
+.dataView summary:focus-visible {
+    outline: none;
+    box-shadow: var(--dv-ring);
 }
-.records {
+
+.dataView .primary {
+    background-color: var(--dv-tint);
+    color: var(--on-selection-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dataView .primary:hover:not(:disabled),
+.dataView .primary:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--selection-color) 86%, black);
+}
+
+.dataView .destructive {
+    background-color: var(--error-color);
+    color: var(--on-selection-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dataView .destructive:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--error-color) 86%, black);
+}
+
+.dataView .tinted {
+    background-color: var(--dv-tint-soft);
+    color: var(--dv-tint);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dataView .tinted:hover:not(:disabled),
+.dataView .tinted:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--selection-color) 20%, transparent);
+}
+
+.dataView select[data-unset] {
+    color: var(--text-secondary-color);
+}
+
+.dataView .iconButton {
+    width: var(--field-height);
+    padding: 0;
+    background-color: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .plain {
+    align-self: flex-start;
+    background-color: transparent;
+    color: var(--dv-tint);
+}
+
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.muted,
+.hint {
+    color: var(--text-secondary-color);
+}
+
+.hint {
+    margin: 12px 0 0;
+    font-size: var(--font-size-callout);
+}
+
+.required {
+    color: var(--error-color);
+    text-decoration: none;
+}
+
+.spacer {
+    flex: 1 1 0;
+}
+
+.count {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-regular);
+}
+
+/* Entity sidebar: a glass source list. */
+.tree {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
     overflow: auto;
+    padding: 10px 8px;
+    border-right: 0.5px solid var(--hairline-color);
+    background: var(--dv-sidebar);
+    backdrop-filter: var(--backdrop-filter);
+}
+
+.dataView .tree input[type='search'] {
+    flex: none;
+    margin-bottom: 6px;
+    border-radius: var(--dv-capsule);
+    background-color: var(--dv-glass-strong);
+    box-shadow: var(--dv-rim);
+}
+
+.listHeading {
+    display: flex;
+    margin: 10px 8px 4px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+}
+
+.listHeading span {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.treeList {
+    display: grid;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.treeList .treeList {
+    margin: 1px 0 4px;
+}
+
+.treeRow {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-md);
+}
+
+.treeRow[data-current] {
+    background: var(--dv-tint-soft);
+}
+
+.dataView .twisty {
+    width: 20px;
+    min-height: 28px;
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .treeItem,
+.dataView .treeField {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    min-height: 28px;
+    padding: 0 8px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    font-weight: var(--font-weight-regular);
+    text-align: left;
+}
+
+.dataView .treeItem {
+    padding-left: 2px;
+}
+
+.dataView .treeField {
+    padding-left: 30px;
+    font-size: var(--font-size-callout);
+}
+
+.treeItem > span,
+.treeField > span {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.treeField > .typeIcon,
+.cardField > .typeIcon {
+    flex: none;
+}
+
+.treeItem small,
+.treeField small {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.treeItem svg {
+    flex: none;
+    color: var(--text-secondary-color);
+}
+
+.dataView .treeItem[aria-current='true'] {
+    color: var(--dv-tint);
+    font-weight: var(--font-weight-semibold);
+}
+
+.treeItem[aria-current='true'] svg,
+.treeItem[aria-current='true'] small {
+    color: var(--dv-tint);
+}
+
+.dataView .treeField[aria-pressed='true'] {
+    background: var(--dv-glass-strong);
+    box-shadow: var(--dv-pill);
+}
+
+.treeField small[data-problem],
+.cardField small[data-problem] {
+    color: var(--warning-color);
+}
+
+.newEntity {
+    display: flex;
+    flex: none;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.dataView .newEntity input {
+    flex: 1 1 0;
+    border-radius: var(--dv-capsule);
+    background-color: var(--dv-glass-strong);
+    box-shadow: var(--dv-rim);
+}
+
+.dataView .newEntity button {
+    padding: 0 12px 0 9px;
+}
+
+/* Work area: summary bar, the map, and the sheet of records below it. */
+.workArea {
+    display: grid;
+    grid-template-rows: auto minmax(150px, 2fr) minmax(240px, 3fr);
+    min-width: 0;
+    min-height: 0;
+    background-color: var(--documents-background);
+    background-image: var(--dv-dots);
+    background-size: 16px 16px;
+}
+
+.workArea[data-empty] {
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.workArea[data-empty] .drawer {
+    place-content: center;
+    align-items: center;
+    padding: 24px;
+    background: none;
+    box-shadow: none;
+}
+
+.commandBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-self: start;
+    margin: 10px 12px 0;
+    padding: 5px 14px;
+    border-radius: var(--dv-capsule);
+    background: var(--dv-glass);
+    backdrop-filter: var(--backdrop-filter);
+    box-shadow: var(--dv-float);
+    font-size: var(--font-size-callout);
+}
+
+.commandBar b {
+    font-weight: var(--font-weight-semibold);
+}
+
+.map {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.mapSize {
+    position: relative;
+}
+
+.mapCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+}
+
+.card[data-dragging] {
+    z-index: 2;
+    cursor: grabbing;
+    box-shadow: var(--dv-card-selected);
+    opacity: 0.94;
+}
+
+.dataView .cardHeader {
+    cursor: grab;
+    touch-action: none;
+}
+
+.zoom {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px;
+    border-radius: var(--dv-capsule);
+    background: var(--field-background);
+}
+
+.dataView .zoom button {
+    min-width: 26px;
+    min-height: 22px;
+    padding: 0 8px;
+    background: transparent;
+    font-size: var(--font-size-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.dataView .zoom button:hover:not(:disabled) {
+    background: var(--surface);
+}
+
+.links {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.links path {
+    fill: none;
+    stroke: var(--text-secondary-color);
+    stroke-dasharray: 4 3;
+    stroke-width: 1.25;
+    opacity: 0.6;
+}
+
+.links path[data-selected] {
+    stroke: var(--dv-tint);
+    stroke-dasharray: none;
+    stroke-width: 1.5;
+    opacity: 1;
+}
+
+.card {
+    position: absolute;
+    display: grid;
+    padding-bottom: 6px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--dv-card);
+}
+
+.card[data-selected] {
+    box-shadow: var(--dv-card-selected);
+}
+
+.dataView .cardHeader,
+.dataView .cardField,
+.dataView .cardAdd {
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 26px;
+    padding: 0 12px;
+    border-radius: 0;
+    background: transparent;
+    font-weight: var(--font-weight-regular);
+    text-align: left;
+}
+
+.dataView .cardHeader {
+    min-height: 36px;
+    cursor: grab;
+    margin-bottom: 2px;
+    border-bottom: 0.5px solid var(--hairline-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+.card[data-selected] .cardHeader {
+    color: var(--dv-tint);
+}
+
+.cardHeader > span,
+.cardField > span {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cardHeader small,
+.cardField small {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-regular);
+}
+
+.dataView .cardField {
+    font-size: var(--font-size-callout);
+}
+
+.dataView .cardField[aria-pressed='true'] {
+    background: var(--dv-tint-soft);
+}
+
+.dataView .cardAdd {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+/* The sheet: an opaque surface raised over the map, with a glass header. */
+.drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 14px 16px;
+    border-radius: 16px 16px 0 0;
+    background: var(--surface);
+    box-shadow: var(--dv-sheet);
+}
+
+.drawer > :first-child {
     margin-top: 12px;
 }
-.records table {
-    border-collapse: collapse;
-    width: 100%;
+
+.drawerHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -14px;
+    padding: 10px 14px;
+    background: var(--dv-glass-strong);
+    backdrop-filter: var(--backdrop-filter);
+    box-shadow: var(--dv-under);
 }
+
+.drawer > .drawerHeader:first-child {
+    margin-top: 0;
+}
+
+/* Segmented control: a capsule track with the selected segment raised. */
+.tabs {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: var(--dv-capsule);
+    background: var(--field-background);
+}
+
+.dataView .tabs button {
+    min-height: 26px;
+    padding: 0 12px;
+    background: transparent;
+    color: var(--text-secondary-color);
+}
+
+.dataView .tabs button[aria-selected='true'] {
+    background: var(--surface);
+    color: var(--text-color);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--dv-pill);
+}
+
+.message,
+.attention {
+    margin: 0;
+    border-radius: 12px;
+    background: var(--warning-background);
+    color: var(--warning-color);
+}
+
+.message {
+    padding: 8px 14px;
+}
+
+.attention summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.attention ul {
+    margin: 0;
+    padding: 0 14px 8px 34px;
+}
+
+.attention button {
+    margin: 0 0 10px 14px;
+}
+
+.tabPanel {
+    min-width: 0;
+}
+
+.emptyState {
+    display: grid;
+    gap: 8px;
+    max-width: 440px;
+    color: var(--text-secondary-color);
+}
+
+.emptyState h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: var(--font-size-title-3);
+    letter-spacing: var(--tracking-title);
+}
+
+.emptyState p {
+    margin: 0;
+}
+
+/* Records */
+.records {
+    overflow: auto;
+    border-radius: 12px;
+    box-shadow: var(--dv-hairline);
+}
+
+.records table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+}
+
 .records th,
 .records td {
+    padding: 3px 4px;
+    border-bottom: 0.5px solid var(--hairline-color);
     text-align: left;
-    padding: 8px;
-    border: 1px solid var(--hairline-color);
     vertical-align: top;
 }
-.valueEditor input,
-.valueEditor select {
-    min-width: 100px;
-    max-width: 100%;
+
+.records tbody tr:last-child > * {
+    border-bottom: 0;
 }
+
+.records thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 7px 14px;
+    background: var(--documents-background);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.columnName {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.records .rowNumber {
+    width: 1%;
+    min-width: 28px;
+    padding-inline: 8px 6px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-regular);
+    line-height: var(--field-height);
+    text-align: right;
+}
+
+.rowNumber small {
+    display: block;
+    max-width: 160px;
+    color: var(--error-color);
+    line-height: 1.4;
+    text-align: left;
+    white-space: normal;
+}
+
+.records .rowActions {
+    width: 1%;
+}
+
+.records td > small {
+    display: block;
+    padding: 2px 10px 0;
+    color: var(--error-color);
+    font-size: var(--font-size-caption);
+}
+
+.records td > small:empty {
+    display: none;
+}
+
+/* A cell's field is quiet until hovered or focused. */
+.dataView .records .valueEditor input,
+.dataView .records .valueEditor select {
+    min-width: 120px;
+    background-color: transparent;
+}
+
+.dataView .records .valueEditor input:hover,
+.dataView .records .valueEditor select:hover {
+    background-color: var(--field-background);
+}
+
+.dataView .records td[data-problem] input,
+.dataView .records td[data-problem] select,
+.dataView .valueEditor[data-problem] input {
+    box-shadow: var(--dv-error-ring);
+}
+
+.tableEmpty {
+    margin: 12px 0 0;
+    color: var(--text-secondary-color);
+}
+
+.valueEditor {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
 .valueEditor small {
-    flex-basis: 100%;
+    color: var(--error-color);
+    font-size: var(--font-size-caption);
 }
-.confirmation {
-    flex-basis: 100%;
+
+.valueEditor[data-variant='title'] {
+    flex: 1 1 120px;
+    max-width: 260px;
+    margin-left: -10px;
+}
+
+.dataView .valueEditor[data-variant='title'] input {
+    background-color: transparent;
+    font-size: var(--font-size-title-3);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-title);
+}
+
+.dataView .valueEditor[data-variant='title'] input:hover {
+    background-color: var(--field-background);
+}
+
+/* Fields: an inset grouped list. */
+.newField {
     display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--documents-background);
+}
+
+.newField label,
+.optionsEditor label,
+.fieldDetail label,
+.setting,
+.ruleForm > label {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+.dataView .newField input,
+.dataView .newField select,
+.dataView .newField textarea,
+.dataView .ruleForm input,
+.dataView .ruleForm select {
+    background-color: var(--surface);
+    box-shadow: var(--dv-hairline);
+}
+
+.newField label:first-child {
+    flex: 1 1 160px;
+}
+
+.newField .wide {
+    flex: 1 1 100%;
+}
+
+.dataView .checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--field-height);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+
+.group {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    list-style: none;
+    border-radius: 12px;
+    box-shadow: var(--dv-hairline);
+}
+
+.field {
+    padding: 6px 10px;
+    transition: background-color 200ms;
+}
+
+.field + .field {
+    border-top: 0.5px solid var(--hairline-color);
+}
+
+.field[data-selected] {
+    background: var(--dv-tint-soft);
+}
+
+.fieldLine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.fieldLine > .valueEditor {
+    flex: 1 1 140px;
+}
+
+.dataView .fieldLine .valueEditor input {
+    background-color: transparent;
+    font-weight: var(--font-weight-medium);
+}
+
+.dataView .fieldLine .valueEditor input:hover {
+    background-color: var(--field-background);
+}
+
+.dataView .typeSelect {
+    flex: 0 0 120px;
+    width: 120px;
+}
+
+.typeIcon {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    background: var(--tag-gray-background);
+    color: var(--tag-gray-color);
+}
+
+.typeIcon[data-type='text'] {
+    background: var(--tag-blue-background);
+    color: var(--tag-blue-color);
+}
+
+.typeIcon[data-type='number'] {
+    background: var(--tag-green-background);
+    color: var(--tag-green-color);
+}
+
+.typeIcon[data-type='boolean'] {
+    background: var(--tag-orange-background);
+    color: var(--tag-orange-color);
+}
+
+.typeIcon[data-type='choice'] {
+    background: var(--tag-purple-background);
+    color: var(--tag-purple-color);
+}
+
+.typeIcon[data-type='reference'] {
+    background: var(--tag-teal-background);
+    color: var(--tag-teal-color);
+}
+
+.optionsEditor,
+.fieldDetail {
+    display: grid;
+    gap: 4px;
+    max-width: 360px;
+    margin: 8px 0 2px 26px;
+}
+
+.optionsEditor small {
+    color: var(--error-color);
+}
+
+.setting {
+    max-width: 360px;
+    margin-top: 12px;
+}
+
+.confirmation {
+    display: flex;
+    flex-basis: 100%;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--panel-gap);
     margin: 8px 0;
-    padding: 8px 10px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--error-background);
+    color: var(--error-color);
 }
+
 .confirmation p {
     flex-basis: 100%;
     margin: 0;
 }
+
+/* Rules */
 .rule {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--panel-gap);
-    padding: 8px 0;
-    border-bottom: 1px solid var(--hairline-color);
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    box-shadow: var(--dv-hairline);
 }
+
 .rule p {
     display: flex;
+    flex: 1 1 240px;
     flex-direction: column;
     gap: 2px;
-    flex: 1 1 240px;
     margin: 0;
 }
+
+.rule span {
+    color: var(--text-secondary-color);
+}
+
+.rule small {
+    color: var(--error-color);
+}
+
 .dataView .ruleForm {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 10px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    gap: 12px;
+    margin: 12px 0;
+    padding: 14px;
+    border-radius: 14px;
+    background: var(--documents-background);
 }
+
 .conditions {
     display: flex;
     flex-direction: column;
     gap: var(--panel-gap);
     margin: 0;
-    padding: 8px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--dv-hairline);
 }
+
+.conditions legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 4px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-semibold);
+}
+
+.conditions label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .condition {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--panel-gap);
+    gap: 6px;
 }
+
+.condition > select,
+.condition > input {
+    flex: 1 1 120px;
+    width: auto;
+}
+
 .dataView .inline {
+    display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 6px;
 }
-.records th small {
-    display: block;
-    font-weight: normal;
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Narrow panels: the sidebar sits above, and the map gives its room to the records. */
+@container (width < 640px) {
+    .dataView {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .tree {
+        max-height: 220px;
+        border-right: 0;
+        border-bottom: 0.5px solid var(--hairline-color);
+    }
+
+    .workArea {
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    .map,
+    .commandBar {
+        display: none;
+    }
+
+    .drawer {
+        border-radius: 0;
+    }
+
+    .valueEditor[data-variant='title'] {
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+@media (pointer: coarse) {
+    .dataView {
+        --field-height: 44px;
+    }
+
+    .dataView input,
+    .dataView select,
+    .dataView textarea {
+        font-size: var(--font-size-touch-input);
+    }
 }

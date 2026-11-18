@@ -1,7 +1,7 @@
 import type { ActionWithParamAndResult, Document } from './types';
 import type { DataField, DataType, DataValue, DataList, DataRule } from './dataTypes';
 import { isReadOnly } from './documentAccess';
-import { readEntity, readDataList } from './services/documentStorage';
+import { readEntity, readDataList, readMapPosition } from './services/documentStorage';
 import {
     dataLeftovers,
     dataRecords,
@@ -19,6 +19,9 @@ export type DataChange =
     | { kind: 'addEntity'; name: string }
     | { kind: 'renameEntity'; id: string; name: string }
     | { kind: 'deleteEntity'; id: string }
+    /** A null position hands the entity back to the map's own layout. */
+    | { kind: 'moveEntity'; id: string; position: { x: number; y: number } | null }
+    | { kind: 'arrangeEntities' }
     | { kind: 'setLabelField'; entityId: string; fieldId: string | null }
     | ({
           kind: 'addField';
@@ -135,6 +138,31 @@ function prepare(
                 }
                 document.dataEntities[edit.entityId].labelFieldId = edit.fieldId;
             }
+        };
+    }
+    if (edit.kind === 'moveEntity') {
+        entity(document, edit.id);
+        const position = edit.position && readMapPosition(edit.position);
+
+        return {
+            write: () => {
+                if (!position) {
+                    delete document.dataEntities[edit.id].mapPosition;
+
+                    return;
+                }
+                document.dataEntities[edit.id].mapPosition = position;
+            }
+        };
+    }
+    if (edit.kind === 'arrangeEntities') {
+        const placed = Object.values(document.dataEntities).filter((item) => item.mapPosition);
+        if (!placed.length) {
+            throw new Error('The map already places every entity.');
+        }
+
+        return {
+            write: () => placed.forEach((item) => delete item.mapPosition)
         };
     }
     if (edit.kind === 'deleteEntity') {

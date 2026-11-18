@@ -397,3 +397,10 @@
     width: min(720px, calc(100vw - var(--application-bar-space)));
     max-width: calc(100vw - var(--application-bar-space));
 }
+
+/* The Data View scrolls its own columns, keeping the entity list and toolbar in view. */
+.panel[data-panel='dataView'] > .content {
+    display: flex;
+    overflow: hidden;
+    container-type: inline-size;
+}

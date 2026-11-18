@@ -302,3 +302,28 @@ it('saves choice and reference values from a Prototype record form', () => {
         saveRecord(document, session, 'ada', { name: 'Ada', tier: 'Free', mentor: '' }).problems
     ).toEqual({});
 });
+
+it('keeps map positions through the readers, refuses far ones and hands them back to the layout', () => {
+    const { store, change, customers, orders } = setup();
+    const entities = () => store.state.currentDocument.dataEntities;
+    applied(change({ kind: 'moveEntity', id: customers, position: { x: 40.4, y: -12 } }));
+    expect(entities()[customers].mapPosition).toEqual({ x: 40, y: -12 });
+    expect(change({ kind: 'moveEntity', id: orders, position: { x: 1e9, y: 0 } }).applied).toBe(
+        false
+    );
+    applied(change({ kind: 'moveEntity', id: orders, position: { x: 300, y: 20 } }));
+
+    const saved = serializePersistedState(store.state);
+    const migrated = migratePersistedState(JSON.parse(JSON.stringify(saved)))!;
+    const restored = hydrateDocument(migrated.documents[store.state.currentDocumentId]);
+    expect(restored.dataEntities[customers].mapPosition).toEqual({ x: 40, y: -12 });
+    expect(() =>
+        readEntity('dataEntities', { ...restored.dataEntities[customers], mapPosition: { x: 'a' } })
+    ).toThrow();
+
+    applied(change({ kind: 'moveEntity', id: customers, position: null }));
+    expect(entities()[customers].mapPosition).toBeUndefined();
+    applied(change({ kind: 'arrangeEntities' }));
+    expect(entities()[orders].mapPosition).toBeUndefined();
+    expect(change({ kind: 'arrangeEntities' }).applied).toBe(false);
+});

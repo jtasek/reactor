@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openEditor } from './support/editor';
+import { showDataTab } from './support/dataView';
 
 test('keeps records in added order and confirms deletes beside the button', async ({ page }) => {
     await openEditor(page, ['Data View']);
@@ -14,7 +15,8 @@ test('keeps records in added order and confirms deletes beside the button', asyn
         const label = `Name, record ${index + 1}`;
         await expect(panel.getByRole('textbox', { name: label, exact: true })).toHaveValue('');
         await panel.getByRole('textbox', { name: label, exact: true }).fill(name);
-        await panel.getByRole('button', { name: `Save ${label}`, exact: true }).click();
+        await panel.getByRole('textbox', { name: label, exact: true }).press('Enter');
+        await expect(panel.getByRole('textbox', { name: label, exact: true })).toBeFocused();
     }
     for (const [index, name] of names.entries()) {
         await expect(
@@ -22,6 +24,7 @@ test('keeps records in added order and confirms deletes beside the button', asyn
         ).toHaveValue(name);
     }
 
+    await showDataTab(panel, 'Fields');
     await panel.getByRole('button', { name: 'Delete Name…', exact: true }).click();
     const cancel = panel.getByRole('button', { name: 'Cancel', exact: true });
     await expect(cancel).toBeFocused();
@@ -32,4 +35,13 @@ test('keeps records in added order and confirms deletes beside the button', asyn
     await expect(panel.getByRole('button', { name: 'Delete', exact: true })).toBeInViewport();
     await panel.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(panel.getByText('No entities yet.')).toBeVisible();
+
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    await panel.getByRole('button', { name: 'Add entity', exact: true }).click();
+    const entities = panel.getByRole('navigation', { name: 'Entities', exact: true });
+    await expect(entities.getByText('Entity', { exact: true })).toBeVisible();
+    await expect(entities.getByText('Entity 2', { exact: true })).toBeVisible();
+    await expect(panel.getByRole('textbox', { name: 'Entity name', exact: true })).toHaveValue(
+        'Entity 2'
+    );
 });
