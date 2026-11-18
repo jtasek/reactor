@@ -25,6 +25,7 @@ import type { RestoredEntity } from './services/collaboration';
 import { readEntity, orUndefined, MIN_FRAME_SIZE } from './services/documentStorage';
 import { isReadOnly } from './documentAccess';
 import { numberedName } from './factories';
+import { presetOfSize } from './services/viewportPresets';
 import { resizeBox, assertNever, isShapeVisible } from './utils';
 import { withTheirGroups } from './membership';
 import { unbindMovedProperties } from './variables';
@@ -359,7 +360,13 @@ export function edit(context: Context, input: FrameEdit): string | undefined {
                 id: context.effects.newId(),
                 kind: 'view',
                 screenId: screen.id,
-                name: frameName(peers, input.name ?? `${input.size.width} px`),
+                name: frameName(
+                    peers,
+                    input.name ??
+                        presetOfSize(state.config.viewportPresets, input.size)?.name ??
+                        `${input.size.width} px`
+                ),
+                layoutMode: 'auto',
                 position: input.position,
                 size: input.size,
                 locked: false,

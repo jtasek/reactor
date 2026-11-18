@@ -1,4 +1,5 @@
 import { DEFAULT_DOCUMENT_SIZE } from './services/documentSizeConfiguration';
+import { DEFAULT_VIEWPORT_PRESETS } from './services/viewportPresets';
 import { DEFAULT_ERROR_REPORT } from './services/errorReport';
 import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
@@ -362,7 +363,8 @@ export function createApplication(options: Partial<Application> = {}): Applicati
             documentsLayout: 'cards',
             documentSize: { ...DEFAULT_DOCUMENT_SIZE },
             errorReport: { ...DEFAULT_ERROR_REPORT },
-            panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT)
+            panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
+            viewportPresets: structuredClone(DEFAULT_VIEWPORT_PRESETS)
         },
         previewModes: {},
         currentDocumentId: 'document-1',

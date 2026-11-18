@@ -18,6 +18,7 @@ import { vi } from 'vitest';
 import { config } from 'src/app';
 import { DEFAULT_ARROW_KEY_STEP, createApplication, createDocument } from 'src/app/factories';
 import { DEFAULT_PANEL_LAYOUT, readPanelLayout } from 'src/app/panelLayout';
+import { DEFAULT_VIEWPORT_PRESETS } from 'src/app/services/viewportPresets';
 import {
     DEFAULT_DOCUMENT_SIZE,
     type DocumentSizeConfiguration
@@ -176,6 +177,7 @@ export function createTestStore(
             documentSize: { ...DEFAULT_DOCUMENT_SIZE, ...options.documentSize },
             errorReport: { ...DEFAULT_ERROR_REPORT },
             panelLayout: readPanelLayout(DEFAULT_PANEL_LAYOUT),
+            viewportPresets: structuredClone(DEFAULT_VIEWPORT_PRESETS),
             version: '1.0'
         }
     });

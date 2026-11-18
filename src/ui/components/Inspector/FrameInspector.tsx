@@ -13,6 +13,7 @@ import { ModeFields } from './ModeFields';
 import { FrameVariables } from './FrameVariables';
 import styles from './styles.css';
 import { MIN_FRAME_SIZE } from 'src/app/services/documentStorage';
+import type { Frame } from 'src/app/types';
 
 const Field: FC<{
     label: string;
@@ -102,6 +103,43 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
         </small>
     );
 });
+
+/** Places another Screen view of the screen at one of the configured sizes, right of `from`. */
+const CreateViewAtSize: FC<{ screenId: string; from: Frame; disabled: boolean }> = ({
+    screenId,
+    from,
+    disabled
+}) => {
+    const presets = useAppState((state) => state.config.viewportPresets);
+    const { editFrame } = useActions();
+
+    return (
+        <select
+            aria-label="Create Screen view at a size"
+            value=""
+            disabled={disabled}
+            onChange={(event) => {
+                const preset = presets.find(({ id }) => id === event.target.value);
+                if (!preset) {
+                    return;
+                }
+                editFrame({
+                    kind: 'addView',
+                    screenId,
+                    position: { x: from.position.x + from.size.width + 40, y: from.position.y },
+                    size: { ...preset.size }
+                });
+            }}
+        >
+            <option value="">Create at size…</option>
+            {presets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                    {preset.name} · {preset.size.width} × {preset.size.height}
+                </option>
+            ))}
+        </select>
+    );
+};
 
 export const FrameInspector: FC<{ id: string }> = ({ id }) => {
     const { frame, source, authoredSize, locked, layout, nested, busy, screenLayout, hasLayouts } =
@@ -222,6 +260,17 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 )}
                             </td>
                         </tr>
+                        {source?.kind === 'screen' && (
+                            <tr>
+                                <td colSpan={2}>
+                                    <CreateViewAtSize
+                                        screenId={source.id}
+                                        from={frame}
+                                        disabled={disabled}
+                                    />
+                                </td>
+                            </tr>
+                        )}
                         <tr>
                             <td colSpan={2}>
                                 <button
@@ -308,6 +357,17 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 >
                                     Create Screen view
                                 </button>
+                            </td>
+                        </tr>
+                    )}
+                    {frame.kind === 'screen' && !nested && (
+                        <tr>
+                            <td colSpan={2}>
+                                <CreateViewAtSize
+                                    screenId={frame.id}
+                                    from={frame}
+                                    disabled={disabled}
+                                />
                             </td>
                         </tr>
                     )}

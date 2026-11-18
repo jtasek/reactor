@@ -9,24 +9,12 @@ import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames, startScreen } from 'src/app/screens';
 import { prototypeModes } from 'src/app/modeEdits';
 import { ordered } from 'src/app/variableModes';
+import { presetOfSize } from 'src/app/services/viewportPresets';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
 import styles from './Prototype.css';
 
 registerEditor();
-
-const VIEWPORT_PRESETS = {
-    mobile: { width: 390, height: 844 },
-    desktop: { width: 1280, height: 800 }
-};
-
-function viewportPreset(viewport: PreviewSession['viewport']) {
-    return (
-        Object.entries(VIEWPORT_PRESETS).find(
-            ([, size]) => size.width === viewport?.width && size.height === viewport.height
-        )?.[0] ?? 'custom'
-    );
-}
 
 export function PrototypePage() {
     const id = useAppState((state) => state.currentDocumentId);
@@ -79,6 +67,7 @@ function ViewportField({
 function PrototypeWorkspace() {
     const document = useAppState((state) => state.currentDocument);
     const seed: PreviewSession = useAppState(prototypeModes);
+    const presets = useAppState((state) => state.config.viewportPresets);
     const screens = screenFrames(document);
     const effects = useEffects();
     const actions = useActions();
@@ -97,9 +86,7 @@ function PrototypeWorkspace() {
             layoutId: fromView ? seed.layoutId : undefined,
             layoutMode: fromView ? seed.layoutMode : 'auto',
             viewport: {
-                ...(fromView && seed.viewport
-                    ? seed.viewport
-                    : (initial?.size ?? { width: 390, height: 844 }))
+                ...(fromView && seed.viewport ? seed.viewport : (initial?.size ?? presets[0].size))
             },
             scope: 'all-screens'
         };
@@ -278,24 +265,30 @@ function PrototypeWorkspace() {
                                         value={
                                             customPreset
                                                 ? 'custom'
-                                                : viewportPreset(session.viewport)
+                                                : (presetOfSize(presets, session.viewport)?.id ??
+                                                  'custom')
                                         }
                                         onChange={(event) => {
-                                            setCustomPreset(event.target.value === 'custom');
-                                            if (event.target.value === 'custom') {
+                                            const preset = presets.find(
+                                                ({ id }) => id === event.target.value
+                                            );
+                                            setCustomPreset(!preset);
+                                            if (!preset) {
                                                 settings.current?.showModal();
 
                                                 return;
                                             }
-                                            const viewport =
-                                                event.target.value === 'mobile'
-                                                    ? VIEWPORT_PRESETS.mobile
-                                                    : VIEWPORT_PRESETS.desktop;
-                                            setSession((previous) => ({ ...previous, viewport }));
+                                            setSession((previous) => ({
+                                                ...previous,
+                                                viewport: { ...preset.size }
+                                            }));
                                         }}
                                     >
-                                        <option value="mobile">Mobile</option>
-                                        <option value="desktop">Desktop</option>
+                                        {presets.map((preset) => (
+                                            <option key={preset.id} value={preset.id}>
+                                                {preset.name}
+                                            </option>
+                                        ))}
                                         <option value="custom">Custom</option>
                                     </select>
                                 </label>

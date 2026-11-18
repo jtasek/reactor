@@ -47,6 +47,15 @@ test('places a second view, resolves its width, edits shared content and deletes
     await expect(
         explorer.getByRole('button', { name: 'Home · Desktop', exact: true })
     ).toHaveAccessibleDescription('Home · 300 × 200 Screen view');
+    await page
+        .getByLabel('Create Screen view at a size')
+        .selectOption({ label: 'Mobile · 390 × 844' });
+    await expect(
+        explorer.getByRole('button', { name: 'Home · Mobile', exact: true })
+    ).toHaveAccessibleDescription('Home · 390 × 844 Screen view');
+    await expect(page.getByLabel('Screen view layout')).toHaveValue('__auto');
+    await page.getByRole('button', { name: 'Delete Screen view' }).click();
+    await explorer.getByRole('button', { name: 'Home · Desktop', exact: true }).click();
 
     const original = page.locator(
         'svg#surface #screen-views > [data-screen-view="home:view"] rect[data-cy="Body"]'
