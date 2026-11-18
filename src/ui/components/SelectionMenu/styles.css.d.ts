@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     selectionBadge: string;
+    selectionButton: string;
     selectionMenu: string;
   }
 }

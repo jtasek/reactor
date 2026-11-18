@@ -47,7 +47,7 @@ const ARTWORK_RECTS = 'svg rect:not([data-change-outline])';
 
 /** Whether the preview's view shows the whole of `element`. */
 async function shownWhole(preview: Locator, element: Locator) {
-    const view = (await preview.locator('svg').getAttribute('viewBox'))!.split(' ').map(Number);
+    const view = (await preview.getByRole('img').getAttribute('viewBox'))!.split(' ').map(Number);
     const [x, y, width, height] = await element.evaluate((item) => {
         const box = (item as SVGGraphicsElement).getBBox();
 
@@ -261,7 +261,7 @@ test('a change described in words is proposed, then applied once accepted, as on
 
     await chat.getByRole('button', { name: 'Accept' }).click();
     await expect(preview).toHaveCount(0);
-    await expect(chat).toContainText('Applied. You can undo this change.');
+    await expect(chat).toContainText(/Applied \d+ changes?\./);
     await expect(shapes(page)).toHaveCount(1);
 
     await page.locator('svg#surface').click({ position: { x: 500, y: 400 } });
@@ -316,7 +316,7 @@ test('pasted CSV becomes an entity with valid records once accepted, as one undo
     await expect(chat.getByRole('button', { name: 'Accept' })).toBeEnabled();
 
     await chat.getByRole('button', { name: 'Accept' }).click();
-    await expect(chat).toContainText('Applied. You can undo this change.');
+    await expect(chat).toContainText(/Applied \d+ changes?\./);
     await showDataTab(panel, 'Records');
     await expect(panel.getByRole('textbox', { name: 'SKU, record 4', exact: true })).toHaveValue(
         '00042'
@@ -401,7 +401,8 @@ for (const width of [1280, 390]) {
 
         const chat = page.getByRole('region', { name: 'AI chat', exact: true });
 
-        await expect(chat).toContainText('Using selected items');
+        // The chip names what the request shares.
+        await expect(chat).toContainText('rectangle-2');
         await chat.getByRole('textbox', { name: 'Change to make' }).fill('Add a button below this');
         await page.screenshot({ path: testInfo.outputPath('context.png') });
         await chat.getByRole('button', { name: 'Send' }).click();
@@ -441,7 +442,7 @@ test('rejects oversized context locally and keeps the prompt available', async (
     const chat = page.getByRole('region', { name: 'AI chat', exact: true });
     const prompt = chat.getByRole('textbox', { name: 'Change to make' });
 
-    await expect(chat).toContainText('Using this document');
+    await expect(chat).toContainText('Whole document');
     await prompt.fill('Add a button');
     await chat.getByRole('button', { name: 'Send' }).click();
     await expect(chat.getByRole('alert')).toContainText(/select fewer items/i);
@@ -495,7 +496,7 @@ test('chat stays beside an editable canvas and keeps its conversation when docke
     expect(requests).toHaveLength(1);
     await chat.getByRole('button', { name: 'Accept' }).click();
     await expect(shapes(page)).toHaveCount(3);
-    await expect(chat).toContainText('Applied. You can undo this change.');
+    await expect(chat).toContainText(/Applied \d+ changes?\./);
     await prompt.fill('Add another button');
     await prompt.press('Enter');
     await expect(chat.getByRole('button', { name: 'Accept' })).toBeVisible();

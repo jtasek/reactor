@@ -53,7 +53,7 @@ const FAILURES: Record<string, { status: number; code: string; streamed?: true }
 export const LOCAL_MODEL_HELP = [
     'This is the local test model: scripted answers made in this browser, with no AI and no server. It understands:',
     '• add a red rectangle, add 3 circles, add text "Hello", add a 200x60 blue square',
-    '• with shapes selected: make them green, rename to "Card", move right 40, delete',
+    '• with shapes selected: make them green, change the text to "Hi", rename to "Card", move right 40, delete',
     '• /slow add 5 circles: streams slowly, so you can try Stop',
     '• /repair add a circle: starts with a broken change, so you can watch it be fixed',
     '• /words Hello: answers in words only',
@@ -198,6 +198,12 @@ function changes(prompt: string, words: string, context: Context): Operation[] {
         return [{ op: 'deleteShapes', shapes: selection }];
     }
 
+    const value = quoted(prompt);
+    const texts = selection.filter((shape) => context.shapes?.[shape].type === 'text');
+    if (value && texts.length > 0 && /\b(change|set|make|update|edit|replace)\b/.test(words)) {
+        return texts.map((shape) => ({ op: 'updateShape', shape, changes: { value } }));
+    }
+
     const name = /\b(rename|name|call)\b/.test(words) ? quoted(prompt) : undefined;
     if (name) {
         return selection.map((shape) => ({ op: 'updateShape', shape, changes: { name } }));
@@ -247,15 +253,22 @@ function changes(prompt: string, words: string, context: Context): Operation[] {
 }
 
 /** What the local model proposes for `prompt`, and the words it says first. */
+const SELECT_FIRST = 'Select what to change on the canvas first, then ask again.';
+
 function propose(prompt: string, context: Context): { operations: Operation[]; text: string } {
     const words = prompt.toLowerCase();
     // With shapes selected, "make the text red" changes them unless it asks to add something.
     const adds = /\b(add|create|draw|insert|new)\b/.test(words);
     const changed = adds ? [] : changes(prompt, words, context);
+    // "change the text to …" with nothing selected says what to do rather than adding text.
+    const changing = !adds && /\b(change|set|update|edit|replace|recolou?r)\b/.test(words);
+    if (changing && changed.length === 0 && (context.selection ?? []).length === 0) {
+        return { operations: [], text: SELECT_FIRST };
+    }
     const operations = changed.length > 0 ? changed : additions(prompt, words, context);
 
     return operations.length > 0
-        ? { operations, text: 'Local test model: a scripted proposal, made without AI.' }
+        ? { operations, text: '' }
         : { operations, text: LOCAL_MODEL_HELP };
 }
 
@@ -300,7 +313,8 @@ function answer(prompt: string, context: Context): Answer {
     );
     const events = (list: Operation[]): Event[] => [
         start,
-        { type: 'message', text },
+        // A proposal speaks for itself; only an answer without one needs words.
+        ...(text ? [{ type: 'message', text }] : []),
         ...list.map((operation) => ({ type: 'operation', operation })),
         { type: 'done' }
     ];

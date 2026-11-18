@@ -376,6 +376,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         resetDocumentId: null,
         historyDocumentId: null,
         aiEditDocumentId: null,
+        aiEditView: 'panel',
         guideDragActive: false,
         previewDocumentId: null,
         previewModeContext: null,

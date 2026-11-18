@@ -1,41 +1,41 @@
-import React, {
-    FC,
-    KeyboardEvent,
-    useCallback,
-    useEffect,
-    useRef,
-    useSyncExternalStore
-} from 'react';
-import { chatFor } from 'src/ai/chat';
-import type { Send } from 'src/ai/client';
-import { ContextTooLarge, documentContext } from 'src/ai/context';
-import { describeOperation } from 'src/ai/describe';
+import { SquarePen } from 'lucide-react';
+import React, { FC, useEffect, useRef } from 'react';
 import { AI_DISCLOSURE } from 'src/ai/disclosure';
-import { useActions, useAppState, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
-import { useSelectedFrameId } from 'src/app/frameHooks';
-import { authoringKeys } from 'src/app/screenAuthoring';
+import { useActions } from 'src/app/hooks';
+import { Composer } from './Composer';
+import { Reply } from './Reply';
+import { useChat } from './useChat';
 import styles from './styles.css';
-import { ProposalPreview } from './ProposalPreview';
 
 const SCROLL_BOTTOM_REACH_PX = 32;
-/** As the gateway allows: room for pasted CSV or JSON. */
-const MAX_PROMPT_LENGTH = 20_000;
+const SUGGESTIONS = [
+    'Add a heading “Welcome back”',
+    'Make the selection blue',
+    'Add 3 circles in a row'
+];
 
-/** The local test model, loaded only when the chat uses it. */
-const sendToLocalModel: Send = (path, body, signal) =>
-    import('src/ai/localModel').then(({ localSend }) => localSend(path, body, signal));
+/** Keyboard events stay in the chat; Escape closes it. */
+export function useChatKeys(root: React.RefObject<HTMLElement | null>, close: () => void) {
+    useEffect(() => {
+        const node = root.current;
+        const keepKeys = (event: globalThis.KeyboardEvent) => {
+            event.stopPropagation();
+            if (event.key === 'Escape') {
+                close();
+            }
+        };
+
+        node?.addEventListener('keydown', keepKeys);
+
+        return () => node?.removeEventListener('keydown', keepKeys);
+    }, [root, close]);
+}
 
 /** A local chat whose proposed edits reach the document only after Accept. */
 export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
-    const document = useCurrentDocument();
-    const selected = useSelectedShapesIds();
-    const selectedFrameId = useSelectedFrameId();
-    const { applyOperations, checkOperations, closeAiEdit } = useActions();
-    const local = useAppState((state) => state.ai === 'local');
-    const chat = chatFor(documentId);
-    const { draft, turns, problem } = useSyncExternalStore(chat.subscribe, chat.getSnapshot);
-    const current = turns.at(-1);
-    const pending = current?.status === 'proposing' || current?.status === 'proposed';
+    const { closeAiEdit } = useActions();
+    const chatState = useChat(documentId);
+    const { chat, turns, pending, local, accept } = chatState;
     const promptField = useRef<HTMLTextAreaElement>(null);
     const chatRoot = useRef<HTMLDivElement>(null);
     const conversation = useRef<HTMLDivElement>(null);
@@ -53,19 +53,7 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
             }),
         [chat]
     );
-    useEffect(() => {
-        const root = chatRoot.current;
-        const keepKeys = (event: globalThis.KeyboardEvent) => {
-            event.stopPropagation();
-            if (event.key === 'Escape') {
-                closeAiEdit();
-            }
-        };
-
-        root?.addEventListener('keydown', keepKeys);
-
-        return () => root?.removeEventListener('keydown', keepKeys);
-    }, [closeAiEdit]);
+    useChatKeys(chatRoot, closeAiEdit);
     useEffect(() => {
         // Keyboard docking already focused the panel's header; keep it there.
         if (!window.document.activeElement?.closest('[data-panel="aiEdit"]')) {
@@ -84,65 +72,28 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
         }
     }, [turns]);
 
-    const ask = () => {
-        if (pending || !draft.trim()) {
-            return;
-        }
-        let context: ReturnType<typeof documentContext>;
-
-        try {
-            context = documentContext(document);
-        } catch (error) {
-            if (!(error instanceof ContextTooLarge)) {
-                throw error;
-            }
-            chat.setProblem(error.message);
-
-            return;
-        }
-        followsBottom.current = true;
-        void chat.send({
-            context,
-            reservedKeys: authoringKeys(document),
-            send: local ? sendToLocalModel : undefined,
-            check: (operations) => checkOperations({ documentId, operations })
-        });
-    };
-    const submitOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-            event.preventDefault();
-            ask();
-        }
-    };
-    const accept = useCallback(
-        () =>
-            chat.accept((proposal) =>
-                applyOperations({
-                    documentId,
-                    by: { kind: 'ai', model: proposal.model, requestId: proposal.requestId },
-                    operations: proposal.operations
-                })
-            ),
-        [chat, applyOperations, documentId]
-    );
-
     return (
         <div className={styles.chat} ref={chatRoot} role="group" aria-label="Chat controls">
             <div className={styles.toolbar}>
-                <span>
-                    {local
-                        ? 'Local test model. Review each change before applying it.'
-                        : 'Review each change before applying it.'}
-                </span>
+                {local && (
+                    <span className={styles.chip} title={AI_DISCLOSURE.local}>
+                        <span className={styles.localDot} aria-hidden="true" />
+                        Local test model
+                    </span>
+                )}
                 <button
                     type="button"
+                    className={styles.iconButton}
+                    aria-label="New chat"
+                    title="New chat"
+                    disabled={turns.length === 0}
                     onClick={() => {
                         chat.clear();
                         followsBottom.current = true;
                         promptField.current?.focus();
                     }}
                 >
-                    New chat
+                    <SquarePen aria-hidden="true" size={16} strokeWidth={1.75} />
                 </button>
             </div>
             <div
@@ -158,133 +109,56 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                         SCROLL_BOTTOM_REACH_PX;
                 }}
             >
-                {turns.length === 0 && (
-                    <>
-                        <p className={styles.status}>
-                            Describe a change to get a proposal. Your canvas stays editable.
+                {turns.length === 0 ? (
+                    <div className={styles.empty}>
+                        <h3>What should change?</h3>
+                        <p>
+                            You get a proposal first. Nothing changes until you accept it, and your
+                            canvas stays editable.
                         </p>
-                        {local ? (
-                            <p className={styles.status}>{AI_DISCLOSURE.local}</p>
-                        ) : (
-                            <>
-                                <p className={styles.status}>{AI_DISCLOSURE.sent}</p>
-                                <p className={styles.status}>{AI_DISCLOSURE.kept}</p>
-                            </>
-                        )}
-                    </>
-                )}
-                {turns.map((turn) => (
-                    <article key={turn.id} className={styles.turn}>
-                        <p className={styles.userMessage}>
-                            <span className={styles.speaker}>You</span>
-                            {turn.prompt}
-                        </p>
-                        <section className={styles.proposal} aria-label="Proposal">
-                            <span className={styles.speaker}>AI</span>
-                            {turn.messages.map((message, index) => (
-                                <p key={index} className={styles.message}>
-                                    {message}
-                                </p>
+                        <div className={styles.suggestions}>
+                            {SUGGESTIONS.map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    type="button"
+                                    className={styles.button}
+                                    onClick={() => {
+                                        chat.setDraft(suggestion);
+                                        promptField.current?.focus();
+                                    }}
+                                >
+                                    {suggestion}
+                                </button>
                             ))}
-                            {turn.operations.length > 0 && (
-                                <ol className={styles.operations}>
-                                    {turn.operations.map((operation, index) => (
-                                        <li key={index}>
-                                            {describeOperation(
-                                                operation,
-                                                document,
-                                                turn.operations
-                                            )}
-                                        </li>
-                                    ))}
-                                </ol>
-                            )}
-                            {turn.status === 'proposing' && (
-                                <p className={styles.status}>
-                                    {turn.repairing
-                                        ? `Fixing a problem: ${turn.repairing}`
-                                        : 'Waiting for AI…'}
-                                </p>
-                            )}
-                            {/* An answer in words only is already shown above as the model's words. */}
-                            {turn.status === 'failed' &&
-                                turn.problem !== turn.messages.join('\n') && (
-                                    <p className={styles.problem} role="alert">
-                                        {turn.problem}
-                                    </p>
-                                )}
-                            {turn.status === 'accepted' && (
-                                <p className={styles.status}>Applied. You can undo this change.</p>
-                            )}
-                            {turn.status === 'discarded' && (
-                                <p className={styles.status}>Discarded. Nothing changed.</p>
-                            )}
-                            {turn.status === 'cancelled' && (
-                                <p className={styles.status}>Cancelled. Nothing changed.</p>
-                            )}
-                            {turn.status === 'proposed' && (
-                                <ProposalPreview
-                                    operations={turn.operations}
-                                    onDiscard={chat.discard}
-                                    onAccept={accept}
-                                />
-                            )}
-                        </section>
-                    </article>
-                ))}
-            </div>
-            <form
-                className={styles.form}
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    ask();
-                }}
-            >
-                <p className={styles.status}>
-                    {selectedFrameId
-                        ? 'Using the selected frame or page, its page’s designs and sizes, and the document’s variables and components.'
-                        : selected.length > 0
-                          ? 'Using selected items, their groups, owning frames and the variables and components they use.'
-                          : 'Using this document. Select items first to share a smaller part.'}
-                </p>
-                {problem && (
-                    <p className={styles.problem} role="alert">
-                        {problem}
-                    </p>
+                        </div>
+                        {(local
+                            ? [AI_DISCLOSURE.local]
+                            : [AI_DISCLOSURE.sent, AI_DISCLOSURE.kept]
+                        ).map((text) => (
+                            <p key={text} className={styles.disclosure}>
+                                {text}
+                            </p>
+                        ))}
+                    </div>
+                ) : (
+                    turns.map((turn) => (
+                        <article key={turn.id} className={styles.turn}>
+                            <p className={styles.userMessage}>
+                                <span className={styles.visuallyHidden}>You: </span>
+                                {turn.prompt}
+                            </p>
+                            <Reply turn={turn} onDiscard={chat.discard} onAccept={accept} />
+                        </article>
+                    ))
                 )}
-                <textarea
-                    ref={promptField}
-                    className={styles.prompt}
-                    aria-label="Change to make"
-                    placeholder="Describe a change…"
-                    value={draft}
-                    readOnly={pending}
-                    maxLength={MAX_PROMPT_LENGTH}
-                    onChange={(event) => chat.setDraft(event.target.value)}
-                    onKeyDownCapture={submitOnEnter}
-                />
-                <div className={styles.actions}>
-                    {current?.status === 'proposing' ? (
-                        <button
-                            type="button"
-                            onClick={(event) => {
-                                event.preventDefault();
-                                chat.stop();
-                            }}
-                        >
-                            Stop
-                        </button>
-                    ) : (
-                        <button
-                            type="submit"
-                            data-variant="primary"
-                            disabled={pending || !draft.trim()}
-                        >
-                            Send
-                        </button>
-                    )}
-                </div>
-            </form>
+            </div>
+            <Composer
+                chat={chatState}
+                field={promptField}
+                onSent={() => {
+                    followsBottom.current = true;
+                }}
+            />
         </div>
     );
 };

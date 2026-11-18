@@ -15,3 +15,6 @@ export const useAiEdit = () =>
 
         return available && documentId === currentDocumentId ? documentId : undefined;
     });
+
+/** Where the open chat is shown: its docked panel, or the bar over the canvas. */
+export const useAiEditView = () => useAppState((state) => state.aiEditView);
