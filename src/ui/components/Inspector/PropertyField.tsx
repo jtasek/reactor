@@ -235,24 +235,37 @@ export const PropertyField: FC<Props> = ({
                         </button>
                     </>
                 ) : property.kind === 'choice' ? (
-                    <select
+                    <div
                         id={id}
+                        role="group"
                         aria-label={property.label}
-                        value={mixed ? '' : String(value ?? '')}
-                        disabled={readOnly}
-                        onChange={(event) => onChange(shapeIds, property.key, event.target.value)}
+                        className={styles.segments}
                     >
-                        {mixed && (
-                            <option value="" disabled>
-                                Mixed
-                            </option>
-                        )}
                         {property.options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
+                            <button
+                                key={option.value}
+                                type="button"
+                                aria-label={option.label}
+                                title={option.label}
+                                aria-pressed={!mixed && value === option.value}
+                                disabled={readOnly}
+                                onClick={() => onChange(shapeIds, property.key, option.value)}
+                            >
+                                {option.icon ? (
+                                    <svg
+                                        viewBox="0 0 24 16"
+                                        width="24"
+                                        height="16"
+                                        aria-hidden="true"
+                                    >
+                                        <path d={option.icon} />
+                                    </svg>
+                                ) : (
+                                    option.label
+                                )}
+                            </button>
                         ))}
-                    </select>
+                    </div>
                 ) : (
                     <input
                         ref={input}

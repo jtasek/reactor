@@ -10,11 +10,12 @@ const AXES: { label: string; glyph: string; sides: [Side, Side] }[] = [
     { label: 'across', glyph: '↔', sides: ['left', 'right'] },
     { label: 'down', glyph: '↕', sides: ['top', 'bottom'] }
 ];
+// Each axis opens into its own two sides, in the same place.
 const EACH: { side: Side; glyph: string }[] = [
-    { side: 'top', glyph: '↑' },
+    { side: 'left', glyph: '←' },
     { side: 'right', glyph: '→' },
-    { side: 'bottom', glyph: '↓' },
-    { side: 'left', glyph: '←' }
+    { side: 'top', glyph: '↑' },
+    { side: 'bottom', glyph: '↓' }
 ];
 
 const SpaceInput: FC<{
@@ -84,35 +85,37 @@ export const SpacingRow: FC<{
     hint?: string;
     value: ShownSides;
     disabled: boolean;
+    /** Names the row with a row heading, as the frame's own fields do. */
+    rowHeader?: boolean;
     onChange: (changes: Partial<Sides>) => void;
-}> = ({ box, hint, value, disabled, onChange }) => {
+}> = ({ box, hint, value, disabled, rowHeader, onChange }) => {
     // Four fields stay while a side is being typed, even once the sides match again.
     const [split, setSplit] = useState(() => !symmetric(value));
     const label = box === 'margin' ? 'Margin' : 'Padding';
     const each = split || !symmetric(value);
+    const Name = rowHeader ? 'th' : 'td';
 
     return (
         <tr data-spacing={box}>
-            <td colSpan={2}>
-                <div className={styles.spacingHead}>
-                    <span className={styles.spacingLabel} data-box={box} title={hint}>
-                        {label}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.eachSide}
-                        aria-label={`${label} on each side`}
-                        title={each ? 'Edit across and down' : 'Edit each side'}
-                        aria-pressed={each}
-                        disabled={disabled || (each && !symmetric(value))}
-                        onClick={() => setSplit(!each)}
-                    >
-                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-                            <rect x="2.5" y="2.5" width="11" height="11" rx="2" />
-                            <path d="M8 2.5v11M2.5 8h11" />
-                        </svg>
-                    </button>
-                </div>
+            <Name {...(rowHeader ? { scope: 'row' } : {})}>
+                <span className={styles.spacingLabel} data-box={box} title={hint}>
+                    {label}
+                </span>
+                <button
+                    type="button"
+                    className={styles.eachSide}
+                    aria-label={`${label} on each side`}
+                    title={each ? 'Edit across and down' : 'Edit each side'}
+                    aria-pressed={each}
+                    disabled={disabled || (each && !symmetric(value))}
+                    onClick={() => setSplit(!each)}
+                >
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                        <path d="M4 2.5h8M4 13.5h8M2.5 4v8M13.5 4v8" />
+                    </svg>
+                </button>
+            </Name>
+            <td>
                 <div className={styles.spacing} data-each={each ? '' : undefined}>
                     {each
                         ? EACH.map(({ side, glyph }) => (

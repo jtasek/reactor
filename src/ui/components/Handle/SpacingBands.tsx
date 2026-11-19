@@ -5,8 +5,8 @@ import type { Sides } from 'src/app/types';
 import styles from './styles.css';
 
 /** Sizes on screen, in pixels, whatever the zoom. */
-const GRIP_LENGTH = 18;
-const GRIP_THICKNESS = 6;
+const GRIP_LENGTH = 16;
+const GRIP_THICKNESS = 5;
 /** A band thinner than this on screen shows no grip or value: the resize handles sit there. */
 const LEAST_GRIPPED = 8;
 const LEAST_LABELLED = 14;
@@ -37,14 +37,18 @@ function band(box: Rect, side: Side, sides: Sides, outside: boolean): Rect {
     }
 }
 
-/** Where a side's grip sits: the edge of its band away from the box's own edge. */
-function gripCenter(strip: Rect, side: Side, outside: boolean) {
+/** The edge of a side's band away from the box's own edge, where its grip sits. */
+function farEdge(strip: Rect, side: Side, outside: boolean) {
     const far = outside === (side === 'top' || side === 'left');
-    const vertical = side === 'left' || side === 'right';
 
-    return vertical
-        ? { x: far ? strip.x : strip.x + strip.width, y: strip.y + strip.height / 2 }
-        : { x: strip.x + strip.width / 2, y: far ? strip.y : strip.y + strip.height };
+    if (side === 'left' || side === 'right') {
+        const x = far ? strip.x : strip.x + strip.width;
+
+        return { x1: x, y1: strip.y, x2: x, y2: strip.y + strip.height };
+    }
+    const y = far ? strip.y : strip.y + strip.height;
+
+    return { x1: strip.x, y1: y, x2: strip.x + strip.width, y2: y };
 }
 
 const Bands: FC<{
@@ -72,12 +76,16 @@ const Bands: FC<{
             data-spacing-bands={kind}
         >
             {strips.map(({ side, strip }) => (
-                <rect key={side} className={styles.spacingBand} {...strip} />
+                <React.Fragment key={side}>
+                    <rect className={styles.spacingBand} {...strip} />
+                    <line className={styles.spacingEdge} {...farEdge(strip, side, outside)} />
+                </React.Fragment>
             ))}
             {strips.map(({ side, strip }) => {
                 const shown = sides[side] * scale;
                 const vertical = side === 'left' || side === 'right';
-                const grip = gripCenter(strip, side, outside);
+                const edge = farEdge(strip, side, outside);
+                const grip = { x: (edge.x1 + edge.x2) / 2, y: (edge.y1 + edge.y2) / 2 };
                 const length = GRIP_LENGTH / scale;
                 const thickness = GRIP_THICKNESS / scale;
 

@@ -57,7 +57,8 @@ export type ShapeProperty = {
     | {
           /** One of a few named values, as `options` lists them. */
           kind: 'choice';
-          options: readonly { value: string; label: string }[];
+          /** `icon` is an SVG path drawn in a 24 × 16 box in place of the label. */
+          options: readonly { value: string; label: string; icon?: string }[];
           read: (shape: Shape, document: Document) => string | undefined;
           write?: (shape: Shape, value: string) => void;
       }
@@ -251,9 +252,9 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         group: 'Border',
         kind: 'choice',
         options: [
-            { value: 'solid', label: 'Solid' },
-            { value: 'dashed', label: 'Dashed' },
-            { value: 'dotted', label: 'Dotted' }
+            { value: 'solid', label: 'Solid', icon: 'M3 8h18' },
+            { value: 'dashed', label: 'Dashed', icon: 'M3 8h5M10 8h4M16 8h5' },
+            { value: 'dotted', label: 'Dotted', icon: 'M3 8h0M7.5 8h0M12 8h0M16.5 8h0M21 8h0' }
         ],
         read: (shape) => (isStrokedShape(shape) ? (shape.borderStyle ?? 'solid') : undefined),
         write: (shape, value) => {

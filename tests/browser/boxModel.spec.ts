@@ -156,8 +156,16 @@ test('a border’s width and style edit how its outline is drawn', async ({ page
     await seed(page);
     await select(page, 'Primary button');
     const inspector = page.locator('[data-property="borderStyle"]');
-    await inspector.getByRole('combobox', { name: 'Style' }).selectOption('dashed');
-    await expect(inspector.getByRole('combobox', { name: 'Style' })).toHaveValue('dashed');
+    const style = inspector.getByRole('group', { name: 'Style' });
+    await expect(style.getByRole('button', { name: 'Solid' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await style.getByRole('button', { name: 'Dashed' }).click();
+    await expect(style.getByRole('button', { name: 'Dashed' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
     await page.locator('#property-borderWidth').fill('3');
     await page.locator('#property-borderWidth').press('Enter');
     await expect

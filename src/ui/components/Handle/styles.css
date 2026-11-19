@@ -77,13 +77,29 @@
     fill: var(--padding-band);
 }
 
+.spacingEdge {
+    stroke-dasharray: 3 2;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+.marginBands .spacingEdge {
+    stroke: var(--margin-edge);
+}
+
+.paddingBands .spacingEdge {
+    stroke: var(--padding-edge);
+}
+
 .spacingValue {
     dominant-baseline: middle;
     font-family: var(--font-ui);
     font-size: var(--canvas-label-size);
-    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-medium);
     paint-order: stroke;
     stroke: var(--surface);
+    stroke-linejoin: round;
     stroke-width: var(--canvas-label-halo-width);
     text-anchor: middle;
 }
@@ -96,19 +112,27 @@
     fill: var(--padding-color);
 }
 
+/* A small capsule in the band's colour on its edge; it grows under the pointer. */
 .spacingGrip {
-    fill: var(--surface);
     pointer-events: all;
+    stroke: var(--surface);
     stroke-width: 1.5px;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 120ms;
     vector-effect: non-scaling-stroke;
 }
 
+.spacingGrip:hover {
+    transform: scale(1.25);
+}
+
 .marginBands .spacingGrip {
-    stroke: var(--margin-color);
+    fill: var(--margin-color);
 }
 
 .paddingBands .spacingGrip {
-    stroke: var(--padding-color);
+    fill: var(--padding-color);
 }
 
 .gripAcross {

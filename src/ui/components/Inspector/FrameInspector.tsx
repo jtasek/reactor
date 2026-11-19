@@ -563,6 +563,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             <SpacingRow
                                 key={`padding-${id}`}
                                 box="padding"
+                                rowHeader
                                 value={stackPadding(frame.stack)}
                                 disabled={disabled}
                                 onChange={(changes) =>
@@ -622,6 +623,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         <SpacingRow
                             key={`margin-${id}`}
                             box="margin"
+                            rowHeader
                             value={sidesOf(frame.margin)}
                             disabled={disabled}
                             onChange={(changes) =>

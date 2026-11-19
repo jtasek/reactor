@@ -18,6 +18,7 @@ declare namespace StylesCssNamespace {
     rotateLine: string;
     spacingBand: string;
     spacingBands: string;
+    spacingEdge: string;
     spacingGrip: string;
     spacingValue: string;
     topLeft: string;
