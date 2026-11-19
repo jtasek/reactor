@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { JSDOM } from 'jsdom';
 import { vi } from 'vitest';
-import { prototypeSession } from 'src/app/modeEdits';
+import { prototypeModes, prototypeSession } from 'src/app/modeEdits';
 import { packageApplication, writeStandalonePackage } from 'src/preview/standalonePackage';
 import { PREVIEW_PROTOCOL_VERSION, type PreviewApplication } from 'src/shared/previewProtocol';
 import {
@@ -26,7 +26,12 @@ const TEMPLATE = readFileSync(path.resolve('src/preview/package.html'), 'utf8')
 export async function packagePage(store: ParityStore, viewId: string) {
     store.actions.editFrame({ kind: 'select', id: viewId });
     const { state } = store;
-    const session = prototypeSession(state, null, state.config.viewportPresets[0].size);
+    const session = prototypeSession(
+        state.currentDocument,
+        prototypeModes(state),
+        null,
+        state.config.viewportPresets[0].size
+    );
     const asset = await previewImageAsset();
     vi.stubGlobal('createImageBitmap', async () => ({ close() {} }));
     try {

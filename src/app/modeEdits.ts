@@ -1,4 +1,4 @@
-import type { ActionWithParam, VariableContext } from './types';
+import type { ActionWithParam, Document, Size, VariableContext } from './types';
 import type { Context } from './index';
 import { isReadOnly } from './documentAccess';
 import { isFrameLocked } from './frameState';
@@ -7,7 +7,6 @@ import { resolveModes } from './inheritedModes';
 import { isSizesDimension } from './variableModes';
 import { screenFrames, startScreen } from './screens';
 import type { PreviewSession } from '../preview/project';
-import type { Size } from './types';
 
 export type ModeTarget = { frameId: string } | { instanceId: string };
 
@@ -82,15 +81,15 @@ export function prototypeModes(state: Context['state']) {
     };
 }
 
-/** How Prototype opens: a link's screen, then the View Play was pressed on, then the
- * document's start, with every screen at the launch size and modes. Downloads use it too. */
+/** How Prototype opens from a launch seed (`prototypeModes`): a link's screen, then the View
+ * Play was pressed on, then the document's start, with every screen at the launch size and
+ * modes. Downloads use it too. */
 export function prototypeSession(
-    state: Context['state'],
+    document: Document,
+    seed: PreviewSession,
     requested: string | null,
     fallbackSize: Size
 ): PreviewSession {
-    const document = state.currentDocument;
-    const seed: PreviewSession = prototypeModes(state);
     const initial =
         screenFrames(document).find((screen) => screen.id === (requested ?? seed.screenId)) ??
         startScreen(document);
