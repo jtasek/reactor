@@ -116,7 +116,7 @@ export const SpacingRow: FC<{
                 </button>
             </Name>
             <td>
-                <div className={styles.spacing} data-each={each ? '' : undefined}>
+                <div className={styles.spacing}>
                     {each
                         ? EACH.map(({ side, glyph }) => (
                               <SpaceInput
