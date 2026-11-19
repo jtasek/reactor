@@ -193,25 +193,6 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                 </InspectorTable>
             </section>
             <ComponentInteractions componentId={componentId} instanceId={instanceId} />
-            <details className={styles.inspectorHelp}>
-                <summary>About prototype behavior</summary>
-                <p>
-                    Roles connect exposed properties to controls. Actions run in Preview and
-                    Prototype; canvas clicks select and edit.
-                </p>
-                {data.settings.role === 'input' && (
-                    <p>
-                        Input actions run on Enter. Use the same input identity and Value property
-                        across a page’s designs to keep typed input. Each identity must be unique
-                        within a design.
-                    </p>
-                )}
-                {instanceId && (
-                    <p>
-                        From source follows the component. Choose it again to restore inheritance.
-                    </p>
-                )}
-            </details>
         </>
     );
 };

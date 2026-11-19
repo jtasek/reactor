@@ -83,7 +83,7 @@ test('long component labels do not overlap values and help stays out of the edit
     await expect(
         properties.getByRole('button', { name: 'Reset Placeholder to source value' })
     ).toHaveCount(0);
-    await panel.getByText('About prototype behavior', { exact: true }).click();
+    await help.locator('summary').click();
     await expect(help).toHaveAttribute('open', '');
     await expect(help).toContainText('Each identity must be unique');
 });

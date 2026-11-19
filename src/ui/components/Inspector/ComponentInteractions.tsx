@@ -1,8 +1,19 @@
 import React, { type FC } from 'react';
+import {
+    ArrowLeftRight,
+    Ban,
+    Braces,
+    Eye,
+    FileText,
+    Info,
+    ToggleLeft,
+    type LucideIcon
+} from 'lucide-react';
 import { useActions } from 'src/app/hooks';
 import { useRoleEditor } from 'src/app/roleHooks';
 import type { InteractionSettings, StateAction } from 'src/app/types';
 import { stateType } from 'src/app/prototypeState';
+import { Icon } from '../Icon';
 import {
     PrototypeState,
     PrototypeVisibility,
@@ -39,6 +50,55 @@ export const ComponentInteractions: FC<{
     const sourceTarget = data.sourceActivation?.screenId;
     const unavailable = target && !data.screens.some((screen) => screen.id === target);
     const trigger = data.settings.role === 'input' ? 'On Enter' : 'On activation';
+    const kind: ActionKind | undefined = data.actionInherited
+        ? undefined
+        : stateAction
+          ? stateAction.change === 'toggle'
+              ? 'toggle'
+              : 'set'
+          : visibilityAction
+            ? 'visibility'
+            : variantAction
+              ? 'variant'
+              : target
+                ? 'page'
+                : 'none';
+    const toggleable = data.states.find(
+        (value) => stateType(value) === 'boolean' && !followed.has(value.id)
+    );
+    const firstState = data.states[0];
+    const firstVariant = data.variantTargets.find((item) => item.variants.length > 0);
+    // Each kind starts at its first target; the pop-up below picks another.
+    const defaults: Record<ActionKind, InteractionSettings['activate'] | undefined> = {
+        none: null,
+        page: data.screens[0] && { type: 'navigate', screenId: data.screens[0].id },
+        visibility: data.visibilityTargets[0] && {
+            type: 'toggleVisibility',
+            instanceId: data.visibilityTargets[0].id
+        },
+        variant: firstVariant && {
+            type: 'changeVariant',
+            instanceId: firstVariant.id,
+            variantId: firstVariant.variants[0].id
+        },
+        toggle:
+            instanceId && toggleable
+                ? { type: 'state', change: 'toggle', stateId: toggleable.id }
+                : undefined,
+        set:
+            instanceId && firstState
+                ? {
+                      type: 'state',
+                      change: 'set',
+                      stateId: firstState.id,
+                      value: stateType(firstState) === 'boolean' ? true : firstState.initial
+                  }
+                : undefined
+    };
+    const kinds = ACTION_KINDS.filter(
+        (item) => instanceId || (item.id !== 'toggle' && item.id !== 'set')
+    );
+    const actionDisabled = data.disabled || data.actionFamily !== undefined;
 
     return (
         <section
@@ -51,11 +111,44 @@ export const ComponentInteractions: FC<{
                     <tr>
                         <td colSpan={2}>
                             <div className={styles.interactionField}>
-                                <label htmlFor="activate-target">{trigger}</label>
+                                <label htmlFor="activate-target" className={styles.caption}>
+                                    {trigger}
+                                    {' · '}
+                                    <b>
+                                        {kind
+                                            ? ACTION_KINDS.find((item) => item.id === kind)!.name
+                                            : 'From source'}
+                                    </b>
+                                </label>
+                                <div
+                                    role="group"
+                                    aria-label={`${trigger}: kind of action`}
+                                    className={`${styles.segments} ${styles.iconSwitch}`}
+                                >
+                                    {kinds.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            aria-label={item.name}
+                                            title={item.name}
+                                            aria-pressed={kind === item.id}
+                                            disabled={
+                                                actionDisabled || defaults[item.id] === undefined
+                                            }
+                                            onClick={() => {
+                                                if (kind !== item.id) {
+                                                    update({ activate: defaults[item.id] });
+                                                }
+                                            }}
+                                        >
+                                            <Icon icon={{ component: item.icon, size: 16 }} />
+                                        </button>
+                                    ))}
+                                </div>
                                 <select
                                     id="activate-target"
                                     aria-label={`${trigger}: action`}
-                                    disabled={data.disabled || data.actionFamily !== undefined}
+                                    disabled={actionDisabled}
                                     value={
                                         data.actionInherited
                                             ? 'inherit'
@@ -323,12 +416,48 @@ export const ComponentInteractions: FC<{
                     )}
                 </PropertyGroup>
             </InspectorTable>
+            {!actionOnly && (
+                <details className={styles.inspectorHelp}>
+                    <summary title="About prototype behavior">
+                        <Icon icon={{ component: Info, size: 16 }} />
+                        <span className={styles.visuallyHidden}>About prototype behavior</span>
+                    </summary>
+                    <p>
+                        Roles connect exposed properties to controls. Actions run in Preview and
+                        Prototype; canvas clicks select and edit.
+                    </p>
+                    {data.settings.role === 'input' && (
+                        <p>
+                            Input actions run on Enter. Use the same input identity and Value
+                            property across a page’s designs to keep typed input. Each identity must
+                            be unique within a design.
+                        </p>
+                    )}
+                    {instanceId && (
+                        <p>
+                            From source follows the component. Choose it again to restore
+                            inheritance.
+                        </p>
+                    )}
+                </details>
+            )}
             {!actionOnly && instanceId && data.prototypeVisible !== undefined && (
                 <PrototypeState values={data.states} disabled={data.disabled} />
             )}
         </section>
     );
 };
+
+type ActionKind = 'none' | 'page' | 'visibility' | 'variant' | 'toggle' | 'set';
+
+const ACTION_KINDS: { id: ActionKind; name: string; icon: LucideIcon }[] = [
+    { id: 'none', name: 'No action', icon: Ban },
+    { id: 'page', name: 'Go to page', icon: FileText },
+    { id: 'visibility', name: 'Show or hide', icon: Eye },
+    { id: 'variant', name: 'Change variant', icon: ArrowLeftRight },
+    { id: 'toggle', name: 'Toggle state', icon: ToggleLeft },
+    { id: 'set', name: 'Set state', icon: Braces }
+];
 
 /** One spelling per action, whatever order a stored action's keys are in. */
 function variantChoice(instanceId: string, variantId: string) {

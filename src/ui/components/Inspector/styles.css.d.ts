@@ -3,6 +3,7 @@ declare namespace StylesCssNamespace {
     align: string;
     alignRow: string;
     bound: string;
+    caption: string;
     color: string;
     componentDetails: string;
     componentHeading: string;
@@ -24,6 +25,7 @@ declare namespace StylesCssNamespace {
     headerSourceName: string;
     heading: string;
     iconButton: string;
+    iconSwitch: string;
     inspector: string;
     inspectorHeader: string;
     inspectorHelp: string;
@@ -56,11 +58,15 @@ declare namespace StylesCssNamespace {
     space: string;
     spacing: string;
     spacingLabel: string;
+    stateAdd: string;
+    stateRow: string;
+    stateType: string;
     stateValue: string;
     subRow: string;
     variablePicker: string;
     variantActions: string;
     variantSummary: string;
+    visuallyHidden: string;
   }
 }
 

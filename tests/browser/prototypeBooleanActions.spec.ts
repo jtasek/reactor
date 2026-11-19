@@ -21,6 +21,7 @@ test('authors explicit Open/Close actions and complementary visibility, preservi
     await page.locator('summary', { hasText: 'Prototype states' }).click();
     await page.getByRole('textbox', { name: 'New state name', exact: true }).fill('showHelp');
     await page.getByRole('button', { name: 'Add state', exact: true }).click();
+    await page.getByRole('button', { name: 'Follows a state', exact: true }).click();
     await page
         .getByRole('combobox', { name: 'Prototype visibility', exact: true })
         .selectOption({ label: 'Follow showHelp' });
@@ -28,6 +29,7 @@ test('authors explicit Open/Close actions and complementary visibility, preservi
         'true'
     );
     await select('Inspector comparison');
+    await page.getByRole('button', { name: 'Follows a state', exact: true }).click();
     await page
         .getByRole('combobox', { name: 'Prototype visibility', exact: true })
         .selectOption({ label: 'Follow showHelp' });
