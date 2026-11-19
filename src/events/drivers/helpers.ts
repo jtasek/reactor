@@ -1,3 +1,4 @@
+import { SIDES, type Side } from 'src/app/boxModel';
 import type { Camera, Point, ResizeHandlerType } from 'src/app/types';
 import type { HandleTarget } from 'src/events/types';
 import { isFinitePoint, screenToWorld } from 'src/app/camera';
@@ -84,6 +85,20 @@ export function getHandleTarget(target: EventTarget | null): HandleTarget | unde
     const groupId = handle?.getAttribute('data-group-id');
     const componentId = handle?.getAttribute('data-component-id');
     const type = handle?.getAttribute('data-type');
+
+    if (type === 'spacing') {
+        const box = handle?.getAttribute('data-box');
+        const side = handle?.getAttribute('data-side');
+
+        if ((box !== 'margin' && box !== 'padding') || !SIDES.includes(side as Side)) {
+            return undefined;
+        }
+        if (frameId) {
+            return { type, box, side: side as Side, frameId };
+        }
+
+        return shapeId ? { type, box, side: side as Side, shapeId } : undefined;
+    }
 
     if (frameId && (type === 'move' || (type && isResizeHandlerType(type)))) {
         return { frameId, type };

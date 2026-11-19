@@ -1,3 +1,4 @@
+import { allSides, withStackPadding } from './boxModel';
 import type { Document, Frame, Shape, Variable } from './types';
 import { resolveVariable, variableDefinition } from './variableResolver';
 
@@ -61,7 +62,11 @@ export function writeFrameNumber(frame: Frame, key: FrameNumberKey, value: numbe
         return;
     }
 
-    frame.stack = { ...frame.stack!, [key]: value };
+    // A variable sets padding on every side.
+    frame.stack =
+        key === 'padding'
+            ? withStackPadding(frame.stack!, allSides(value))
+            : { ...frame.stack!, [key]: value };
 }
 
 /** Definition edits update held base values; a manual edit or deletion detaches a binding. */

@@ -76,6 +76,6 @@ describe('groupRows()', () => {
             ({ group }) => group
         );
 
-        expect(groups).toEqual(['Identity', 'Layout', 'Appearance', 'State', 'Text']);
+        expect(groups).toEqual(['Identity', 'Layout', 'Appearance', 'Border', 'State', 'Text']);
     });
 });

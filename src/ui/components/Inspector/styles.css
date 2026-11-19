@@ -1100,3 +1100,128 @@
 .prototypeState select:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }
+
+/* Margin and padding: one field across and one down, which open into a field per side. */
+.spacing {
+    align-items: center;
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.space {
+    align-items: center;
+    background: var(--field-background);
+    border-radius: var(--field-radius);
+    display: flex;
+    gap: 2px;
+    height: var(--field-height);
+    min-width: 0;
+    padding-left: 6px;
+    transition: background-color 150ms;
+}
+
+.space:focus-within {
+    background: var(--control-background-active);
+}
+
+.space > span {
+    color: var(--label-tertiary);
+    flex: 0 0 auto;
+    font-size: var(--font-size-caption);
+}
+
+.inspector .space input[type='number'] {
+    appearance: textfield;
+    background: transparent;
+    padding: 0 4px 0 2px;
+}
+
+.space input::-webkit-inner-spin-button {
+    appearance: none;
+}
+
+.inspector td .eachSide {
+    align-items: center;
+    background: transparent;
+    border-radius: var(--field-radius);
+    color: var(--label-tertiary);
+    display: flex;
+    float: right;
+    height: var(--field-height);
+    justify-content: center;
+    padding: 0;
+    width: var(--field-height);
+}
+
+.inspector td .eachSide[aria-pressed='true'] {
+    background: var(--field-background);
+    color: var(--text-color-hover);
+}
+
+.eachSide svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.4;
+}
+
+.inspector td > span.spacingLabel {
+    margin-left: 0;
+}
+
+/* The label carries the band's own light tint, so the field reads as the band on the canvas. */
+.spacingLabel::before {
+    border-radius: 3px;
+    content: '';
+    display: inline-block;
+    height: 10px;
+    margin-right: 6px;
+    vertical-align: -1px;
+    width: 10px;
+}
+
+.spacingLabel[data-box='margin']::before {
+    background: var(--margin-band);
+    outline: 1px solid var(--margin-edge);
+    outline-offset: -1px;
+}
+
+.spacingLabel[data-box='padding']::before {
+    background: var(--padding-band);
+    outline: 1px solid var(--padding-edge);
+    outline-offset: -1px;
+}
+
+/* A choice of a few named values, as icons side by side. */
+.segments {
+    background: var(--field-background);
+    border-radius: var(--field-radius);
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+}
+
+.inspector td .segments button {
+    align-items: center;
+    background: transparent;
+    border-radius: calc(var(--field-radius) - 2px);
+    color: var(--label-secondary);
+    display: flex;
+    height: calc(var(--field-height) - 4px);
+    justify-content: center;
+    padding: 0;
+    width: 30px;
+}
+
+.inspector td .segments button[aria-pressed='true'] {
+    background: var(--panel-content-background);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color-hover);
+}
+
+.segments svg {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.6;
+}

@@ -9,6 +9,7 @@ import type {
 } from '../dataTypes';
 import { MAX_CONDITION_TEXT, readConditionTree, type Condition } from '../../shared/conditions';
 import { extractScreenViews } from '../screenViewMigration';
+import { BORDER_STYLES } from '../boxModel';
 import { frameParents } from '../frameState';
 import { readPackageIdentity } from '../packageIdentity';
 import { readDimension, legacyTheme } from '../variableModes';
@@ -372,7 +373,8 @@ function readShape(value: unknown, readChild: (child: unknown) => ShapeData): Sh
         ...(s.layoutOrder === undefined ? {} : { layoutOrder: number(s.layoutOrder) }),
         ...(s.parentShapeId === undefined ? {} : { parentShapeId: id(s.parentShapeId) }),
         ...(s.children === undefined ? {} : { children: list(s.children, readChild) }),
-        ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) })
+        ...(s.bindings === undefined ? {} : { bindings: readBindings(s.bindings) }),
+        ...(s.margin === undefined ? {} : { margin: readSides(s.margin) })
     };
 
     const geometry = readShapeGeometry(value);
@@ -398,6 +400,12 @@ export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
         ...(s.opacity === undefined ? {} : { opacity: fraction(s.opacity) }),
         ...(s.fill === undefined || !isClosedShape(shape) ? {} : { fill: color(s.fill) }),
         ...(s.stroke === undefined || !isStrokedShape(shape) ? {} : { stroke: color(s.stroke) }),
+        ...(s.borderWidth === undefined || !isStrokedShape(shape)
+            ? {}
+            : { borderWidth: number(s.borderWidth, 0) }),
+        ...(s.borderStyle === undefined || !isStrokedShape(shape)
+            ? {}
+            : { borderStyle: readBorderStyle(s.borderStyle) }),
         ...(s.fontColor === undefined || shape.type !== 'text'
             ? {}
             : { fontColor: color(s.fontColor) })
@@ -752,8 +760,29 @@ export function readStack(value: unknown): import('../types').StackRules {
         direction: rules.direction as 'row' | 'column',
         align: rules.align as 'start' | 'center' | 'end',
         gap: number(rules.gap, 0),
-        padding: number(rules.padding, 0)
+        padding: number(rules.padding, 0),
+        ...(rules.paddingSides === undefined ? {} : { paddingSides: readSides(rules.paddingSides) })
     };
+}
+
+/** A length for each side of a box, none of them negative. */
+export function readSides(value: unknown): import('../types').Sides {
+    const sides = record(value);
+
+    return {
+        top: number(sides.top, 0),
+        right: number(sides.right, 0),
+        bottom: number(sides.bottom, 0),
+        left: number(sides.left, 0)
+    };
+}
+
+function readBorderStyle(value: unknown): import('../types').BorderStyle {
+    if (!BORDER_STYLES.includes(value as import('../types').BorderStyle)) {
+        throw new Error('Invalid border style');
+    }
+
+    return value as import('../types').BorderStyle;
 }
 
 function readFrame(value: unknown): Frame {
@@ -794,7 +823,8 @@ function readFrame(value: unknown): Frame {
             Object.keys(bindings).length > 0 ||
             f.stack !== undefined ||
             f.sizing !== undefined ||
-            f.layoutOrder !== undefined)
+            f.layoutOrder !== undefined ||
+            f.margin !== undefined)
     ) {
         throw new Error('A screen view cannot hold layout children');
     }
@@ -816,6 +846,7 @@ function readFrame(value: unknown): Frame {
         ...(f.kind === 'screen' ? { responsiveLayouts: readLayoutRules(f.responsiveLayouts) } : {}),
         ...(f.parentFrameId === undefined ? {} : { parentFrameId: id(f.parentFrameId) }),
         ...(f.stack === undefined ? {} : { stack: readStack(f.stack) }),
+        ...(f.margin === undefined ? {} : { margin: readSides(f.margin) }),
         ...(f.sizing === undefined ? {} : { sizing: readSizing(f.sizing) }),
         ...(f.layoutOrder === undefined ? {} : { layoutOrder: number(f.layoutOrder) }),
         position: point(f.position),

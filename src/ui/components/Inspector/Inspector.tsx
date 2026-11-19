@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import styles from './styles.css';
 import { ComponentRole } from './ComponentRole';
 import { SizingFields } from './SizingFields';
+import { ShapeSpacing } from './ShapeSpacing';
 import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
 import { PropertyGroup } from './PropertyGroup';
@@ -197,9 +198,10 @@ export const Inspector: FC<Props> = ({
                 </PropertyGroup>
                 {shapeIds.length === 1 && <SizingFields shapeId={shapeIds[0]} />}
                 {groupRows(shownRows).map(({ group, rows: grouped }) => (
-                    <PropertyGroup key={group} name={group}>
-                        {grouped.map(propertyField)}
-                    </PropertyGroup>
+                    <React.Fragment key={group}>
+                        <PropertyGroup name={group}>{grouped.map(propertyField)}</PropertyGroup>
+                        {group === 'Layout' && <ShapeSpacing shapeIds={shapeIds} />}
+                    </React.Fragment>
                 ))}
             </table>
             {instance && shapeIds.length === 1 && <ComponentRole instanceId={shapeIds[0]} />}

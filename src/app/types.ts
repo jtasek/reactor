@@ -134,6 +134,17 @@ export interface Grid {
     height: number;
 }
 
+/** A length for each side of a box, in canvas units: see `src/app/boxModel.ts`. */
+export interface Sides {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+}
+
+/** How a border's line is drawn. */
+export type BorderStyle = 'solid' | 'dashed' | 'dotted';
+
 /** Fields every shape carries, whatever its geometry. */
 export interface ShapeBase {
     active: boolean;
@@ -166,6 +177,12 @@ export interface ShapeBase {
     selected: boolean;
     /** The color its outline is drawn in, as `#rrggbb`; the default outline when unset. */
     stroke?: string;
+    /** How thick its outline is drawn; `DEFAULT_BORDER_WIDTH` when unset. */
+    borderWidth?: number;
+    /** Solid when unset. */
+    borderStyle?: BorderStyle;
+    /** Space kept clear around it; a stack adds it to its gap and padding. */
+    margin?: Sides;
     visible: boolean;
 }
 
@@ -424,7 +441,9 @@ export interface Camera {
 export interface StackRules {
     direction: 'row' | 'column';
     gap: number;
+    /** Padding on every side; `paddingSides`, when set, replaces it side by side. */
     padding: number;
+    paddingSides?: Sides;
     align: 'start' | 'center' | 'end';
 }
 
@@ -454,6 +473,8 @@ export interface Frame {
     /** A placed view references its screen definition; its box is view-local. */
     screenId?: string;
     stack?: StackRules;
+    /** Space kept clear around it in its parent's stack. */
+    margin?: Sides;
     id: string;
     parentFrameId?: string;
     layoutOrder?: number;

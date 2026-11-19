@@ -1,3 +1,4 @@
+import { spaceAlong, stackPadding } from './boxModel';
 import type { Document, InstanceShape, Size } from './types';
 import type { ModeAddress } from './inheritedModes';
 import { frameParents } from './frameState';
@@ -56,7 +57,7 @@ export function variantWidths(
                 ? Math.max(
                       0,
                       (sizes[parent.id]?.width ?? parent.size.width) -
-                          2 * (parent.stack?.padding ?? 0)
+                          (parent.stack ? spaceAlong(stackPadding(parent.stack), 'width') : 0)
                   )
                 : undefined,
         parentProblem: dependsOnContent

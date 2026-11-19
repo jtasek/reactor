@@ -4,6 +4,7 @@ export {
     selectedViewProperties,
     componentEditingOrigin
 } from 'src/app/screenViewEditing';
+import { dragSpacing, restoreSpacing, spacingOf } from './spacingDrag';
 import { setShapesSelected } from 'src/app/shapeSelection';
 import {
     canTransformScreenViewShape,
@@ -194,6 +195,7 @@ export const beginGesture = (
         handle &&
         ('frameId' in handle ||
             handle.type === 'radius' ||
+            handle.type === 'spacing' ||
             ('shapeId' in handle
                 ? !canTransformScreenViewShape(
                       state.currentDocument,
@@ -256,6 +258,20 @@ export const beginGesture = (
     pointer.lastPress = { documentId: state.currentDocumentId, position };
     pointer.current = position;
     pointer.path = [];
+
+    if (handle?.type === 'spacing') {
+        const original = spacingOf(state.currentDocument, handle);
+
+        if (!original) {
+            pointer.screenView = previousScreenView;
+            effects.collaboration.resume();
+
+            return false;
+        }
+        pointer.gesture = { ...owner, ...handle, kind: 'spacing', original };
+
+        return true;
+    }
 
     if (handle && 'frameId' in handle && state.tools.activeToolsIds[0] === 'select') {
         const began = editorHelpers().frames.begin({ state, actions, effects }, owner, handle);
@@ -530,6 +546,12 @@ export const movePointer = (
         return;
     }
 
+    if (gesture.kind === 'spacing') {
+        dragSpacing(state.currentDocument, gesture, pointer.start, position);
+
+        return;
+    }
+
     if (gesture.kind === 'drawing') {
         pointer.path.push({ ...pointer.current });
 
@@ -796,6 +818,10 @@ export const cancelGesture = (
 
     if (gesture.kind === 'editingFrame') {
         editorHelpers().frames.cancel({ state }, restoredEntities);
+    }
+
+    if (gesture.kind === 'spacing') {
+        restoreSpacing(state.currentDocument, gesture, restoredEntities);
     }
 
     if ('shapes' in gesture) {

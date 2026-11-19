@@ -7,9 +7,11 @@ import type {
     Point,
     ResizeHandlerType,
     Shape,
+    Sides,
     StackRules,
     VariableContext
 } from './types';
+import { NO_SIDES, sidesOf, spaceAlong, spaceBefore, stackPadding } from './boxModel';
 import { editorHelpers, editorLoaded } from './editorHelpers';
 import { frameParents, projectFrameStates } from './frameState';
 import { drawnBox } from './membership';
@@ -238,7 +240,10 @@ export function projectFrameLayout(
         const offset = result.frames[id] ?? ZERO;
         const rules = freeStacks.has(id) ? undefined : frame.stack;
         const members = items.get(id) ?? [];
-        let cursor = rules?.padding ?? 0;
+        const padding = rules ? stackPadding(rules) : NO_SIDES;
+        const main = rules?.direction === 'row' ? 'width' : 'height';
+        const cross = main === 'width' ? 'height' : 'width';
+        let cursor = spaceBefore(padding, main);
 
         if (frame.stack) {
             result.slots[id] = members.map(({ id, kind, members, order }) => ({
@@ -250,22 +255,30 @@ export function projectFrameLayout(
         }
 
         for (const item of members) {
+            const margin = itemMargin(document, item);
             const delta = rules
-                ? stackOffset({ position: frame.position, size }, offset, rules, item, cursor)
+                ? stackOffset(
+                      { position: frame.position, size },
+                      offset,
+                      rules,
+                      item,
+                      cursor + spaceBefore(margin, main),
+                      padding,
+                      margin
+                  )
                 : offset;
 
             if (rules) {
-                cursor += (rules.direction === 'row' ? item.width : item.height) + rules.gap;
-                const main = rules.direction === 'row' ? size.width : size.height;
-                const cross = rules.direction === 'row' ? size.height : size.width;
-                const itemCross = rules.direction === 'row' ? item.height : item.width;
+                cursor += item[main] + spaceAlong(margin, main) + rules.gap;
 
                 if (
-                    cursor - rules.gap + rules.padding > main ||
-                    itemCross + 2 * rules.padding > cross
+                    cursor - rules.gap + spaceAlong(padding, main) - spaceBefore(padding, main) >
+                        size[main] ||
+                    item[cross] + spaceAlong(margin, cross) + spaceAlong(padding, cross) >
+                        size[cross]
                 ) {
                     result.problems[id] ??=
-                        'Contents overflow this stack. Increase its size or reduce gap, padding or minimum sizes.';
+                        'Contents overflow this stack. Increase its size or reduce gap, padding, margins or minimum sizes.';
                 }
             }
             if (item.kind === 'frame') {
@@ -296,20 +309,35 @@ export function projectFrameLayout(
     return result;
 }
 
+/** The space kept clear around a stack item: a group as one keeps none. */
+function itemMargin(document: Pick<Document, 'frames' | 'shapes'>, item: Item): Sides {
+    if (item.kind === 'frame') {
+        return sidesOf(document.frames[item.id]?.margin);
+    }
+
+    return item.members.length === 1 && item.members[0] === item.id
+        ? sidesOf(document.shapes[item.id]?.margin)
+        : NO_SIDES;
+}
+
 function stackOffset(
     frame: Pick<Frame, 'position' | 'size'>,
     offset: Point,
     rules: StackRules,
     item: Item,
-    cursor: number
+    cursor: number,
+    padding: Sides,
+    margin: Sides
 ): Point {
     const row = rules.direction === 'row';
+    const cross = row ? 'height' : 'width';
     const available = Math.max(
         0,
-        (row ? frame.size.height - item.height : frame.size.width - item.width) - 2 * rules.padding
+        frame.size[cross] - item[cross] - spaceAlong(padding, cross) - spaceAlong(margin, cross)
     );
     const across =
-        rules.padding +
+        spaceBefore(padding, cross) +
+        spaceBefore(margin, cross) +
         (rules.align === 'center' ? available / 2 : rules.align === 'end' ? available : 0);
 
     return {

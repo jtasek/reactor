@@ -19,6 +19,8 @@ export const KEEPS_SHAPE_BOUNDS: Record<Gesture['kind'], boolean> = {
     rotating: true,
     // Rounding the corners leaves the box they are drawn in as it is.
     rounding: true,
+    // Margin and padding move shapes in a stack by its layout, not by their bounds.
+    spacing: true,
     resizingGroup: true,
     rotatingGroup: true,
     resizingComponent: true,

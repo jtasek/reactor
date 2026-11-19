@@ -16,6 +16,8 @@ const SOURCE_ONLY = new Set(['name', 'x', 'y', 'width', 'height', 'rotation', 'l
 
 const isExposable = (property: ShapeProperty, shape: Shape, document: Document) =>
     !SOURCE_ONLY.has(property.key) &&
+    // Instances have no field to pick a named value with.
+    property.kind !== 'choice' &&
     Boolean(property.write) &&
     property.read(shape, document) !== undefined;
 
@@ -81,6 +83,11 @@ export function acceptsComponentValue(property: ShapeProperty, value: PropertyVa
             return typeof value === 'boolean';
         case 'color':
             return typeof value === 'string' && (value === '' || isHexColor(value));
+        case 'choice':
+            return (
+                typeof value === 'string' &&
+                property.options.some((option) => option.value === value)
+            );
     }
 }
 

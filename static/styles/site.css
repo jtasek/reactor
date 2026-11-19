@@ -92,6 +92,12 @@ body,
   --selection-color: #1a5ddb;
   --on-selection-color: #fff;
   --shape-stroke-color: #474a51;
+  --margin-color: #b25f08;
+  --padding-color: #13804f;
+  --margin-band: rgba(255, 160, 64, .16);
+  --padding-band: rgba(48, 196, 124, .14);
+  --margin-edge: rgba(230, 130, 30, .55);
+  --padding-edge: rgba(31, 157, 99, .45);
   --component-color: #6a47a8;
   --accent: #9370db;
   --warning-background: #f6ecd0;

@@ -1,6 +1,8 @@
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState } from './frameState';
-import type { Box, Document, Shape } from './types';
+import type { BorderStyle, Box, Document, Shape } from './types';
+import { BORDER_STYLES } from './boxModel';
+import { DEFAULT_BORDER_WIDTH } from './border';
 import { limitCornerRadius, translateShape } from './geometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
@@ -51,6 +53,14 @@ export type ShapeProperty = {
           kind: 'boolean';
           read: (shape: Shape, document: Document) => boolean | undefined;
           write?: (shape: Shape, value: boolean) => void;
+      }
+    | {
+          /** One of a few named values, as `options` lists them. */
+          kind: 'choice';
+          /** `icon` is an SVG path drawn in a 24 × 16 box in place of the label. */
+          options: readonly { value: string; label: string; icon?: string }[];
+          read: (shape: Shape, document: Document) => string | undefined;
+          write?: (shape: Shape, value: string) => void;
       }
     | {
           /** A `#rrggbb` color, or none as the empty string. */
@@ -216,7 +226,48 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     colorProperty('fill', 'Fill', 'Appearance', isClosedShape),
-    colorProperty('stroke', 'Stroke', 'Appearance', isStrokedShape),
+    colorProperty('stroke', 'Stroke', 'Border', isStrokedShape),
+    {
+        key: 'borderWidth',
+        label: 'Thickness',
+        group: 'Border',
+        kind: 'number',
+        read: (shape) =>
+            isStrokedShape(shape) ? (shape.borderWidth ?? DEFAULT_BORDER_WIDTH) : undefined,
+        accepts: (value) => value >= 0,
+        write: (shape, value) => {
+            if (!isStrokedShape(shape) || value < 0) {
+                return;
+            }
+            if (value === DEFAULT_BORDER_WIDTH) {
+                delete shape.borderWidth;
+            } else {
+                shape.borderWidth = value;
+            }
+        }
+    },
+    {
+        key: 'borderStyle',
+        label: 'Style',
+        group: 'Border',
+        kind: 'choice',
+        options: [
+            { value: 'solid', label: 'Solid', icon: 'M3 8h18' },
+            { value: 'dashed', label: 'Dashed', icon: 'M3 8h5M10 8h4M16 8h5' },
+            { value: 'dotted', label: 'Dotted', icon: 'M3 8h0M7.5 8h0M12 8h0M16.5 8h0M21 8h0' }
+        ],
+        read: (shape) => (isStrokedShape(shape) ? (shape.borderStyle ?? 'solid') : undefined),
+        write: (shape, value) => {
+            if (!isStrokedShape(shape) || !BORDER_STYLES.includes(value as BorderStyle)) {
+                return;
+            }
+            if (value === 'solid') {
+                delete shape.borderStyle;
+            } else {
+                shape.borderStyle = value as BorderStyle;
+            }
+        }
+    },
     {
         key: 'visible',
         label: 'Visible',
@@ -377,6 +428,7 @@ export function sharedProperties(shapes: Shape[], document: Document): PropertyR
 export function applyProperty(property: ShapeProperty, shape: Shape, value: PropertyValue) {
     switch (property.kind) {
         case 'text':
+        case 'choice':
         case 'color':
             if (typeof value === 'string') {
                 property.write?.(shape, value);

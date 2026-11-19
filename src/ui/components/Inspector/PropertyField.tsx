@@ -153,7 +153,7 @@ export const PropertyField: FC<Props> = ({
                         />
                     </button>
                 )}
-                {!variable && property.write && (
+                {!variable && property.write && property.kind !== 'choice' && (
                     <select
                         className={styles.variablePicker}
                         aria-label={`Variable for ${property.label}`}
@@ -234,6 +234,38 @@ export const PropertyField: FC<Props> = ({
                             None
                         </button>
                     </>
+                ) : property.kind === 'choice' ? (
+                    <div
+                        id={id}
+                        role="group"
+                        aria-label={property.label}
+                        className={styles.segments}
+                    >
+                        {property.options.map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                aria-label={option.label}
+                                title={option.label}
+                                aria-pressed={!mixed && value === option.value}
+                                disabled={readOnly}
+                                onClick={() => onChange(shapeIds, property.key, option.value)}
+                            >
+                                {option.icon ? (
+                                    <svg
+                                        viewBox="0 0 24 16"
+                                        width="24"
+                                        height="16"
+                                        aria-hidden="true"
+                                    >
+                                        <path d={option.icon} />
+                                    </svg>
+                                ) : (
+                                    option.label
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 ) : (
                     <input
                         ref={input}

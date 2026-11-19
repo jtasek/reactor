@@ -1,7 +1,8 @@
 .shape {
     fill: var(--shape-fill, none);
     stroke: var(--shape-stroke, var(--shape-stroke-color));
-    stroke-width: 2;
+    stroke-width: var(--shape-stroke-width, 2);
+    stroke-dasharray: var(--shape-stroke-dash, none);
 }
 
 .selected {

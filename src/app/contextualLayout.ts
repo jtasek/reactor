@@ -1,3 +1,4 @@
+import { sidesOf, spaceAlong, stackPadding } from './boxModel';
 import type { Document, Frame, Shape, Size, Text, InstanceShape, VariableContext } from './types';
 import { untracked } from './untracked';
 import type { FrameLayout } from './frameLayout';
@@ -157,7 +158,10 @@ function availableWidthIn(parent: Frame | undefined, shape: Shape, width?: numbe
     if (!parent || parent.sizing?.width?.mode === 'hug') {
         return undefined;
     }
-    const inner = (width ?? parent.size.width) - 2 * (parent.stack?.padding ?? 0);
+    const inner =
+        (width ?? parent.size.width) -
+        (parent.stack ? spaceAlong(stackPadding(parent.stack), 'width') : 0) -
+        spaceAlong(sidesOf(shape.margin), 'width');
     // A stack places its items itself; a free frame keeps the shape where it is.
     const offset = parent.stack
         ? 0

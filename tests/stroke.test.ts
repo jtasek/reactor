@@ -24,10 +24,10 @@ const saved = (shape: Shape) =>
     JSON.parse(JSON.stringify({ ...shape, selected: undefined, active: undefined }));
 
 describe('stroke', () => {
-    it('is a color edited in the style section, for shapes drawn with an outline', () => {
+    it('is a color edited in the Border section, for shapes drawn with an outline', () => {
         const shape = rectangle();
 
-        expect(strokeProperty).toMatchObject({ group: 'Appearance', kind: 'color' });
+        expect(strokeProperty).toMatchObject({ group: 'Border', kind: 'color' });
         expect(strokeProperty.read(shape, {} as never)).toBe('');
         expect(strokeProperty.read(line, {} as never)).toBe('');
         expect(strokeProperty.read(text, {} as never)).toBeUndefined();

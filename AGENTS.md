@@ -1370,6 +1370,23 @@ The preview protocol stays version 3: a snapshot carries `states`, `visibility.c
 still accepts the older `booleans`, `toggleState`, `setState` and `stateKey`/`when` of links
 shared before.
 
+Schema v35 adds the box model (`src/app/boxModel.ts`, borders in `src/app/border.ts`). Shapes and
+frames take an optional `margin: Sides` (`{ top, right, bottom, left }`, none negative, absent when
+every side is zero); a stack keeps it clear around the item, on top of its gap and padding, in
+placement (`frameLayout`), Hug/Fill sizing (`stackSizing`), overflow problems and the width a
+wrapped text may use. A group as one stack item keeps no margin. `StackRules.paddingSides`
+replaces the single `padding` side by side when the sides differ; `withStackPadding` drops it
+again once they match, and a padding variable, the command line and `writeFrameNumber` always set
+every side. Stroked shapes take `borderWidth` (default 2, the old canvas width) and
+`borderStyle: 'solid' | 'dashed' | 'dotted'`; the canvas draws them through
+`--shape-stroke-width`/`--shape-stroke-dash` on each shape, the player and SVG export through
+`stroke-width`/`stroke-dasharray` (allowed by the preview reader; protocol stays version 3).
+Selecting a shape or frame draws its margin (orange) and a stack's padding (green) as bands with
+a grip per side (`src/ui/components/Handle/SpacingBands.tsx`); dragging a grip is the `spacing`
+gesture (`src/events/spacingDrag.ts`). The Inspector edits spacing as one value across and one
+down, or one per side (`SpacingFields.tsx`); Spacing shows for items in a stack or with a margin.
+`updateShape`/`updateFrame` take `margin: null` to remove it.
+
 
 ## Bound sample lists
 

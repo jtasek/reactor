@@ -82,8 +82,10 @@ export interface DeleteVariable {
  */
 type ShapeChanges = ShapeInput extends infer S
     ? S extends ShapeInput
-        ? Partial<Omit<S, 'parentFrameId' | 'interaction'>> & {
+        ? Partial<Omit<S, 'parentFrameId' | 'interaction' | 'margin'>> & {
               parentFrameId?: string | null;
+              /** Null takes the margin away. */
+              margin?: import('./types').Sides | null;
               interaction?: import('./types').RoleSettings | null;
               /** An instance's repeated list; null removes it. */
               dataList?: DataList | null;
@@ -141,6 +143,8 @@ export interface UpdateFrame {
             | 'bindings'
         >
     > & {
+        /** `null` takes the margin away. */
+        margin?: Frame['margin'] | null;
         parentFrameId?: string | null;
         stack?: Frame['stack'] | null;
         layoutId?: string | null;
