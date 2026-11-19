@@ -5,8 +5,9 @@ import { isShapeLocked } from 'src/app/utils';
 import { compatibleListField, dataListProblems, DEFAULT_LIST_GAP } from 'src/app/dataLists';
 import { dataFields, dataRecords } from 'src/app/data';
 import type { DataList as ListBinding } from 'src/app/dataTypes';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import { instanceComponent } from 'src/app/componentSource';
+import styles from './styles.css';
 
 /** A component instance supplies the item artwork; bindings never alter its source. */
 export function DataList({ instanceId }: { instanceId: string }) {
@@ -60,8 +61,8 @@ export function DataList({ instanceId }: { instanceId: string }) {
     };
 
     return (
-        <section aria-label="Data binding">
-            <table>
+        <section aria-label="Data binding" className={styles.dataList}>
+            <InspectorTable>
                 <PropertyGroup name="Data binding">
                     <tr>
                         <th scope="row">
@@ -218,7 +219,7 @@ export function DataList({ instanceId }: { instanceId: string }) {
                         </>
                     )}
                 </PropertyGroup>
-            </table>
+            </InspectorTable>
             {!data.entities.length && <p>Add an entity and sample records in Data first.</p>}
             {data.list && (
                 <p>

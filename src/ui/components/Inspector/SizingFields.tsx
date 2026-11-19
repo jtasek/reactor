@@ -7,51 +7,45 @@ import styles from './styles.css';
 
 const Constraint: FC<{
     label: string;
+    placeholder: string;
     value?: number;
     disabled: boolean;
     onCommit: (value: number | undefined) => void;
-}> = ({ label, value, disabled, onCommit }) => {
+}> = ({ label, placeholder, value, disabled, onCommit }) => {
     const id = `sizing-${label.toLowerCase().replaceAll(' ', '-')}`;
     const [draft, setDraft] = useState(value === undefined ? '' : String(value));
     useEffect(() => setDraft(value === undefined ? '' : String(value)), [value]);
 
     return (
-        <tr>
-            <th scope="row">
-                <label htmlFor={id}>{label}</label>
-            </th>
-            <td>
-                <input
-                    id={id}
-                    aria-label={label}
-                    type="number"
-                    min={0}
-                    step="any"
-                    placeholder="None"
-                    disabled={disabled}
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    onBlur={() => {
-                        const number = draft.trim() ? Number(draft) : undefined;
-                        if (number !== undefined && (!Number.isFinite(number) || number < 0)) {
-                            setDraft(value === undefined ? '' : String(value));
+        <input
+            id={id}
+            aria-label={label}
+            type="number"
+            min={0}
+            step="any"
+            placeholder={placeholder}
+            disabled={disabled}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => {
+                const number = draft.trim() ? Number(draft) : undefined;
+                if (number !== undefined && (!Number.isFinite(number) || number < 0)) {
+                    setDraft(value === undefined ? '' : String(value));
 
-                            return;
-                        }
-                        // Leaving a field unchanged writes nothing.
-                        if (number !== value) {
-                            onCommit(number);
-                        }
-                    }}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                            event.preventDefault();
-                            event.currentTarget.blur();
-                        }
-                    }}
-                />
-            </td>
-        </tr>
+                    return;
+                }
+                // Leaving a field unchanged writes nothing.
+                if (number !== value) {
+                    onCommit(number);
+                }
+            }}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                }
+            }}
+        />
     );
 };
 
@@ -65,7 +59,7 @@ export const SizingFields: FC<{ frameId?: string; shapeId?: string }> = ({ frame
     if (!supported || !size || !shownSize) {
         return problem ? (
             <PropertyGroup name="Sizing">
-                <tr>
+                <tr className={styles.footnote}>
                     <td colSpan={2}>
                         <small className={styles.frameHint} role="status">
                             {problem}
@@ -117,9 +111,7 @@ export const SizingFields: FC<{ frameId?: string; shapeId?: string }> = ({ frame
                 return (
                     <React.Fragment key={axis}>
                         <tr>
-                            <th scope="row">
-                                <label htmlFor={`sizing-${axis}`}>{label} sizing</label>
-                            </th>
+                            <th scope="row">{label}</th>
                             <td>
                                 <select
                                     id={`sizing-${axis}`}
@@ -139,26 +131,34 @@ export const SizingFields: FC<{ frameId?: string; shapeId?: string }> = ({ frame
                                 </select>
                             </td>
                         </tr>
-                        {(['min', 'max'] as const).map((bound) => (
-                            <Constraint
-                                key={bound}
-                                label={`${bound === 'min' ? 'Min' : 'Max'} ${axis}`}
-                                value={rule[bound]}
-                                disabled={disabled}
-                                onCommit={(value) => {
-                                    const next = { ...rule, [bound]: value };
-                                    if (value === undefined) {
-                                        delete next[bound];
-                                    }
-                                    change(axis, next);
-                                }}
-                            />
-                        ))}
+                        <tr className={styles.subRow}>
+                            <td />
+                            <td>
+                                <div className={styles.pair}>
+                                    {(['min', 'max'] as const).map((bound) => (
+                                        <Constraint
+                                            key={bound}
+                                            label={`${bound === 'min' ? 'Min' : 'Max'} ${axis}`}
+                                            placeholder={bound === 'min' ? 'Min' : 'Max'}
+                                            value={rule[bound]}
+                                            disabled={disabled}
+                                            onCommit={(value) => {
+                                                const next = { ...rule, [bound]: value };
+                                                if (value === undefined) {
+                                                    delete next[bound];
+                                                }
+                                                change(axis, next);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </td>
+                        </tr>
                     </React.Fragment>
                 );
             })}
             {shapeId && problem && (
-                <tr>
+                <tr className={styles.footnote}>
                     <td colSpan={2}>
                         <small className={styles.frameHint} role="status">
                             {problem}

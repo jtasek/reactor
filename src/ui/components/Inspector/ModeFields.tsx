@@ -55,7 +55,7 @@ export const ModeFields: FC<{ target: ModeTarget }> = ({ target }) => {
                 </tr>
             ))}
             {problems.map((problem) => (
-                <tr key={problem}>
+                <tr key={problem} className={styles.footnote}>
                     <td colSpan={2}>
                         <small className={styles.frameHint} role="status">
                             {problem}

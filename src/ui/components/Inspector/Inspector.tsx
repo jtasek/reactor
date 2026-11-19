@@ -5,7 +5,7 @@ import { SizingFields } from './SizingFields';
 import { ShapeSpacing } from './ShapeSpacing';
 import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
 import { ModeFields } from './ModeFields';
 import { InstanceProps } from './InstanceProps';
@@ -189,7 +189,7 @@ export const Inspector: FC<Props> = ({
             />
             {instance && <InstanceProps />}
             <AlignSection />
-            <table>
+            <InspectorTable>
                 {instance && shapeIds.length === 1 && (
                     <ModeFields target={{ instanceId: shapeIds[0] }} />
                 )}
@@ -203,7 +203,7 @@ export const Inspector: FC<Props> = ({
                         {group === 'Layout' && <ShapeSpacing shapeIds={shapeIds} />}
                     </React.Fragment>
                 ))}
-            </table>
+            </InspectorTable>
             {instance && shapeIds.length === 1 && <ComponentRole instanceId={shapeIds[0]} />}
         </div>
     );

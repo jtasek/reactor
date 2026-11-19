@@ -9,9 +9,11 @@ declare namespace StylesCssNamespace {
     componentHint: string;
     componentPreview: string;
     componentProps: string;
+    dataList: string;
     eachSide: string;
     exposeButton: string;
     exposureStatus: string;
+    footnote: string;
     frameHint: string;
     headerActions: string;
     headerBinding: string;
@@ -39,8 +41,10 @@ declare namespace StylesCssNamespace {
     instanceValue: string;
     interactionField: string;
     interactions: string;
+    labelColumn: string;
     layoutChoice: string;
     note: string;
+    pair: string;
     propertyMapping: string;
     prototypeState: string;
     prototypeStateRow: string;
@@ -53,6 +57,7 @@ declare namespace StylesCssNamespace {
     spacing: string;
     spacingLabel: string;
     stateValue: string;
+    subRow: string;
     variablePicker: string;
     variantActions: string;
     variantSummary: string;

@@ -5,7 +5,7 @@ import { roleLinks } from 'src/app/componentRoles';
 import { useActions } from 'src/app/hooks';
 import { useRoleEditor } from 'src/app/roleHooks';
 import { ComponentInteractions } from './ComponentInteractions';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
 const ROLES = ['none', 'text', 'input', 'button', 'list', 'image'] as const;
@@ -65,7 +65,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
         <>
             {instanceId && <DataList key={instanceId} instanceId={instanceId} />}
             <section aria-label="Semantic role">
-                <table>
+                <InspectorTable>
                     <PropertyGroup name="Role">
                         <tr>
                             <th scope="row">
@@ -181,7 +181,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                             </tr>
                         )}
                         {data.problems.map((problem) => (
-                            <tr key={problem}>
+                            <tr key={problem} className={styles.footnote}>
                                 <td colSpan={2}>
                                     <small className={styles.frameHint} role="status">
                                         {problem}
@@ -190,7 +190,7 @@ export const ComponentRole: FC<{ componentId?: string; instanceId?: string }> = 
                             </tr>
                         ))}
                     </PropertyGroup>
-                </table>
+                </InspectorTable>
             </section>
             <ComponentInteractions componentId={componentId} instanceId={instanceId} />
             <details className={styles.inspectorHelp}>

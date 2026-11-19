@@ -9,7 +9,7 @@ import {
     StateBindings,
     StateValueInput
 } from './PrototypeState';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
 /** Actions belong to the component or instance, independently of its semantic role. */
@@ -46,7 +46,7 @@ export const ComponentInteractions: FC<{
             className={styles.interactions}
             data-action-only={actionOnly}
         >
-            <table>
+            <InspectorTable>
                 <PropertyGroup name="Interactions">
                     <tr>
                         <td colSpan={2}>
@@ -310,7 +310,7 @@ export const ComponentInteractions: FC<{
                             </tr>
                         )}
                     {(data.actionFamily !== undefined || unavailable) && (
-                        <tr>
+                        <tr className={styles.footnote}>
                             <td colSpan={2}>
                                 <small className={styles.frameHint}>
                                     {data.actionFamily !== undefined &&
@@ -322,7 +322,7 @@ export const ComponentInteractions: FC<{
                         </tr>
                     )}
                 </PropertyGroup>
-            </table>
+            </InspectorTable>
             {!actionOnly && instanceId && data.prototypeVisible !== undefined && (
                 <PrototypeState values={data.states} disabled={data.disabled} />
             )}

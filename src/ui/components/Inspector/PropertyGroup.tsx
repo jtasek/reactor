@@ -1,4 +1,5 @@
 import React, { FC, ReactNode } from 'react';
+import styles from './styles.css';
 
 interface Props {
     name: string;
@@ -15,4 +16,15 @@ export const PropertyGroup: FC<Props> = ({ name, children }) => (
         </tr>
         {children}
     </tbody>
+);
+
+/** Property sections share one label column, so every label and value lines up. */
+export const InspectorTable: FC<{ children?: ReactNode }> = ({ children }) => (
+    <table>
+        <colgroup>
+            <col className={styles.labelColumn} />
+            <col />
+        </colgroup>
+        {children}
+    </table>
 );

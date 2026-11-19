@@ -72,7 +72,7 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                         </select>
                     </td>
                 </tr>
-                <tr>
+                <tr className={styles.footnote}>
                     <td colSpan={2}>
                         <small className={styles.frameHint}>
                             {root?.screenLayout
