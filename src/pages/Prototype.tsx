@@ -6,8 +6,8 @@ import { Guide } from 'src/ui/components/FirstRun/Guide';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
-import { screenFrames, startScreen } from 'src/app/screens';
-import { prototypeModes } from 'src/app/modeEdits';
+import { screenFrames } from 'src/app/screens';
+import { prototypeSession } from 'src/app/modeEdits';
 import { isSizesDimension, ordered } from 'src/app/variableModes';
 import { presetOfSize } from 'src/app/services/viewportPresets';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
@@ -66,31 +66,18 @@ function ViewportField({
 
 function PrototypeWorkspace() {
     const document = useAppState((state) => state.currentDocument);
-    const seed: PreviewSession = useAppState(prototypeModes);
     const presets = useAppState((state) => state.config.viewportPresets);
     const screens = screenFrames(document);
     const effects = useEffects();
     const actions = useActions();
-    const [session, setSession] = useState<PreviewSession>(() => {
-        const requested = new URLSearchParams(window.location.search).get('screen');
-        // A link's screen, then the view Play was pressed on, then the document's start.
-        const initial =
-            screens.find((screen) => screen.id === (requested ?? seed.screenId)) ??
-            startScreen(document);
-        const fromView = initial?.id === seed.screenId;
-
-        return {
-            ...seed,
-            screenId: initial?.id,
-            modes: fromView ? seed.modes : {},
-            layoutId: fromView ? seed.layoutId : undefined,
-            layoutMode: fromView ? seed.layoutMode : 'auto',
-            viewport: {
-                ...(fromView && seed.viewport ? seed.viewport : (initial?.size ?? presets[0].size))
-            },
-            scope: 'all-screens'
-        };
-    });
+    const root = useAppState((state) => state);
+    const [session, setSession] = useState<PreviewSession>(() =>
+        prototypeSession(
+            root,
+            new URLSearchParams(window.location.search).get('screen'),
+            presets[0].size
+        )
+    );
     const [inspection, setInspection] = useState<PreviewInspection>({});
     const settings = useRef<HTMLDialogElement>(null);
     const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);

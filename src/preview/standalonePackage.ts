@@ -1,6 +1,26 @@
 import { PREVIEW_PROTOCOL_VERSION, type PreviewApplication } from '../shared/previewProtocol';
+import type { Document } from '../app/types';
+import { projectPreview, type PreviewInspection, type PreviewSession } from './project';
+import { createPreviewResources } from './resources';
 
 const MARKER = '<!-- reactor:package -->';
+
+/** The snapshot a package carries: every screen as this Prototype session draws it, with
+ * its images read and verified. */
+export function packageApplication(
+    document: Document,
+    session: PreviewSession,
+    inspection: PreviewInspection,
+    assets: Parameters<typeof createPreviewResources>[0],
+    signal: AbortSignal
+) {
+    const drawing = projectPreview(document, {}, [], session, inspection);
+    if (!drawing.screens.length || drawing.screens[0].id !== session.screenId) {
+        throw new Error('Choose an available start page before downloading.');
+    }
+
+    return createPreviewResources(assets)(drawing, signal);
+}
 
 /** Writes a validated snapshot into the preview site's package page, which then plays it
  * offline: the page's policy allows no requests, so it never reaches a server. */

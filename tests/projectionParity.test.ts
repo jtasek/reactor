@@ -1,3 +1,4 @@
+import { json } from 'overmind';
 import { booleanVisibility, simpleCondition } from 'src/app/prototypeState';
 import { buildStarterTemplate } from 'src/templates/build';
 import { STARTER_TEMPLATES } from 'src/templates/catalog';
@@ -21,12 +22,13 @@ import { responsiveDocument } from './support/responsiveModes';
 import { responsiveVariantsDocument } from './support/responsiveVariants';
 import { screenLayoutsDocument } from './support/screenLayouts';
 import { dataListFixture, recordDetailFixture } from './support/dataList';
+import { openPackage, packagePage } from './support/packageProjection';
 
 /**
- * One fixture set drawn by the canvas, Prototype and SVG export and compared as what a
- * person sees. Intended differences: Prototype hides instances that start hidden, draws
- * records where an instance is bound to data, and swaps artwork as controls are used; the
- * canvas and export always draw the authored artwork.
+ * One fixture set drawn by the canvas, Prototype, the downloaded package and SVG export and
+ * compared as what a person sees. Intended differences: Prototype and the package hide
+ * instances that start hidden, draw records where an instance is bound to data, and swap
+ * artwork as controls are used; the canvas and export always draw the authored artwork.
  */
 const FIXTURES: [string, () => Document][] = [
     ['primitives, nested instances, frame themes and state', parityArtworkDocument],
@@ -55,6 +57,11 @@ const CONTROLS = [
 const RECORDS = ['records repeated in a list', 'a selected record'];
 
 const instanceOf = (document: Document, id: string) => document.shapes[id] as InstanceShape;
+/** A plain copy of an opened document, to open again with changes. */
+const copy = (document: Document): Document => JSON.parse(JSON.stringify(json(document)));
+
+// An opened package page stubs the browser globals its runtime draws with.
+afterEach(() => vi.unstubAllGlobals());
 
 /** Whether Prototype opens with this shape hidden; the canvas always draws it. */
 function hiddenAtStart(document: Document, id: string) {
@@ -114,6 +121,85 @@ describe.each(FIXTURES)('%s', (_, document) => {
             }
         }
     );
+
+    it('downloads each View as a page that plays every screen as Prototype draws it', async () => {
+        const store = await openDocument(document());
+        const opened = store.state.currentDocument;
+        for (const [viewId, canvas] of canvasProjection(store)) {
+            const page = await openPackage(await packagePage(store, viewId));
+            const { drawing, screen } = previewProjection(store, viewId, {}, 'prototype');
+            expect(page.status, label(store, viewId)).toBeNull();
+            expect(page.title).toBe(opened.name);
+            const start = page.show(screen.id);
+            expect([...start.keys()], label(store, viewId)).toEqual([...canvas.keys()]);
+            for (const [shapeId, marks] of canvas) {
+                if (!instanceOf(opened, shapeId).dataList) {
+                    expect(start.get(shapeId), label(store, viewId, shapeId)).toEqual(
+                        hiddenAtStart(opened, shapeId) ? [] : marks
+                    );
+                }
+            }
+            const launched = opened.frames[viewId];
+            for (const other of drawing.screens) {
+                const played = page.show(other.id);
+                for (const node of other.nodes) {
+                    const shapeId = node.key.slice(other.id.length + 1);
+                    expect(played.get(shapeId), label(store, other.id, shapeId)).toEqual(
+                        nodeMarks(node, other, drawing.states)
+                    );
+                }
+                // Another screen plays at the launch size and modes, as a View of it set to them draws it.
+                const shown = views(store).find(
+                    (id) => id !== viewId && opened.frames[id].screenId === other.id
+                );
+                if (other.id === screen.id || !shown) {
+                    continue;
+                }
+                const canvasOther = (
+                    await canvasAfter(copy(opened), (edited) => {
+                        const view = edited.frames[shown];
+                        view.size = { ...launched.size };
+                        view.modeOverrides = { ...launched.modeOverrides };
+                        delete view.layoutId;
+                        view.layoutMode = 'auto';
+                    })
+                ).get(shown)!;
+                for (const [shapeId, marks] of canvasOther) {
+                    if (!instanceOf(opened, shapeId).dataList) {
+                        expect(played.get(shapeId), label(store, shown, shapeId)).toEqual(
+                            hiddenAtStart(opened, shapeId) ? [] : marks
+                        );
+                    }
+                }
+            }
+            page.close();
+        }
+    });
+
+    it('downloads the same page wherever its Views sit and whatever the canvas shows', async () => {
+        const store = await openDocument(document());
+        const opened = store.state.currentDocument;
+        const moved = copy(opened);
+        for (const frame of Object.values(moved.frames)) {
+            if (frame.kind === 'view') {
+                frame.position = { x: frame.position.x + 1234, y: frame.position.y - 567 };
+            }
+        }
+        moved.camera = { position: { x: -800, y: 300 }, scale: 0.25 };
+        const elsewhere = await openDocument(moved);
+        // The canvas shows the last mode of every dimension.
+        for (const dimension of Object.values(opened.dimensions)) {
+            elsewhere.actions.setPreviewMode({
+                dimensionId: dimension.id,
+                modeId: Object.keys(dimension.modes).at(-1)!
+            });
+        }
+        for (const viewId of views(store)) {
+            expect(await packagePage(elsewhere, viewId), label(store, viewId)).toBe(
+                await packagePage(store, viewId)
+            );
+        }
+    });
 });
 
 it.each(CONTROLS)(
