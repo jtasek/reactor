@@ -224,6 +224,12 @@
 }
 
 .inspector tbody tr:not(:first-child) > :is(th, td) + td {
+    padding-right: var(--card-padding);
+}
+
+.inspector tbody tr:not(:first-child):has(:is(.variablePicker:not(:disabled), .eachSide))
+    > :is(th, td)
+    + td {
     padding-right: calc(var(--slot-size) + var(--slot-inset) * 2);
 }
 
