@@ -32,7 +32,10 @@ const allowsDock = (dock: Dock, docking: Docking) =>
     dock === null || docking === 'both' || orientationOf(dock) === docking;
 
 const KEYBOARD_MOVE_STEP_PX = 10;
-const DRAG_PREVIEW_OFFSET_PX = 12;
+/** The space between a dragged panel and the dock hint above it. */
+const DOCK_HINT_GAP_PX = 6;
+/** The room the dock hint takes above a dragged panel; with less, it goes below the pointer. */
+const DOCK_HINT_ROOM_PX = 30;
 /** The smallest a panel is resized to: room for a few rows under its header. */
 const MIN_PANEL_SIZE = { width: 160, height: 80 };
 const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
@@ -57,10 +60,11 @@ interface Drag {
     moved: boolean;
     pointer: { x: number; y: number };
     offset: { x: number; y: number };
+    /** The panel's size as the drag began; it keeps it while it follows the pointer. */
+    size: { width: number; height: number };
     dock: Dock;
     /** Where among the other panels in `dock` the panel would go. */
     index: number;
-    title: string;
     docking: Docking;
 }
 
@@ -408,6 +412,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             y: Math.max(0, Math.min(placement.position.y, maxY))
         };
         const isDragging = drag?.id === id;
+        const lifted = isDragging && drag.moved ? drag : undefined;
         const resizing = resize?.id === id ? resize : undefined;
         const chosenSize = resizing?.size ?? placement.size;
         const shownPosition = resizing?.position ?? position;
@@ -642,10 +647,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 pointerId: event.pointerId,
                 start: { x: event.clientX, y: event.clientY },
                 moved: false,
-                title,
                 docking,
                 pointer: { x: event.clientX, y: event.clientY },
                 offset: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
+                size: { width: bounds.width, height: bounds.height },
                 dock: null,
                 index: 0
             });
@@ -707,7 +712,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             <section
                 key={id}
                 className={`${styles.panel} ${close ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
-                    isDragging && drag.moved ? styles.dragSource : ''
+                    lifted ? styles.lifted : ''
                 }`}
                 data-panel={id}
                 data-floating-panel={floating ? '' : undefined}
@@ -742,7 +747,18 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                                   viewport.height - STATUS_BAR_HEIGHT_PX
                               ),
                               maxHeight: 'none'
-                          })
+                          }),
+                    // Dragged, the panel itself follows the pointer from where it was grabbed.
+                    ...(lifted
+                        ? {
+                              left: lifted.pointer.x - lifted.offset.x,
+                              top: lifted.pointer.y - lifted.offset.y,
+                              width: lifted.size.width,
+                              height: lifted.size.height,
+                              maxWidth: 'none',
+                              maxHeight: 'none'
+                          }
+                        : {})
                 }}
             >
                 <button
@@ -856,11 +872,31 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 <div key="drop" className={styles.dropMarker} data-drop-marker />
             ) : null;
         const children = panels.map((panel) => renderPanel(panel, dock));
+        const liftedAt = drag?.moved ? panels.findIndex((panel) => panel.props.id === drag.id) : -1;
+
+        // A dragged panel leaves its outline behind, so the panels around it stay put.
+        if (drag && liftedAt >= 0) {
+            children.splice(
+                liftedAt,
+                0,
+                <div
+                    key="place"
+                    className={styles.liftedPlace}
+                    style={{ width: drag.size.width, height: drag.size.height }}
+                    data-panel-place
+                    aria-hidden="true"
+                />
+            );
+        }
 
         if (marker && drag) {
             const next = panels.filter((panel) => panel.props.id !== drag.id)[drag.index];
 
-            children.splice(next ? panels.indexOf(next) : panels.length, 0, marker);
+            children.splice(
+                next ? children.findIndex((child) => child.key === next.props.id) : children.length,
+                0,
+                marker
+            );
         }
 
         return (
@@ -876,9 +912,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         );
     };
 
-    const floats = visiblePanels
-        .filter((panel) => panelDock(panel) === null)
-        .map((panel) => renderPanel(panel, null));
+    const floatingPanels = visiblePanels.filter((panel) => panelDock(panel) === null);
+    const floats = floatingPanels.map((panel) => renderPanel(panel, null));
+    const floatLifted = drag?.moved && floatingPanels.some((panel) => panel.props.id === drag.id);
+    const hintAbove = drag && drag.pointer.y - drag.offset.y >= DOCK_HINT_ROOM_PX;
 
     return (
         <div className={styles.panelLayer} ref={panelLayer} style={DOCK_GEOMETRY_STYLE}>
@@ -906,20 +943,21 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 <div className={styles.toolbar}>{toolbar}</div>
                 {docked('bottom')}
             </div>
-            <div className={styles.floatingLayer}>{floats}</div>
-            {drag?.moved && (
+            <div className={`${styles.floatingLayer} ${floatLifted ? styles.liftedLayer : ''}`}>
+                {floats}
+            </div>
+            {drag?.moved && drag.dock && (
                 <div
-                    className={styles.dragPreview}
+                    className={`${styles.dragPreview} ${hintAbove ? styles.dragPreviewAbove : ''}`}
                     style={{
-                        left: drag.pointer.x + DRAG_PREVIEW_OFFSET_PX,
-                        top: drag.pointer.y + DRAG_PREVIEW_OFFSET_PX
+                        left: Math.max(DOCK_HINT_GAP_PX, drag.pointer.x - drag.offset.x),
+                        top: hintAbove
+                            ? drag.pointer.y - drag.offset.y - DOCK_HINT_GAP_PX
+                            : drag.pointer.y + DOCK_HINT_ROOM_PX
                     }}
                     aria-hidden="true"
                 >
-                    {drag.title}
-                    {drag.dock && (
-                        <span>Dock {DOCK_ZONES.find(({ dock }) => dock === drag.dock)?.label}</span>
-                    )}
+                    Dock {DOCK_ZONES.find(({ dock }) => dock === drag.dock)?.label.toLowerCase()}
                 </div>
             )}
         </div>

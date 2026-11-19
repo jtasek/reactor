@@ -8,7 +8,7 @@
     --panel-close-background: rgba(0, 0, 0, .06);
     --panel-close-background-hover: rgba(0, 0, 0, .11);
     --dock-zone-transition-duration: 0.12s;
-    --panel-drag-opacity: 0.55;
+    --panel-lifted-opacity: 0.92;
     inset: 0;
     pointer-events: none;
     position: fixed;
@@ -382,31 +382,42 @@
     z-index: 1;
 }
 
-.dragSource {
-    opacity: var(--panel-drag-opacity);
+.panel.lifted {
+    box-shadow: var(--box-shadow-hover);
+    opacity: var(--panel-lifted-opacity);
+    position: fixed;
+    /* Above the dock zones, so the panel stays in view wherever it is dragged. */
+    z-index: 5;
+}
+
+/* A floating panel being dragged lifts its whole layer above the dock zones. */
+.liftedLayer {
+    z-index: 5;
+}
+
+.liftedPlace {
+    border: 2px dashed var(--hairline-color);
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    flex: none;
+    max-width: 100%;
 }
 
 .dragPreview {
     background: var(--control-background);
-    border: 2px dashed currentColor;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow-hover);
     color: var(--text-color);
     left: 0;
-    min-width: 120px;
-    padding: 10px;
+    padding: 4px 8px;
     pointer-events: none;
     position: absolute;
     top: 0;
-    /* Keep the dragged panel label above the dock-zone overlay. */
-    z-index: 5;
+    z-index: 6;
 }
 
-.dragPreview span {
-    display: block;
-    /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- relative to the dragged panel's title */
-    font-size: 0.8em;
-    margin-top: 4px;
+.dragPreviewAbove {
+    transform: translateY(-100%);
 }
 
 @supports not (backdrop-filter: blur(1px)) {

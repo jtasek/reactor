@@ -300,7 +300,7 @@ test('dock targets match the default width and highlight the actual drop target'
     await expect(page.locator('[data-dock="left"] [data-panel="controlPanel"]')).toBeVisible();
 });
 
-test('a tall panel’s drag bubble follows the pointer on both axes', async ({ page }) => {
+test('a dragged panel itself follows the pointer on both axes', async ({ page }) => {
     await page.addInitScript(() => {
         localStorage.setItem(
             'reactor:panel-layout',
@@ -320,9 +320,10 @@ test('a tall panel’s drag bubble follows the pointer on both axes', async ({ p
     await page.mouse.down();
     await page.mouse.move(700, 250);
 
-    const bubble = page.locator('[aria-hidden="true"]').filter({ hasText: 'Explorer' });
+    const bubble = page.locator('[data-panel="explorer"]');
     await expect(bubble).toBeVisible();
     const first = (await bubble.boundingBox())!;
+    expect({ width: first.width, height: first.height }).toEqual({ width: 600, height: 695 });
 
     await page.mouse.move(800, 450);
     await expect
@@ -342,7 +343,6 @@ test('a tall panel’s drag bubble follows the pointer on both axes', async ({ p
         })
         .toEqual({ x: -50, y: 100 });
     await page.mouse.up();
-    await expect(bubble).toHaveCount(0);
 
     const dropped = await panelBox(page, 'explorer');
     expect(dropped.y + dropped.height).toBeLessThanOrEqual(page.viewportSize()!.height);
@@ -820,3 +820,35 @@ const frontPanel = (page: Page, first: string, second: string) =>
         },
         [first, second]
     );
+
+test('a docked panel follows the pointer and leaves its place outlined', async ({ page }) => {
+    await openEditor(page);
+    const panel = page.locator('[data-panel="controlPanel"]');
+    const before = (await panel.boundingBox())!;
+    const header = page.locator('[data-panel="controlPanel"] > button');
+    const bounds = (await header.boundingBox())!;
+    await page.mouse.move(bounds.x + 20, bounds.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(600, 300, { steps: 5 });
+
+    await expect
+        .poll(async () => {
+            const box = (await panel.boundingBox())!;
+
+            return { x: box.x, y: box.y, width: box.width, height: box.height };
+        })
+        .toEqual({ x: 580, y: 290, width: before.width, height: before.height });
+    await expect(panel).toHaveCSS('position', 'fixed');
+    const place = page.locator('[data-dock="top-right"] [data-panel-place]');
+    expect(await place.boundingBox()).toEqual(before);
+
+    // Over the top dock, the hint naming it stays on screen.
+    await page.mouse.move(600, 20, { steps: 3 });
+    const hint = page.getByText('Dock top', { exact: true });
+    await expect(hint).toBeVisible();
+    expect((await hint.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+
+    await page.keyboard.press('Escape');
+    await expect(panel).not.toHaveCSS('position', 'fixed');
+    expect(await panel.boundingBox()).toEqual(before);
+});
