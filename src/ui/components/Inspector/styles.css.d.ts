@@ -45,6 +45,7 @@ declare namespace StylesCssNamespace {
     interactions: string;
     labelColumn: string;
     layoutChoice: string;
+    limit: string;
     note: string;
     pair: string;
     propertyMapping: string;

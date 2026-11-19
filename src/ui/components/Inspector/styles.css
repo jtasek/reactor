@@ -263,6 +263,25 @@
     padding-top: 0;
 }
 
+.limit {
+    display: block;
+    min-width: 0;
+    position: relative;
+}
+
+.limit > span {
+    color: var(--label-secondary);
+    left: 8px;
+    line-height: var(--field-height);
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+}
+
+.inspector .limit > input[type='number'] {
+    padding-left: 36px;
+}
+
 .pair {
     display: grid;
     gap: var(--column-gap);
@@ -1027,7 +1046,18 @@
 
 /* Interactions: the kind of action and the start visibility are icon switches, named in words. */
 .interactions {
+    display: flex;
+    flex-direction: column;
     position: relative;
+}
+
+/* The ⓘ comes first for the keyboard, its notes open under the card. */
+.interactions > .inspectorHelp {
+    order: 1;
+}
+
+.interactions > .prototypeState {
+    order: 2;
 }
 
 .caption {
@@ -1087,6 +1117,7 @@
     right: var(--slot-inset);
     top: calc(var(--section-gap) + (var(--line-height-body) - var(--slot-size)) / 2);
     width: var(--slot-size);
+    z-index: 1;
 }
 
 .inspectorHelp summary:hover,

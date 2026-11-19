@@ -183,7 +183,9 @@ export const PrototypeVisibility: FC<{
                         aria-label={item.name}
                         title={item.name}
                         aria-pressed={start === item.id}
-                        disabled={disabled || (item.id === OTHER && !choices.length)}
+                        disabled={
+                            disabled || (item.id === OTHER && start !== OTHER && !choices.length)
+                        }
                         onClick={() => {
                             if (start !== item.id) {
                                 choose(item.id === OTHER ? choices[0].id : item.id);

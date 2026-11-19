@@ -7,45 +7,48 @@ import styles from './styles.css';
 
 const Constraint: FC<{
     label: string;
-    placeholder: string;
+    prefix: string;
     value?: number;
     disabled: boolean;
     onCommit: (value: number | undefined) => void;
-}> = ({ label, placeholder, value, disabled, onCommit }) => {
+}> = ({ label, prefix, value, disabled, onCommit }) => {
     const id = `sizing-${label.toLowerCase().replaceAll(' ', '-')}`;
     const [draft, setDraft] = useState(value === undefined ? '' : String(value));
     useEffect(() => setDraft(value === undefined ? '' : String(value)), [value]);
 
     return (
-        <input
-            id={id}
-            aria-label={label}
-            type="number"
-            min={0}
-            step="any"
-            placeholder={placeholder}
-            disabled={disabled}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={() => {
-                const number = draft.trim() ? Number(draft) : undefined;
-                if (number !== undefined && (!Number.isFinite(number) || number < 0)) {
-                    setDraft(value === undefined ? '' : String(value));
+        <span className={styles.limit}>
+            <span aria-hidden="true">{prefix}</span>
+            <input
+                id={id}
+                aria-label={label}
+                type="number"
+                min={0}
+                step="any"
+                placeholder="–"
+                disabled={disabled}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={() => {
+                    const number = draft.trim() ? Number(draft) : undefined;
+                    if (number !== undefined && (!Number.isFinite(number) || number < 0)) {
+                        setDraft(value === undefined ? '' : String(value));
 
-                    return;
-                }
-                // Leaving a field unchanged writes nothing.
-                if (number !== value) {
-                    onCommit(number);
-                }
-            }}
-            onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.currentTarget.blur();
-                }
-            }}
-        />
+                        return;
+                    }
+                    // Leaving a field unchanged writes nothing.
+                    if (number !== value) {
+                        onCommit(number);
+                    }
+                }}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                    }
+                }}
+            />
+        </span>
     );
 };
 
@@ -139,7 +142,7 @@ export const SizingFields: FC<{ frameId?: string; shapeId?: string }> = ({ frame
                                         <Constraint
                                             key={bound}
                                             label={`${bound === 'min' ? 'Min' : 'Max'} ${axis}`}
-                                            placeholder={bound === 'min' ? 'Min' : 'Max'}
+                                            prefix={bound === 'min' ? 'Min' : 'Max'}
                                             value={rule[bound]}
                                             disabled={disabled}
                                             onCommit={(value) => {

@@ -106,6 +106,31 @@ export const ComponentInteractions: FC<{
             className={styles.interactions}
             data-action-only={actionOnly}
         >
+            {!actionOnly && (
+                <details className={styles.inspectorHelp}>
+                    <summary title="About prototype behavior">
+                        <Icon icon={{ component: Info, size: 16 }} />
+                        <span className={styles.visuallyHidden}>About prototype behavior</span>
+                    </summary>
+                    <p>
+                        Roles connect exposed properties to controls. Actions run in Preview and
+                        Prototype; canvas clicks select and edit.
+                    </p>
+                    {data.settings.role === 'input' && (
+                        <p>
+                            Input actions run on Enter. Use the same input identity and Value
+                            property across a page’s designs to keep typed input. Each identity must
+                            be unique within a design.
+                        </p>
+                    )}
+                    {instanceId && (
+                        <p>
+                            From source follows the component. Choose it again to restore
+                            inheritance.
+                        </p>
+                    )}
+                </details>
+            )}
             <InspectorTable>
                 <PropertyGroup name="Interactions">
                     <tr>
@@ -133,7 +158,9 @@ export const ComponentInteractions: FC<{
                                             title={item.name}
                                             aria-pressed={kind === item.id}
                                             disabled={
-                                                actionDisabled || defaults[item.id] === undefined
+                                                actionDisabled ||
+                                                (kind !== item.id &&
+                                                    defaults[item.id] === undefined)
                                             }
                                             onClick={() => {
                                                 if (kind !== item.id) {
@@ -416,31 +443,6 @@ export const ComponentInteractions: FC<{
                     )}
                 </PropertyGroup>
             </InspectorTable>
-            {!actionOnly && (
-                <details className={styles.inspectorHelp}>
-                    <summary title="About prototype behavior">
-                        <Icon icon={{ component: Info, size: 16 }} />
-                        <span className={styles.visuallyHidden}>About prototype behavior</span>
-                    </summary>
-                    <p>
-                        Roles connect exposed properties to controls. Actions run in Preview and
-                        Prototype; canvas clicks select and edit.
-                    </p>
-                    {data.settings.role === 'input' && (
-                        <p>
-                            Input actions run on Enter. Use the same input identity and Value
-                            property across a page’s designs to keep typed input. Each identity must
-                            be unique within a design.
-                        </p>
-                    )}
-                    {instanceId && (
-                        <p>
-                            From source follows the component. Choose it again to restore
-                            inheritance.
-                        </p>
-                    )}
-                </details>
-            )}
             {!actionOnly && instanceId && data.prototypeVisible !== undefined && (
                 <PrototypeState values={data.states} disabled={data.disabled} />
             )}
