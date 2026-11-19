@@ -4,6 +4,7 @@ declare namespace StylesCssNamespace {
     centerColumn: string;
     closable: string;
     close: string;
+    closeCorner: string;
     column: string;
     content: string;
     dock: string;

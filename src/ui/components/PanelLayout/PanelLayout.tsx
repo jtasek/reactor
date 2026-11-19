@@ -12,7 +12,6 @@ import React, {
 } from 'react';
 import type { PanelPlacement } from 'src/app/types';
 import { X } from 'lucide-react';
-import { Icon } from '../Icon';
 import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
@@ -171,7 +170,10 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
 }) => {
     const panelLayout = usePanelLayout();
     const controls = useControls();
-    const { setPanelPlacement } = useActions();
+    const {
+        setPanelPlacement,
+        ui: { hideControl }
+    } = useActions();
     // Floating panels by last use, the most recent last; it sets their stacking order.
     const [floatOrder, setFloatOrder] = useState<string[]>([]);
     const previousFloats = useRef<string[]>([]);
@@ -374,6 +376,23 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     }, [visiblePanelLocations]);
     const renderPanel = (panel: ReactElement<DockablePanelProps>, dock: Dock) => {
         const { id, title, children, horizontalView, onClose, docking = 'both' } = panel.props;
+        // Focus inside a closing panel moves to the header of the panel shown beside it;
+        // a panel with its own `onClose` places focus itself.
+        const close =
+            onClose ??
+            (id in controls
+                ? (event: React.MouseEvent<HTMLButtonElement>) => {
+                      if (
+                          event.currentTarget.closest('section')?.contains(document.activeElement)
+                      ) {
+                          const others = visiblePanels.map((other) => other.props.id);
+                          const at = others.indexOf(id);
+
+                          pendingFocus.current = others[at + 1] ?? others[at - 1] ?? null;
+                      }
+                      hideControl(id);
+                  }
+                : undefined);
         const orientation = orientationOf(dock);
         const content = orientation === 'horizontal' ? (horizontalView ?? children) : children;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };
@@ -687,7 +706,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
         return (
             <section
                 key={id}
-                className={`${styles.panel} ${onClose ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
+                className={`${styles.panel} ${close ? styles.closable : ''} ${floating ? styles.floating : styles.docked} ${
                     isDragging && drag.moved ? styles.dragSource : ''
                 }`}
                 data-panel={id}
@@ -809,15 +828,19 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 >
                     {id === 'sideBar' ? <span aria-hidden="true">☰</span> : title}
                 </button>
-                {onClose && (
-                    <button
-                        type="button"
-                        className={styles.close}
-                        aria-label={`Close ${title}`}
-                        onClick={onClose}
-                    >
-                        <Icon icon={{ component: X, size: 16 }} />
-                    </button>
+                {close && (
+                    // Wrapped, so `> button` stays the panel's header.
+                    <div className={styles.closeCorner}>
+                        <button
+                            type="button"
+                            className={styles.close}
+                            aria-label={`Close ${title}`}
+                            title={`Close ${title}`}
+                            onClick={close}
+                        >
+                            <X aria-hidden="true" focusable="false" size={10} strokeWidth={2.6} />
+                        </button>
+                    </div>
                 )}
                 <div className={styles.content}>{content}</div>
                 <div className={styles.grips}>{RESIZE_CORNERS[dock ?? 'floating'].map(grip)}</div>
