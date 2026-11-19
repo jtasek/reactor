@@ -95,11 +95,11 @@ const angleOf = ([a, b]: Matrix) => round((Math.atan2(b, a) * 180) / Math.PI);
 const scaleOf = ([a, b]: Matrix) => Math.hypot(a, b);
 
 /** An element of SVG markup or of the Preview drawing. */
-interface Element {
+export interface MarkupElement {
     tag: string;
     attrs: Record<string, string>;
     text?: string;
-    children: Element[];
+    children: MarkupElement[];
 }
 
 interface Paint {
@@ -122,7 +122,13 @@ const READ = new Set(
         .split(' ')
 );
 
-function mark(element: Element, paint: Paint, fill: string, stroke?: string, strokeWidth?: number) {
+function mark(
+    element: MarkupElement,
+    paint: Paint,
+    fill: string,
+    stroke?: string,
+    strokeWidth?: number
+) {
     const { attrs } = element;
     const { matrix } = paint;
     const number = (key: string) => Number(attrs[key] ?? 0);
@@ -188,7 +194,7 @@ function mark(element: Element, paint: Paint, fill: string, stroke?: string, str
 }
 
 /** Text drawn as one element per line, as Preview and export do. */
-function lines(element: Element): Element[] {
+function lines(element: MarkupElement): MarkupElement[] {
     const spans = element.children.filter((child) => child.tag === 'tspan');
     if (!spans.length) {
         return [element];
@@ -221,8 +227,8 @@ const decode = (text: string) =>
     });
 
 /** Reads the well-formed SVG that React and the export serializer write. */
-export function parseMarkup(markup: string): Element[] {
-    const root: Element = { tag: '#root', attrs: {}, children: [] };
+export function parseMarkup(markup: string): MarkupElement[] {
+    const root: MarkupElement = { tag: '#root', attrs: {}, children: [] };
     const stack = [root];
     const tokens =
         /<\?[^>]*\?>|<\/([\w:-]+)>|<([\w:-]+)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>|([^<]+)/g;
@@ -238,7 +244,7 @@ export function parseMarkup(markup: string): Element[] {
                 throw new Error(`Unbalanced </${closing}>`);
             }
         } else if (opening) {
-            const element: Element = {
+            const element: MarkupElement = {
                 tag: opening,
                 attrs: Object.fromEntries(
                     [...attributes.matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, key, value]) => [
@@ -260,7 +266,7 @@ export function parseMarkup(markup: string): Element[] {
     return root.children;
 }
 
-const styles = (element: Element) =>
+const styles = (element: MarkupElement) =>
     Object.fromEntries(
         (element.attrs.style ?? '')
             .split(';')
@@ -276,7 +282,7 @@ const styles = (element: Element) =>
  * The canvas's primitives take their paint from the `.shape` rule in `src/tools/styles.css`
  * (`--shape-fill`, `--shape-stroke`, a stroke of 2) and text from its own inline style.
  */
-function canvasMarks(element: Element, paint: Paint, marks: Mark[]) {
+function canvasMarks(element: MarkupElement, paint: Paint, marks: Mark[]) {
     if (element.attrs['data-view-instance-hit'] !== undefined) {
         return;
     }
@@ -313,7 +319,7 @@ function canvasMarks(element: Element, paint: Paint, marks: Mark[]) {
 }
 
 /** Preview and export draw from the same attributes; export has replaced the stroke token. */
-function drawingMarks(element: Element, paint: Paint, marks: Mark[]) {
+function drawingMarks(element: MarkupElement, paint: Paint, marks: Mark[]) {
     const { attrs } = element;
     const next: Paint = {
         matrix: multiply(paint.matrix, parseTransform(attrs.transform)),
@@ -349,6 +355,14 @@ const origin = (x: number, y: number): Paint => ({
     matrix: [1, 0, 0, 1, -x, -y],
     opacity: 1
 });
+
+/** Marks of an element drawn as Preview and export draw, in its screen's coordinates. */
+export function markupMarks(element: MarkupElement, x: number, y: number) {
+    const marks: Mark[] = [];
+    drawingMarks(element, origin(x, y), marks);
+
+    return marks;
+}
 
 /** Marks drawn for each shape, keyed by shape id, in drawing order. */
 export type ShapeMarks = Map<string, Mark[]>;
@@ -428,7 +442,7 @@ export function playedNode(
     authored: PreviewNode,
     states: Record<string, PreviewStateValue>,
     player: Player
-): Element | null {
+): MarkupElement | null {
     const record =
         authored.recordEntity === player.record?.entityId ? player.record?.id : undefined;
     if (record && Object.hasOwn(authored.records ?? {}, record)) {

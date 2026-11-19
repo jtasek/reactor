@@ -2,10 +2,10 @@ import { Download } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from 'src/ui/components/Icon';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
-import { projectPreview, type PreviewSession, type PreviewInspection } from 'src/preview/project';
-import { createPreviewResources } from 'src/preview/resources';
+import type { PreviewSession, PreviewInspection } from 'src/preview/project';
 import {
     fetchPackageTemplate,
+    packageApplication,
     packageFileName,
     writeStandalonePackage
 } from 'src/preview/standalonePackage';
@@ -33,12 +33,8 @@ export function DownloadPrototype({
         operation.current = controller;
         setPending(true);
         try {
-            const drawing = projectPreview(document, {}, [], session, inspection);
-            if (!drawing.screens.length || drawing.screens[0].id !== session.screenId) {
-                throw new Error('Choose an available start page before downloading.');
-            }
             const [application, template] = await Promise.all([
-                createPreviewResources(assets)(drawing, controller.signal),
+                packageApplication(document, session, inspection, assets, controller.signal),
                 fetchPackageTemplate(controller.signal)
             ]);
             const page = writeStandalonePackage(template, document.name, application);

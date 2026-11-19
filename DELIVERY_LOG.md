@@ -1052,3 +1052,29 @@ padding and margin on selection, with four visual directions first
 - **Not in this step.** Padding on text and instances (a label's box around its words), dragging
   a grip from zero (set a first value in the Inspector), Alt to mirror a side and Shift to snap.
 
+
+## R6.1 Package parity
+
+_Recorded 2026-11-19._
+
+The projection parity suite (`tests/projectionParity.test.ts`) now plays the downloaded web
+package too, so the canvas, Prototype, the package and SVG export are held to one meaning.
+
+- **The real package.** For each fixture View, the suite builds the page as Download does, from
+  the same code: `prototypeSession` (`src/app/modeEdits.ts`, now shared with the Prototype page)
+  and `packageApplication` (`src/preview/standalonePackage.ts`, now shared with Download) write
+  the snapshot into `src/preview/package.html`. It then opens the page in jsdom and runs
+  `src/preview/runtime.ts` against it (`tests/support/packageProjection.ts`), choosing each
+  screen with the page's own picker. jsdom is a new dev dependency.
+- **What must match.** The start screen draws each shape as the canvas draws that View, except
+  instances hidden at start. Every screen draws what the hosted Prototype draws for it, records
+  included. Every other screen that has a View on the canvas draws as that View does once it is
+  given the launch View's size and modes and Auto layout: the R4 mode resolver, width variants,
+  automatic layouts and Fill have the same meaning after navigation in the file.
+- **No editor-only context.** The page is identical, byte for byte, when every View is moved,
+  the camera changes and the canvas shows other modes. A check that let the canvas's modes into
+  the session failed this test.
+- **Found.** No differences in today's projection or runtime.
+- **Not covered.** As before, images' content, where a list places its rows and the native
+  fields drawn over inputs. The Width and Layout a person inspects in Prototype still go into
+  the file: that is the context they tested.

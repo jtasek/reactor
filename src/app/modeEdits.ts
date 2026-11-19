@@ -1,10 +1,12 @@
-import type { ActionWithParam, VariableContext } from './types';
+import type { ActionWithParam, Document, Size, VariableContext } from './types';
 import type { Context } from './index';
 import { isReadOnly } from './documentAccess';
 import { isFrameLocked } from './frameState';
 import { isShapeLocked } from './utils';
 import { resolveModes } from './inheritedModes';
 import { isSizesDimension } from './variableModes';
+import { screenFrames, startScreen } from './screens';
+import type { PreviewSession } from '../preview/project';
 
 export type ModeTarget = { frameId: string } | { instanceId: string };
 
@@ -76,6 +78,33 @@ export function prototypeModes(state: Context['state']) {
                 ([dimensionId, modeId]) => dimensions[dimensionId]?.modes[modeId]
             )
         )
+    };
+}
+
+/** How Prototype opens from a launch seed (`prototypeModes`): a link's screen, then the View
+ * Play was pressed on, then the document's start, with every screen at the launch size and
+ * modes. Downloads use it too. */
+export function prototypeSession(
+    document: Document,
+    seed: PreviewSession,
+    requested: string | null,
+    fallbackSize: Size
+): PreviewSession {
+    const initial =
+        screenFrames(document).find((screen) => screen.id === (requested ?? seed.screenId)) ??
+        startScreen(document);
+    const fromView = initial?.id === seed.screenId;
+
+    return {
+        ...seed,
+        screenId: initial?.id,
+        modes: fromView ? seed.modes : {},
+        layoutId: fromView ? seed.layoutId : undefined,
+        layoutMode: fromView ? seed.layoutMode : 'auto',
+        viewport: {
+            ...(fromView && seed.viewport ? seed.viewport : (initial?.size ?? fallbackSize))
+        },
+        scope: 'all-screens'
     };
 }
 

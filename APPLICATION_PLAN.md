@@ -718,6 +718,7 @@ mode inheritance and responsive behavior are R4 requirements, not postponed to t
 
 1. Extend S1's projection parity suite to R5's standalone web package: the R4 resolver and
    responsive rules have identical meaning there; exported apps do not depend on editor-only context or canvas view placement.
+   R6.1 built; see the [delivery log](DELIVERY_LOG.md#r61-package-parity).
 2. Expose V4/V5 package and supported DTCG interchange in the design-system workflow. Preserve
    unsupported-mode diagnostics rather than claiming the DTCG subset can exchange all contexts.
 3. Audit contrast, labels and focus order across selected modes, widths, variants and layouts,

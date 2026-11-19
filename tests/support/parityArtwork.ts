@@ -2,7 +2,8 @@ import { createComponent, createDocument, createShape } from 'src/app/factories'
 import type { Frame, Shape, ShapeInput } from 'src/app/types';
 import { responsiveDocument } from './responsiveModes';
 
-const IMAGE = `asset:${'ab'.repeat(32)}`;
+/** The hash of `PREVIEW_PNG`, so the downloaded package can read it. */
+const IMAGE = 'asset:c414cd0e204de974f73753c7e28d7638e7b3691bb8b1a2bab6b25bb7fed7ce77';
 
 /**
  * Every primitive with rotation, opacity and its own paint, nested rotated instances, a
