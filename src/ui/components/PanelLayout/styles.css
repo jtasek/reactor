@@ -413,8 +413,11 @@
     pointer-events: none;
     position: absolute;
     top: 0;
-    transform: translateY(-100%);
     z-index: 6;
+}
+
+.dragPreviewAbove {
+    transform: translateY(-100%);
 }
 
 @supports not (backdrop-filter: blur(1px)) {

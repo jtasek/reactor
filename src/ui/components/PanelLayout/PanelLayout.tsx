@@ -34,6 +34,8 @@ const allowsDock = (dock: Dock, docking: Docking) =>
 const KEYBOARD_MOVE_STEP_PX = 10;
 /** The space between a dragged panel and the dock hint above it. */
 const DOCK_HINT_GAP_PX = 6;
+/** The room the dock hint takes above a dragged panel; with less, it goes below the pointer. */
+const DOCK_HINT_ROOM_PX = 30;
 /** The smallest a panel is resized to: room for a few rows under its header. */
 const MIN_PANEL_SIZE = { width: 160, height: 80 };
 const UNMEASURED_PANEL_SIZE = { width: 320, height: 200 };
@@ -913,6 +915,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     const floatingPanels = visiblePanels.filter((panel) => panelDock(panel) === null);
     const floats = floatingPanels.map((panel) => renderPanel(panel, null));
     const floatLifted = drag?.moved && floatingPanels.some((panel) => panel.props.id === drag.id);
+    const hintAbove = drag && drag.pointer.y - drag.offset.y >= DOCK_HINT_ROOM_PX;
 
     return (
         <div className={styles.panelLayer} ref={panelLayer} style={DOCK_GEOMETRY_STYLE}>
@@ -945,10 +948,12 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
             </div>
             {drag?.moved && drag.dock && (
                 <div
-                    className={styles.dragPreview}
+                    className={`${styles.dragPreview} ${hintAbove ? styles.dragPreviewAbove : ''}`}
                     style={{
-                        left: drag.pointer.x - drag.offset.x,
-                        top: drag.pointer.y - drag.offset.y - DOCK_HINT_GAP_PX
+                        left: Math.max(DOCK_HINT_GAP_PX, drag.pointer.x - drag.offset.x),
+                        top: hintAbove
+                            ? drag.pointer.y - drag.offset.y - DOCK_HINT_GAP_PX
+                            : drag.pointer.y + DOCK_HINT_ROOM_PX
                     }}
                     aria-hidden="true"
                 >

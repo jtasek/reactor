@@ -842,6 +842,12 @@ test('a docked panel follows the pointer and leaves its place outlined', async (
     const place = page.locator('[data-dock="top-right"] [data-panel-place]');
     expect(await place.boundingBox()).toEqual(before);
 
+    // Over the top dock, the hint naming it stays on screen.
+    await page.mouse.move(600, 20, { steps: 3 });
+    const hint = page.getByText('Dock top', { exact: true });
+    await expect(hint).toBeVisible();
+    expect((await hint.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+
     await page.keyboard.press('Escape');
     await expect(panel).not.toHaveCSS('position', 'fixed');
     expect(await panel.boundingBox()).toEqual(before);
