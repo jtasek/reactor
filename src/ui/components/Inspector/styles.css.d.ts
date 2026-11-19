@@ -3,15 +3,18 @@ declare namespace StylesCssNamespace {
     align: string;
     alignRow: string;
     bound: string;
+    caption: string;
     color: string;
     componentDetails: string;
     componentHeading: string;
     componentHint: string;
     componentPreview: string;
     componentProps: string;
+    dataList: string;
     eachSide: string;
     exposeButton: string;
     exposureStatus: string;
+    footnote: string;
     frameHint: string;
     headerActions: string;
     headerBinding: string;
@@ -22,6 +25,7 @@ declare namespace StylesCssNamespace {
     headerSourceName: string;
     heading: string;
     iconButton: string;
+    iconSwitch: string;
     inspector: string;
     inspectorHeader: string;
     inspectorHelp: string;
@@ -39,8 +43,11 @@ declare namespace StylesCssNamespace {
     instanceValue: string;
     interactionField: string;
     interactions: string;
+    labelColumn: string;
     layoutChoice: string;
+    limit: string;
     note: string;
+    pair: string;
     propertyMapping: string;
     prototypeState: string;
     prototypeStateRow: string;
@@ -52,10 +59,15 @@ declare namespace StylesCssNamespace {
     space: string;
     spacing: string;
     spacingLabel: string;
+    stateAdd: string;
+    stateRow: string;
+    stateType: string;
     stateValue: string;
+    subRow: string;
     variablePicker: string;
     variantActions: string;
     variantSummary: string;
+    visuallyHidden: string;
   }
 }
 

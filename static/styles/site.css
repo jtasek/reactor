@@ -37,12 +37,15 @@ body,
   --line-height-caption: 0.875rem;
   --font-size-micro: 0.625rem;
   --font-size-touch-input: 16px;
-  --control-height: 22px;
+  --control-height: 24px;
+  --touch-target: 44px;
   --list-row-height: 28px;
   --panel-title-height: 28px;
-  --space-section: 12px;
+  --space-section: 14px;
   --space-card: 10px;
-  --space-row: 3px;
+  --space-row: 4px;
+  --inspector-label-width: 72px;
+  --inspector-label-width-narrow: 44px;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;

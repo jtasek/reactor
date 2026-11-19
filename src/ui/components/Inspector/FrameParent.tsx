@@ -131,7 +131,7 @@ export const FrameParent: FC<{
                 </tr>
             )}
             {restriction && (
-                <tr>
+                <tr className={styles.footnote}>
                     <td colSpan={2}>
                         <small id={`${id}-restriction`} className={styles.frameHint} role="status">
                             {restriction}
@@ -140,7 +140,7 @@ export const FrameParent: FC<{
                 </tr>
             )}
             {problem && (
-                <tr>
+                <tr className={styles.footnote}>
                     <td colSpan={2}>
                         <small id={`${id}-problem`} className={styles.frameHint} role="status">
                             {problem}

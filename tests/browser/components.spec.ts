@@ -179,11 +179,12 @@ test('instance fields stay usable at default and minimum panel widths', async ({
         const xBox = (await x.boundingBox())!;
         const yBox = (await y.boundingBox())!;
         expect(xBox.width).toBeGreaterThan(50);
+        // Instances use the same one-row-per-value grid as every other selection.
+        expect(yBox.x).toBe(xBox.x);
+        expect(yBox.y).toBeGreaterThan(xBox.y);
         if (width === 160) {
-            expect(yBox.y).toBeGreaterThan(xBox.y);
             continue;
         }
-        expect(xBox.y).toBe(yBox.y);
         await resize.focus();
         for (let step = 0; step < 10; step += 1) {
             await resize.press('ArrowLeft');

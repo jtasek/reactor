@@ -102,14 +102,16 @@ test('authors and persists initial visibility in Inspector', async ({ page }) =>
             .first()
             .click();
     await selectHelp();
-    const visible = page.getByRole('combobox', { name: 'Prototype visibility', exact: true });
-    await expect(visible.locator('option:checked')).toHaveText('Hidden at start');
-    await visible.selectOption({ label: 'Shown at start' });
+    const shown = page.getByRole('button', { name: 'Shown at start', exact: true });
+    await expect(
+        page.getByRole('button', { name: 'Hidden at start', exact: true })
+    ).toHaveAttribute('aria-pressed', 'true');
+    await shown.click();
     await expect(page.locator('#status-save')).toHaveText('Saved');
     await page.reload();
     await selectHelp();
-    await expect(visible.locator('option:checked')).toHaveText('Shown at start');
-    await visible.scrollIntoViewIfNeeded();
+    await expect(shown).toHaveAttribute('aria-pressed', 'true');
+    await shown.scrollIntoViewIfNeeded();
     await page.screenshot({ path: 'test-results/prototype-visibility-inspector.png' });
     await page.getByRole('link', { name: 'Open prototype' }).click();
     const player = page.frameLocator('iframe[title="Application preview"]');

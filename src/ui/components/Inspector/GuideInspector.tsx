@@ -4,7 +4,7 @@ import { useActions, useAppState } from 'src/app/hooks';
 import { isReadOnly } from 'src/app/documentAccess';
 import type { Orientation } from 'src/app/types';
 import { Icon } from '../Icon';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import styles from './styles.css';
 
 function GuideField({
@@ -114,7 +114,7 @@ export function GuideInspector({ id }: { id: string }) {
                     <Icon icon={{ component: guide.locked ? Lock : LockOpen, size: 16 }} />
                 </button>
             </header>
-            <table>
+            <InspectorTable>
                 <PropertyGroup name="Guide">
                     <GuideField
                         label="Name"
@@ -162,7 +162,7 @@ export function GuideInspector({ id }: { id: string }) {
                             });
                         }}
                     />
-                    <tr>
+                    <tr className={styles.footnote}>
                         <td colSpan={2}>
                             <small className={styles.frameHint}>
                                 Canvas coordinates. Changing orientation keeps the same position.
@@ -181,7 +181,7 @@ export function GuideInspector({ id }: { id: string }) {
                         </td>
                     </tr>
                 </PropertyGroup>
-            </table>
+            </InspectorTable>
         </div>
     );
 }

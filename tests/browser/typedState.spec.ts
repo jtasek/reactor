@@ -137,6 +137,7 @@ test('authors a text state, a Set action and a condition in Inspector', async ({
     const initial = page.getByRole('textbox', { name: 'Initial value of Panel', exact: true });
     await initial.fill('Styles');
     await initial.press('Enter');
+    await page.getByRole('button', { name: 'Follows a state', exact: true }).click();
     await page
         .getByRole('combobox', { name: 'Prototype visibility', exact: true })
         .selectOption({ label: 'Follow Panel' });

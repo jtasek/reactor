@@ -82,7 +82,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
 
     return (
         <PropertyGroup name="Automatic design">
-            <tr>
+            <tr className={styles.footnote}>
                 <td colSpan={2}>
                     <small className={styles.frameHint}>
                         Used by every size of this page set to Auto. The greatest minimum width
@@ -155,7 +155,7 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
                 </td>
             </tr>
             {problems.map((problem) => (
-                <tr key={problem}>
+                <tr key={problem} className={styles.footnote}>
                     <td colSpan={2}>
                         <small role="status" className={styles.frameHint}>
                             {problem}

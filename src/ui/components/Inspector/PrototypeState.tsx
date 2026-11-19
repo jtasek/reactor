@@ -1,4 +1,6 @@
 import React, { useState, type FC } from 'react';
+import { Eye, EyeOff, Hash, Link2, Plus, ToggleLeft, Trash2, Type } from 'lucide-react';
+import { Icon } from '../Icon';
 import { useActions } from 'src/app/hooks';
 import type { PrototypeValue, StateValue } from 'src/app/types';
 import type { PrototypeStateEdit } from 'src/app/interactionEdits';
@@ -15,6 +17,8 @@ const TYPE_NAMES: Record<StateType, string> = {
     text: 'Text',
     number: 'Number'
 };
+
+const TYPE_ICONS = { boolean: ToggleLeft, text: Type, number: Hash };
 
 /** The comparisons a visibility condition offers for each kind of state. */
 const COMPARISON_NAMES: Record<'text' | 'number', [Comparison | 'isSet', string][]> = {
@@ -135,48 +139,78 @@ export const PrototypeVisibility: FC<{
         );
     const type = followed ? stateType(followed) : undefined;
 
+    const choose = (choice: string) => {
+        const value = values.find((item) => item.id === choice);
+        if (value && stateType(value) !== 'boolean') {
+            // Shown at first: the value it starts with.
+            show(stateEquals(value.id, value.initial));
+
+            return;
+        }
+        setProblem(
+            editInteractions({
+                target: 'state',
+                kind: 'bind',
+                instanceId,
+                ...(choice === SHOWN || choice === HIDDEN
+                    ? { stateId: null, visible: choice === SHOWN }
+                    : { stateId: choice, when: true })
+            })
+        );
+    };
+    const start = condition ? OTHER : visible ? SHOWN : HIDDEN;
+    const starts = [
+        { id: SHOWN, name: 'Shown at start', icon: Eye },
+        { id: HIDDEN, name: 'Hidden at start', icon: EyeOff },
+        { id: OTHER, name: 'Follows a state', icon: Link2 }
+    ];
+
     return (
         <div className={styles.interactionField}>
-            <label htmlFor={`prototype-visibility-${instanceId}`}>In prototype</label>
-            <select
-                id={`prototype-visibility-${instanceId}`}
-                aria-label="Prototype visibility"
-                disabled={disabled}
-                value={other ? OTHER : (followed?.id ?? (visible ? SHOWN : HIDDEN))}
-                onChange={(event) => {
-                    const choice = event.target.value;
-                    const value = values.find((item) => item.id === choice);
-                    if (value && stateType(value) !== 'boolean') {
-                        // Shown at first: the value it starts with.
-                        show(stateEquals(value.id, value.initial));
-
-                        return;
-                    }
-                    setProblem(
-                        editInteractions({
-                            target: 'state',
-                            kind: 'bind',
-                            instanceId,
-                            ...(choice === SHOWN || choice === HIDDEN
-                                ? { stateId: null, visible: choice === SHOWN }
-                                : { stateId: choice, when: true })
-                        })
-                    );
-                }}
+            <span className={styles.caption} id={`prototype-start-${instanceId}`}>
+                At start ·{' '}
+                <b>{start === SHOWN ? 'Shown' : start === HIDDEN ? 'Hidden' : 'Follows a state'}</b>
+            </span>
+            <div
+                role="group"
+                aria-labelledby={`prototype-start-${instanceId}`}
+                className={`${styles.segments} ${styles.iconSwitch}`}
             >
-                <option value={SHOWN}>Shown at start</option>
-                <option value={HIDDEN}>Hidden at start</option>
-                {other && <option value={OTHER}>When {text}</option>}
-                {choices.length > 0 && (
-                    <optgroup label="Follow state">
-                        {choices.map((value) => (
-                            <option key={value.id} value={value.id}>
-                                Follow {value.name}
-                            </option>
-                        ))}
-                    </optgroup>
-                )}
-            </select>
+                {starts.map((item) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        aria-label={item.name}
+                        title={item.name}
+                        aria-pressed={start === item.id}
+                        disabled={
+                            disabled || (item.id === OTHER && start !== OTHER && !choices.length)
+                        }
+                        onClick={() => {
+                            if (start !== item.id) {
+                                choose(item.id === OTHER ? choices[0].id : item.id);
+                            }
+                        }}
+                    >
+                        <Icon icon={{ component: item.icon, size: 16 }} />
+                    </button>
+                ))}
+            </div>
+            {condition && (
+                <select
+                    aria-label="Prototype visibility"
+                    disabled={disabled}
+                    value={other ? OTHER : followed?.id}
+                    onChange={(event) => choose(event.target.value)}
+                >
+                    {other && <option value={OTHER}>When {text}</option>}
+                    {choices.map((value) => (
+                        <option key={value.id} value={value.id}>
+                            Follow {value.name}
+                        </option>
+                    ))}
+                </select>
+            )}
             {followed && simple && type === 'boolean' && (
                 <label className={styles.interactionField}>
                     Show when
@@ -327,16 +361,15 @@ export const PrototypeState: FC<{ values: PrototypeValue[]; disabled: boolean }>
     return (
         <details className={styles.prototypeState}>
             <summary>Prototype states{values.length > 0 ? ` (${values.length})` : ''}</summary>
-            <p className={styles.frameHint}>
-                Shared by every control in this document. Reset restores these initial values.
-            </p>
             {values.map((value) => (
-                <div key={value.id} className={styles.prototypeStateRow}>
+                <div key={value.id} className={styles.stateRow}>
+                    <span className={styles.stateType} title={TYPE_NAMES[stateType(value)]}>
+                        <Icon icon={{ component: TYPE_ICONS[stateType(value)], size: 16 }} />
+                    </span>
                     <input
                         type="text"
                         key={value.name}
                         aria-label={`Name of ${value.name}`}
-                        title={TYPE_NAMES[stateType(value)]}
                         defaultValue={value.name}
                         maxLength={100}
                         disabled={disabled}
@@ -358,46 +391,23 @@ export const PrototypeState: FC<{ values: PrototypeValue[]; disabled: boolean }>
                             setProblem(error);
                         }}
                     />
-                    {stateType(value) === 'boolean' ? (
-                        <label>
-                            <input
-                                type="checkbox"
-                                aria-label={`Initial value of ${value.name}`}
-                                checked={value.initial === true}
-                                disabled={disabled}
-                                onChange={(event) =>
-                                    setProblem(
-                                        edit({
-                                            target: 'state',
-                                            kind: 'update',
-                                            id: value.id,
-                                            name: value.name,
-                                            initial: event.target.checked
-                                        })
-                                    )
-                                }
-                            />
-                            True
-                        </label>
-                    ) : (
-                        <StateValueInput
-                            type={stateType(value)}
-                            value={value.initial}
-                            label={`Initial value of ${value.name}`}
-                            disabled={disabled}
-                            onCommit={(initial) =>
-                                setProblem(
-                                    edit({
-                                        target: 'state',
-                                        kind: 'update',
-                                        id: value.id,
-                                        name: value.name,
-                                        initial
-                                    })
-                                )
-                            }
-                        />
-                    )}
+                    <StateValueInput
+                        type={stateType(value)}
+                        value={value.initial}
+                        label={`Initial value of ${value.name}`}
+                        disabled={disabled}
+                        onCommit={(initial) =>
+                            setProblem(
+                                edit({
+                                    target: 'state',
+                                    kind: 'update',
+                                    id: value.id,
+                                    name: value.name,
+                                    initial
+                                })
+                            )
+                        }
+                    />
                     <button
                         type="button"
                         disabled={disabled}
@@ -405,8 +415,10 @@ export const PrototypeState: FC<{ values: PrototypeValue[]; disabled: boolean }>
                         onClick={() =>
                             setProblem(edit({ target: 'state', kind: 'delete', id: value.id }))
                         }
+                        title="Delete state"
+                        className={styles.iconButton}
                     >
-                        ×
+                        <Icon icon={{ component: Trash2, size: 16 }} />
                     </button>
                 </div>
             ))}
@@ -425,7 +437,7 @@ export const PrototypeState: FC<{ values: PrototypeValue[]; disabled: boolean }>
                         setName('');
                     }
                 }}
-                className={styles.prototypeStateRow}
+                className={styles.stateAdd}
             >
                 <input
                     type="text"
@@ -450,10 +462,14 @@ export const PrototypeState: FC<{ values: PrototypeValue[]; disabled: boolean }>
                     ))}
                 </select>
                 <button type="submit" disabled={disabled || !name.trim()}>
+                    <Icon icon={{ component: Plus, size: 14 }} />
                     Add state
                 </button>
             </form>
             {problem && <p role="alert">{problem}</p>}
+            <p className={styles.frameHint}>
+                Shared by every control in this document. Reset restores these starting values.
+            </p>
         </details>
     );
 };

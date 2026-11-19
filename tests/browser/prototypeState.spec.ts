@@ -26,8 +26,10 @@ test('authors shared boolean state, binds two instances, renames it and reloads'
     await openStates();
     await page.getByRole('textbox', { name: 'New state name', exact: true }).fill('showHelp');
     await page.getByRole('button', { name: 'Add state', exact: true }).click();
+    await page.getByRole('button', { name: 'Follows a state', exact: true }).click();
     await visibility.selectOption({ label: 'Follow showHelp' });
     await select('Inspector comparison');
+    await page.getByRole('button', { name: 'Follows a state', exact: true }).click();
     await visibility.selectOption({ label: 'Follow showHelp' });
     await openStates();
     await page.getByRole('textbox', { name: 'Name of showHelp', exact: true }).fill('showDetails');

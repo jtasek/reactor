@@ -1,13 +1,17 @@
 /* The panel draws the glass; each section is a lighter card on it, under its heading. */
 .inspector {
     --inspector-inset: var(--panel-gap);
-    --section-gap: var(--space-section, 12px);
+    --section-gap: var(--space-section);
+    --heading-gap: 6px;
     --card-radius: var(--radius-md);
-    --card-padding: var(--space-card, 10px);
-    --field-height: var(--control-height, 22px);
+    --card-padding: var(--space-card);
+    --field-height: var(--control-height);
     --field-radius: var(--radius-sm);
-    --row-padding: var(--space-row, 3px);
-    --column-gap: 8px;
+    --row-padding: var(--space-row);
+    --label-width: var(--inspector-label-width);
+    --slot-size: var(--control-height);
+    --slot-inset: 4px;
+    --column-gap: 6px;
     --checkbox-size: 14px;
     --color-swatch-width: 44px;
     color: var(--text-color);
@@ -25,9 +29,8 @@
     display: flex;
     gap: 6px;
     justify-content: space-between;
-    margin-bottom: var(--section-gap);
     min-width: 0;
-    padding: 8px var(--card-padding);
+    padding: 8px var(--slot-inset) 8px var(--card-padding);
 }
 
 .headerIdentity,
@@ -167,7 +170,8 @@
     min-width: 0;
 }
 
-/* The first row is a heading across both columns, so the fixed layout splits them evenly. */
+/* Every row has the same columns: a label, the value, and a slot at its end for the
+   variable picker or a side toggle, so labels, values and slots each share one edge. */
 .inspector table {
     border-collapse: separate;
     border-spacing: 0;
@@ -175,90 +179,156 @@
     width: 100%;
 }
 
-/* A section's heading sits on the glass, above its card. */
-.inspector th,
+.labelColumn {
+    width: calc(var(--card-padding) + var(--label-width) + var(--column-gap));
+}
+
+/* Fingers get the larger touch target on every field, pop-up and slot. */
+@media (pointer: coarse) {
+    .inspector {
+        --field-height: var(--touch-target);
+        --slot-size: var(--touch-target);
+    }
+}
+
+/* A section's heading sits on the glass, above its card, on the labels' edge. */
+.inspector th[scope='colgroup'],
 .heading {
-    color: var(--section-label-color, var(--label-primary));
-    font-size: var(--font-size-section, var(--font-size-body));
+    color: var(--label-primary);
+    font-size: var(--font-size-body);
     font-weight: var(--font-weight-semibold);
-    letter-spacing: normal;
     line-height: var(--line-height-body);
-    padding: 0 var(--card-padding) 6px;
+    padding: var(--section-gap) var(--card-padding) var(--heading-gap);
     text-align: left;
-    text-transform: none;
 }
 
-.inspector th {
-    padding-top: var(--section-gap);
+.inspector tr {
+    position: relative;
 }
 
-.inspector th[scope='row'] {
-    color: var(--label-secondary);
-    font-size: var(--font-size-callout);
-    font-weight: var(--font-weight-regular);
-    line-height: var(--line-height-callout);
-    padding-top: 0;
-}
-
-.inspector tbody:first-of-type th {
-    padding-top: 0;
-}
-
-.inspector td {
+.inspector tbody tr:not(:first-child) > :is(th, td) {
+    background-color: var(--panel-content-background);
     padding: var(--row-padding) 0;
     vertical-align: top;
 }
 
-.inspector td:first-child {
-    overflow: hidden;
-    padding-left: var(--card-padding);
-    padding-right: var(--column-gap);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.inspector tbody tr:not(:first-child) > :is(th[scope='row'], td:first-child:not([colspan])) {
+    color: var(--label-secondary);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-callout);
+    overflow-wrap: anywhere;
+    padding: calc(var(--row-padding) + (var(--field-height) - var(--line-height-callout)) / 2)
+        var(--column-gap) 0 var(--card-padding);
+    text-align: left;
 }
 
-/* A label sits on its field's line, also when a slider follows the field. */
-.inspector tbody td:first-child {
-    line-height: var(--field-height);
+.inspector tbody tr:not(:first-child) > :is(th, td) + td {
+    padding-right: var(--card-padding);
 }
 
-.inspector td ~ td {
-    padding-right: var(--row-padding);
+.inspector tbody tr:not(:first-child):has(:is(.variablePicker:not(:disabled), .eachSide))
+    > :is(th, td)
+    + td {
+    padding-right: calc(var(--slot-size) + var(--slot-inset) * 2);
 }
 
-.inspector tbody td {
-    background-color: var(--panel-content-background);
+.inspector tbody tr:not(:first-child) > td[colspan] {
+    padding: var(--row-padding) var(--card-padding);
 }
 
-.inspector tbody tr + tr + tr td {
+.inspector tbody tr + tr + tr > :is(th, td) {
     border-top: 1px solid var(--hairline-color);
 }
 
-.inspector tbody tr:nth-child(2) td:first-child {
+.inspector tbody tr:nth-child(2) > :first-child {
     border-top-left-radius: var(--card-radius);
 }
 
-.inspector tbody tr:nth-child(2) td:last-child {
+.inspector tbody tr:nth-child(2) > :last-child {
     border-top-right-radius: var(--card-radius);
 }
 
-.inspector tbody tr:last-child td:first-child {
+.inspector tbody tr:is(:last-child, :has(+ .footnote)) > :first-child {
     border-bottom-left-radius: var(--card-radius);
 }
 
-.inspector tbody tr:last-child td:last-child {
+.inspector tbody tr:is(:last-child, :has(+ .footnote)) > :last-child {
     border-bottom-right-radius: var(--card-radius);
 }
 
+/* A row that continues the one above it, such as a size's limits, joins its card row. */
+.inspector tbody tr.subRow > :is(th, td) {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.limit {
+    display: block;
+    min-width: 0;
+    position: relative;
+}
+
+.limit > span {
+    color: var(--label-secondary);
+    left: 8px;
+    line-height: var(--field-height);
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+}
+
+.inspector .limit > input[type='number'] {
+    padding-left: 40px;
+}
+
+.pair {
+    display: grid;
+    gap: var(--column-gap);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* A row that only explains the rows above it reads as a note under the card. */
+.inspector tbody tr.footnote > td[colspan] {
+    background-color: transparent;
+    border-top: 0;
+    padding: var(--heading-gap) var(--card-padding) 0;
+}
+
+.inspector tbody tr.footnote + tr:not(.footnote) > :is(th, td) {
+    border-top: 0;
+}
+
+.inspector tbody tr.footnote + tr:not(.footnote) > :first-child {
+    border-top-left-radius: var(--card-radius);
+}
+
+.inspector tbody tr.footnote + tr:not(.footnote) > :last-child {
+    border-top-right-radius: var(--card-radius);
+}
+
+.inspector tbody tr.footnote:has(+ tr:not(.footnote)) > td[colspan] {
+    padding-bottom: var(--heading-gap);
+}
+
+/* Notes about a whole section sit under its card, like a footnote row. */
+.dataList > p {
+    color: var(--label-secondary);
+    font-size: var(--font-size-callout);
+    line-height: var(--line-height-callout);
+    overflow-wrap: anywhere;
+    padding: var(--heading-gap) var(--card-padding) 0;
+}
+
 .inspector input[type='text'],
-.inspector input[type='number'] {
+.inspector input[type='number'],
+.inspector select:not(.variablePicker, .instanceOptions select) {
     background-color: var(--field-background);
     border-radius: var(--field-radius);
-    color: var(--text-color-hover);
+    color: var(--label-primary);
     display: block;
     font: inherit;
     font-variant-numeric: tabular-nums;
-    font-weight: var(--font-weight-medium);
     height: var(--field-height);
     min-width: 0;
     padding: 0 8px;
@@ -266,26 +336,47 @@
     width: 100%;
 }
 
+/* One pop-up style: a field with an up and down chevron at its end. */
+.inspector select:not(.variablePicker, .instanceOptions select) {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355585f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
+    background-position: right 6px center;
+    background-repeat: no-repeat;
+    background-size: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    padding-right: 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .inspector input::placeholder {
-    font-weight: 400;
+    color: var(--label-tertiary);
+    font-weight: var(--font-weight-regular);
 }
 
 .inspector input[type='text']:focus,
-.inspector input[type='number']:focus {
+.inspector input[type='number']:focus,
+.inspector select:not(.variablePicker):focus {
     background-color: var(--control-background-active);
 }
 
-.inspector input:focus-visible,
-.inspector button:focus-visible {
+.inspector :is(input, select, button, summary):focus-visible {
+    border-radius: var(--field-radius);
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: 0;
+    outline-offset: 1px;
 }
 
 /* A field that cannot change reads as text, not as a well to type in. */
 .inspector input[readonly] {
     background-color: transparent;
     color: var(--ink-strong);
-    font-weight: 400;
+}
+
+.inspector select:disabled,
+.inspector input:disabled {
+    cursor: default;
+    opacity: 0.55;
 }
 
 .inspector input[type='checkbox'] {
@@ -334,14 +425,14 @@
 .inspector td button {
     background-color: var(--field-background);
     border-radius: var(--field-radius);
-    color: var(--text-color-hover);
+    color: var(--label-primary);
     cursor: pointer;
     font: inherit;
-    font-size: var(--font-size-callout);
     height: var(--field-height);
     margin-left: 8px;
     padding: 0 10px;
     vertical-align: top;
+    white-space: nowrap;
 }
 
 .inspector td button[aria-pressed='true'] {
@@ -375,7 +466,7 @@
 }
 
 .align {
-    margin-bottom: var(--section-gap);
+    margin: 0;
 }
 
 .alignRow {
@@ -400,32 +491,49 @@
     border-bottom-right-radius: var(--card-radius);
 }
 
-/* A field's variable picker sits at the end of its label's line, showing only its mark. */
+/* A field's variable picker shows only its mark, and only while its row is hovered or
+   focused, so the values stay the quietest column to scan. */
 .variablePicker {
     appearance: none;
     background: none;
     border: 0;
-    color: var(--text-color);
+    border-radius: var(--field-radius);
+    color: var(--label-secondary);
     cursor: pointer;
-    float: right;
     font: inherit;
-    height: var(--field-height);
-    opacity: 0.6;
-    padding: 0 2px;
-    width: 1.4em;
+    height: var(--slot-size);
+    padding: 0;
+    text-align: center;
+    width: var(--slot-size);
+}
+
+.inspector tbody tr:not(:first-child) :is(.variablePicker, .eachSide) {
+    position: absolute;
+    right: var(--slot-inset);
+    top: var(--row-padding);
+}
+
+.inspector tbody tr:not(:first-child) .variablePicker {
+    opacity: 0;
+}
+
+.inspector tbody tr:not(:first-child):is(:hover, :focus-within) .variablePicker:not(:disabled) {
+    opacity: 1;
 }
 
 .variablePicker:hover:not(:disabled) {
-    opacity: 1;
+    background-color: var(--field-background);
+    color: var(--label-primary);
 }
 
 .variablePicker:disabled {
     cursor: default;
-    opacity: 0.25;
 }
 
-.variablePicker:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+@media (hover: none) {
+    .inspector tbody tr:not(:first-child) .variablePicker:not(:disabled) {
+        opacity: 1;
+    }
 }
 
 /* A property taken from a variable shows the variable's name where its field would be. */
@@ -449,8 +557,7 @@
 }
 
 .interactions {
-    margin-top: var(--section-gap);
-    margin-bottom: var(--section-gap);
+    margin: 0;
 }
 
 .interactions select {
@@ -459,14 +566,18 @@
     width: 100%;
 }
 
-/* Inherited frame restrictions must wrap, including in a narrow Inspector. */
+/* Notes and restrictions wrap, including in a narrow Inspector. */
 .frameHint {
-    color: var(--text-secondary-color);
+    color: var(--label-secondary);
     display: block;
     font-size: var(--font-size-callout);
-    line-height: 1.4;
+    line-height: var(--line-height-callout);
     overflow-wrap: anywhere;
     white-space: normal;
+}
+
+.inspector td > * + .frameHint {
+    margin-top: 4px;
 }
 
 /* What a field's value cannot show, as a template naming no variable. */
@@ -561,13 +672,13 @@
 .responsiveField > select,
 .responsiveField > input {
     background: var(--field-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-color);
+    border-radius: var(--field-radius);
+    color: var(--label-primary);
     font: inherit;
-    min-height: 28px;
+    min-height: var(--field-height);
     min-width: 0;
-    padding: 4px 8px;
+    padding: 0 8px;
+    white-space: nowrap;
     width: 100%;
 }
 
@@ -683,60 +794,50 @@
     flex-wrap: wrap;
     gap: 4px 8px;
     justify-content: space-between;
-    padding: 12px calc(var(--inspector-inset) + var(--card-padding)) 8px;
+    padding: var(--section-gap) calc(var(--inspector-inset) + var(--card-padding)) var(--heading-gap);
 }
 
 .instanceSectionHeading .heading {
     margin: 0;
+    padding: 0;
 }
 
 .instanceSectionHeading span {
-    white-space: nowrap;
     color: var(--component-color);
-    font-size: var(--font-size-caption);
+    font-size: var(--font-size-callout);
+    white-space: nowrap;
 }
 
 .instanceChild {
-    padding: 0 var(--inspector-inset) 10px;
+    padding: 0 var(--inspector-inset) var(--heading-gap);
 }
 
 .instanceChild h4 {
-    color: var(--text-secondary-color);
+    color: var(--label-secondary);
     font-size: var(--font-size-callout);
     font-weight: var(--font-weight-medium);
-    margin: 0 0 5px;
+    margin: 0 0 4px var(--card-padding);
 }
 
 .instanceFields {
-    background: var(--control-background);
-    border-radius: var(--radius-md);
-    padding: 0 9px;
+    background: var(--panel-content-background);
+    border-radius: var(--card-radius);
+    padding: 0 var(--card-padding);
 }
 
 .instanceProps .instanceEmpty {
-    background: var(--control-background);
-    border-radius: var(--radius-md);
-    margin: 0 var(--inspector-inset) 12px;
-    padding: 10px;
+    background: var(--panel-content-background);
+    border-radius: var(--card-radius);
+    margin: 0 var(--inspector-inset);
+    padding: var(--card-padding);
 }
 
-.instanceInspector > table {
-    display: block;
-}
-
-.instanceInspector > table > tbody {
-    display: grid;
-    gap: 6px;
-    grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-}
-
-.instanceInspector > table > tbody[data-property-group='Layout'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-/* Keep room for a numeric value beside each label in a narrow panel. */
+/* Keep room for a value beside each label in a narrow panel. */
 @container (width < 230px) {
+    .inspector table {
+        --label-width: var(--inspector-label-width-narrow);
+    }
+
     .inspectorHeader {
         flex-wrap: wrap;
     }
@@ -748,73 +849,6 @@
     .headerActions {
         margin-left: auto;
     }
-
-    .instanceInspector > table > tbody[data-property-group='Layout'] {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-.instanceInspector > table > tbody > tr:first-child {
-    grid-column: 1 / -1;
-}
-
-.instanceInspector > table > tbody > tr:not(:first-child) {
-    align-items: center;
-    background: var(--control-background);
-    border-radius: var(--radius-md);
-    display: flex;
-    min-width: 0;
-    padding: 5px 8px;
-}
-
-.instanceInspector > table > tbody > tr[data-property='rotation'] {
-    grid-column: 1 / -1;
-}
-
-.instanceInspector > table > tbody > tr:not(:first-child) > td {
-    background: transparent;
-    border: 0;
-    padding: 0;
-}
-
-.instanceInspector > table > tbody > tr > td:first-child {
-    color: var(--text-secondary-color);
-    flex: 0 0 42px;
-    font-size: var(--font-size-callout);
-    line-height: var(--field-height);
-    overflow: visible;
-    white-space: nowrap;
-}
-
-.instanceInspector > table > tbody > tr[data-property='rotation'] > td:first-child,
-.instanceInspector > table > tbody:not([data-property-group='Layout']) > tr > td:first-child {
-    flex-basis: 72px;
-}
-
-.instanceInspector > table > tbody > tr > td:last-child {
-    flex: 1;
-    min-height: var(--field-height);
-    min-width: 0;
-}
-
-.instanceInspector > table > tbody input[type='text'],
-.instanceInspector > table > tbody input[type='number'] {
-    background: transparent;
-    padding: 0;
-}
-
-.instanceInspector > table > tbody > tr > td:has(> .bound) {
-    display: flex;
-}
-
-.instanceInspector > table .bound {
-    max-width: none;
-    min-width: 0;
-    padding-left: 0;
-}
-
-.instanceInspector > table .bound + button {
-    flex-shrink: 0;
 }
 
 .instanceRow {
@@ -830,13 +864,12 @@
     align-items: center;
     display: grid;
     gap: 6px;
-    grid-template-columns: minmax(0, 1fr) 22px;
+    grid-template-columns: minmax(0, 1fr) var(--slot-size);
 }
 
 .instanceValue label {
     grid-column: 1 / -1;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
+    color: var(--label-secondary);
     min-width: 0;
     overflow-wrap: anywhere;
 }
@@ -894,7 +927,7 @@
     cursor: pointer;
     /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- sizes the "…" glyph, not text */
     font-size: 1.2rem;
-    height: 22px;
+    height: var(--field-height);
     line-height: 16px;
     list-style: none;
     text-align: center;
@@ -925,7 +958,7 @@
     align-items: center;
     color: var(--component-color);
     display: flex;
-    font-size: var(--font-size-caption);
+    font-size: var(--font-size-callout);
     justify-content: flex-end;
     margin-top: 4px;
 }
@@ -937,7 +970,7 @@
     color: var(--component-color);
     cursor: pointer;
     display: inline-flex;
-    font-size: var(--font-size-caption);
+    font-size: var(--font-size-callout);
     gap: 3px;
     padding: 0;
 }
@@ -1001,29 +1034,6 @@
     width: 100%;
 }
 
-.inspectorHelp {
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
-    line-height: 1.4;
-    margin: var(--panel-gap) 0 var(--section-gap);
-    overflow-wrap: anywhere;
-}
-
-.inspectorHelp summary {
-    cursor: pointer;
-    padding: 4px 0;
-}
-
-.inspectorHelp summary:focus-visible,
-.instanceOptions summary:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: 2px;
-}
-
-.inspectorHelp p {
-    margin: 4px 0;
-}
-
 .interactionField {
     display: grid;
     gap: 4px;
@@ -1031,28 +1041,238 @@
 }
 
 .interactionField label {
-    color: var(--text-secondary-color);
+    color: var(--label-secondary);
+}
+
+/* Interactions: the kind of action and the start visibility are icon switches, named in words. */
+.interactions {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* The ⓘ comes first for the keyboard, its notes open under the card. */
+.interactions > .inspectorHelp {
+    order: 1;
+}
+
+.interactions > .prototypeState {
+    order: 2;
+}
+
+.caption {
+    color: var(--label-secondary);
     font-size: var(--font-size-callout);
+    line-height: var(--line-height-callout);
 }
 
-.prototypeState {
-    display: grid;
-    gap: 8px;
-    padding: var(--card-padding);
-}
-
-.prototypeState summary {
-    cursor: pointer;
-    font-size: var(--font-size-body);
+.caption b {
+    color: var(--label-primary);
     font-weight: var(--font-weight-medium);
 }
 
-.prototypeState summary:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+.segments.iconSwitch {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
 }
 
-.prototypeState [role='alert'] {
+.inspector td .segments.iconSwitch button {
+    height: var(--field-height);
     margin: 0;
+    width: auto;
+}
+
+.inspector td .segments.iconSwitch button:disabled {
+    opacity: 0.35;
+}
+
+.visuallyHidden {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+/* About prototype behavior is an ⓘ on the Interactions heading; its notes open under the card. */
+.inspectorHelp {
+    color: var(--label-secondary);
+    font-size: var(--font-size-callout);
+    line-height: var(--line-height-callout);
+    overflow-wrap: anywhere;
+}
+
+.inspectorHelp summary {
+    align-items: center;
+    border-radius: var(--field-radius);
+    color: var(--label-secondary);
+    cursor: pointer;
+    display: flex;
+    height: var(--slot-size);
+    justify-content: center;
+    list-style: none;
+    position: absolute;
+    right: var(--slot-inset);
+    top: calc(var(--section-gap) + (var(--line-height-body) - var(--slot-size)) / 2);
+    width: var(--slot-size);
+    z-index: 1;
+}
+
+.inspectorHelp summary:hover,
+.inspectorHelp[open] summary {
+    background-color: var(--field-background);
+    color: var(--label-primary);
+}
+
+.inspectorHelp summary::-webkit-details-marker {
+    display: none;
+}
+
+.inspectorHelp p {
+    margin: var(--heading-gap) var(--card-padding) 0;
+}
+
+/* Prototype states open from a heading with a turning chevron. */
+.prototypeState {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+}
+
+.prototypeState summary {
+    align-items: center;
+    color: var(--label-primary);
+    cursor: pointer;
+    display: flex;
+    font-weight: var(--font-weight-semibold);
+    gap: 4px;
+    list-style: none;
+    margin-top: calc(var(--section-gap) - 4px);
+    min-height: var(--field-height);
+    padding: 0 var(--card-padding) 0 calc(var(--card-padding) - 4px);
+}
+
+.prototypeState summary::-webkit-details-marker {
+    display: none;
+}
+
+.prototypeState summary::before {
+    border-color: currentColor;
+    border-style: solid;
+    border-width: 0 1.5px 1.5px 0;
+    content: '';
+    flex: 0 0 auto;
+    height: 6px;
+    margin: 0 5px 0 3px;
+    transform: rotate(-45deg);
+    transition: transform 150ms;
+    width: 6px;
+}
+
+.prototypeState[open] > summary::before {
+    transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .prototypeState summary::before {
+        transition: none;
+    }
+}
+
+.prototypeState [role='alert'],
+.prototypeState > .frameHint {
+    margin: var(--heading-gap) var(--card-padding) 0;
+}
+
+/* Each state is a card row: its type, its name, its starting value and delete. */
+.stateRow,
+.stateAdd {
+    align-items: center;
+    background-color: var(--panel-content-background);
+    display: grid;
+    gap: var(--column-gap);
+    min-width: 0;
+    padding: var(--row-padding) var(--slot-inset) var(--row-padding) var(--card-padding);
+}
+
+.stateRow {
+    grid-template-columns: 16px minmax(0, 1fr) minmax(0, 72px) var(--slot-size);
+}
+
+.stateAdd {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding-right: var(--card-padding);
+}
+
+.prototypeState > summary + :is(.stateRow, .stateAdd) {
+    border-top-left-radius: var(--card-radius);
+    border-top-right-radius: var(--card-radius);
+    margin-top: var(--heading-gap);
+}
+
+.stateRow + :is(.stateRow, .stateAdd) {
+    border-top: 1px solid var(--hairline-color);
+}
+
+.stateAdd {
+    border-bottom-left-radius: var(--card-radius);
+    border-bottom-right-radius: var(--card-radius);
+}
+
+.stateType {
+    color: var(--label-secondary);
+    display: flex;
+}
+
+.stateRow > input,
+.stateRow > select,
+.stateAdd > input {
+    min-width: 0;
+    width: 100%;
+}
+
+.prototypeState button,
+.prototypeState select {
+    background-color: var(--field-background);
+    border-radius: var(--field-radius);
+    color: var(--label-primary);
+    cursor: pointer;
+    font: inherit;
+    height: var(--field-height);
+    padding: 0 10px;
+    white-space: nowrap;
+}
+
+.prototypeState select {
+    padding-right: 22px;
+}
+
+.stateAdd > button {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    padding: 0 8px;
+}
+
+.prototypeState .iconButton {
+    align-items: center;
+    background-color: transparent;
+    color: var(--label-secondary);
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    width: var(--slot-size);
+}
+
+.prototypeState button:disabled {
+    opacity: 0.35;
+}
+
+.prototypeState button:hover:not(:disabled) {
+    background-color: var(--control-background-active);
+    color: var(--label-primary);
 }
 
 .prototypeStateRow {
@@ -1062,43 +1282,8 @@
     min-width: 0;
 }
 
-.prototypeStateRow > input {
-    flex: 1;
-    min-width: 0;
-}
-
 .prototypeStateRow > .stateValue {
     flex: 0 1 96px;
-}
-
-.prototypeStateRow label {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-    white-space: nowrap;
-}
-
-.prototypeState button,
-.prototypeState select {
-    background: var(--field-background);
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--field-radius);
-    color: var(--text-color);
-    font: inherit;
-    min-height: 28px;
-    padding: 4px 8px;
-}
-
-.prototypeState button:disabled {
-    opacity: 0.5;
-}
-
-.prototypeState input[type='text'] {
-    min-height: 28px;
-}
-
-.prototypeState select:focus-visible {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
 }
 
 /* Margin and padding: one field across and one down, which open into a field per side. */

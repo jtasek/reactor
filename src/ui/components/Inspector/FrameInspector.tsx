@@ -11,7 +11,7 @@ import { isScreenLayout } from 'src/app/screenLayouts';
 import { screenViewName } from 'src/app/screenViews';
 import { SizingFields } from './SizingFields';
 import { FrameParent } from './FrameParent';
-import { PropertyGroup } from './PropertyGroup';
+import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import { ModeFields } from './ModeFields';
 import { FrameVariables } from './FrameVariables';
 import styles from './styles.css';
@@ -199,7 +199,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                 <header className={styles.inspectorHeader}>
                     <strong>{viewName}</strong>
                 </header>
-                <table>
+                <InspectorTable>
                     <ScreenLayouts key={id} viewId={id} disabled={disabled} />
                     <ModeFields target={{ frameId: id }} />
                     <PropertyGroup name="On canvas">
@@ -310,7 +310,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </td>
                         </tr>
                     </PropertyGroup>
-                </table>
+                </InspectorTable>
             </div>
         );
     }
@@ -320,7 +320,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
             <header className={styles.inspectorHeader}>
                 <strong>{screenLayout ? 'Separate design' : page ? 'Page' : 'Frame'}</strong>
             </header>
-            <table>
+            <InspectorTable>
                 <ModeFields target={{ frameId: id }} />
                 <PropertyGroup name="Frame">
                     {!nested && (
@@ -354,7 +354,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         </tr>
                     )}
                     {(screenLayout || !nested) && (
-                        <tr>
+                        <tr className={styles.footnote}>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
                                     {screenLayout
@@ -432,7 +432,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         onCommit={(name) => editFrame({ kind: 'update', id, changes: { name } })}
                     />
                     {screenLayout && (
-                        <tr>
+                        <tr className={styles.footnote}>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
                                     Size and position follow each size of the page that shows this
@@ -475,7 +475,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 />
                             ))}
                             {moveProblem && (
-                                <tr>
+                                <tr className={styles.footnote}>
                                     <td colSpan={2}>
                                         <small className={styles.frameHint} role="status">
                                             {moveProblem}
@@ -609,7 +609,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                         </>
                     )}
                     {(layout.problems[id] || layout.modeProblems?.[id]) && (
-                        <tr>
+                        <tr className={styles.footnote}>
                             <td colSpan={2}>
                                 <small className={styles.frameHint} role="status">
                                     {layout.problems[id] ?? layout.modeProblems?.[id]}
@@ -637,7 +637,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     </PropertyGroup>
                 )}
                 <FrameVariables id={id} />
-            </table>
+            </InspectorTable>
         </div>
     );
 };
