@@ -38,7 +38,7 @@ export function spacingOf(document: Document, handle: SpacingHandle): Sides | un
         return undefined;
     }
     if (handle.box === 'padding') {
-        return frame.stack ? stackPadding(frame.stack) : undefined;
+        return frame.stack ? { ...stackPadding(frame.stack) } : undefined;
     }
 
     return { ...sidesOf(frame.margin) };

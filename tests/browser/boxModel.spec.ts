@@ -133,6 +133,12 @@ test('a shape’s margin shows on the canvas, moves it in its stack and follows 
     await page.mouse.up();
     await expect(page.getByRole('spinbutton', { name: 'Margin top' })).toHaveValue('14');
     await expect.poll(async () => Number(await button(page).getAttribute('y'))).toBe(top - 10);
+    // The drag undoes as one step.
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.getByRole('spinbutton', { name: 'Margin top' })).toHaveValue('24');
+    await expect.poll(async () => Number(await button(page).getAttribute('y'))).toBe(top);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(page.getByRole('spinbutton', { name: 'Margin top' })).toHaveValue('14');
 
     // Sides that differ show one field each; once they match, one field across and one down.
     await expect(page.getByRole('button', { name: 'Margin on each side' })).toBeDisabled();

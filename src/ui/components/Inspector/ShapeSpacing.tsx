@@ -2,6 +2,7 @@ import React, { type FC } from 'react';
 import { sidesOf, withSides } from 'src/app/boxModel';
 import { useActions, useCurrentDocument } from 'src/app/hooks';
 import { isShapeLocked } from 'src/app/utils';
+import { shapeGroup } from 'src/app/membership';
 import { PropertyGroup } from './PropertyGroup';
 import { SpacingRow, shownSides } from './SpacingFields';
 
@@ -15,9 +16,14 @@ export const ShapeSpacing: FC<{ shapeIds: string[] }> = ({ shapeIds }) => {
     const shapes = shapeIds.map((id) => document.shapes[id]).filter(Boolean);
     const editable = shapes.filter((shape) => !isShapeLocked(document, shape.id));
 
-    // Margin only acts in a stack, so a free shape shows it once it has one.
+    // Margin only acts on a stack's own items, so other shapes show it once they have one.
     if (
-        !shapes.some((shape) => document.frames[shape.parentFrameId ?? '']?.stack || shape.margin)
+        !shapes.some(
+            (shape) =>
+                shape.margin ||
+                (document.frames[shape.parentFrameId ?? '']?.stack &&
+                    !shapeGroup(document, shape.id))
+        )
     ) {
         return null;
     }
