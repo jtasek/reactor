@@ -12,6 +12,7 @@ declare namespace StylesCssNamespace {
     dockZones: string;
     docked: string;
     dragPreview: string;
+    dragPreviewAbove: string;
     dropMarker: string;
     explorerPanel: string;
     floating: string;
