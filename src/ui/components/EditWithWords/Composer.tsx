@@ -1,5 +1,5 @@
 import { ArrowUp, Square } from 'lucide-react';
-import React, { FC, KeyboardEvent, ReactNode, RefObject, useEffect, useState } from 'react';
+import React, { FC, KeyboardEvent, ReactNode, RefObject, useEffect, useId, useState } from 'react';
 import type { complete } from 'src/ai/local/complete';
 import type { Context } from 'src/ai/local/interpret';
 import { useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
@@ -47,6 +47,7 @@ export const Composer: FC<{
         }
     };
     const rest = useCompletion(state.local && !pending, draft);
+    const hint = useId();
     const submitOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Tab' && rest && !event.shiftKey) {
             event.preventDefault();
@@ -89,6 +90,7 @@ export const Composer: FC<{
                         maxLength={MAX_PROMPT_LENGTH}
                         onChange={(event) => chat.setDraft(event.target.value)}
                         onKeyDownCapture={submitOnEnter}
+                        aria-describedby={rest ? hint : undefined}
                     />
                     {rest && (
                         <div className={styles.ghost} aria-hidden="true">
@@ -105,7 +107,13 @@ export const Composer: FC<{
                     >
                         {scope.label}
                     </span>
-                    {rest && !compact && <span className={styles.hint}>Tab to complete</span>}
+                    {rest && (
+                        // Read out with the field: the grey words are only seen.
+                        <span id={hint} className={compact ? styles.visuallyHidden : styles.hint}>
+                            Tab to complete
+                            <span className={styles.visuallyHidden}>: {draft + rest}</span>
+                        </span>
+                    )}
                     {trailing}
                     {current?.status === 'proposing' ? (
                         <button

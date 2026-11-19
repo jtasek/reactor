@@ -49,7 +49,7 @@ function answer(prompt: string, context: Context): Answer {
         }
         if (!failure) {
             return {
-                events: [start, { type: 'message', text: LOCAL_MODEL_HELP }, { type: 'done' }]
+                events: [start, { type: 'message', text: help(context) }, { type: 'done' }]
             };
         }
 

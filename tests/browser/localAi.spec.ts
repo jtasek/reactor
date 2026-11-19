@@ -136,6 +136,7 @@ test('help gives examples by kind, the full list on request, and Tab finishes a 
 
     await prompt.fill('make it wi');
     await expect(chat.getByText('Tab to complete')).toBeVisible();
+    await expect(prompt).toHaveAccessibleDescription(/^Tab to complete ?: make it wider by 40$/);
     await prompt.press('Tab');
     await expect(prompt).toHaveValue('make it wider by 40');
     await expect(prompt).toBeFocused();

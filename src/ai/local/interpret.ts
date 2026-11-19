@@ -990,6 +990,8 @@ function describe(ids: string[], context: Context, only: Property[]): string {
                 return value === undefined ? [] : [`- ${item.label}: ${value}`];
             })
         ]),
+        // A blank line ends the last shape's list, so what follows is about all of them.
+        '',
         ...(ids.length > LIMITS.described ? [`And ${ids.length - LIMITS.described} more.`] : []),
         'Change any of these by name, such as `opacity 50%` or `width 200`.'
     ].join('\n');
