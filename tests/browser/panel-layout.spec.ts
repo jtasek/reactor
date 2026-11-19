@@ -31,6 +31,37 @@ test('the application rail switches left sections and the tool picker stays at t
     await expect(page.locator('[data-panel="inspector"]')).toBeVisible();
 });
 
+test('every panel closes from the button in its header corner', async ({ page }) => {
+    await openEditor(page, ['Explorer', 'Inspector', 'Minimap']);
+    const panels = page.locator('[data-panel]');
+    const corner = async (id: string) => {
+        const panel = (await page.locator(`[data-panel="${id}"]`).boundingBox())!;
+        const close = (await page
+            .locator(`[data-panel="${id}"]`)
+            .getByRole('button', { name: /^Close / })
+            .boundingBox())!;
+
+        return { right: panel.x + panel.width - (close.x + close.width), top: close.y - panel.y };
+    };
+
+    await expect(panels).toHaveCount(4);
+    for (const id of ['explorer', 'inspector', 'miniMap', 'controlPanel']) {
+        await expect.poll(() => corner(id)).toEqual({ right: 0, top: 0 });
+    }
+
+    await page.getByRole('button', { name: 'Close Minimap', exact: true }).click();
+    await expect(page.locator('[data-panel="miniMap"]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close Inspector', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-panel="inspector"]')).toHaveCount(0);
+
+    // A closed panel comes back from the Control Panel.
+    const minimap = page.getByRole('checkbox', { name: 'Minimap', exact: true });
+    await expect(minimap).not.toBeChecked();
+    await minimap.check();
+    await expect(page.locator('[data-panel="miniMap"]')).toBeVisible();
+});
+
 test('a bottom-docked panel pushes the tool picker upward', async ({ page }) => {
     await setLayout(page, { documentInfo: 'bottom' });
     await openEditor(page, ['Document Info']);
@@ -658,7 +689,7 @@ test('opens Preview above overlapping panels and tools and raises the panel bein
     await inspector
         .locator(':scope > button')
         .first()
-        .click({ position: { x: 250, y: 14 } });
+        .click({ position: { x: 200, y: 14 } });
     await expect.poll(() => frontPanel('[data-panel="inspector"]')).toBe('inspector');
     await preview
         .locator(':scope > button')
