@@ -16,7 +16,7 @@ const ICON = { size: 16, strokeWidth: 1.75, 'aria-hidden': true } as const;
 export const CanvasBar: FC<{ documentId: string }> = ({ documentId }) => {
     const { closeAiEdit, requestAiEdit } = useActions();
     const chatState = useChat(documentId);
-    const { chat, current, pending, accept } = chatState;
+    const { chat, current, pending, local, accept } = chatState;
     const root = useRef<HTMLDivElement>(null);
     const field = useRef<HTMLTextAreaElement>(null);
     const wasPending = useRef(pending);
@@ -45,7 +45,19 @@ export const CanvasBar: FC<{ documentId: string }> = ({ documentId }) => {
                             {current.prompt}
                         </p>
                     </div>
-                    <Reply turn={current} onDiscard={chat.discard} onAccept={accept} />
+                    <Reply
+                        turn={current}
+                        onDiscard={chat.discard}
+                        onAccept={accept}
+                        onExample={
+                            local
+                                ? (example) => {
+                                      chat.setDraft(example);
+                                      field.current?.focus();
+                                  }
+                                : undefined
+                        }
+                    />
                 </div>
             )}
             <Composer

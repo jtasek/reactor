@@ -103,3 +103,49 @@ test('the selection offers the AI bar, which shares its chat with the panel', as
     await expect(bar).toHaveCount(0);
     await expect(askAi).toBeVisible();
 });
+
+test('help gives examples by kind, the full list on request, and Tab finishes a sentence', async ({
+    page
+}) => {
+    await page.goto('/?ai=local');
+    await editWithWords(page).click();
+
+    const chat = page.getByRole('group', { name: 'Chat controls' });
+    const prompt = page.getByRole('textbox', { name: 'Change to make' });
+    const applied = chat.getByText(/^Applied/);
+
+    // Clear of the panels over the canvas, where it can be clicked.
+    for (const [index, words] of [
+        'add a 160x48 rectangle named "Card"',
+        'move all rectangles right 400',
+        'move all rectangles down 300'
+    ].entries()) {
+        await ask(page, words);
+        await chat.getByRole('button', { name: 'Accept' }).click();
+        await expect(applied).toHaveCount(index + 1);
+    }
+    await shapes(page).first().click();
+    await ask(page, 'help');
+    await expect(chat.getByRole('term')).toHaveText(['Add', 'ChangeCard', 'Arrange']);
+    await expect(chat.getByRole('definition').nth(1)).toContainText('now 0');
+    await expect(chat.getByRole('definition').nth(2)).not.toContainText('help all');
+    await expect(prompt).toHaveValue('help');
+    await chat.getByRole('button', { name: 'corner radius 12' }).click();
+    await expect(prompt).toHaveValue('corner radius 12');
+    await expect(prompt).toBeFocused();
+
+    await prompt.fill('make it wi');
+    await expect(chat.getByText('Tab to complete')).toBeVisible();
+    await expect(prompt).toHaveAccessibleDescription(/^Tab to complete ?: make it wider by 40$/);
+    await prompt.press('Tab');
+    await expect(prompt).toHaveValue('make it wider by 40');
+    await expect(prompt).toBeFocused();
+    await prompt.press('Enter');
+    await chat.getByRole('button', { name: 'Accept' }).click();
+    await expect(applied).toHaveCount(4);
+
+    await ask(page, 'help all');
+    await expect(chat.getByRole('heading', { name: 'Everything I understand' })).toBeVisible();
+    await expect(chat).toContainText('font weight');
+    await expect(prompt).toHaveValue('help all');
+});

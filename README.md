@@ -572,13 +572,41 @@ provider's tokens; the gateway still accounts for provider-reported token use.
 `AI_PROVIDER`, or signed out), `pnpm start` answers the chat from a local test model
 instead (`src/ai/localModel.ts`): scripted proposals made in the browser, with no AI and
 nothing sent anywhere. Any build does the same once opened with `?ai=local` (kept for the
-tab; `?ai=server` goes back). It understands requests like “add 3 red circles”, “add text
-"Welcome"” and, with shapes selected, “make them green”, “rename to "Card"”, “move right
-40” and “delete”. `/slow …` streams slowly for Stop, `/repair …` sends a broken change first
-so the repair round runs (both take a request, or add a rectangle), `/words …` answers in
-words only, and `/fail limit|busy|off|forbidden|refused|incomplete|network` shows each problem
-the server can report. Anything else, such as `/help`, lists these. New shapes go on Canvas
-below the existing artwork, not into a selected frame.
+tab; `?ai=server` goes back).
+
+It reads a request by matching its words loosely against small vocabularies
+(`src/ai/local/`): actions, shapes, colours, edges and the properties of the shapes the
+request is about. A mistyped word counts as the term it resembles (“widht 200”, “algin top”),
+short words and words that start differently never do, and the limits are in `MATCHING`
+(`src/ai/local/fuzzy.ts`). A request is about the shapes it names, `all circles` or
+`everything`, else the selection.
+
+- **Add:** `add 3 red circles radius 20`, `add text "Hello" font size 32 bold`; rectangle,
+  square, circle, ellipse, line and text, placed on Canvas below the existing artwork.
+- **Properties, by name:** name, text, fill, stroke, font color, font size, font weight,
+  opacity, rotation, corner radius, radius, width, height, X and Y, each only on shapes that
+  have it: `corner radius 12 and fill green`, `opacity 50%`, `w=240 h=48`.
+- **By an amount:** `wider by 40`, `bigger`, `increase font size by 4`, `rotate 45`.
+- **Arrange:** `move right 40`, `move to 100, 200`, `align left|right|top|bottom|center|middle`,
+  `distribute horizontally|vertically`, `duplicate`, `group as "Header"`, `ungroup`, `delete`.
+- **Ask:** `props` lists what the selection has; `help` gives two examples each of adding,
+  changing and arranging, about the selected shapes with their values now; `help all` lists
+  everything, written from the vocabularies.
+
+As you type, the prompt shows the rest of a sentence that fits the selection in grey, and Tab
+takes it (`src/ai/local/complete.ts`, sentences in `COMPLETION`). Only the local model
+completes; the server's AI takes any words.
+
+A request it cannot read gets a short answer: the words it missed, near matches, and what
+the selection can change. A command of the app that is not a document change, such as Zoom in
+or Undo, is named with its shortcut. Answers in words may mark a `# title`, `**topic**` lines
+(a blank line ends the topic) and examples between backticks (`Words.tsx`); with the local model an example fills the
+prompt when pressed.
+
+`/slow …` streams slowly for Stop, `/repair …` sends a broken change first so the repair
+round runs (both take a request, or add a rectangle), `/words …` answers in words only, and
+`/fail limit|busy|off|forbidden|refused|incomplete|network` shows each problem the server
+can report.
 
 For single-column screenshot recreation, the AI can call `composeScreen` with ordered text and
 labeled controls, padding, gaps and an optional bottom footer. Reactor measures wrapped text

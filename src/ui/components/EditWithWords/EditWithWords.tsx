@@ -147,7 +147,19 @@ export const EditWithWords: FC<{ documentId: string }> = ({ documentId }) => {
                                 <span className={styles.visuallyHidden}>You: </span>
                                 {turn.prompt}
                             </p>
-                            <Reply turn={turn} onDiscard={chat.discard} onAccept={accept} />
+                            <Reply
+                                turn={turn}
+                                onDiscard={chat.discard}
+                                onAccept={accept}
+                                onExample={
+                                    local
+                                        ? (example) => {
+                                              chat.setDraft(example);
+                                              promptField.current?.focus();
+                                          }
+                                        : undefined
+                                }
+                            />
                         </article>
                     ))
                 )}
