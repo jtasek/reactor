@@ -376,7 +376,23 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
     }, [visiblePanelLocations]);
     const renderPanel = (panel: ReactElement<DockablePanelProps>, dock: Dock) => {
         const { id, title, children, horizontalView, onClose, docking = 'both' } = panel.props;
-        const close = onClose ?? (id in controls ? () => hideControl(id) : undefined);
+        // Focus inside a closing panel moves to the header of the panel shown beside it;
+        // a panel with its own `onClose` places focus itself.
+        const close =
+            onClose ??
+            (id in controls
+                ? (event: React.MouseEvent<HTMLButtonElement>) => {
+                      if (
+                          event.currentTarget.closest('section')?.contains(document.activeElement)
+                      ) {
+                          const others = visiblePanels.map((other) => other.props.id);
+                          const at = others.indexOf(id);
+
+                          pendingFocus.current = others[at + 1] ?? others[at - 1] ?? null;
+                      }
+                      hideControl(id);
+                  }
+                : undefined);
         const orientation = orientationOf(dock);
         const content = orientation === 'horizontal' ? (horizontalView ?? children) : children;
         const placement = panelLayout[id] ?? { dock: null, position: { x: 0, y: 0 } };

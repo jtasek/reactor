@@ -54,6 +54,7 @@ test('every panel closes from the button in its header corner', async ({ page })
     await page.getByRole('button', { name: 'Close Inspector', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-panel="inspector"]')).toHaveCount(0);
+    await expect(page.locator('[data-panel="controlPanel"] > button')).toBeFocused();
 
     // A closed panel comes back from the Control Panel.
     const minimap = page.getByRole('checkbox', { name: 'Minimap', exact: true });
