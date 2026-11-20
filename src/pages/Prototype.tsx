@@ -2,6 +2,7 @@ import { ArrowLeft, RotateCcw, SlidersHorizontal, Workflow } from 'lucide-react'
 import { Icon } from 'src/ui/components/Icon';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
+import { AccessibilityCheck } from './AccessibilityCheck';
 import { Guide } from 'src/ui/components/FirstRun/Guide';
 import { registerEditor } from './registerEditor';
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,6 +11,12 @@ import { screenFrames } from 'src/app/screens';
 import { prototypeModes, prototypeSession } from 'src/app/modeEdits';
 import { isSizesDimension, ordered } from 'src/app/variableModes';
 import { presetOfSize } from 'src/app/services/viewportPresets';
+import {
+    checkContexts,
+    choiceDimensions,
+    defaultChoice,
+    type ContextChoice
+} from 'src/app/accessibilityCheck';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
 import styles from './Prototype.css';
@@ -68,6 +75,7 @@ function PrototypeWorkspace() {
     const document = useAppState((state) => state.currentDocument);
     const seed: PreviewSession = useAppState(prototypeModes);
     const presets = useAppState((state) => state.config.viewportPresets);
+    const rules = useAppState((state) => state.config.accessibility);
     const screens = screenFrames(document);
     const effects = useEffects();
     const actions = useActions();
@@ -80,6 +88,11 @@ function PrototypeWorkspace() {
         )
     );
     const [inspection, setInspection] = useState<PreviewInspection>({});
+    // The modes and sizes the accessibility check covers and a download carries.
+    const [choice, setChoice] = useState<ContextChoice>(() => defaultChoice(document, presets));
+    const contexts = checkContexts(document, presets, choice, rules);
+    const toggle = (list: string[], id: string, on: boolean) =>
+        on ? [...new Set([...list, id])] : list.filter((item) => item !== id);
     const settings = useRef<HTMLDialogElement>(null);
     const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
     // Custom stays chosen while its size still matches a preset.
@@ -139,7 +152,16 @@ function PrototypeWorkspace() {
                         <Icon icon={{ component: Workflow, size: 18 }} />
                         Flow
                     </a>
-                    <DownloadPrototype session={session} inspection={inspection} />
+                    <AccessibilityCheck
+                        session={session}
+                        contexts={contexts}
+                        onShow={(id) => locate({ kind: 'shape', id, message: '' })}
+                    />
+                    <DownloadPrototype
+                        session={session}
+                        inspection={inspection}
+                        contexts={'contexts' in contexts ? contexts.contexts : []}
+                    />
                     <SharePrototype session={session} inspection={inspection} />
                 </div>
             </header>
@@ -229,6 +251,69 @@ function PrototypeWorkspace() {
                         Changes apply only to this session. Restart returns to the start page and
                         resets input and state.
                     </p>
+                    <fieldset className={styles.contexts}>
+                        <legend>Check and download in</legend>
+                        {choiceDimensions(document).map((dimension) => (
+                            <div key={dimension.id} role="group" aria-label={dimension.name}>
+                                <span>{dimension.name}</span>
+                                {ordered(dimension.modes).map((mode) => (
+                                    <label key={mode.id}>
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                !choice.modes[dimension.id] ||
+                                                choice.modes[dimension.id].includes(mode.id)
+                                            }
+                                            onChange={(event) =>
+                                                setChoice((previous) => ({
+                                                    ...previous,
+                                                    modes: {
+                                                        ...previous.modes,
+                                                        [dimension.id]: toggle(
+                                                            previous.modes[dimension.id] ??
+                                                                ordered(dimension.modes).map(
+                                                                    ({ id }) => id
+                                                                ),
+                                                            mode.id,
+                                                            event.target.checked
+                                                        )
+                                                    }
+                                                }))
+                                            }
+                                        />
+                                        {mode.name}
+                                    </label>
+                                ))}
+                            </div>
+                        ))}
+                        <div role="group" aria-label="Sizes">
+                            <span>Sizes</span>
+                            {presets.map((preset) => (
+                                <label key={preset.id}>
+                                    <input
+                                        type="checkbox"
+                                        checked={choice.sizes.includes(preset.id)}
+                                        onChange={(event) =>
+                                            setChoice((previous) => ({
+                                                ...previous,
+                                                sizes: toggle(
+                                                    previous.sizes,
+                                                    preset.id,
+                                                    event.target.checked
+                                                )
+                                            }))
+                                        }
+                                    />
+                                    {preset.name}
+                                </label>
+                            ))}
+                        </div>
+                        <p>
+                            {'problem' in contexts
+                                ? contexts.problem
+                                : `${contexts.contexts.length} ${contexts.contexts.length === 1 ? 'combination' : 'combinations'}. Downloads can be viewed in each.`}
+                        </p>
+                    </fieldset>
                 </div>
             </dialog>
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (

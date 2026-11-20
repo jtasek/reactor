@@ -7,6 +7,8 @@ import {
     type PreviewStateValue
 } from '../shared/previewProtocol';
 import { evaluateCondition, formatStateValue, type Condition } from '../shared/conditions';
+import { auditScreen, type AuditPick, type AuditReport } from './accessibilityAudit';
+import { DEFAULT_ACCESSIBILITY_RULES, type AccessibilityRules } from './accessibilityRules';
 import '../../static/styles/site.css';
 import './runtime.css';
 
@@ -61,6 +63,11 @@ let images: Record<string, string> = {};
 let currentScreen: string | undefined;
 /** The editor draws the screen picker and Layout itself. Older editors never say so. */
 let hostControls = false;
+/** The modes and sizes a package can be viewed in; the first is the session it was tested in. */
+let views: { name: string; application: PreviewApplication }[] = [];
+let currentView = 0;
+let accessibilityRules = DEFAULT_ACCESSIBILITY_RULES;
+let reportOpen = false;
 let port: MessagePort | undefined;
 
 function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
@@ -234,6 +241,71 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     return element;
 }
 
+/** What the player shows for a node now: its record, variant and state, or nothing when hidden. */
+const shownNode: AuditPick = (authored) => {
+    const recordId =
+        authored.recordEntity === selectedRecord?.entityId ? selectedRecord?.id : undefined;
+    if (recordId && Object.hasOwn(authored.records ?? {}, recordId)) {
+        return shownNode(authored.records![recordId]);
+    }
+    if (authored.visibility && !isShown(authored.visibility.key, authored.visibility.initial)) {
+        return undefined;
+    }
+    const choice = authored.variantKey ? variants.get(authored.variantKey) : undefined;
+    const node = choice && authored.variants?.[choice] ? authored.variants[choice] : authored;
+    const label =
+        node.control?.labelState !== undefined &&
+        formatStateValue(stateValue(node.control.labelState));
+
+    return label ? { ...node, control: { ...node.control!, label } } : node;
+};
+
+function reportSection(report: AuditReport) {
+    const section = document.createElement('section');
+    section.id = 'accessibility-report';
+    section.setAttribute('aria-label', 'Accessibility report');
+    const list = (title: string, items: string[], ordered = false) => {
+        const heading = document.createElement('h2');
+        heading.textContent = title;
+        const element = document.createElement(ordered ? 'ol' : 'ul');
+        element.setAttribute('aria-label', title);
+        for (const text of items.length ? items : ['None']) {
+            const item = document.createElement('li');
+            item.textContent = text;
+            element.append(item);
+        }
+        section.append(heading, element);
+    };
+    const name = (text: string) => (text ? `“${text}”` : 'no name');
+    list(
+        'Problems',
+        report.problems.map((problem) =>
+            problem.kind === 'contrast'
+                ? `“${problem.text}” has contrast ${problem.ratio}:1; it needs ${problem.required}:1.`
+                : problem.kind === 'name'
+                  ? `A ${problem.role} showing ${name(problem.visible)} is named ${name(problem.name)}.`
+                  : `Tab goes from ${name(problem.after)} back to ${name(problem.name)}.`
+        )
+    );
+    list('Focus order', report.focusOrder.map(name), true);
+    list(
+        'Names',
+        report.names.map(
+            ({ role, name: text }) =>
+                `${role === 'image' ? 'Image' : role === 'list' ? 'List' : role === 'input' ? 'Input' : 'Button'}: ${name(text)}`
+        )
+    );
+    list(
+        'Contrast',
+        report.contrast.map(
+            ({ text, ratio, required }) =>
+                `“${text}”: ${ratio}:1, ${ratio >= required ? 'passes' : 'fails'} ${required}:1`
+        )
+    );
+
+    return section;
+}
+
 function activate(control: NonNullable<PreviewNode['control']>) {
     if (
         !control.changeVariant &&
@@ -324,6 +396,26 @@ function render() {
         render();
     });
     navigation.append(label);
+    if (views.length > 1) {
+        const viewLabel = document.createElement('label');
+        viewLabel.textContent = 'View as ';
+        const viewSelect = document.createElement('select');
+        viewSelect.setAttribute('aria-label', 'Modes and size');
+        views.forEach((view, index) => {
+            const option = document.createElement('option');
+            option.value = String(index);
+            option.textContent = view.name;
+            viewSelect.append(option);
+        });
+        viewSelect.value = String(currentView);
+        viewSelect.addEventListener('change', () => {
+            currentView = Number(viewSelect.value);
+            receive(views[currentView].application);
+            root.querySelector<HTMLSelectElement>('select[aria-label="Modes and size"]')?.focus();
+        });
+        viewLabel.append(viewSelect);
+        navigation.append(viewLabel);
+    }
     if (screen.layouts && !standalone) {
         const widthLabel = document.createElement('label');
         widthLabel.textContent = 'Width ';
@@ -370,13 +462,32 @@ function render() {
     if (!externalControls) {
         navigation.append(reset);
     }
+    const report =
+        standalone && reportOpen ? auditScreen(screen, accessibilityRules, shownNode) : undefined;
+    if (standalone) {
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.textContent = report ? `Accessibility · ${report.problems.length}` : 'Accessibility';
+        toggle.setAttribute('aria-expanded', String(reportOpen));
+        toggle.setAttribute('aria-controls', 'accessibility-report');
+        toggle.addEventListener('click', () => {
+            reportOpen = !reportOpen;
+            render();
+            root.querySelector<HTMLButtonElement>(
+                'button[aria-controls="accessibility-report"]'
+            )?.focus();
+        });
+        navigation.append(toggle);
+    }
     const svg = document.createElementNS(SVG, 'svg');
     svg.setAttribute('viewBox', `${screen.x} ${screen.y} ${screen.width} ${screen.height}`);
     svg.setAttribute('width', String(screen.width));
     svg.setAttribute('height', String(screen.height));
     svg.setAttribute('aria-label', screen.name);
     screen.nodes.forEach((node) => svg.append(nodeElement(node)));
-    root.replaceChildren(...(hostControls ? [svg] : [navigation, svg]));
+    root.replaceChildren(
+        ...(hostControls ? [svg] : [navigation, ...(report ? [reportSection(report)] : []), svg])
+    );
     port?.postMessage({ type: 'current-screen', screenId: screen.id, record: selectedRecord });
     if (hostControls) {
         document.documentElement.dataset.player = 'true';
@@ -618,6 +729,21 @@ async function openSharedPrototype() {
         root.setAttribute('role', 'status');
     }
 }
+/** The thresholds a package was checked with, or the defaults. */
+function readRules(value: unknown): AccessibilityRules {
+    const rules = { ...DEFAULT_ACCESSIBILITY_RULES };
+    if (value && typeof value === 'object') {
+        for (const key of Object.keys(rules) as (keyof AccessibilityRules)[]) {
+            const number = (value as Record<string, unknown>)[key];
+            if (typeof number === 'number' && Number.isFinite(number) && number > 0) {
+                rules[key] = number;
+            }
+        }
+    }
+
+    return rules;
+}
+
 /** Read the snapshot the editor wrote into the downloaded page, as a shared link would load it. */
 function openPackage(element: HTMLElement) {
     try {
@@ -628,7 +754,27 @@ function openPackage(element: HTMLElement) {
         if (typeof data.name === 'string' && data.name) {
             document.title = data.name;
         }
-        receive(readPreview(data.application));
+        const tested = readPreview(data.application);
+        const known = readPreviewImages(data.application?.images);
+        views = [
+            { name: 'As tested', application: tested },
+            ...(Array.isArray(data.views) ? data.views : []).map((view: unknown) => {
+                const { name, application } = (view ?? {}) as Record<string, unknown>;
+                if (typeof name !== 'string' || !name) {
+                    throw new Error('This prototype could not be opened.');
+                }
+
+                return {
+                    name,
+                    application: readPreview(
+                        { ...(application as object), images: undefined },
+                        known
+                    )
+                };
+            })
+        ];
+        accessibilityRules = readRules(data.accessibility);
+        receive(tested);
     } catch (error) {
         root.textContent =
             error instanceof Error ? error.message : 'This prototype could not be opened.';

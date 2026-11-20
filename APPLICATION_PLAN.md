@@ -724,6 +724,7 @@ mode inheritance and responsive behavior are R4 requirements, not postponed to t
    R6.2 built; see the [delivery log](DELIVERY_LOG.md#r62-design-system-interchange).
 3. Audit contrast, labels and focus order across selected modes, widths, variants and layouts,
    with fixes the AI can propose and a person accepts.
+   R6.3 built; see the [delivery log](DELIVERY_LOG.md#r63-accessibility-check).
 
 Done when `tests/themes.test.ts` checks editor/prototype/export resolution parity and
 `tests/browser/themes.spec.ts` switches user-defined modes and sizes in the exported runtime,

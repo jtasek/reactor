@@ -1115,3 +1115,54 @@ same V4 package rules as Import, and the DTCG export says up front everything it
   with the dimension and mode named.
 - **Not yet.** Mode interchange through DTCG Resolver documents; tokens a reused local alias
   no longer needs are still added.
+
+## R6.3 Accessibility check
+
+_Recorded 2026-11-20._
+
+The Prototype page checks every page for contrast, names and focus order in the modes and sizes a
+person chooses, offers fixes the AI proposes and the person accepts, and the downloaded page can
+be viewed and checked in the same contexts.
+
+- **Contexts.** Prototype Settings has "Check and download in": modes of each dimension (the
+  Sizes dimension follows the width) and the viewport presets. Each combination is drawn as
+  Prototype draws it at that size, with its modes and Auto layouts (`contextSession` in
+  `src/app/accessibilityCheck.ts`), at most `config.accessibility.maxContexts` (16).
+- **The audit** (`src/preview/accessibilityAudit.ts`) reads the drawing the player gets, so the
+  editor and the exported runtime check the same thing. Contrast: each text line against what is
+  drawn below it, composited with opacity over the page, at three points along the line; text
+  over an image (unless something opaque covers it), under a disabled control or in a native
+  field isn't checked; a ratio is never rounded up to its threshold. What shows at start follows
+  the start states, as the player decides it. WCAG AA thresholds
+  are in `config.accessibility` (`src/preview/accessibilityRules.ts`). Names: buttons and inputs
+  need one, and a button's name must include the words it shows (a layer name such as
+  "Rectangle 7" fails). Focus order: Tab follows the drawing order; a control Tab reaches after
+  one below or to its right is reported. Variants and instances hidden at start are checked for
+  contrast and names too, against what is below them.
+- **The dialog.** Accessibility on the Prototype page lists each problem once per page with the
+  contexts it occurs in, a Show link to the shape, and the fix or advice. A text color is fixed
+  where it comes from: a bound color changes its variable's value for that mode, an unbound one
+  the shape's color, to the closest color of the same hue that passes everywhere that source is
+  used; when no color can, the advice says to bind it per mode. A button's name is fixed by its
+  linked Label override, or by renaming the instance when the name comes from its layer.
+  Focus order has advice only, since operations can't reorder layers.
+- **AI fixes.** Propose fixes sends the involved shapes' context plus `accessibility` (problems,
+  contexts, and `fixes`, the merged batch) to the AI; the instructions ask it to propose those
+  and keep bindings. The local test model answers with `fixes`. The proposal is listed with
+  Accept and Discard; Accept applies it with the AI's provenance and checks again. Without AI,
+  Review fixes shows the same batch for the person to accept.
+- **Download.** The package keeps the tested session as "As tested" and adds `views`, each
+  chosen context drawn the same way, sharing one image table, plus the thresholds. The page has
+  a "View as" picker and an Accessibility toggle that lists problems, focus order, names and
+  contrast for the screen as it is now (variants, records and state included). Shared links get
+  the toggle too. The preview protocol stays at version 3. `packageContents` replaces
+  `packageApplication` and reads each image once for every view.
+- **Tests.** `tests/accessibilityAudit.test.ts` (contrast math, compositing, variants and hidden
+  instances, player state, contexts and the limit, fixes applied, local model);
+  `tests/themes.test.ts` (each mode and size drawn alike by the canvas, Prototype and the
+  downloaded page, and the page's report matching the check); `tests/browser/themes.spec.ts`
+  (choose contexts, check, accept AI fixes, download, switch modes and sizes and read the report).
+- **Not yet.** Text width is estimated, not measured, so a line's sampled background can miss a
+  narrow shape; rotation is ignored. Names of lists and images, landmarks and heading structure
+  aren't checked. Focus order can't be fixed from the check.
+

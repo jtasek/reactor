@@ -1,5 +1,6 @@
 import type { DocumentSizeConfiguration } from './services/documentSizeConfiguration';
 import type { ViewportPreset } from './services/viewportPresets';
+import type { AccessibilityRules } from '../preview/accessibilityRules';
 import type { ErrorReportConfiguration } from './services/errorReport';
 import type { ContainerStates } from './containerState';
 import type { projectScreenViews } from './screenProjection';
@@ -695,6 +696,8 @@ export type Configuration = {
      * without one, in screen pixels.
      */
     arrowKeyStep: number;
+    /** What the accessibility check holds pages to, and how many contexts it covers. */
+    accessibility: AccessibilityRules;
     autoSave: boolean;
     debugMode: boolean;
     /** How the Documents page shows documents, kept per device. */

@@ -1,4 +1,5 @@
 import { containerStatesOf } from './containerState';
+import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics';
 import { frameState } from './frameState';
 import {
     Box,
@@ -160,8 +161,6 @@ export function getPathBoundingBox({ points }: Pick<Pen, 'points'>) {
 }
 
 export const DEFAULT_TEXT_FONT_SIZE = 24; // matches .shape font-size: 1.5rem
-const TEXT_CHAR_WIDTH_RATIO = 0.6;
-const TEXT_ASCENT_RATIO = 0.8;
 
 export function getTextBoundingBox(text: Pick<Text, 'position' | 'value' | 'fontSize'>): Box {
     const value = text.value;

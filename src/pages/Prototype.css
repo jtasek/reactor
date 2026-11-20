@@ -46,6 +46,7 @@
 }
 .headerActions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
 }
@@ -257,4 +258,35 @@
         background: var(--surface);
         backdrop-filter: none;
     }
+}
+.contexts {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--radius-md);
+}
+.contexts legend {
+    padding: 0 4px;
+}
+.contexts [role='group'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+.contexts [role='group'] > span {
+    min-width: 64px;
+    color: var(--text-secondary-color);
+}
+.controls .contexts label {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+.controls .contexts input {
+    width: auto;
+    min-height: 0;
+    padding: 0;
 }

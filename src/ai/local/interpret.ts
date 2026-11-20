@@ -21,6 +21,8 @@ export interface Context {
     selection?: string[];
     shapes?: Record<string, ShapeFields>;
     groups?: Record<string, { name: string; shapes: string[] }>;
+    /** What the accessibility check found, with the batch that fixes what it can. */
+    accessibility?: { fixes?: Operation[] };
 }
 
 /** What the local model makes of a request: operations to propose, and words to say. */

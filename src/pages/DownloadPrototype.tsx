@@ -5,22 +5,27 @@ import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import type { PreviewSession, PreviewInspection } from 'src/preview/project';
 import {
     fetchPackageTemplate,
-    packageApplication,
+    packageContents,
     packageFileName,
     writeStandalonePackage
 } from 'src/preview/standalonePackage';
+import type { CheckContext } from 'src/app/accessibilityCheck';
 
 /** Saves the prototype as one web page that plays offline, as a shared link would. */
 export function DownloadPrototype({
     session,
-    inspection
+    inspection,
+    contexts
 }: {
     session: PreviewSession;
     inspection: PreviewInspection;
+    /** Other modes and sizes the page can be viewed in. */
+    contexts: readonly CheckContext[];
 }) {
-    const { document, busy } = useAppState((state) => ({
+    const { document, busy, rules } = useAppState((state) => ({
         document: state.currentDocument,
-        busy: state.events.pointer.gesture.kind !== 'idle' || state.guideDragActive
+        busy: state.events.pointer.gesture.kind !== 'idle' || state.guideDragActive,
+        rules: state.config.accessibility
     }));
     const { assets } = useEffects();
     const { displayError } = useActions();
@@ -33,11 +38,19 @@ export function DownloadPrototype({
         operation.current = controller;
         setPending(true);
         try {
-            const [application, template] = await Promise.all([
-                packageApplication(document, session, inspection, assets, controller.signal),
+            const [{ application, extras }, template] = await Promise.all([
+                packageContents(
+                    document,
+                    session,
+                    inspection,
+                    contexts,
+                    rules,
+                    assets,
+                    controller.signal
+                ),
                 fetchPackageTemplate(controller.signal)
             ]);
-            const page = writeStandalonePackage(template, document.name, application);
+            const page = writeStandalonePackage(template, document.name, application, extras);
             const url = URL.createObjectURL(new Blob([page], { type: 'text/html' }));
             const link = window.document.createElement('a');
             link.href = url;
