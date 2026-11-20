@@ -1,5 +1,6 @@
 declare namespace PrototypeCssNamespace {
   export interface IPrototypeCss {
+    contexts: string;
     controls: string;
     dimensions: string;
     documentName: string;

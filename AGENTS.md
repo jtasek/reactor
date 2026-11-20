@@ -1306,6 +1306,18 @@ source records; diagnostic metadata is never sent into the sandbox. Tests: `prev
 and `tests/browser/responsivePrototype.spec.ts`, including simultaneous sessions and live edits.
 
 
+## Accessibility check
+
+`src/preview/accessibilityAudit.ts` audits one screen of a `PreviewDrawing` (contrast with
+compositing, button/input names and label-in-name, Tab order against reading order); it imports
+only `src/shared` so the runtime bundles it. `src/app/accessibilityCheck.ts` builds the chosen
+contexts (`ContextChoice` → `CheckContext`, product of non-Sizes modes and viewport presets,
+bounded by `config.accessibility.maxContexts`), draws each with `contextSession`, merges problems
+into `AccessibilityIssue`s and derives fixes (`fixOperations` merges one operation per record).
+The Prototype page's `AccessibilityCheck` dialog proposes fixes through `propose()` with an
+`accessibility` context key; Download writes the same contexts as package `views`. Tests:
+`tests/accessibilityAudit.test.ts`, `tests/themes.test.ts`, `tests/browser/themes.spec.ts`.
+
 ## SVG export
 
 The lazy `src/export/` feature exports a selected Screen view, a root Screen as authored

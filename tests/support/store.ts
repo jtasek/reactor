@@ -1,3 +1,4 @@
+import { DEFAULT_ACCESSIBILITY_RULES } from 'src/preview/accessibilityRules';
 import * as screenViews from 'src/app/screenViewGeometry';
 import * as data from 'src/app/dataEdits';
 import * as componentProperties from 'src/app/componentPropertyEdits';
@@ -175,6 +176,7 @@ export function createTestStore(
         documents: { [document.id]: document },
         config: {
             arrowKeyStep: options.arrowKeyStep ?? DEFAULT_ARROW_KEY_STEP,
+            accessibility: { ...DEFAULT_ACCESSIBILITY_RULES },
             autoSave: options.autoSave ?? false,
             debugMode: false,
             documentsLayout: 'cards',

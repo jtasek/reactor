@@ -1,7 +1,13 @@
-import { PREVIEW_PROTOCOL_VERSION, type PreviewApplication } from '../shared/previewProtocol';
+import {
+    PREVIEW_PROTOCOL_VERSION,
+    type PreviewApplication,
+    type PreviewDrawing
+} from '../shared/previewProtocol';
 import type { Document } from '../app/types';
+import { contextSession, type CheckContext } from '../app/accessibilityCheck';
 import { projectPreview, type PreviewInspection, type PreviewSession } from './project';
 import { createPreviewResources } from './resources';
+import type { AccessibilityRules } from './accessibilityRules';
 
 const MARKER = '<!-- reactor:package -->';
 
@@ -22,12 +28,58 @@ export function packageApplication(
     return createPreviewResources(assets)(drawing, signal);
 }
 
+/** Another context a package can be viewed in: its modes and size, drawn as Prototype would. */
+export interface PackageView {
+    name: string;
+    application: PreviewDrawing;
+}
+
+/** What a package carries besides the session it was tested in. */
+export interface PackageExtras {
+    views: PackageView[];
+    accessibility: AccessibilityRules;
+}
+
+/**
+ * The tested session and each chosen context, every drawing's images in one table. A
+ * context that can't be drawn stops the download, as the tested session would.
+ */
+export async function packageContents(
+    document: Document,
+    session: PreviewSession,
+    inspection: PreviewInspection,
+    contexts: readonly CheckContext[],
+    accessibility: AccessibilityRules,
+    assets: Parameters<typeof createPreviewResources>[0],
+    signal: AbortSignal
+): Promise<{ application: PreviewApplication; extras: PackageExtras }> {
+    const resources = createPreviewResources(assets);
+    const application = await packageApplication(document, session, inspection, assets, signal);
+    const views: PackageView[] = [];
+    let images = application.images;
+    for (const context of contexts) {
+        const drawing = projectPreview(
+            document,
+            {},
+            [],
+            contextSession(document, session, context),
+            {}
+        );
+        const { images: used, ...view } = await resources(drawing, signal);
+        images = { ...images, ...used };
+        views.push({ name: context.name, application: view });
+    }
+
+    return { application: { ...application, images }, extras: { views, accessibility } };
+}
+
 /** Writes a validated snapshot into the preview site's package page, which then plays it
  * offline: the page's policy allows no requests, so it never reaches a server. */
 export function writeStandalonePackage(
     template: string,
     name: string,
-    application: PreviewApplication
+    application: PreviewApplication,
+    extras?: PackageExtras
 ) {
     if (!/^<!doctype html>/i.test(template) || template.split(MARKER).length !== 2) {
         throw new Error('The prototype package from the preview site is not valid.');
@@ -42,10 +94,12 @@ export function writeStandalonePackage(
         );
     }
     // `<` escaped so no text in the document can end the script element early.
-    const data = JSON.stringify({ version: PREVIEW_PROTOCOL_VERSION, name, application }).replace(
-        /</g,
-        '\\u003c'
-    );
+    const data = JSON.stringify({
+        version: PREVIEW_PROTOCOL_VERSION,
+        name,
+        application,
+        ...extras
+    }).replace(/</g, '\\u003c');
 
     return template.replace(
         MARKER,

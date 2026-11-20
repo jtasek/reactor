@@ -67,6 +67,22 @@ function answer(prompt: string, context: Context): Answer {
         };
     }
 
+    const fixes = context.accessibility?.fixes;
+    if (!command && fixes && /accessib/i.test(prompt)) {
+        return {
+            events: [
+                start,
+                {
+                    type: 'message',
+                    text: fixes.length
+                        ? 'Local test model: the fixes the accessibility check suggests.'
+                        : 'Local test model: the check suggests no changes; the problems left need a person.'
+                },
+                ...fixes.map((operation) => ({ type: 'operation', operation })),
+                { type: 'done' }
+            ]
+        };
+    }
     const scripted = name === 'slow' || name === 'repair';
     // `/slow` and `/repair` alone still need something to propose.
     // An unknown `/command` gets the help rather than a guess at its words.

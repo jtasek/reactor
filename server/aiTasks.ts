@@ -150,6 +150,11 @@ variables with existing names or add another frame/view for the same composed sc
 - A list shows records in Prototype: an instance whose dataList names the entity and maps the
   component's exposed props to fields. Use a component whose props suit the fields, and place it
   in the screen the person means. When no component has suitable props, say so instead.
+- accessibility, when present, lists problems the accessibility check found in the modes and
+  sizes the person chose (contrast, control names, focus order), and fixes: a batch that resolves
+  the ones it can. Propose those fixes unless asked otherwise; for a problem with only advice,
+  propose a change only when it is safe in every listed context. Keep bindings: fix a bound color
+  by changing its variable's value for that mode.
 - Do only what was asked, and leave the rest of the document as it is.
 - When the tools cannot make the change, say why in one sentence and call none.`;
 

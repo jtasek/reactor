@@ -1,5 +1,6 @@
 import { DEFAULT_DOCUMENT_SIZE } from './services/documentSizeConfiguration';
 import { DEFAULT_VIEWPORT_PRESETS } from './services/viewportPresets';
+import { DEFAULT_ACCESSIBILITY_RULES } from '../preview/accessibilityRules';
 import { DEFAULT_ERROR_REPORT } from './services/errorReport';
 import { editorLoaded } from './editorHelpers';
 import { currentDocument } from './computed/currentDocument';
@@ -358,6 +359,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         config: {
             version: '1.0',
             arrowKeyStep: DEFAULT_ARROW_KEY_STEP,
+            accessibility: { ...DEFAULT_ACCESSIBILITY_RULES },
             autoSave: true,
             debugMode: false,
             documentsLayout: 'cards',
