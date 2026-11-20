@@ -170,6 +170,21 @@ it('offers an update when a used token changes and replaces only what came from 
     expect(libraryUpdateAvailable(store.state, 'badge')).toBe(false);
 });
 
+it('fingerprints tokens the same whatever order their fields were written in', () => {
+    const document = library();
+    const before = componentFingerprint(document, 'badge');
+    document.variables.ink = {
+        values: { dark: '#eeeeee', default: '#112233' },
+        dimensionId: 'theme',
+        type: 'color',
+        name: 'Ink',
+        id: 'ink'
+    };
+    const { modes, ...theme } = document.dimensions.theme;
+    document.dimensions.theme = { modes: { dark: modes.dark, light: modes.light }, ...theme };
+    expect(componentFingerprint(document, 'badge')).toBe(before);
+});
+
 it('keeps a component without tokens fingerprinted as before', () => {
     const plain = library();
     delete plain.components.badge.sourceShapes!.swatch.bindings;

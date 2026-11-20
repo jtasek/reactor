@@ -127,6 +127,18 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
     };
 }
 
+/** Sorted object keys, so insertion order and collaboration do not change serialized records. */
+export const canonical = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object')
+        return Object.fromEntries(
+            Object.entries(value)
+                .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+                .map(([key, item]) => [key, canonical(item)])
+        );
+    return value;
+};
+
 export function parseDesignSystemPackage(text: string): DesignSystemPackage {
     if (new TextEncoder().encode(text).length > PACKAGE_MAX_BYTES)
         throw new Error('The package is larger than 1 MiB.');
@@ -143,17 +155,6 @@ export function exportDesignSystemPackage(document: Document): string {
         variables: Object.values(document.variables),
         dimensions: Object.values(document.dimensions)
     });
-    // Canonicalize object keys too, so insertion order and collaboration do not change exports.
-    const canonical = (value: unknown): unknown => {
-        if (Array.isArray(value)) return value.map(canonical);
-        if (value && typeof value === 'object')
-            return Object.fromEntries(
-                Object.entries(value)
-                    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-                    .map(([key, item]) => [key, canonical(item)])
-            );
-        return value;
-    };
     const text = `${JSON.stringify(canonical(data), null, 2)}\n`;
     if (new TextEncoder().encode(text).length > PACKAGE_MAX_BYTES)
         throw new Error('The package is larger than 1 MiB.');

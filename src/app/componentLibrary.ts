@@ -5,6 +5,7 @@ import { json } from 'overmind';
 import { shapeGeometry, shapeStyle } from './utils';
 import { memberTokens, stageLibraryTokens } from './libraryTokens';
 import { writeBatch } from './operationBatches';
+import { canonical } from './designSystemPackages';
 
 const roleContent = (settings: RoleSettings | undefined) =>
     settings && {
@@ -23,10 +24,10 @@ function tokenContent(document: Document, members: Shape[]) {
     }
     const byId = <T extends { id: string }>(records: T[]) =>
         [...records].sort((a, b) => (a.id < b.id ? -1 : Number(a.id > b.id)));
-    return {
+    return canonical({
         variables: byId([...ids.variables].map((id) => document.variables[id])),
         dimensions: byId([...ids.dimensions].map((id) => document.dimensions[id]))
-    };
+    });
 }
 
 function fingerprint(
