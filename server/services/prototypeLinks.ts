@@ -14,6 +14,16 @@ const FIRST_LINK_BUCKETS = [60, 300, 600, 1800, 3600, 7200, 21600, 86400, 604800
 /** Distinct players counted per link; anyone with the link can claim to be a new one. */
 const MAX_PLAYERS_PER_LINK = 10_000;
 const PLAYER = /^[A-Za-z0-9_-]{16,64}$/;
+
+/** How R7's beta measures count prototype sessions and new people. */
+export const BETA_MEASURES = {
+    /** A player's opens of one link this far apart start a new session. */
+    sessionGapMs: 30 * 60 * 1000,
+    /** New people count as activated by sharing two screens or more this soon after sign-up. */
+    activationMs: 24 * 60 * 60 * 1000,
+    /** Weeks `/metrics/beta` reports. */
+    weeks: 12
+};
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 export type ShareProblem = 'NOT_FOUND' | 'FORBIDDEN' | 'INVALID_SNAPSHOT' | 'SHARE_LIMIT';
 type Failure = { ok: false; problem: ShareProblem };
@@ -22,7 +32,11 @@ const failed = (problem: ShareProblem): Failure => ({ ok: false, problem });
 /** Public snapshots are validated render DTOs, never editable document records. */
 export function createPrototypeLinkService(
     db: Db,
-    { metrics = noMetrics, log = console }: { metrics?: Metrics; log?: Pick<Log, 'warn'> } = {}
+    {
+        metrics = noMetrics,
+        log = console,
+        now: clock = () => new Date()
+    }: { metrics?: Metrics; log?: Pick<Log, 'warn'>; now?: () => Date } = {}
 ) {
     const published = (result: string) =>
         metrics.count(
@@ -56,6 +70,20 @@ export function createPrototypeLinkService(
         }
 
         return { ok: true as const, workspaceId: document.workspace_id };
+    }
+
+    async function countPlayer(linkId: string, player: string, now: Date) {
+        if (!(await repository.recordPlayer(db, linkId, player, MAX_PLAYERS_PER_LINK, now))) {
+            return;
+        }
+        const since = new Date(now.getTime() - BETA_MEASURES.sessionGapMs);
+        if (await repository.recordSession(db, { linkId, player, byAuthor: false }, since, now)) {
+            metrics.count(
+                'reactor_prototype_sessions_total',
+                'Sessions of shared prototypes, by who ran them.',
+                { by: 'others' }
+            );
+        }
     }
 
     /** Snapshots from another protocol can't be drawn by the deployed runtime. */
@@ -204,7 +232,7 @@ export function createPrototypeLinkService(
 
                 return null;
             }
-            const now = new Date();
+            const now = clock();
             const link = await repository.snapshotForToken(db, tokenHash(token), now);
             if (!link) {
                 opened('missing');
@@ -220,9 +248,9 @@ export function createPrototypeLinkService(
             if (typeof player === 'string' && PLAYER.test(player)) {
                 const hashed = tokenHash(`${link.id}:${player}`);
                 // Counting must never keep the prototype from opening.
-                await repository
-                    .recordPlayer(db, link.id, hashed, MAX_PLAYERS_PER_LINK, now)
-                    .catch((error: unknown) => log.warn(error, 'A player was not counted'));
+                await countPlayer(link.id, hashed, now).catch((error: unknown) =>
+                    log.warn(error, 'A player was not counted')
+                );
             }
 
             return { snapshot: link.snapshot };

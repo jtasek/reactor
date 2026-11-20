@@ -1,4 +1,6 @@
+import { BETA_MEASURES } from './services/prototypeLinks.ts';
 import {
+    betaMeasures,
     deleteExpiredLinks,
     firstSharedLinks,
     sharedPrototypes
@@ -106,6 +108,7 @@ export async function startAccounts(
         /** Each prototype link shared, with its screens and distinct players. */
         sharedPrototypes: () => sharedPrototypes(db),
         firstSharedLinks: () => firstSharedLinks(db),
+        betaMeasures: () => betaMeasures(db, { ...BETA_MEASURES, now: new Date() }),
         close: () => {
             clearTimeout(firstCleanup);
             clearInterval(cleanups);

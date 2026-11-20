@@ -133,7 +133,10 @@ export async function firstSharedLinks(db: Db) {
     );
 }
 
-/** Counts an open by `player`; a new player only while the link has fewer than `limit`. */
+/**
+ * Counts an open by `player`; a new player only while the link has fewer than `limit`.
+ * Says whether the player is counted.
+ */
 export async function recordPlayer(
     db: Db,
     linkId: string,
@@ -149,7 +152,7 @@ export async function recordPlayer(
         .returning('player')
         .executeTakeFirst();
     if (opened) {
-        return;
+        return true;
     }
     const { count } = await db
         .selectFrom('prototype_players')
@@ -157,7 +160,7 @@ export async function recordPlayer(
         .where('link_id', '=', linkId)
         .executeTakeFirstOrThrow();
     if (Number(count) >= limit) {
-        return;
+        return false;
     }
     await db
         .insertInto('prototype_players')
@@ -169,6 +172,102 @@ export async function recordPlayer(
             }))
         )
         .execute();
+
+    return true;
+}
+
+/** Continues `player`'s last session of the link if it was opened after `since`, else starts one. */
+export async function recordSession(
+    db: Db,
+    session: { linkId: string; player: string; byAuthor: boolean },
+    since: Date,
+    now: Date
+) {
+    const continued = await db
+        .updateTable('prototype_sessions')
+        .set({ last_opened_at: now })
+        .where('link_id', '=', session.linkId)
+        .where('player', '=', session.player)
+        .where('last_opened_at', '>', since)
+        .returning('started_at')
+        .executeTakeFirst();
+    if (continued) {
+        return false;
+    }
+    await db
+        .insertInto('prototype_sessions')
+        .values({
+            link_id: session.linkId,
+            player: session.player,
+            started_at: now,
+            last_opened_at: now,
+            by_author: session.byAuthor
+        })
+        .onConflict((conflict) => conflict.doNothing())
+        .execute();
+
+    return true;
+}
+
+/**
+ * R7's measures for each of the last `weeks` weeks, newest first, weeks starting on Monday
+ * in UTC: people who signed up, how many of them shared a prototype with at least two
+ * screens within `activationMs` of signing up, and prototype sessions run by others than
+ * the link's author. A week's sign-ups are final once `activationMs` has passed after it.
+ */
+export async function betaMeasures(
+    db: Db,
+    { now, weeks, activationMs }: { now: Date; weeks: number; activationMs: number }
+) {
+    const result = await sql<{
+        week: Date;
+        signUps: number;
+        activated: number;
+        signUpsFinal: boolean;
+        sessionsByOthers: number;
+        sessionsByAuthors: number;
+        linksPlayedByOthers: number;
+    }>`
+        with weeks as (
+            select generate_series(
+                date_trunc('week', ${now}::timestamptz, 'UTC') - ${weeks - 1} * interval '1 week',
+                date_trunc('week', ${now}::timestamptz, 'UTC'),
+                interval '1 week'
+            ) as week
+        ),
+        window_ as (select make_interval(secs => ${activationMs / 1000}) as activation)
+        select weeks.week,
+            (select count(*)::integer from auth."user" person
+                where person."createdAt" >= weeks.week
+                    and person."createdAt" < weeks.week + interval '1 week') as "signUps",
+            (select count(*)::integer from auth."user" person
+                where person."createdAt" >= weeks.week
+                    and person."createdAt" < weeks.week + interval '1 week'
+                    and exists (
+                        select 1 from shared_prototypes shared
+                        where shared.created_by = person.id
+                            and shared.screens >= 2
+                            and shared.created_at <= person."createdAt" + window_.activation
+                    )) as activated,
+            weeks.week + interval '1 week' + window_.activation <= ${now}::timestamptz
+                as "signUpsFinal",
+            (select count(*)::integer from prototype_sessions session
+                where session.started_at >= weeks.week
+                    and session.started_at < weeks.week + interval '1 week'
+                    and not session.by_author) as "sessionsByOthers",
+            (select count(*)::integer from prototype_sessions session
+                where session.started_at >= weeks.week
+                    and session.started_at < weeks.week + interval '1 week'
+                    and session.by_author) as "sessionsByAuthors",
+            (select count(distinct session.link_id)::integer from prototype_sessions session
+                where session.started_at >= weeks.week
+                    and session.started_at < weeks.week + interval '1 week'
+                    and not session.by_author) as "linksPlayedByOthers"
+        from weeks, window_
+        order by weeks.week desc
+    `.execute(db);
+
+    return result.rows;
 }
 
 /** Every shared prototype, newest first, with its distinct players and their opens. */

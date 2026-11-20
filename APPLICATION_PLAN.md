@@ -740,6 +740,10 @@ apps' contracts stay compatible. Track two measures:
 
 R8 and R10 start only if beta users ask for real data and for publishing.
 
+1. Measure both, weekly, on the server. Acceptance: `tests/server/betaMeasures.test.ts`.
+   Partly built; see the [delivery log](DELIVERY_LOG.md#r7-step-1-beta-measures). Open: telling
+   the author's own sessions apart from other people's.
+
 ### R8 One HTTP source (L)
 
 The user's list shows live records from an API, with loading, empty, error and retry states,

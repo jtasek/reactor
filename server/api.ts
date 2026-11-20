@@ -124,7 +124,7 @@ export function createApi({
     ai?: { provider: AiProvider; limits?: AiLimits };
 }) {
     const api = express.Router();
-    api.use(publicPrototypeLinks(db, previewOrigin, { metrics, log }));
+    api.use(publicPrototypeLinks(db, previewOrigin, { metrics, log, now }));
 
     // Only public provider names, so signed-out people see the configured sign-in choices.
     api.get('/sign-in/providers', (_req, res) => {
