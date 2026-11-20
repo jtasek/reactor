@@ -227,6 +227,55 @@ export function parseDesignTokenInterchange(
     });
 }
 
+const representable = (name: string) =>
+    name.split('/').every((segment) => {
+        try {
+            checkName(segment, []);
+            return true;
+        } catch {
+            return false;
+        }
+    });
+
+/**
+ * Every definition the DTCG subset cannot carry, each with what to do instead. Modes are named
+ * with the variables that vary by them, since the subset holds one value per token.
+ */
+export function designTokenInterchangeProblems(
+    document: Pick<Document, 'variables' | 'dimensions'>
+): string[] {
+    const variables = Object.values(document.variables).sort((a, b) =>
+        a.name.localeCompare(b.name)
+    );
+    const problems = Object.values(document.dimensions)
+        .sort((a, b) => a.order - b.order)
+        .map((dimension) => {
+            const modes = Object.values(dimension.modes)
+                .sort((a, b) => a.order - b.order)
+                .map((mode) => mode.name)
+                .join(', ');
+            const varying = variables.filter(
+                (variable) => variable.type !== 'boolean' && variable.dimensionId === dimension.id
+            ).length;
+            return `${dimension.name} (${modes}): DTCG mode interchange is unsupported${
+                varying
+                    ? `, so ${varying} ${varying === 1 ? 'variable' : 'variables'} would lose ${dimension.name} values`
+                    : ''
+            }. Use the Reactor format to keep dimensions and modes.`;
+        });
+    for (const variable of variables) {
+        if (variable.type !== 'color' && variable.type !== 'number')
+            problems.push(
+                `${variable.name}: DTCG export supports color and number tokens. Use the Reactor format to keep ${variable.type} variables.`
+            );
+        else if (!representable(variable.name))
+            problems.push(
+                `${variable.name}: This name cannot be represented as a DTCG token path.`
+            );
+    }
+    return problems;
+}
+
 /** Refuse unsupported definitions rather than dropping them or flattening mode/alias semantics. */
 export function exportDesignTokenInterchange(document: Document): string {
     const data = readDesignSystemPackage({
@@ -237,20 +286,10 @@ export function exportDesignTokenInterchange(document: Document): string {
         variables: Object.values(document.variables),
         dimensions: Object.values(document.dimensions)
     });
-    if (data.dimensions.length)
-        throw new Error(
-            'DTCG mode interchange is unsupported. Use the native format to retain dimensions and modes.'
-        );
+    const [problem] = designTokenInterchangeProblems(document);
+    if (problem) throw new Error(problem);
     const paths = new Map<string, string[]>();
-    for (const variable of data.variables) {
-        if (variable.type !== 'color' && variable.type !== 'number')
-            throw new Error(
-                `${variable.name}: DTCG export supports color and number tokens. Use the native format to retain ${variable.type} variables.`
-            );
-        const path = variable.name.split('/');
-        path.forEach((segment) => checkName(segment, path));
-        paths.set(variable.id, path);
-    }
+    for (const variable of data.variables) paths.set(variable.id, variable.name.split('/'));
     for (const [id, path] of paths) {
         if (
             [...paths.values()].some(

@@ -316,7 +316,7 @@ it('rejects reuse when a matching dimension lacks imported modes', () => {
     store.actions.createDimension('Appearance');
     const before = JSON.stringify(document);
     expect(() => planDesignSystemImport(json(document), pack(), 'reuse', newId)).toThrow(
-        'Unknown mode'
+        'Appearance has no Day mode here'
     );
     expect(JSON.stringify(document)).toBe(before);
     expect(apply(store, document, 'separate').applied).toBe(true);

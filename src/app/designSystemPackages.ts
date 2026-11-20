@@ -19,6 +19,16 @@ export interface DesignSystemPackage {
     dimensions: VariableDimension[];
 }
 export type ImportChoice = 'reuse' | 'replace' | 'separate';
+/** Library updates: replace what came from the same source, reuse local same-named definitions. */
+export type ImportPolicy = ImportChoice | 'update';
+export interface ImportPlan {
+    operations: Operation[];
+    /** Package record ID → document record ID. */
+    variableIds: Map<string, string>;
+    dimensionIds: Map<string, string>;
+    /** Package mode ID → document mode ID, by package dimension, where a kept dimension differs. */
+    modeIds: Map<string, Map<string, string>>;
+}
 type RecordWithIdentity = { id: string; name: string; source?: PackageIdentity };
 const identity = (record: RecordWithIdentity, packageId: string) =>
     record.source ?? { packageId, tokenId: record.id };
@@ -117,6 +127,18 @@ export function readDesignSystemPackage(input: unknown): DesignSystemPackage {
     };
 }
 
+/** Sorted object keys, so insertion order and collaboration do not change serialized records. */
+export const canonical = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object')
+        return Object.fromEntries(
+            Object.entries(value)
+                .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+                .map(([key, item]) => [key, canonical(item)])
+        );
+    return value;
+};
+
 export function parseDesignSystemPackage(text: string): DesignSystemPackage {
     if (new TextEncoder().encode(text).length > PACKAGE_MAX_BYTES)
         throw new Error('The package is larger than 1 MiB.');
@@ -133,17 +155,6 @@ export function exportDesignSystemPackage(document: Document): string {
         variables: Object.values(document.variables),
         dimensions: Object.values(document.dimensions)
     });
-    // Canonicalize object keys too, so insertion order and collaboration do not change exports.
-    const canonical = (value: unknown): unknown => {
-        if (Array.isArray(value)) return value.map(canonical);
-        if (value && typeof value === 'object')
-            return Object.fromEntries(
-                Object.entries(value)
-                    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-                    .map(([key, item]) => [key, canonical(item)])
-            );
-        return value;
-    };
     const text = `${JSON.stringify(canonical(data), null, 2)}\n`;
     if (new TextEncoder().encode(text).length > PACKAGE_MAX_BYTES)
         throw new Error('The package is larger than 1 MiB.');
@@ -169,11 +180,21 @@ export function planDesignSystemImport(
     choice: ImportChoice,
     newId: () => string
 ): Operation[] {
+    return planPackageImport(document, input, choice, newId).operations;
+}
+
+export function planPackageImport(
+    document: Document,
+    input: DesignSystemPackage,
+    choice: ImportPolicy,
+    newId: () => string
+): ImportPlan {
     if (document.locked) throw new Error('This document is locked.');
     const data = readDesignSystemPackage(input);
     const operations: Operation[] = [];
     const variableIds = new Map<string, string>();
     const dimensionIds = new Map<string, string>();
+    const modeIds = new Map<string, Map<string, string>>();
     const takenNames = new Set(Object.values(document.variables).map((v) => v.name));
     const dimensionNames = new Set(Object.values(document.dimensions).map((d) => d.name));
     const freshName = (name: string, taken: Set<string>) => {
@@ -190,11 +211,34 @@ export function planDesignSystemImport(
             throw new Error(`Several records match ${incoming.name}. Import separately instead.`);
         return matches[0];
     };
+    const keeps = <T extends RecordWithIdentity>(incoming: T, existing: T) =>
+        choice === 'reuse' ||
+        (choice === 'update' &&
+            identityKey(identity(existing, document.id)) !== identityKey(incoming.source!));
     for (const dimension of data.dimensions) {
         const existing = match(dimension, document.dimensions);
         const id = existing?.id ?? newId();
         dimensionIds.set(dimension.id, id);
-        if (existing && choice === 'reuse') continue;
+        if (existing && keeps(dimension, existing)) {
+            // A kept dimension keeps its own modes; incoming values follow them by ID, then name.
+            const local = Object.values(existing.modes);
+            const modes = new Map<string, string>();
+            for (const mode of Object.values(dimension.modes)) {
+                const same =
+                    existing.modes[mode.id] ?? local.find((other) => other.name === mode.name);
+                if (!same)
+                    throw new Error(
+                        `${existing.name} has no ${mode.name} mode here. Import separately instead.`
+                    );
+                if ((mode.id === dimension.defaultModeId) !== (same.id === existing.defaultModeId))
+                    throw new Error(
+                        `${existing.name} starts with another mode here. Import separately instead.`
+                    );
+                modes.set(mode.id, same.id);
+            }
+            modeIds.set(dimension.id, modes);
+            continue;
+        }
         const name = existing ? dimension.name : freshName(dimension.name, dimensionNames);
         operations.push({
             op: 'setDimension',
@@ -226,7 +270,7 @@ export function planDesignSystemImport(
     data.variables.forEach(visit);
     for (const variable of ordered) {
         const existing = matched.get(variable.id);
-        if (existing && choice === 'reuse') continue;
+        if (existing && keeps(variable, existing)) continue;
         const name = existing ? variable.name : freshName(variable.name, takenNames);
         const value =
             variable.type === 'text'
@@ -242,7 +286,7 @@ export function planDesignSystemImport(
                           Object.entries(variable.values)
                               .filter(([key]) => key !== 'default')
                               .map(([key, value]) => [
-                                  key,
+                                  modeIds.get(variable.dimensionId!)?.get(key) ?? key,
                                   variable.type === 'text'
                                       ? replaceTemplateIds(String(value), (id) =>
                                             variableIds.get(id)
@@ -297,5 +341,5 @@ export function planDesignSystemImport(
             if (issues.length) throw new Error(`${variable.name}: ${issues.join(', ')}.`);
         }
     }
-    return operations;
+    return { operations, variableIds, dimensionIds, modeIds };
 }
