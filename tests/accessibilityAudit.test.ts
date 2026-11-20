@@ -75,7 +75,7 @@ describe('contrast', () => {
         const ratios = Object.fromEntries(report.contrast.map(({ key, ratio }) => [key, ratio]));
 
         expect(ratios['on-dark']).toBe(21);
-        expect(ratios['on-page']).toBeCloseTo(4.48, 2);
+        expect(ratios['on-page']).toBe(4.47);
         expect(ratios['faded/line']).toBeLessThan(4.5);
         expect(report.problems.map((problem) => problem.key)).toEqual(['on-page', 'faded/line']);
     });
@@ -315,4 +315,98 @@ it('lets the local test model propose the check’s fixes', async () => {
     });
 
     expect(result).toMatchObject({ kind: 'proposed', operations: fixOperations(issues) });
+});
+
+describe('review fixes', () => {
+    const line = (key: string, attrs: PreviewNode['attrs'] = {}): PreviewNode => ({
+        key,
+        tag: 'text',
+        attrs: { x: 10, y: 30, 'font-size': 16, fill: '#000000', ...attrs },
+        text: 'Hello'
+    });
+    const rect = (key: string, fill: string): PreviewNode => ({
+        key,
+        tag: 'rect',
+        attrs: { x: 0, y: 0, width: 200, height: 50, fill }
+    });
+
+    it('reads text over an image only once something opaque covers it', () => {
+        const image: PreviewNode = {
+            key: 'photo',
+            tag: 'image',
+            image: 'a'.repeat(64),
+            attrs: { x: 0, y: 0, width: 200, height: 50 }
+        };
+
+        expect(auditScreen({ nodes: [image, line('over-image')] }).contrast).toEqual([]);
+        expect(
+            auditScreen({ nodes: [image, rect('card', '#ffffff'), line('over-card')] }).contrast
+        ).toMatchObject([{ key: 'over-card', ratio: 21 }]);
+        expect(
+            auditScreen({
+                nodes: [
+                    image,
+                    {
+                        ...rect('tint', '#ffffff'),
+                        attrs: { ...rect('tint', '#ffffff').attrs, opacity: 0.5 }
+                    },
+                    line('over-tint')
+                ]
+            }).contrast
+        ).toEqual([]);
+    });
+
+    it('never rounds a failing ratio up to the threshold', () => {
+        // #767777 on white is 4.497:1.
+        const [result] = auditScreen({ nodes: [line('grey', { fill: '#767777' })] }).contrast;
+
+        expect(result.ratio).toBeLessThan(4.5);
+        expect(auditScreen({ nodes: [line('grey', { fill: '#767777' })] }).problems).toHaveLength(
+            1
+        );
+    });
+
+    it('starts controls that follow a state as the start states decide', () => {
+        const control = (key: string, y: number, initial: boolean): PreviewNode => ({
+            key,
+            tag: 'g',
+            attrs: {},
+            control: { role: 'button', label: key, x: 0, y, width: 80, height: 20 },
+            visibility: {
+                key,
+                initial,
+                condition: {
+                    kind: 'equals',
+                    left: { kind: 'state', stateId: 'state:open' },
+                    right: { kind: 'value', value: key === 'Close' }
+                }
+            }
+        });
+        const nodes = [control('Close', 0, false), control('Open', 40, true)];
+
+        expect(
+            auditScreen({ nodes }, RULES, undefined, { 'state:open': false }).focusOrder
+        ).toEqual(['Open']);
+        expect(auditScreen({ nodes }, RULES, undefined, { 'state:open': true }).focusOrder).toEqual(
+            ['Close']
+        );
+    });
+
+    it('proposes no source color for text an instance colors itself', () => {
+        const document = accessibilityFixture();
+        const hint = document.shapes.hint;
+        if (hint.type !== 'text') {
+            throw new Error('Expected text');
+        }
+        hint.fontColor = '#bbbbbb';
+        const issues = accessibilityIssues(document, check(document));
+        // Pretend the drawn color came from elsewhere: the fix must not target the shape.
+        hint.fontColor = '#010101';
+        const again = accessibilityIssues(document, check(document)).filter(
+            ({ problem }) => problem.key === 'home/hint/line-0'
+        );
+
+        expect(issues.some(({ problem }) => problem.key === 'home/hint/line-0')).toBe(true);
+        expect(again.every(({ fix }) => !fix)).toBe(true);
+    });
 });

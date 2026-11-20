@@ -10,23 +10,7 @@ import { createPreviewResources } from './resources';
 import type { AccessibilityRules } from './accessibilityRules';
 
 const MARKER = '<!-- reactor:package -->';
-
-/** The snapshot a package carries: every screen as this Prototype session draws it, with
- * its images read and verified. */
-export function packageApplication(
-    document: Document,
-    session: PreviewSession,
-    inspection: PreviewInspection,
-    assets: Parameters<typeof createPreviewResources>[0],
-    signal: AbortSignal
-) {
-    const drawing = projectPreview(document, {}, [], session, inspection);
-    if (!drawing.screens.length || drawing.screens[0].id !== session.screenId) {
-        throw new Error('Choose an available start page before downloading.');
-    }
-
-    return createPreviewResources(assets)(drawing, signal);
-}
+const START_PAGE = 'Choose an available start page before downloading.';
 
 /** Another context a package can be viewed in: its modes and size, drawn as Prototype would. */
 export interface PackageView {
@@ -54,7 +38,11 @@ export async function packageContents(
     signal: AbortSignal
 ): Promise<{ application: PreviewApplication; extras: PackageExtras }> {
     const resources = createPreviewResources(assets);
-    const application = await packageApplication(document, session, inspection, assets, signal);
+    const tested = projectPreview(document, {}, [], session, inspection);
+    if (!tested.screens.length || tested.screens[0].id !== session.screenId) {
+        throw new Error(START_PAGE);
+    }
+    const application = await resources(tested, signal);
     const views: PackageView[] = [];
     let images = application.images;
     for (const context of contexts) {

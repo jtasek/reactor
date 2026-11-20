@@ -1,4 +1,5 @@
-import type { PreviewDrawing, PreviewNode } from '../shared/previewProtocol';
+import type { PreviewDrawing, PreviewNode, PreviewStateValue } from '../shared/previewProtocol';
+import { evaluateCondition } from '../shared/conditions';
 import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics';
 import { DEFAULT_ACCESSIBILITY_RULES, type AccessibilityRules } from './accessibilityRules';
 
@@ -171,15 +172,16 @@ const inside = (box: Box) => (x: number, y: number) =>
 
 /** What is drawn at a point, composited over the page; undefined over an image. */
 function backdrop(paints: readonly Paint[], x: number, y: number): Rgb | undefined {
-    let color = WHITE;
+    let color: Rgb | undefined = WHITE;
     for (const paint of paints) {
         if (!paint.contains(x, y)) {
             continue;
         }
-        if (!paint.color) {
-            return undefined;
-        }
-        color = blend(paint.color, color, paint.alpha);
+        // An image's colors are unknown until something opaque covers it.
+        color =
+            paint.color && (color || paint.alpha >= 1)
+                ? blend(paint.color, color ?? WHITE, paint.alpha)
+                : undefined;
     }
 
     return color;
@@ -202,14 +204,23 @@ function visibleText(node: PreviewNode, pick: AuditPick): string {
     );
 }
 
-const startPick: AuditPick = (node) => {
-    if (node.visibility && !node.visibility.initial && !node.visibility.condition) {
-        return undefined;
-    }
-    const variant = node.initialVariant ? node.variants?.[node.initialVariant] : undefined;
+/** What a screen shows as it opens: initial variants, and visibility as the start states decide it. */
+const startPick =
+    (states: Readonly<Record<string, PreviewStateValue>>): AuditPick =>
+    (node) => {
+        const visibility = node.visibility;
+        const shown = visibility?.condition
+            ? evaluateCondition(visibility.condition, (operand) =>
+                  operand.kind === 'state' ? states[operand.stateId] : undefined
+              )
+            : (visibility?.initial ?? true);
+        if (!shown) {
+            return undefined;
+        }
+        const variant = node.initialVariant ? node.variants?.[node.initialVariant] : undefined;
 
-    return variant ?? node;
-};
+        return variant ?? node;
+    };
 
 /**
  * Checks one screen as the player draws it: the contrast of each text line against what
@@ -219,9 +230,12 @@ const startPick: AuditPick = (node) => {
 export function auditScreen(
     screen: Pick<Screen, 'nodes'>,
     rules: AccessibilityRules = DEFAULT_ACCESSIBILITY_RULES,
-    livePick?: AuditPick
+    livePick?: AuditPick,
+    /** Start values of named states, which decide what shows at start without `livePick`. */
+    states: Readonly<Record<string, PreviewStateValue>> = {}
 ): AuditReport {
-    const pick = livePick ?? startPick;
+    const atStart = startPick(states);
+    const pick = livePick ?? atStart;
     const names: AuditName[] = [];
     const contrast: AuditContrast[] = [];
     const problems: AuditProblem[] = [];
@@ -241,6 +255,20 @@ export function auditScreen(
 
     const visit = (authored: PreviewNode, walk: Walk) => {
         if (!livePick) {
+            // Checked once shown, against what is drawn below it now; its variants follow.
+            if (authored.visibility && !atStart(authored)) {
+                visit(
+                    { ...authored, visibility: undefined },
+                    {
+                        ...walk,
+                        paints: [...walk.paints],
+                        when: walk.when ?? { shown: true },
+                        alternative: true
+                    }
+                );
+
+                return;
+            }
             if (authored.variants && authored.initialVariant) {
                 Object.entries(authored.variants).forEach(([id, variant]) => {
                     if (id !== authored.initialVariant) {
@@ -255,19 +283,6 @@ export function auditScreen(
                         );
                     }
                 });
-            }
-            if (authored.visibility && !startPick(authored)) {
-                visit(
-                    { ...authored, visibility: undefined },
-                    {
-                        ...walk,
-                        paints: [...walk.paints],
-                        when: walk.when ?? { shown: true },
-                        alternative: true
-                    }
-                );
-
-                return;
             }
         }
         const node = pick(authored);
@@ -364,7 +379,8 @@ export function auditScreen(
             color: hex(own),
             background: hex(background),
             opacity: walk.alpha,
-            ratio: Math.round(ratio * 100) / 100,
+            // Never rounded up: 4.499 fails 4.5 and must not read as 4.5.
+            ratio: Math.floor(ratio * 100) / 100,
             required,
             ...(walk.when ? { when: walk.when } : {})
         };

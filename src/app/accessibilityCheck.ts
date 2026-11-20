@@ -177,7 +177,7 @@ export function checkAccessibility(
                 screens: drawing.screens.map((screen) => ({
                     id: screen.id,
                     name: screen.name,
-                    report: auditScreen(screen, rules)
+                    report: auditScreen(screen, rules, undefined, drawing.states)
                 }))
             };
         } catch (error) {
@@ -250,7 +250,10 @@ function colorSource(
     }
     const bound = boundVariable(shape, 'fontColor', document);
     if (!bound) {
-        return { kind: 'shape', shape: shape.id, name: shape.name };
+        // An instance override drew another color; changing the source wouldn't fix it.
+        return (shape.fontColor ?? '#000000').toLowerCase() === entry.color
+            ? { kind: 'shape', shape: shape.id, name: shape.name }
+            : undefined;
     }
     const definition = variableDefinition(bound, document.variables);
     if (definition.type !== 'color') {

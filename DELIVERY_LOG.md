@@ -1131,7 +1131,9 @@ be viewed and checked in the same contexts.
 - **The audit** (`src/preview/accessibilityAudit.ts`) reads the drawing the player gets, so the
   editor and the exported runtime check the same thing. Contrast: each text line against what is
   drawn below it, composited with opacity over the page, at three points along the line; text
-  over an image, under a disabled control or in a native field isn't checked. WCAG AA thresholds
+  over an image (unless something opaque covers it), under a disabled control or in a native
+  field isn't checked; a ratio is never rounded up to its threshold. What shows at start follows
+  the start states, as the player decides it. WCAG AA thresholds
   are in `config.accessibility` (`src/preview/accessibilityRules.ts`). Names: buttons and inputs
   need one, and a button's name must include the words it shows (a layer name such as
   "Rectangle 7" fails). Focus order: Tab follows the drawing order; a control Tab reaches after
@@ -1153,7 +1155,8 @@ be viewed and checked in the same contexts.
   chosen context drawn the same way, sharing one image table, plus the thresholds. The page has
   a "View as" picker and an Accessibility toggle that lists problems, focus order, names and
   contrast for the screen as it is now (variants, records and state included). Shared links get
-  the toggle too. The preview protocol stays at version 3.
+  the toggle too. The preview protocol stays at version 3. `packageContents` replaces
+  `packageApplication` and reads each image once for every view.
 - **Tests.** `tests/accessibilityAudit.test.ts` (contrast math, compositing, variants and hidden
   instances, player state, contexts and the limit, fixes applied, local model);
   `tests/themes.test.ts` (each mode and size drawn alike by the canvas, Prototype and the
