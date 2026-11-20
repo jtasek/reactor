@@ -3,7 +3,7 @@ import {
     exportDesignTokenInterchange,
     parseDesignTokenInterchange
 } from 'src/app/designTokenInterchange';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
 import {
@@ -47,18 +47,8 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
         variables: json(document.variables),
         dimensions: json(document.dimensions)
     };
-    const variables = document.variables;
-    const dimensions = document.dimensions;
-    const unsupported = useMemo(
-        () =>
-            mode === 'export' && format === 'dtcg'
-                ? designTokenInterchangeProblems({
-                      variables: json(variables),
-                      dimensions: json(dimensions)
-                  })
-                : [],
-        [mode, format, variables, dimensions]
-    );
+    const unsupported =
+        mode === 'export' && format === 'dtcg' ? designTokenInterchangeProblems(snapshot) : [];
     const exportPackage = () => {
         try {
             const text =
