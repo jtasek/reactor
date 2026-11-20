@@ -2,6 +2,7 @@ import { json } from 'overmind';
 import { createDocument } from 'src/app/factories';
 import {
     parseDesignTokenInterchange,
+    designTokenInterchangeProblems,
     exportDesignTokenInterchange,
     DTCG_SCHEMA
 } from 'src/app/designTokenInterchange';
@@ -199,7 +200,7 @@ it('refuses to drop unsupported native definitions during export', () => {
             text: { id: 'text', name: 'Label', type: 'text', values: { default: 'Hello' } }
         }
     });
-    expect(() => exportDesignTokenInterchange(text)).toThrow('native');
+    expect(() => exportDesignTokenInterchange(text)).toThrow('Reactor format');
     const data = parse(fixture());
     const document = createDocument({
         variables: Object.fromEntries(data.variables.map((v) => [v.id, v]))
@@ -212,6 +213,47 @@ it('refuses to drop unsupported native definitions during export', () => {
         modes: { base: { id: 'base', name: 'Base', order: 0 } }
     };
     expect(() => exportDesignTokenInterchange(document)).toThrow('dimensions and modes');
+});
+
+it('lists every definition DTCG cannot carry, naming the variables each mode affects', () => {
+    const document = createDocument({
+        dimensions: {
+            theme: {
+                id: 'theme',
+                name: 'Theme',
+                order: 0,
+                defaultModeId: 'light',
+                modes: {
+                    light: { id: 'light', name: 'Light', order: 0 },
+                    dark: { id: 'dark', name: 'Dark', order: 1 }
+                }
+            }
+        },
+        variables: {
+            ink: {
+                id: 'ink',
+                name: 'Ink',
+                type: 'color',
+                dimensionId: 'theme',
+                values: { default: '#000000', dark: '#ffffff' }
+            },
+            gap: { id: 'gap', name: 'Gap', type: 'number', values: { default: 8 } },
+            label: { id: 'label', name: 'Label', type: 'text', values: { default: 'Hi' } },
+            odd: { id: 'odd', name: 'odd.name', type: 'number', values: { default: 1 } }
+        }
+    });
+    expect(designTokenInterchangeProblems(document)).toEqual([
+        'Theme (Light, Dark): DTCG mode interchange is unsupported, so 1 variable would lose Theme values. Use the Reactor format to keep dimensions and modes.',
+        'Label: DTCG export supports color and number tokens. Use the Reactor format to keep text variables.',
+        'odd.name: This name cannot be represented as a DTCG token path.'
+    ]);
+    expect(() => exportDesignTokenInterchange(document)).toThrow('Theme (Light, Dark)');
+    delete document.dimensions.theme;
+    delete document.variables.ink;
+    delete document.variables.label;
+    delete document.variables.odd;
+    expect(designTokenInterchangeProblems(document)).toEqual([]);
+    expect(() => exportDesignTokenInterchange(document)).not.toThrow();
 });
 
 it('limits bytes, nesting and token counts', () => {

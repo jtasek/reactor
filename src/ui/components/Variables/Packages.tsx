@@ -1,8 +1,9 @@
 import {
+    designTokenInterchangeProblems,
     exportDesignTokenInterchange,
     parseDesignTokenInterchange
 } from 'src/app/designTokenInterchange';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { json } from 'overmind';
 import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
 import {
@@ -46,6 +47,18 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
         variables: json(document.variables),
         dimensions: json(document.dimensions)
     };
+    const variables = document.variables;
+    const dimensions = document.dimensions;
+    const unsupported = useMemo(
+        () =>
+            mode === 'export' && format === 'dtcg'
+                ? designTokenInterchangeProblems({
+                      variables: json(variables),
+                      dimensions: json(dimensions)
+                  })
+                : [],
+        [mode, format, variables, dimensions]
+    );
     const exportPackage = () => {
         try {
             const text =
@@ -139,7 +152,12 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
                         <button type="button" onClick={onClose}>
                             Close
                         </button>
-                        <button type="button" data-variant="primary" onClick={exportPackage}>
+                        <button
+                            type="button"
+                            data-variant="primary"
+                            disabled={unsupported.length > 0}
+                            onClick={exportPackage}
+                        >
                             Export design system
                         </button>
                     </>
@@ -185,6 +203,20 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
                         Unsupported definitions reject the whole file. Use Reactor format for modes,
                         text and booleans.
                     </p>
+                )}
+                {unsupported.length > 0 && (
+                    <>
+                        <p className={styles.problem}>
+                            This document can’t be exported as DTCG without losing definitions:
+                        </p>
+                        <ul aria-label="Not exchangeable as DTCG">
+                            {unsupported.map((problem) => (
+                                <li key={problem} className={styles.row}>
+                                    {problem}
+                                </li>
+                            ))}
+                        </ul>
+                    </>
                 )}
                 {mode === 'import' && (
                     <div className={styles.rowHeader}>

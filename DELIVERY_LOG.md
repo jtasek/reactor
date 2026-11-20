@@ -1078,3 +1078,40 @@ package too, so the canvas, Prototype, the package and SVG export are held to on
 - **Not covered.** As before, images' content, where a list places its rows and the native
   fields drawn over inputs. The Width and Layout a person inspects in Prototype still go into
   the file: that is the context they tested.
+
+## R6.2 Design-system interchange
+
+_Recorded 2026-11-20._
+
+Copying a component from another document now brings the design system it uses, through the
+same V4 package rules as Import, and the DTCG export says up front everything it cannot carry.
+
+- **Library copies bring their tokens.** `src/app/libraryTokens.ts` collects what a copied
+  source and its nested sources use (bindings, variable overrides, templates, instance mode
+  overrides), with their aliases and dimensions, as a package named after the library
+  document. Copy reuses matching local definitions (identity first, then name); the copy
+  points its bindings and mode overrides at the local IDs. Before, copied sources kept the
+  library's IDs, so they drew their stored colors and ignored the document's modes.
+- **Updates follow the library.** A source's fingerprint now includes the definitions it uses,
+  so changing a used token in the library offers Update; unused tokens don't. Components that
+  use no tokens keep their old fingerprints. Update replaces only definitions that came from
+  that library (`ImportPolicy` `update` in `src/app/designSystemPackages.ts`); a local
+  definition that only shares a name is kept.
+- **One step or none.** Tokens and sources are written as one shared undo step. If a token
+  can't be brought (for example a local definition with the same name and another type), the
+  copy or update is refused with the reason and nothing is written.
+- **DTCG diagnostics.** `designTokenInterchangeProblems` lists every definition the subset
+  can't carry: each dimension with its modes and how many variables would lose its values,
+  text and yes/no variables, and names that aren't token paths. The Export dialog shows the
+  list when DTCG is chosen and disables Export; the Reactor format stays available. The DTCG
+  subset still exchanges no modes.
+- **Tests.** `tests/libraryTokens.test.ts` (identity, modes, reuse, mode names, refusal without writes,
+  update offer and replace, unchanged fingerprints, shared undo);
+  `tests/designTokenInterchange.test.ts` and `tests/browser/designTokenInterchange.spec.ts`
+  for the diagnostics.
+- **Kept dimensions.** When an incoming dimension matches a local one that is kept, its
+  modes follow the local modes by ID, then by name, for Import and library copies alike, and
+  copied mode overrides follow too. A missing mode, or a different starting mode, refuses
+  with the dimension and mode named.
+- **Not yet.** Mode interchange through DTCG Resolver documents; tokens a reused local alias
+  no longer needs are still added.

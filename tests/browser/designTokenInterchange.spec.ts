@@ -105,9 +105,14 @@ test('refuses a partial DTCG export and leaves native export available', async (
     await createVariable(page, 'Label', 'Text');
     await openPackageDialog(page, 'Export');
     await page.getByLabel('Design-system format').selectOption('dtcg');
-    await page.getByRole('button', { name: 'Export design system', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('Use the native format');
+    await expect(page.getByLabel('Not exchangeable as DTCG')).toContainText(
+        'Label: DTCG export supports color and number tokens'
+    );
+    await expect(
+        page.getByRole('button', { name: 'Export design system', exact: true })
+    ).toBeDisabled();
     await page.getByLabel('Design-system format').selectOption('native');
+    await expect(page.getByLabel('Not exchangeable as DTCG')).toHaveCount(0);
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export design system', exact: true }).click();
     expect((await pending).suggestedFilename()).toBe('design-system.reactor.json');

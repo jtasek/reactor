@@ -1,7 +1,10 @@
 import type { ActionWithParam } from './types';
+import type { Context } from './index';
 import type { Component, Document, Shape, RoleSettings, InteractionSettings } from './types';
 import { json } from 'overmind';
 import { shapeGeometry, shapeStyle } from './utils';
+import { memberTokens, stageLibraryTokens } from './libraryTokens';
+import { writeBatch } from './operationBatches';
 
 const roleContent = (settings: RoleSettings | undefined) =>
     settings && {
@@ -12,12 +15,28 @@ const roleContent = (settings: RoleSettings | undefined) =>
         )
     };
 
+/** The definitions the members use; absent when none, so earlier fingerprints still hold. */
+function tokenContent(document: Document, members: Shape[]) {
+    const ids = memberTokens(document, members);
+    if (!ids.variables.size && !ids.dimensions.size) {
+        return undefined;
+    }
+    const byId = <T extends { id: string }>(records: T[]) =>
+        [...records].sort((a, b) => (a.id < b.id ? -1 : Number(a.id > b.id)));
+    return {
+        variables: byId([...ids.variables].map((id) => document.variables[id])),
+        dimensions: byId([...ids.dimensions].map((id) => document.dimensions[id]))
+    };
+}
+
 function fingerprint(
+    document: Document,
     component: Component,
     members: Shape[],
     records: ReadonlyMap<string, { hash: string }>
 ): string {
     const payload = JSON.stringify({
+        tokens: tokenContent(document, members),
         name: component.name,
         variants: component.variantIds?.map((id) => [id, records.get(id)?.hash]),
         responsiveVariants: component.responsiveVariants,
@@ -110,7 +129,7 @@ function libraryRecords(
             }
             members.push(shape);
         }
-        const hash = fingerprint(component, members, records);
+        const hash = fingerprint(document, component, members, records);
         records.set(id, { component, members, hash });
         visiting.delete(id);
 
@@ -207,10 +226,35 @@ export function librarySnapshot(
     }));
 }
 
+/** Writes copied sources and the tokens they use as one shared step, or explains why not. */
+function writeLibraryCopies(
+    target: Document,
+    source: Document,
+    copies: Component[],
+    policy: 'reuse' | 'update',
+    effects: Pick<Context['effects'], 'newId' | 'collaboration'>
+): string | null {
+    let staged;
+    try {
+        staged = stageLibraryTokens(json(target), json(source), copies, policy, effects.newId);
+    } catch (error) {
+        return `Its tokens cannot be brought here. ${error instanceof Error ? error.message : String(error)}`;
+    }
+    effects.collaboration.startBatch(target.id, { kind: 'person' });
+    if (staged) {
+        writeBatch(target, staged);
+    }
+    copies.forEach((component) => {
+        target.components[component.id] = component;
+    });
+    effects.collaboration.flush();
+    return null;
+}
+
 export const importLibraryComponent: ActionWithParam<{
     documentId: string;
     componentId: string;
-}> = ({ state, actions }, { documentId, componentId }) => {
+}> = ({ state, actions, effects }, { documentId, componentId }) => {
     const source = state.documents[documentId];
     const target = state.currentDocument;
 
@@ -230,9 +274,13 @@ export const importLibraryComponent: ActionWithParam<{
 
         return;
     }
-    copies.forEach((component) => {
-        target.components[component.id] = component;
-    });
+    const problem = writeLibraryCopies(target, source, copies, 'reuse', effects);
+
+    if (problem) {
+        actions.displayWarning(problem);
+
+        return;
+    }
     actions.ui.showControl('components');
 };
 
@@ -259,9 +307,9 @@ export const updateLibraryComponent: ActionWithParam<string> = (
 
         return;
     }
-    effects.collaboration.startBatch(target.id, { kind: 'person' });
-    copies.forEach((component) => {
-        target.components[component.id] = component;
-    });
-    effects.collaboration.flush();
+    const problem = writeLibraryCopies(target, source, copies, 'update', effects);
+
+    if (problem) {
+        actions.displayWarning(problem);
+    }
 };
