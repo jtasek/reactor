@@ -120,6 +120,15 @@ export interface Database {
         first_opened_at: Generated<Date>;
         last_opened_at: Generated<Date>;
     };
+    prototype_sessions: {
+        link_id: string;
+        /** The same hash as `prototype_players.player`. */
+        player: string;
+        started_at: Date;
+        last_opened_at: Date;
+        /** Opened by the person who shared the link. */
+        by_author: Generated<boolean>;
+    };
     ai_requests: {
         id: string;
         workspace_id: string;

@@ -47,7 +47,7 @@ PostgreSQL; see Accounts below.
 | `HOST` | Address to listen on; `localhost` for the development server, `0.0.0.0` for the production server |
 | `LOG_LEVEL` | Production server log level; `info` by default |
 | `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
-| `METRICS_TOKEN` | Turns on `/metrics` and `/metrics/prototypes` for requests sending it as `Authorization: Bearer <token>`; off by default |
+| `METRICS_TOKEN` | Turns on `/metrics` and its `/metrics/…` lists for requests sending it as `Authorization: Bearer <token>`; off by default |
 
 The production server stops at start with a clear message when `PORT` or
 `TRUST_PROXY` is invalid; `LOG_LEVEL` must be one of `fatal`, `error`, `warn`,
@@ -754,6 +754,17 @@ across links. Nothing is sent to a third party.
 started, the earlier of their account's creation and the shared document's creation as the
 editor reports it, when they shared it and the seconds between. `/metrics` has the same time
 as the `reactor_first_shared_link_seconds` histogram, observed once per person.
+
+`GET /metrics/beta` has R7's measures for each of the last 12 weeks, newest first, weeks
+starting on Monday in UTC: `signUps`, the accounts created that week; `activated`, how many of
+them shared a prototype with at least two screens within a day of signing up (`signUpsFinal`
+once that day has passed for all of them); and prototype sessions started that week by people
+other than the link's author (`sessionsByOthers`, `sessionsByAuthors`, `linksPlayedByOthers`).
+A session is one browser's opens of one link, until it leaves the link for half an hour;
+browsers that keep no id run no counted session. The author's own sessions are not told
+apart yet, so every session counts as by others for now. `/metrics` counts sessions as
+`reactor_prototype_sessions_total`. The windows are `BETA_MEASURES` in
+[server/services/prototypeLinks.ts](server/services/prototypeLinks.ts).
 
 The editor sends errors nothing handled, up to ten per page load and each message once, to
 `POST /api/client-errors`, signed in or not. The server takes them only from its own pages,

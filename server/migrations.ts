@@ -335,6 +335,31 @@ const migrations: Record<string, Migration> = {
                 .addColumn('started_at', 'timestamptz')
                 .execute();
         }
+    },
+    '0012_prototype_sessions': {
+        async up(db) {
+            // Each run of a shared prototype by one browser, for the weekly beta measures.
+            await db.schema
+                .createTable('prototype_sessions')
+                .addColumn('link_id', 'text', (c) =>
+                    c.notNull().references('shared_prototypes.link_id').onDelete('cascade')
+                )
+                .addColumn('player', 'text', (c) => c.notNull())
+                .addColumn('started_at', 'timestamptz', (c) => c.notNull())
+                .addColumn('last_opened_at', 'timestamptz', (c) => c.notNull())
+                .addColumn('by_author', 'boolean', (c) => c.notNull().defaultTo(false))
+                .addPrimaryKeyConstraint('prototype_sessions_pkey', [
+                    'link_id',
+                    'player',
+                    'started_at'
+                ])
+                .execute();
+            await db.schema
+                .createIndex('prototype_sessions_started')
+                .on('prototype_sessions')
+                .column('started_at')
+                .execute();
+        }
     }
 };
 

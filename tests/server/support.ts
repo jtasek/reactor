@@ -17,7 +17,12 @@ import {
     metricsRoutes,
     type BrowserErrorLimits
 } from '../../server/metrics';
-import { firstSharedLinks, sharedPrototypes } from '../../server/repositories/prototypeLinks';
+import {
+    betaMeasures,
+    firstSharedLinks,
+    sharedPrototypes
+} from '../../server/repositories/prototypeLinks';
+import { BETA_MEASURES } from '../../server/services/prototypeLinks';
 import { SCHEMA_VERSION } from '../../src/shared/schemaVersion';
 
 export const ORIGIN = 'http://localhost:4000';
@@ -311,7 +316,8 @@ export async function startServer({
             token: metricsToken,
             metrics,
             prototypes: () => sharedPrototypes(accounts.db),
-            firstLinks: () => firstSharedLinks(accounts.db)
+            firstLinks: () => firstSharedLinks(accounts.db),
+            beta: () => betaMeasures(accounts.db, { ...BETA_MEASURES, now: now?.() ?? new Date() })
         })
     );
     app.use(browserErrors({ metrics, log: browserLog, limits: browserErrorLimits }));

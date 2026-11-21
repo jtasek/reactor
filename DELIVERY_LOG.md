@@ -1166,3 +1166,19 @@ be viewed and checked in the same contexts.
   narrow shape; rotation is ignored. Names of lists and images, landmarks and heading structure
   aren't checked. Focus order can't be fixed from the check.
 
+## R7 step 1: Beta measures
+
+_Recorded 2026-11-20._
+
+Implementation status (2026-11-20): opening a shared link with a player id now also records a
+session in `prototype_sessions` (migration `0012_prototype_sessions`): one browser's opens of
+one link belong to one session until half an hour passes without one. Only counted players run
+sessions, so the existing 10,000-players-per-link cap bounds them too. `GET /metrics/beta`
+(behind `METRICS_TOKEN`) reports the last 12 weeks, Monday to Monday in UTC: sign-ups, how
+many of them shared a prototype with two screens or more within a day of signing up, whether
+that week's count is final, and sessions started by others and by authors, with the links
+others played. `/metrics` counts `reactor_prototype_sessions_total{by}`. The windows live in
+`BETA_MEASURES` (`server/services/prototypeLinks.ts`). Covered by
+`tests/server/betaMeasures.test.ts`. Not yet: telling the author's own sessions apart, so every
+session counts as by others for now (`by_author` stays false); and a dashboard.
+

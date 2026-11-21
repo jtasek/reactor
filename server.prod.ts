@@ -128,7 +128,8 @@ app.use(
         token: process.env.METRICS_TOKEN,
         metrics,
         prototypes: accounts?.sharedPrototypes,
-        firstLinks: accounts?.firstSharedLinks
+        firstLinks: accounts?.firstSharedLinks,
+        beta: accounts?.betaMeasures
     })
 );
 app.use(browserErrors({ metrics, log: logger.logger }));
