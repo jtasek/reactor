@@ -11,7 +11,8 @@ import {
     serializePersistedState,
     readEntity,
     readView,
-    restoreDocuments
+    restoreDocuments,
+    withoutDanglingReferences
 } from '../services/documentStorage';
 
 const fixture = () => {
@@ -215,5 +216,53 @@ describe('saved guides', () => {
     it('refuse any other orientation', () => {
         expect(() => readEntity('guides', guide('diagonal'))).toThrow('Invalid orientation');
         expect(() => readEntity('guides', guide(0))).toThrow('Invalid orientation');
+    });
+});
+
+describe('saved components', () => {
+    const exists = () => true;
+
+    it('stay as saved when they refer to nothing missing', () => {
+        const shape = createShape({
+            type: 'text',
+            name: 'Label',
+            order: 'a0',
+            value: 'Go',
+            position: { x: 0, y: 0 }
+        });
+        const component = createComponent({
+            id: 'button',
+            name: 'Button',
+            shapesIds: [shape.id],
+            props: [{ id: 'label', shapeId: shape.id, key: 'text', label: 'Label' }]
+        });
+        const document = createDocument({
+            id: 'd',
+            shapes: { [shape.id]: shape },
+            components: { button: component }
+        });
+        const onRepair = vi.fn();
+
+        migratePersistedState(
+            serializePersistedState({ currentDocumentId: 'd', documents: { d: document } }),
+            onRepair
+        );
+
+        expect(withoutDanglingReferences('components', component, exists)).toBe(component);
+        expect(onRepair).not.toHaveBeenCalled();
+    });
+
+    it('lose properties of shapes they no longer hold', () => {
+        const component = createComponent({
+            id: 'button',
+            name: 'Button',
+            shapesIds: [],
+            props: [{ id: 'label', shapeId: 'gone', key: 'text', label: 'Label' }]
+        });
+
+        expect(withoutDanglingReferences('components', component, exists)).toEqual({
+            ...component,
+            props: []
+        });
     });
 });
