@@ -743,11 +743,6 @@ R8 and R10 start only if beta users ask for real data and for publishing.
 1. Measure both, weekly, on the server. Acceptance: `tests/server/betaMeasures.test.ts`.
    Partly built; see the [delivery log](DELIVERY_LOG.md#r7-step-1-beta-measures). Open: telling
    the author's own sessions apart from other people's.
-2. Keep what people saved and shared opening in every later release: documents (Yjs and the
-   older local storage save), shared link snapshots and variable files (Reactor and DTCG),
-   frozen per format version with what they looked like. Acceptance:
-   `tests/compatibility.test.ts`; see the
-   [delivery log](DELIVERY_LOG.md#r7-step-2-compatibility-suite).
 
 ### R8 One HTTP source (L)
 

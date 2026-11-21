@@ -89,9 +89,6 @@ const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/
  * yes/no state fields (`booleans`, `toggleState`, `setState`, `stateKey`/`when`) are read into
  * today's typed states, so links shared before them still open. */
 export const PREVIEW_PROTOCOL_VERSION = 3;
-/** Whether this release opens a snapshot written at `version`; shared links stay open
- * across releases, so a new protocol version keeps reading the ones before it. */
-export const readsPreviewVersion = (version: unknown) => version === PREVIEW_PROTOCOL_VERSION;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
 const TAGS = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);

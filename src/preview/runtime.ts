@@ -2,7 +2,6 @@ import {
     readPreview,
     readPreviewImages,
     PREVIEW_PROTOCOL_VERSION,
-    readsPreviewVersion,
     type PreviewApplication,
     type PreviewNode,
     type PreviewStateValue
@@ -716,7 +715,7 @@ async function openSharedPrototype() {
             );
         }
         const data = await response.json();
-        if (!readsPreviewVersion(data.version)) {
+        if (data.version !== PREVIEW_PROTOCOL_VERSION) {
             throw new Error('This shared prototype uses an unsupported version.');
         }
         const snapshot = readPreview(data.application);
@@ -749,7 +748,7 @@ function readRules(value: unknown): AccessibilityRules {
 function openPackage(element: HTMLElement) {
     try {
         const data = JSON.parse(element.textContent ?? '');
-        if (!readsPreviewVersion(data?.version)) {
+        if (data?.version !== PREVIEW_PROTOCOL_VERSION) {
             throw new Error('This prototype uses an unsupported version.');
         }
         if (typeof data.name === 'string' && data.name) {

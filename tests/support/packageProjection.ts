@@ -61,17 +61,6 @@ export async function packagePage(
     }
 }
 
-/** The page a shared link's stored snapshot plays in, read as the runtime reads it. */
-export function snapshotPage(snapshot: string) {
-    const data = JSON.stringify({ ...JSON.parse(snapshot), name: 'Shared prototype' });
-
-    return TEMPLATE.replace(
-        '<!-- reactor:package -->',
-        () =>
-            `<script type="application/json" id="reactor-package">${data.replace(/</g, '\\u003c')}</script>`
-    );
-}
-
 const SVG = 'http://www.w3.org/2000/svg';
 /** What the runtime adds for people using assistive technology, which draws nothing. */
 const ACCESSIBILITY = new Set(['id', 'role', 'tabindex']);
