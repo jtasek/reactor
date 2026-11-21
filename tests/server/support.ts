@@ -158,7 +158,8 @@ export interface Email {
 /** Accounts on an empty in-process database, with email kept in an outbox. */
 export async function startAccounts(
     plugins: KyselyPlugin[] = [],
-    socialProviders?: Parameters<typeof createAuth>[0]['socialProviders']
+    socialProviders?: Parameters<typeof createAuth>[0]['socialProviders'],
+    connections?: Parameters<typeof createAuth>[0]['connections']
 ) {
     const db = await emptyCopy(plugins);
     const outbox: Email[] = [];
@@ -167,6 +168,7 @@ export async function startAccounts(
         baseURL: ORIGIN,
         secret: SECRET,
         socialProviders,
+        connections,
         mailer: {
             send: async (email: Email) => {
                 outbox.push(email);
@@ -296,7 +298,7 @@ export async function startServer({
     browserErrorLimits,
     log: browserLog = { warn: () => {} }
 }: ServeOptions = {}) {
-    const accounts = await startAccounts(databasePlugins, socialProviders);
+    const accounts = await startAccounts(databasePlugins, socialProviders, () => sync);
     const app = express();
     const log = { error: () => {}, warn: () => {} };
     const metrics = createMetrics();
@@ -410,6 +412,7 @@ export async function startServer({
 
     return {
         db: accounts.db,
+        outbox: accounts.outbox,
         metrics,
         address: `http://127.0.0.1:${port}`,
         call,

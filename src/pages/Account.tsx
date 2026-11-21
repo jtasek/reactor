@@ -1,9 +1,15 @@
 import React, { FC, SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useAccount, useEffects, useReaction } from 'src/app/hooks';
-import { accountLabel, type AccountResult } from 'src/app/services/accounts';
+import {
+    accountLabel,
+    deleteAccountRequest,
+    hasPassword,
+    type AccountResult,
+    type AccountUser
+} from 'src/app/services/accounts';
 import { authenticationURLs, loginURL, resendVerification } from 'src/app/services/authentication';
 import { signInWithProvider, type OAuthProvider } from 'src/app/services/oauth';
-import { signOut, waitForSync } from 'src/app/services/signOut';
+import { deleteAccount, signOut, waitForSync } from 'src/app/services/signOut';
 import { Avatars } from 'src/ui/components/Avatars';
 import { SocialSignIn, returnedProblem } from './SocialSignIn';
 import styles from './Account.css';
@@ -88,6 +94,104 @@ const SignOut: FC<{ owner: string }> = ({ owner }) => {
             </button>
             {failure && <p role="alert">{failure}</p>}
         </>
+    );
+};
+
+/**
+ * Deletes the account once the person types its email address, and its password
+ * when it has one; the page then loads again signed out.
+ */
+const DeleteAccount: FC<{ account: AccountUser }> = ({ account }) => {
+    const effects = useEffects();
+    const [confirming, setConfirming] = useState(false);
+    const [typed, setTyped] = useState('');
+    const [password, setPassword] = useState('');
+    const [needsPassword, setNeedsPassword] = useState<boolean>();
+    const [busy, setBusy] = useState(false);
+    const [failure, setFailure] = useState<string>();
+    const confirmation = useRef<HTMLInputElement>(null);
+    const confirmed = typed.trim().toLowerCase() === account.email.toLowerCase();
+
+    useEffect(() => {
+        if (confirming) {
+            confirmation.current?.focus();
+            void hasPassword().then((has) => setNeedsPassword(has ?? false));
+        }
+    }, [confirming]);
+
+    const submit = async (event: SubmitEvent) => {
+        event.preventDefault();
+
+        if (busy || !confirmed) {
+            return;
+        }
+
+        setBusy(true);
+        setFailure(undefined);
+
+        const result = await deleteAccount(effects, account.id, () =>
+            deleteAccountRequest(needsPassword ? password : undefined)
+        );
+
+        if (!result.ok) {
+            setBusy(false);
+            setFailure(result.message);
+        }
+    };
+
+    if (!confirming) {
+        return (
+            <button type="button" onClick={() => setConfirming(true)}>
+                Delete account…
+            </button>
+        );
+    }
+
+    return (
+        <form className={styles.form} onSubmit={submit} aria-busy={busy}>
+            <fieldset className={styles.fields} disabled={busy}>
+                <label>
+                    Type {account.email} to confirm
+                    <input
+                        value={typed}
+                        onChange={(event) => setTyped(event.target.value)}
+                        ref={confirmation}
+                        autoComplete="off"
+                    />
+                </label>
+                {needsPassword && (
+                    <label>
+                        Password
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            autoComplete="current-password"
+                            required
+                        />
+                    </label>
+                )}
+                {failure && <p role="alert">{failure}</p>}
+                <button
+                    type="submit"
+                    className={styles.danger}
+                    disabled={!confirmed || needsPassword === undefined}
+                >
+                    {busy ? 'Deleting account…' : 'Delete account permanently'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setConfirming(false);
+                        setTyped('');
+                        setPassword('');
+                        setFailure(undefined);
+                    }}
+                >
+                    Cancel
+                </button>
+            </fieldset>
+        </form>
     );
 };
 
@@ -438,6 +542,9 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
     if (account.kind === 'signedOut') {
         return (
             <AccountFrame>
+                {new URLSearchParams(window.location.search).has('accountDeleted') && (
+                    <p role="status">Your account was deleted.</p>
+                )}
                 <p className={styles.secondary}>
                     Sign in to sync your documents and work together.
                 </p>
@@ -474,6 +581,15 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
                     copy from the browser.
                 </p>
                 <SignOut owner={account.id} />
+            </section>
+            <section className={styles.signOut} aria-labelledby="delete-account-heading">
+                <h2 id="delete-account-heading">Delete account</h2>
+                <p>
+                    Deletes your account and your Personal workspace: its documents, their history,
+                    images and shared links. People you invited lose access to them. Documents you
+                    made in other workspaces stay there. This cannot be undone.
+                </p>
+                <DeleteAccount account={account} />
             </section>
         </AccountFrame>
     );

@@ -3,6 +3,7 @@ declare namespace AccountCssNamespace {
     brand: string;
     card: string;
     content: string;
+    danger: string;
     fields: string;
     form: string;
     identity: string;

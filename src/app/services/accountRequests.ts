@@ -8,7 +8,10 @@ const MESSAGES: Record<string, string> = {
     PASSWORD_TOO_SHORT: 'Use a password of at least 8 characters.',
     PASSWORD_TOO_LONG: 'Use a shorter password.',
     USER_ALREADY_EXISTS: 'An account with this email address already exists.',
-    USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'An account with this email address already exists.'
+    USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'An account with this email address already exists.',
+    INVALID_PASSWORD: 'The password is wrong.',
+    SESSION_EXPIRED:
+        'You signed in a while ago. Sign out and sign in again, then delete your account.'
 };
 
 export async function accountRequest(path: string, body: object): Promise<AccountResult> {

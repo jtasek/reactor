@@ -7,6 +7,7 @@ import type { Mailer } from './mailer.ts';
 import type { Db } from './schema.ts';
 import { passwordResetURL } from './passwordReset.ts';
 import { refreshingPhotoOnly, type KnownUser, type SocialProviders } from './oauth.ts';
+import { accountReach, type AccountConnections } from './accountDeletion.ts';
 
 /** The header that carries the client's address, set only by `authHandler`. */
 const CLIENT_ADDRESS = 'x-reactor-client-address';
@@ -17,21 +18,26 @@ const PASSWORD_RESET_SECONDS = 60 * 60;
  * an email address, confirmed by a link before they can sign in with a password,
  * or sign in with a link sent by email. Sessions are only in the database, so
  * revoking one takes effect at once. Google and GitHub sign-in, when configured,
- * refresh only the account's photo (`refreshingPhotoOnly`).
+ * refresh only the account's photo (`refreshingPhotoOnly`). People delete their own
+ * account with their password or, without one, from a recent sign-in; `connections`
+ * then disconnects them and everyone on the documents deleted with it.
  */
 export function createAuth({
     db,
     baseURL,
     secret,
     mailer,
-    socialProviders = {}
+    socialProviders = {},
+    connections
 }: {
     db: Db;
     baseURL: string;
     secret: string;
     mailer: Mailer;
     socialProviders?: SocialProviders;
+    connections?: () => AccountConnections;
 }) {
+    const closing = new Map<string, Awaited<ReturnType<typeof accountReach>>>();
     const auth = betterAuth({
         baseURL,
         basePath: '/api/auth',
@@ -54,6 +60,24 @@ export function createAuth({
         }),
         database: { db, type: 'postgres', schemaName: 'auth' },
         session: { cookieCache: { enabled: false } },
+        user: {
+            deleteUser: {
+                enabled: true,
+                beforeDelete: async (user) => {
+                    closing.set(user.id, await accountReach(db, user.id));
+                },
+                afterDelete: async (user) => {
+                    const close = closing.get(user.id);
+                    const open = connections?.();
+
+                    closing.delete(user.id);
+
+                    if (close && open) {
+                        await close(open);
+                    }
+                }
+            }
+        },
         // Both are on in tests too, where Better Auth would otherwise skip them.
         rateLimit: { enabled: true },
         advanced: {
