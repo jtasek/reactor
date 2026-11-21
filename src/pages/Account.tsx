@@ -469,6 +469,19 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 <button className={styles.primary} type="submit">
                     {pending === mode ? MODES[mode].pending : MODES[mode].submit}
                 </button>
+                {mode !== 'forgot' && (
+                    <p className={styles.agreement}>
+                        By continuing, you agree to the{' '}
+                        <a href="/terms" target="_blank" rel="noopener">
+                            Terms of use
+                        </a>{' '}
+                        and the{' '}
+                        <a href="/privacy" target="_blank" rel="noopener">
+                            Privacy policy
+                        </a>
+                        .
+                    </p>
+                )}
                 <div className={styles.modes}>
                     {(Object.keys(MODES) as Mode[])
                         .filter((other) => other !== mode && other !== 'forgot')

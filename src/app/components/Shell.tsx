@@ -13,6 +13,7 @@ const Designer = lazy(() => loadDesigner().then((module) => ({ default: module.D
 const Account = lazy(() =>
     import('../../pages/Account').then((module) => ({ default: module.Account }))
 );
+const Legal = lazy(() => import('../../pages/Legal').then((module) => ({ default: module.Legal })));
 const Documents = lazy(() =>
     import('../../pages/Documents').then((module) => ({ default: module.Documents }))
 );
@@ -72,6 +73,9 @@ export const Shell: FC = () => {
                     {currentPage === 'prototype' && <Prototype />}
                     {(currentPage === 'account' || currentPage === 'login') && (
                         <Account login={currentPage === 'login'} />
+                    )}
+                    {(currentPage === 'terms' || currentPage === 'privacy') && (
+                        <Legal page={currentPage} />
                     )}
                     {currentPage === 'sharing' && <Sharing />}
                     {currentPage === 'invitation' && <Invitation />}

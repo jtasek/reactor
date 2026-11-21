@@ -174,3 +174,29 @@
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: 2px;
 }
+
+.wide {
+  max-width: 680px;
+}
+
+.legal section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal h2 {
+  font-size: var(--font-size-title-2);
+  line-height: 1.4;
+}
+
+.agreement {
+  color: var(--text-secondary-color);
+  font-size: var(--font-size-callout);
+}
+
+.agreement a,
+.content nav a {
+  color: var(--selection-color);
+  text-decoration: underline;
+}

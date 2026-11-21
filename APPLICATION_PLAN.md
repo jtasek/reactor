@@ -746,6 +746,10 @@ R8 and R10 start only if beta users ask for real data and for publishing.
 2. People delete their own account from the Account page, with its Personal workspace, documents,
    history and shared links. Acceptance: `tests/server/accountDeletion.test.ts`.
    Built; see the [delivery log](DELIVERY_LOG.md#r7-step-2-delete-my-account).
+3. Terms of use and a Privacy policy at `/terms` and `/privacy`; signing up says it agrees to
+   them, and each new account records the version. Acceptance:
+   `tests/server/legalAgreement.test.ts`. Built; see the
+   [delivery log](DELIVERY_LOG.md#r7-step-3-terms-and-privacy).
 
 ### R8 One HTTP source (L)
 

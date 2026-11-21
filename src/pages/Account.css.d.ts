@@ -1,5 +1,6 @@
 declare namespace AccountCssNamespace {
   export interface IAccountCss {
+    agreement: string;
     brand: string;
     card: string;
     content: string;
@@ -7,6 +8,7 @@ declare namespace AccountCssNamespace {
     fields: string;
     form: string;
     identity: string;
+    legal: string;
     link: string;
     local: string;
     modes: string;
@@ -15,6 +17,7 @@ declare namespace AccountCssNamespace {
     secondary: string;
     signOut: string;
     social: string;
+    wide: string;
   }
 }
 

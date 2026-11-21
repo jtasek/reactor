@@ -8,6 +8,10 @@ export const showAccount: ActionWithParam<'account' | 'login'> = ({ state }, pag
     state.currentPage = page;
 };
 
+export const showLegal: ActionWithParam<'terms' | 'privacy'> = ({ state }, page) => {
+    state.currentPage = page;
+};
+
 export const showDocuments: Action = ({ state }) => {
     state.currentPage = 'documents';
 };

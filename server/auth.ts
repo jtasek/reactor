@@ -8,6 +8,7 @@ import type { Db } from './schema.ts';
 import { passwordResetURL } from './passwordReset.ts';
 import { refreshingPhotoOnly, type KnownUser, type SocialProviders } from './oauth.ts';
 import { accountReach, type AccountConnections } from './accountDeletion.ts';
+import { LEGAL_VERSION } from '../src/shared/legal.ts';
 
 /** The header that carries the client's address, set only by `authHandler`. */
 const CLIENT_ADDRESS = 'x-reactor-client-address';
@@ -20,7 +21,9 @@ const PASSWORD_RESET_SECONDS = 60 * 60;
  * revoking one takes effect at once. Google and GitHub sign-in, when configured,
  * refresh only the account's photo (`refreshingPhotoOnly`). People delete their own
  * account with their password or, without one, from a recent sign-in; `connections`
- * then disconnects them and everyone on the documents deleted with it.
+ * then disconnects them and everyone on the documents deleted with it. Every way of
+ * signing up says that it agrees to the Terms and Privacy policy, so each new account
+ * records when and to which version (`LEGAL_VERSION`).
  */
 export function createAuth({
     db,
@@ -61,6 +64,10 @@ export function createAuth({
         database: { db, type: 'postgres', schemaName: 'auth' },
         session: { cookieCache: { enabled: false } },
         user: {
+            additionalFields: {
+                legalVersion: { type: 'string', required: false, input: false, returned: false },
+                legalAcceptedAt: { type: 'date', required: false, input: false, returned: false }
+            },
             deleteUser: {
                 enabled: true,
                 beforeDelete: async (user) => {
@@ -76,6 +83,15 @@ export function createAuth({
                     if (close && open) {
                         await close(open).catch(() => undefined);
                     }
+                }
+            }
+        },
+        databaseHooks: {
+            user: {
+                create: {
+                    before: async (user) => ({
+                        data: { ...user, legalVersion: LEGAL_VERSION, legalAcceptedAt: new Date() }
+                    })
                 }
             }
         },
