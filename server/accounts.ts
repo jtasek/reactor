@@ -62,7 +62,14 @@ export async function startAccounts(
           )
         : logMailer(log);
     const db = openDatabase(env.DATABASE_URL, log);
-    const auth = createAuth({ db, baseURL, secret, mailer, socialProviders });
+    const auth = createAuth({
+        db,
+        baseURL,
+        secret,
+        mailer,
+        socialProviders,
+        connections: () => sync
+    });
 
     try {
         await migrateAuth(auth);

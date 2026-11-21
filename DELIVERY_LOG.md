@@ -1182,3 +1182,19 @@ others played. `/metrics` counts `reactor_prototype_sessions_total{by}`. The win
 `tests/server/betaMeasures.test.ts`. Not yet: telling the author's own sessions apart, so every
 session counts as by others for now (`by_author` stays false); and a dashboard.
 
+
+## R7 step 2: Delete my account
+
+_Recorded 2026-11-21._
+
+The Account page has a Delete account section. The person types their email address to
+confirm, and their password when the account has one; an account without a password needs a
+sign-in within Better Auth's default fresh age (a day), otherwise it is told to sign in again.
+Better Auth's `delete-user` deletes the user, and the tables' cascades remove the workspaces it
+owns with their documents, history, prototype links and measures, and its memberships of other
+workspaces; documents it made elsewhere stay with `created_by` cleared. Images go with the
+hourly unused-asset cleanup. `server/accountDeletion.ts` reads what the account reaches before
+it goes and then disconnects everyone from the deleted documents and the person from the rest.
+The browser removes the account's local copy as signing out does and opens
+`/login?accountDeleted`. Covered by `tests/server/accountDeletion.test.ts`,
+`tests/signOut.test.ts` and `tests/browser/deleteAccount.spec.ts`.

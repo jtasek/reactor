@@ -2,7 +2,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import type { Accounts } from 'src/app/services/accounts';
 import { DocumentDatabase, deleteDocumentDatabase } from 'src/app/services/documentDatabase';
 import { accountCopy } from 'src/app/services/documentSync';
-import { signOut, waitForSync } from 'src/app/services/signOut';
+import { ACCOUNT_DELETED_URL, deleteAccount, signOut, waitForSync } from 'src/app/services/signOut';
 import { createTestStore } from './support/store';
 
 const copy = accountCopy('user-ada');
@@ -116,5 +116,31 @@ describe('signing out', () => {
         vi.advanceTimersByTime(5000);
         vi.useRealTimers();
         expect(await stuck).toMatch(/on their way/);
+    });
+});
+
+describe('deleting the account', () => {
+    it('removes the account’s copy from the browser once the server deleted it', async () => {
+        const { effects, storage, databases } = await browser();
+        const request = vi.fn(async () => ({ ok: true as const }));
+
+        expect(await deleteAccount(effects, 'user-ada', request)).toEqual({ ok: true });
+
+        expect(request).toHaveBeenCalledOnce();
+        expect([...storage.keys()]).toEqual(['reactor:notices']);
+        expect(await databases()).toEqual(['reactor']);
+        expect(effects.recordSignedOut).toHaveBeenCalledOnce();
+        expect(effects.reload).toHaveBeenCalledWith(ACCOUNT_DELETED_URL);
+    });
+
+    it('keeps everything when the server refuses', async () => {
+        const { effects, storage, databases } = await browser();
+        const refused = { ok: false as const, message: 'The password is wrong.' };
+
+        expect(await deleteAccount(effects, 'user-ada', async () => refused)).toEqual(refused);
+        expect(storage.size).toBe(4);
+        expect(await databases()).toContain(copy.database);
+        expect(effects.recordSignedOut).not.toHaveBeenCalled();
+        expect(effects.reload).not.toHaveBeenCalled();
     });
 });

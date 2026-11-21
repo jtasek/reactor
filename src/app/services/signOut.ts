@@ -89,6 +89,17 @@ export async function signOut(
         return result;
     }
 
+    await clearAccountCopy(effects, owner);
+    effects.reload('/login');
+
+    return result;
+}
+
+/**
+ * Removes `owner`'s copy of its documents from this browser, after telling the
+ * other open copies of the editor to load again signed out.
+ */
+async function clearAccountCopy(effects: Effects, owner: string) {
     // Stop account copies from saving cached records again while cleanup is in flight.
     effects.recordSignedOut();
 
@@ -107,7 +118,28 @@ export async function signOut(
         effects.deleteDocumentDatabase(database).catch(() => undefined),
         delay(CLEAR_WAIT)
     ]);
-    effects.reload('/login');
+}
+
+/** Where the editor goes once the account is deleted. */
+export const ACCOUNT_DELETED_URL = '/login?accountDeleted';
+
+/**
+ * Deletes `owner`'s account on the server with `request`, then its copy of its
+ * documents in this browser, and loads again signed out.
+ */
+export async function deleteAccount(
+    effects: Effects,
+    owner: string,
+    request: () => Promise<AccountResult>
+): Promise<AccountResult> {
+    const result = await request();
+
+    if (!result.ok) {
+        return result;
+    }
+
+    await clearAccountCopy(effects, owner);
+    effects.reload(ACCOUNT_DELETED_URL);
 
     return result;
 }
