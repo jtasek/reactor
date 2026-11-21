@@ -1,0 +1,19 @@
+{
+  "home": {
+    "body": [
+      {
+        "tag": "rect",
+        "points": [
+          "10,10",
+          "290,10",
+          "290,50",
+          "10,50"
+        ],
+        "fill": "none",
+        "opacity": 1,
+        "stroke": "var(--shape-stroke-color)",
+        "strokeWidth": 2
+      }
+    ]
+  }
+}

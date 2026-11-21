@@ -1,8 +1,5 @@
 import { json } from 'overmind';
 import { booleanVisibility, simpleCondition } from 'src/app/prototypeState';
-import { buildStarterTemplate } from 'src/templates/build';
-import { STARTER_TEMPLATES } from 'src/templates/catalog';
-import { createDocument } from 'src/app/factories';
 import { dataRecords } from 'src/app/data';
 import { recordOverrides } from 'src/app/dataLists';
 import type { Document, InstanceShape } from 'src/app/types';
@@ -17,37 +14,10 @@ import {
     type ParityStore
 } from './support/projectionParity';
 import { parityArtworkDocument } from './support/parityArtwork';
-import { prototypeDocument } from './support/prototype';
-import { responsiveDocument } from './support/responsiveModes';
-import { responsiveVariantsDocument } from './support/responsiveVariants';
-import { screenLayoutsDocument } from './support/screenLayouts';
-import { dataListFixture, recordDetailFixture } from './support/dataList';
 import { openPackage, packagePage } from './support/packageProjection';
+import { DOCUMENT_FIXTURES } from './support/documentFixtures';
 
-/**
- * One fixture set drawn by the canvas, Prototype, the downloaded package and SVG export and
- * compared as what a person sees. Intended differences: Prototype and the package hide
- * instances that start hidden, draw records where an instance is bound to data, and swap
- * artwork as controls are used; the canvas and export always draw the authored artwork.
- */
-const FIXTURES: [string, () => Document][] = [
-    ['primitives, nested instances, frame themes and state', parityArtworkDocument],
-    ['theme and width modes', () => responsiveDocument()],
-    ['automatic and explicit screen layouts', prototypeDocument],
-    ['stacks with fill in two layouts', () => screenLayoutsDocument()],
-    ['responsive component variants', () => responsiveVariantsDocument()],
-    ['records repeated in a list', () => dataListFixture().document],
-    ['a selected record', () => recordDetailFixture().document],
-    ...STARTER_TEMPLATES.map(({ id, name }): [string, () => Document] => [
-        `${name} starter`,
-        () => {
-            let next = 0;
-
-            return createDocument({ id, ...buildStarterTemplate(id, () => `${id}-${next++}`) });
-        }
-    ])
-];
-const fixture = (name: string) => FIXTURES.find(([label]) => label === name)![1];
+const fixture = (name: string) => DOCUMENT_FIXTURES.find(([label]) => label === name)![1];
 /** Fixtures whose controls change variants or show hidden instances. */
 const CONTROLS = [
     'primitives, nested instances, frame themes and state',
@@ -91,7 +61,7 @@ const label = (store: ParityStore, viewId: string, shapeId?: string) =>
         .filter(Boolean)
         .join(' › ');
 
-describe.each(FIXTURES)('%s', (_, document) => {
+describe.each(DOCUMENT_FIXTURES)('%s', (_, document) => {
     it('exports each View exactly as the canvas draws it', async () => {
         const store = await openDocument(document());
         for (const [viewId, shapes] of canvasProjection(store)) {

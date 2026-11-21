@@ -1,0 +1,104 @@
+{
+  "canvas": {
+    "details:view": {
+      "title": [
+        {
+          "tag": "text",
+          "points": [
+            "24,48"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Hello from details",
+          "fontSize": 24
+        }
+      ]
+    },
+    "home:view": {
+      "next": [
+        {
+          "tag": "text",
+          "points": [
+            "24,219.2"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 24
+        }
+      ],
+      "name": [
+        {
+          "tag": "text",
+          "points": [
+            "24,59.2"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Your name",
+          "fontSize": 24
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "details:view": {
+      "title": [
+        {
+          "tag": "text",
+          "points": [
+            "24,48"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Hello from details",
+          "fontSize": 24
+        }
+      ]
+    },
+    "home:view": {
+      "next": [
+        {
+          "tag": "text",
+          "points": [
+            "24,219.2"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 24
+        }
+      ],
+      "name": [
+        {
+          "tag": "text",
+          "points": [
+            "24,59.2"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Ada",
+          "fontSize": 24
+        },
+        {
+          "tag": "text",
+          "points": [
+            "24,91.2"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Grace",
+          "fontSize": 24
+        }
+      ]
+    }
+  }
+}

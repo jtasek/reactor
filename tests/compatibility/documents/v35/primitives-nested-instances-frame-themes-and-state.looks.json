@@ -1,0 +1,837 @@
+{
+  "canvas": {
+    "narrow": {
+      "card": [
+        {
+          "tag": "rect",
+          "points": [
+            "49.03,326.79",
+            "206.6,354.58",
+            "190.97,443.21",
+            "33.4,415.42"
+          ],
+          "fill": "#ffffff",
+          "opacity": 0.72,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "52.97,348.8",
+            "112.06,338.38",
+            "116.23,362.01",
+            "57.14,372.43"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 0.8,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "62.74,361.37"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 0.8,
+          "angle": 5,
+          "text": "Hot",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "dark-label": [
+        {
+          "tag": "text",
+          "points": [
+            "40,500"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Dark panel",
+          "fontSize": 14
+        }
+      ],
+      "dark-card": [
+        {
+          "tag": "rect",
+          "points": [
+            "200,490",
+            "260,490",
+            "260,514",
+            "200,514"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 1,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "207.44,504.08"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 15,
+          "text": "New",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "rect": [
+        {
+          "tag": "rect",
+          "points": [
+            "43.04,-5.98",
+            "146.96,54.02",
+            "116.96,105.98",
+            "13.04,45.98"
+          ],
+          "fill": "#336699",
+          "opacity": 0.5,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "8"
+        }
+      ],
+      "circle": [
+        {
+          "tag": "circle",
+          "points": [
+            "220,60"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "#aa0000",
+          "strokeWidth": 2,
+          "size": "30"
+        }
+      ],
+      "ellipse": [
+        {
+          "tag": "ellipse",
+          "points": [
+            "320,60"
+          ],
+          "fill": "#00aa00",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "40,20",
+          "angle": 45
+        }
+      ],
+      "line": [
+        {
+          "tag": "line",
+          "points": [
+            "24.47,88.9",
+            "375.53,171.1"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ],
+      "pen": [
+        {
+          "tag": "polyline",
+          "points": [
+            "20,160",
+            "60,200",
+            "100,170",
+            "140,210"
+          ],
+          "fill": "none",
+          "opacity": 0.7,
+          "stroke": "#5500aa",
+          "strokeWidth": 2
+        }
+      ],
+      "wrapped": [
+        {
+          "tag": "text",
+          "points": [
+            "18,258.1"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "A long caption ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "19.88,279.62"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "that wraps across ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "21.76,301.14"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "several lines ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "23.64,322.66"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "inside its width",
+          "fontSize": 18,
+          "fontWeight": "600"
+        }
+      ],
+      "picture": [
+        {
+          "tag": "image",
+          "points": [
+            "340,180",
+            "340,300",
+            "260,300",
+            "260,180"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "other": {
+            "preserveAspectRatio": "xMidYMid meet"
+          }
+        }
+      ]
+    },
+    "wide": {
+      "card": [
+        {
+          "tag": "rect",
+          "points": [
+            "49.03,326.79",
+            "206.6,354.58",
+            "190.97,443.21",
+            "33.4,415.42"
+          ],
+          "fill": "#ffffff",
+          "opacity": 0.72,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "52.97,348.8",
+            "112.06,338.38",
+            "116.23,362.01",
+            "57.14,372.43"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 0.8,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "62.74,361.37"
+          ],
+          "fill": "#112233",
+          "opacity": 0.8,
+          "angle": 5,
+          "text": "Hot",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "dark-label": [
+        {
+          "tag": "text",
+          "points": [
+            "40,500"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Dark panel",
+          "fontSize": 16
+        }
+      ],
+      "dark-card": [
+        {
+          "tag": "rect",
+          "points": [
+            "200,490",
+            "260,490",
+            "260,514",
+            "200,514"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 1,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "207.44,504.08"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 15,
+          "text": "New",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "rect": [
+        {
+          "tag": "rect",
+          "points": [
+            "43.04,-5.98",
+            "146.96,54.02",
+            "116.96,105.98",
+            "13.04,45.98"
+          ],
+          "fill": "#336699",
+          "opacity": 0.5,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "8"
+        }
+      ],
+      "circle": [
+        {
+          "tag": "circle",
+          "points": [
+            "220,60"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "#aa0000",
+          "strokeWidth": 2,
+          "size": "30"
+        }
+      ],
+      "ellipse": [
+        {
+          "tag": "ellipse",
+          "points": [
+            "320,60"
+          ],
+          "fill": "#00aa00",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "40,20",
+          "angle": 45
+        }
+      ],
+      "line": [
+        {
+          "tag": "line",
+          "points": [
+            "24.47,88.9",
+            "375.53,171.1"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ],
+      "pen": [
+        {
+          "tag": "polyline",
+          "points": [
+            "20,160",
+            "60,200",
+            "100,170",
+            "140,210"
+          ],
+          "fill": "none",
+          "opacity": 0.7,
+          "stroke": "#5500aa",
+          "strokeWidth": 2
+        }
+      ],
+      "wrapped": [
+        {
+          "tag": "text",
+          "points": [
+            "18,258.1"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "A long caption ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "19.88,279.62"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "that wraps across ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "21.76,301.14"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "several lines ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "23.64,322.66"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "inside its width",
+          "fontSize": 18,
+          "fontWeight": "600"
+        }
+      ],
+      "picture": [
+        {
+          "tag": "image",
+          "points": [
+            "340,180",
+            "340,300",
+            "260,300",
+            "260,180"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "other": {
+            "preserveAspectRatio": "xMidYMid meet"
+          }
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "narrow": {
+      "card": [
+        {
+          "tag": "rect",
+          "points": [
+            "49.03,326.79",
+            "206.6,354.58",
+            "190.97,443.21",
+            "33.4,415.42"
+          ],
+          "fill": "#ffffff",
+          "opacity": 0.72,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "52.97,348.8",
+            "112.06,338.38",
+            "116.23,362.01",
+            "57.14,372.43"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 0.8,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "62.74,361.37"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 0.8,
+          "angle": 5,
+          "text": "Hot",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "dark-label": [
+        {
+          "tag": "text",
+          "points": [
+            "40,500"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Dark panel",
+          "fontSize": 14
+        }
+      ],
+      "dark-card": [],
+      "rect": [
+        {
+          "tag": "rect",
+          "points": [
+            "43.04,-5.98",
+            "146.96,54.02",
+            "116.96,105.98",
+            "13.04,45.98"
+          ],
+          "fill": "#336699",
+          "opacity": 0.5,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "8"
+        }
+      ],
+      "circle": [
+        {
+          "tag": "circle",
+          "points": [
+            "220,60"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "#aa0000",
+          "strokeWidth": 2,
+          "size": "30"
+        }
+      ],
+      "ellipse": [
+        {
+          "tag": "ellipse",
+          "points": [
+            "320,60"
+          ],
+          "fill": "#00aa00",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "40,20",
+          "angle": 45
+        }
+      ],
+      "line": [
+        {
+          "tag": "line",
+          "points": [
+            "24.47,88.9",
+            "375.53,171.1"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ],
+      "pen": [
+        {
+          "tag": "polyline",
+          "points": [
+            "20,160",
+            "60,200",
+            "100,170",
+            "140,210"
+          ],
+          "fill": "none",
+          "opacity": 0.7,
+          "stroke": "#5500aa",
+          "strokeWidth": 2
+        }
+      ],
+      "wrapped": [
+        {
+          "tag": "text",
+          "points": [
+            "18,258.1"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "A long caption ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "19.88,279.62"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "that wraps across ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "21.76,301.14"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "several lines ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "23.64,322.66"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "inside its width",
+          "fontSize": 18,
+          "fontWeight": "600"
+        }
+      ],
+      "picture": [
+        {
+          "tag": "image",
+          "points": [
+            "340,180",
+            "340,300",
+            "260,300",
+            "260,180"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "other": {
+            "preserveAspectRatio": "xMidYMid meet"
+          }
+        }
+      ]
+    },
+    "wide": {
+      "card": [
+        {
+          "tag": "rect",
+          "points": [
+            "49.03,326.79",
+            "206.6,354.58",
+            "190.97,443.21",
+            "33.4,415.42"
+          ],
+          "fill": "#ffffff",
+          "opacity": 0.72,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "52.97,348.8",
+            "112.06,338.38",
+            "116.23,362.01",
+            "57.14,372.43"
+          ],
+          "fill": "#ffeecc",
+          "opacity": 0.8,
+          "stroke": "#cc8800",
+          "strokeWidth": 2,
+          "size": "12"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "62.74,361.37"
+          ],
+          "fill": "#112233",
+          "opacity": 0.8,
+          "angle": 5,
+          "text": "Hot",
+          "fontSize": 12,
+          "fontWeight": "700"
+        }
+      ],
+      "dark-label": [
+        {
+          "tag": "text",
+          "points": [
+            "40,500"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Dark panel",
+          "fontSize": 16
+        }
+      ],
+      "dark-card": [],
+      "rect": [
+        {
+          "tag": "rect",
+          "points": [
+            "43.04,-5.98",
+            "146.96,54.02",
+            "116.96,105.98",
+            "13.04,45.98"
+          ],
+          "fill": "#336699",
+          "opacity": 0.5,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "8"
+        }
+      ],
+      "circle": [
+        {
+          "tag": "circle",
+          "points": [
+            "220,60"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "#aa0000",
+          "strokeWidth": 2,
+          "size": "30"
+        }
+      ],
+      "ellipse": [
+        {
+          "tag": "ellipse",
+          "points": [
+            "320,60"
+          ],
+          "fill": "#00aa00",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2,
+          "size": "40,20",
+          "angle": 45
+        }
+      ],
+      "line": [
+        {
+          "tag": "line",
+          "points": [
+            "24.47,88.9",
+            "375.53,171.1"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ],
+      "pen": [
+        {
+          "tag": "polyline",
+          "points": [
+            "20,160",
+            "60,200",
+            "100,170",
+            "140,210"
+          ],
+          "fill": "none",
+          "opacity": 0.7,
+          "stroke": "#5500aa",
+          "strokeWidth": 2
+        }
+      ],
+      "wrapped": [
+        {
+          "tag": "text",
+          "points": [
+            "18,258.1"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "A long caption ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "19.88,279.62"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "that wraps across ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "21.76,301.14"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "several lines ",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "23.64,322.66"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": -5,
+          "text": "inside its width",
+          "fontSize": 18,
+          "fontWeight": "600"
+        }
+      ],
+      "picture": [
+        {
+          "tag": "image",
+          "points": [
+            "340,180",
+            "340,300",
+            "260,300",
+            "260,180"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "other": {
+            "preserveAspectRatio": "xMidYMid meet"
+          }
+        }
+      ]
+    }
+  }
+}

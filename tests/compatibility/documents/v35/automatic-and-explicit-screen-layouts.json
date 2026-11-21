@@ -1,0 +1,482 @@
+{
+  "version": 35,
+  "currentDocumentId": "preview-document",
+  "documents": {
+    "preview-document": {
+      "id": "preview-document",
+      "author": "anonymous",
+      "name": "Prototype",
+      "locked": false,
+      "created": "2026-11-21T12:51:02.220Z",
+      "modified": "2026-11-21T12:51:02.220Z",
+      "createdBy": "anonymous",
+      "modifiedBy": "anonymous",
+      "description": "",
+      "tags": [],
+      "tagTones": {},
+      "grid": {
+        "width": 10,
+        "height": 10,
+        "factor": 10,
+        "visible": true
+      },
+      "camera": {
+        "scale": 1,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "shapes": {
+        "caption": {
+          "id": "caption",
+          "name": "Caption",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a0",
+          "rotation": 0,
+          "children": [],
+          "bindings": {
+            "fontColor": "ink",
+            "fontSize": "font"
+          },
+          "type": "text",
+          "position": {
+            "x": 0,
+            "y": 24
+          },
+          "value": "Continue",
+          "fontSize": 16,
+          "fontColor": "#112233"
+        },
+        "field": {
+          "id": "field",
+          "name": "Field label",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a1",
+          "rotation": 0,
+          "children": [],
+          "bindings": {
+            "fontColor": "ink",
+            "fontSize": "font"
+          },
+          "type": "text",
+          "position": {
+            "x": 0,
+            "y": 24
+          },
+          "value": "Your name",
+          "fontSize": 16,
+          "fontColor": "#112233"
+        },
+        "next": {
+          "id": "next",
+          "name": "Continue button",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a2",
+          "rotation": 0,
+          "parentFrameId": "home",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {},
+          "componentId": "button",
+          "position": {
+            "x": 24,
+            "y": 100
+          },
+          "overrides": {}
+        },
+        "name": {
+          "id": "name",
+          "name": "Name field",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a3",
+          "rotation": 0,
+          "parentFrameId": "home",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interaction": {
+            "role": "input",
+            "controlId": "person-name",
+            "props": {
+              "label": "label",
+              "value": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "componentId": "input",
+          "position": {
+            "x": 24,
+            "y": 40
+          },
+          "overrides": {}
+        },
+        "title": {
+          "id": "title",
+          "name": "Details title",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a4",
+          "rotation": 0,
+          "parentFrameId": "details",
+          "children": [],
+          "bindings": {
+            "fontColor": "ink",
+            "fontSize": "font"
+          },
+          "type": "text",
+          "position": {
+            "x": 424,
+            "y": 48
+          },
+          "value": "Hello from details",
+          "fontSize": 16,
+          "fontColor": "#112233"
+        },
+        "wide-name": {
+          "id": "wide-name",
+          "name": "Wide input",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a5",
+          "rotation": 0,
+          "parentFrameId": "wide",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interaction": {
+            "role": "input",
+            "controlId": "person-name",
+            "props": {
+              "label": "label",
+              "value": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "componentId": "input",
+          "position": {
+            "x": 1048,
+            "y": 40
+          },
+          "overrides": {}
+        },
+        "wide-next": {
+          "id": "wide-next",
+          "name": "Wide continue",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.220Z",
+          "modified": "2026-11-21T12:51:02.220Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a6",
+          "rotation": 0,
+          "parentFrameId": "wide",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {},
+          "componentId": "button",
+          "position": {
+            "x": 1048,
+            "y": 100
+          },
+          "overrides": {}
+        }
+      },
+      "frames": {
+        "home": {
+          "id": "home",
+          "name": "Home",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {
+            "wide": {
+              "minWidth": 640,
+              "layoutId": "wide"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 480
+          }
+        },
+        "details": {
+          "id": "details",
+          "name": "Details",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {},
+          "position": {
+            "x": 400,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 480
+          }
+        },
+        "wide": {
+          "id": "wide",
+          "name": "Wide",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "frame",
+          "screenLayout": true,
+          "parentFrameId": "home",
+          "position": {
+            "x": 1000,
+            "y": 0
+          },
+          "size": {
+            "width": 800,
+            "height": 480
+          }
+        },
+        "view": {
+          "id": "view",
+          "name": "Mobile",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {
+            "theme": "dark"
+          },
+          "kind": "view",
+          "screenId": "home",
+          "layoutMode": "auto",
+          "position": {
+            "x": 400,
+            "y": 200
+          },
+          "size": {
+            "width": 320,
+            "height": 480
+          }
+        },
+        "details:view": {
+          "id": "details:view",
+          "name": "320 px",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "view",
+          "screenId": "details",
+          "layoutMode": "auto",
+          "position": {
+            "x": 400,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 480
+          }
+        }
+      },
+      "groups": {},
+      "layers": {},
+      "components": {
+        "button": {
+          "id": "button",
+          "name": "Button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "caption"
+          ],
+          "interaction": {
+            "role": "button",
+            "navigateTo": "details",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": {
+              "type": "navigate",
+              "screenId": "details"
+            }
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "caption",
+              "key": "text"
+            }
+          ]
+        },
+        "input": {
+          "id": "input",
+          "name": "Input",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "field"
+          ],
+          "interaction": {
+            "role": "input",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "field",
+              "key": "text"
+            },
+            {
+              "id": "other-value",
+              "label": "Other value",
+              "shapeId": "field",
+              "key": "text"
+            }
+          ]
+        }
+      },
+      "links": {},
+      "guides": {},
+      "prototypeBooleans": {},
+      "dataEntities": {},
+      "dataFields": {},
+      "dataRecords": {},
+      "dataRules": {},
+      "dimensions": {
+        "theme": {
+          "id": "theme",
+          "name": "Theme",
+          "order": 0,
+          "defaultModeId": "light",
+          "modes": {
+            "light": {
+              "id": "light",
+              "name": "Light",
+              "order": 0
+            },
+            "dark": {
+              "id": "dark",
+              "name": "Dark",
+              "order": 1
+            }
+          }
+        },
+        "media": {
+          "id": "media",
+          "name": "MediaSize",
+          "order": 1,
+          "defaultModeId": "sm",
+          "modes": {
+            "xs": {
+              "id": "xs",
+              "name": "xs",
+              "order": 0,
+              "minWidth": 0
+            },
+            "sm": {
+              "id": "sm",
+              "name": "sm",
+              "order": 1,
+              "minWidth": 400
+            },
+            "lg": {
+              "id": "lg",
+              "name": "lg",
+              "order": 2,
+              "minWidth": 600
+            }
+          },
+          "selection": "width"
+        }
+      },
+      "variables": {
+        "width": {
+          "id": "width",
+          "name": "Button width",
+          "type": "number",
+          "values": {
+            "default": 120,
+            "xs": 80,
+            "lg": 240
+          },
+          "dimensionId": "media"
+        },
+        "font": {
+          "id": "font",
+          "name": "Font size",
+          "type": "number",
+          "values": {
+            "default": 16,
+            "xs": 14,
+            "lg": 20
+          },
+          "dimensionId": "media"
+        },
+        "ink": {
+          "id": "ink",
+          "name": "Ink",
+          "type": "color",
+          "values": {
+            "default": "#112233",
+            "dark": "#ddeeff"
+          },
+          "dimensionId": "theme"
+        }
+      }
+    }
+  }
+}

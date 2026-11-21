@@ -1,5 +1,9 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { readPreview, PREVIEW_PROTOCOL_VERSION } from '../../src/shared/previewProtocol.ts';
+import {
+    readPreview,
+    readsPreviewVersion,
+    PREVIEW_PROTOCOL_VERSION
+} from '../../src/shared/previewProtocol.ts';
 import { noMetrics, type Metrics } from '../metrics.ts';
 import type { Db, Log } from '../schema.ts';
 import * as repository from '../repositories/prototypeLinks.ts';
@@ -89,7 +93,7 @@ export function createPrototypeLinkService(
     /** Snapshots from another protocol can't be drawn by the deployed runtime. */
     const described = <T extends { version: number }>({ version, ...link }: T) => ({
         ...link,
-        outdated: version !== PREVIEW_PROTOCOL_VERSION
+        outdated: !readsPreviewVersion(version)
     });
 
     return {
@@ -239,7 +243,7 @@ export function createPrototypeLinkService(
 
                 return null;
             }
-            if (link.version !== PREVIEW_PROTOCOL_VERSION) {
+            if (!readsPreviewVersion(link.version)) {
                 opened('outdated');
 
                 return 'OUTDATED';

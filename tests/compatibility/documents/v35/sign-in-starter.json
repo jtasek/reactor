@@ -1,0 +1,880 @@
+{
+  "version": 35,
+  "currentDocumentId": "sign-in",
+  "documents": {
+    "sign-in": {
+      "id": "sign-in",
+      "author": "anonymous",
+      "name": "Sign-in starter",
+      "locked": false,
+      "created": "2026-11-21T12:51:02.703Z",
+      "modified": "2026-11-21T12:51:02.703Z",
+      "createdBy": "anonymous",
+      "modifiedBy": "anonymous",
+      "description": "",
+      "tags": [],
+      "tagTones": {},
+      "grid": {
+        "width": 10,
+        "height": 10,
+        "factor": 10,
+        "visible": true
+      },
+      "camera": {
+        "scale": 0.75,
+        "position": {
+          "x": 360,
+          "y": 80
+        }
+      },
+      "shapes": {
+        "sign-in-0": {
+          "id": "sign-in-0",
+          "name": "Button background",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a0",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 416,
+            "height": 48
+          },
+          "cornerRadius": 8,
+          "fill": "#275de5",
+          "stroke": "#275de5"
+        },
+        "sign-in-1": {
+          "id": "sign-in-1",
+          "name": "Button label",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a1",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 16,
+            "y": 30
+          },
+          "value": "Button",
+          "fontSize": 16,
+          "fontColor": "#ffffff"
+        },
+        "sign-in-3": {
+          "id": "sign-in-3",
+          "name": "Text field background",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a2",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 416,
+            "height": 48
+          },
+          "cornerRadius": 8,
+          "fill": "#ffffff",
+          "stroke": "#dce1e9"
+        },
+        "sign-in-4": {
+          "id": "sign-in-4",
+          "name": "Text field label",
+          "locked": false,
+          "visible": false,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a3",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 16,
+            "y": 30
+          },
+          "value": "Text field",
+          "fontSize": 16,
+          "fontColor": "#626b78"
+        },
+        "sign-in-5": {
+          "id": "sign-in-5",
+          "name": "Text field placeholder",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a4",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 16,
+            "y": 30
+          },
+          "value": "Placeholder",
+          "fontSize": 16,
+          "fontColor": "#626b78"
+        },
+        "sign-in-11": {
+          "id": "sign-in-11",
+          "name": "Page background",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a5",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          },
+          "fill": "#ffffff",
+          "stroke": "#dce1e9"
+        },
+        "sign-in-12": {
+          "id": "sign-in-12",
+          "name": "SIGN-IN",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a6",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 40
+          },
+          "value": "SIGN-IN",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-13": {
+          "id": "sign-in-13",
+          "name": "Welcome back",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a7",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 96
+          },
+          "value": "Welcome back",
+          "fontSize": 28,
+          "wrapWidth": 416,
+          "fontColor": "#20242c"
+        },
+        "sign-in-14": {
+          "id": "sign-in-14",
+          "name": "Try an email sign-in flow. No account is required.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a8",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 132
+          },
+          "value": "Try an email sign-in flow. No account is required.",
+          "fontSize": 15,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-15": {
+          "id": "sign-in-15",
+          "name": "Sample prototype · no data is submitted",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a9",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 612
+          },
+          "value": "Sample prototype · no data is submitted",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-16": {
+          "id": "sign-in-16",
+          "name": "Email address",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aA",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 220
+          },
+          "value": "Email address",
+          "fontSize": 14,
+          "wrapWidth": 416,
+          "fontColor": "#20242c"
+        },
+        "sign-in-17": {
+          "id": "sign-in-17",
+          "name": "Email address",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aB",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {},
+          "componentId": "sign-in-6",
+          "position": {
+            "x": 32,
+            "y": 232
+          },
+          "overrides": {
+            "label": "Email address",
+            "placeholder": "name@example.com"
+          }
+        },
+        "sign-in-18": {
+          "id": "sign-in-18",
+          "name": "Preview email link",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aC",
+          "rotation": 0,
+          "parentFrameId": "sign-in-7",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "navigate",
+              "screenId": "sign-in-8"
+            }
+          },
+          "componentId": "sign-in-2",
+          "position": {
+            "x": 32,
+            "y": 328
+          },
+          "overrides": {
+            "label": "Preview email link"
+          }
+        },
+        "sign-in-20": {
+          "id": "sign-in-20",
+          "name": "Page background",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aD",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          },
+          "fill": "#ffffff",
+          "stroke": "#dce1e9"
+        },
+        "sign-in-21": {
+          "id": "sign-in-21",
+          "name": "SIGN-IN",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aE",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 40
+          },
+          "value": "SIGN-IN",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-22": {
+          "id": "sign-in-22",
+          "name": "Check your email",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aF",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 96
+          },
+          "value": "Check your email",
+          "fontSize": 28,
+          "wrapWidth": 416,
+          "fontColor": "#20242c"
+        },
+        "sign-in-23": {
+          "id": "sign-in-23",
+          "name": "In a real app, this step follows an email request.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aG",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 132
+          },
+          "value": "In a real app, this step follows an email request.",
+          "fontSize": 15,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-24": {
+          "id": "sign-in-24",
+          "name": "Sample prototype · no data is submitted",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aH",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 612
+          },
+          "value": "Sample prototype · no data is submitted",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-25": {
+          "id": "sign-in-25",
+          "name": "Prototype only. No email has been sent.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aI",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 220
+          },
+          "value": "Prototype only. No email has been sent.",
+          "fontSize": 16,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-26": {
+          "id": "sign-in-26",
+          "name": "Continue demo",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aJ",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "navigate",
+              "screenId": "sign-in-9"
+            }
+          },
+          "componentId": "sign-in-2",
+          "position": {
+            "x": 32,
+            "y": 304
+          },
+          "overrides": {
+            "label": "Continue demo"
+          }
+        },
+        "sign-in-27": {
+          "id": "sign-in-27",
+          "name": "Back to sign in",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aK",
+          "rotation": 0,
+          "parentFrameId": "sign-in-8",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "navigate",
+              "screenId": "sign-in-7"
+            }
+          },
+          "componentId": "sign-in-2",
+          "position": {
+            "x": 32,
+            "y": 372
+          },
+          "overrides": {
+            "label": "Back to sign in"
+          }
+        },
+        "sign-in-29": {
+          "id": "sign-in-29",
+          "name": "Page background",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aL",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          },
+          "fill": "#ffffff",
+          "stroke": "#dce1e9"
+        },
+        "sign-in-30": {
+          "id": "sign-in-30",
+          "name": "SIGN-IN",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aM",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 40
+          },
+          "value": "SIGN-IN",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-31": {
+          "id": "sign-in-31",
+          "name": "No projects yet",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aN",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 96
+          },
+          "value": "No projects yet",
+          "fontSize": 28,
+          "wrapWidth": 416,
+          "fontColor": "#20242c"
+        },
+        "sign-in-32": {
+          "id": "sign-in-32",
+          "name": "You are viewing an example account.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aO",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 132
+          },
+          "value": "You are viewing an example account.",
+          "fontSize": 15,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-33": {
+          "id": "sign-in-33",
+          "name": "Sample prototype · no data is submitted",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aP",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 32,
+            "y": 612
+          },
+          "value": "Sample prototype · no data is submitted",
+          "fontSize": 12,
+          "wrapWidth": 416,
+          "fontColor": "#626b78"
+        },
+        "sign-in-34": {
+          "id": "sign-in-34",
+          "name": "Back to sign in",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.703Z",
+          "modified": "2026-11-21T12:51:02.703Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aQ",
+          "rotation": 0,
+          "parentFrameId": "sign-in-9",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "navigate",
+              "screenId": "sign-in-7"
+            }
+          },
+          "componentId": "sign-in-2",
+          "position": {
+            "x": 32,
+            "y": 240
+          },
+          "overrides": {
+            "label": "Back to sign in"
+          }
+        }
+      },
+      "frames": {
+        "sign-in-7": {
+          "id": "sign-in-7",
+          "name": "Sign in",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {},
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        },
+        "sign-in-10": {
+          "id": "sign-in-10",
+          "name": "Desktop",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "view",
+          "screenId": "sign-in-7",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        },
+        "sign-in-8": {
+          "id": "sign-in-8",
+          "name": "Check email",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {},
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        },
+        "sign-in-19": {
+          "id": "sign-in-19",
+          "name": "Desktop",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "view",
+          "screenId": "sign-in-8",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        },
+        "sign-in-9": {
+          "id": "sign-in-9",
+          "name": "Account",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {},
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        },
+        "sign-in-28": {
+          "id": "sign-in-28",
+          "name": "Desktop",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "view",
+          "screenId": "sign-in-9",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "size": {
+            "width": 480,
+            "height": 640
+          }
+        }
+      },
+      "groups": {},
+      "layers": {},
+      "components": {
+        "sign-in-2": {
+          "id": "sign-in-2",
+          "name": "Button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "sign-in-0",
+            "sign-in-1"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "sign-in-1",
+              "key": "text"
+            }
+          ]
+        },
+        "sign-in-6": {
+          "id": "sign-in-6",
+          "name": "Text field",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "sign-in-3",
+            "sign-in-4",
+            "sign-in-5"
+          ],
+          "interaction": {
+            "role": "input",
+            "props": {
+              "label": "label",
+              "placeholder": "placeholder"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "sign-in-4",
+              "key": "text"
+            },
+            {
+              "id": "placeholder",
+              "label": "Placeholder",
+              "shapeId": "sign-in-5",
+              "key": "text"
+            }
+          ]
+        }
+      },
+      "links": {},
+      "guides": {},
+      "prototypeBooleans": {},
+      "dataEntities": {},
+      "dataFields": {},
+      "dataRecords": {},
+      "dataRules": {},
+      "dimensions": {},
+      "variables": {}
+    }
+  }
+}

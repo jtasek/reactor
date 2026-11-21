@@ -1,0 +1,46 @@
+{
+  "dimensions": [],
+  "format": "reactor-design-system",
+  "id": "plain-tokens",
+  "name": "Plain tokens",
+  "variables": [
+    {
+      "alias": "brand",
+      "id": "accent",
+      "name": "Accent",
+      "source": {
+        "packageId": "plain-tokens",
+        "tokenId": "accent"
+      },
+      "type": "color",
+      "values": {
+        "default": "#2457d6"
+      }
+    },
+    {
+      "id": "brand",
+      "name": "Brand",
+      "source": {
+        "packageId": "plain-tokens",
+        "tokenId": "brand"
+      },
+      "type": "color",
+      "values": {
+        "default": "#2457d6"
+      }
+    },
+    {
+      "id": "card-width",
+      "name": "Card width",
+      "source": {
+        "packageId": "plain-tokens",
+        "tokenId": "card-width"
+      },
+      "type": "number",
+      "values": {
+        "default": 160
+      }
+    }
+  ],
+  "version": 1
+}

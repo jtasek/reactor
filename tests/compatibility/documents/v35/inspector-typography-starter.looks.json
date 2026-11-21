@@ -1,0 +1,820 @@
+{
+  "canvas": {
+    "inspector-typography-1": {
+      "inspector-typography-62": [
+        {
+          "tag": "rect",
+          "points": [
+            "0,0",
+            "420,0",
+            "420,860",
+            "0,860"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        }
+      ],
+      "inspector-typography-63": [
+        {
+          "tag": "text",
+          "points": [
+            "24,42"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Inspector typography",
+          "fontSize": 24,
+          "fontWeight": "600"
+        }
+      ],
+      "inspector-typography-64": [
+        {
+          "tag": "text",
+          "points": [
+            "24,72"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Choose a style to compare the headings.",
+          "fontSize": 16,
+          "fontWeight": "400"
+        }
+      ],
+      "inspector-typography-65": [
+        {
+          "tag": "rect",
+          "points": [
+            "50,260",
+            "370,260",
+            "370,690",
+            "50,690"
+          ],
+          "fill": "#f5f6f8",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "160,290"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Inspector",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,334"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Properties",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,346",
+            "358,346",
+            "358,414",
+            "62,414"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,450"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Layout variables",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,462",
+            "358,462",
+            "358,530",
+            "62,530"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,566"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Appearance",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,578",
+            "358,578",
+            "358,646",
+            "62,646"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,370"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,398"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,492"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Width",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "260,492"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "240",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,608"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Fill",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "260,592",
+            "284,592",
+            "284,616",
+            "260,616"
+          ],
+          "fill": "#6789e6",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        }
+      ],
+      "inspector-typography-69": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,106",
+            "204,106",
+            "204,154",
+            "24,154"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,135"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Sentence · Medium",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-73": [
+        {
+          "tag": "rect",
+          "points": [
+            "216,106",
+            "396,106",
+            "396,154",
+            "216,154"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "226,135"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Sentence · Regular",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-77": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,166",
+            "204,166",
+            "204,214",
+            "24,214"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,195"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Title · Semibold",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-81": [
+        {
+          "tag": "rect",
+          "points": [
+            "216,166",
+            "396,166",
+            "396,214",
+            "216,214"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "226,195"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Uppercase · Semibold",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-87": [
+        {
+          "tag": "rect",
+          "points": [
+            "50,710",
+            "370,710",
+            "370,798",
+            "50,798"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "64,738"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Use quieter headings to emphasize values.",
+          "fontSize": 13,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "64,762"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Sentence case is easier to scan.",
+          "fontSize": 13,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "64,784"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Try each style, then reset to compare again.",
+          "fontSize": 13,
+          "fontWeight": "400"
+        }
+      ],
+      "inspector-typography-91": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,222",
+            "204,222",
+            "204,254",
+            "24,254"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,245"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "About these styles",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-92": [
+        {
+          "tag": "text",
+          "points": [
+            "24,834"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Reset restores the original style and hides help.",
+          "fontSize": 14,
+          "fontWeight": "400"
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "inspector-typography-1": {
+      "inspector-typography-62": [
+        {
+          "tag": "rect",
+          "points": [
+            "0,0",
+            "420,0",
+            "420,860",
+            "0,860"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        }
+      ],
+      "inspector-typography-63": [
+        {
+          "tag": "text",
+          "points": [
+            "24,42"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Inspector typography",
+          "fontSize": 24,
+          "fontWeight": "600"
+        }
+      ],
+      "inspector-typography-64": [
+        {
+          "tag": "text",
+          "points": [
+            "24,72"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Choose a style to compare the headings.",
+          "fontSize": 16,
+          "fontWeight": "400"
+        }
+      ],
+      "inspector-typography-65": [
+        {
+          "tag": "rect",
+          "points": [
+            "50,260",
+            "370,260",
+            "370,690",
+            "50,690"
+          ],
+          "fill": "#f5f6f8",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "160,290"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Inspector",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,334"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Properties",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,346",
+            "358,346",
+            "358,414",
+            "62,414"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,450"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Layout variables",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,462",
+            "358,462",
+            "358,530",
+            "62,530"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "68,566"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Appearance",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "62,578",
+            "358,578",
+            "358,646",
+            "62,646"
+          ],
+          "fill": "#ffffff",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,370"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,398"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,492"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Width",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "260,492"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "240",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "74,608"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Fill",
+          "fontSize": 14,
+          "fontWeight": "400"
+        },
+        {
+          "tag": "rect",
+          "points": [
+            "260,592",
+            "284,592",
+            "284,616",
+            "260,616"
+          ],
+          "fill": "#6789e6",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        }
+      ],
+      "inspector-typography-69": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,106",
+            "204,106",
+            "204,154",
+            "24,154"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,135"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Sentence · Medium",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-73": [
+        {
+          "tag": "rect",
+          "points": [
+            "216,106",
+            "396,106",
+            "396,154",
+            "216,154"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "226,135"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Sentence · Regular",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-77": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,166",
+            "204,166",
+            "204,214",
+            "24,214"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,195"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Title · Semibold",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-81": [
+        {
+          "tag": "rect",
+          "points": [
+            "216,166",
+            "396,166",
+            "396,214",
+            "216,214"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "226,195"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Uppercase · Semibold",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-87": [],
+      "inspector-typography-91": [
+        {
+          "tag": "rect",
+          "points": [
+            "24,222",
+            "204,222",
+            "204,254",
+            "24,254"
+          ],
+          "fill": "#eef2fc",
+          "opacity": 1,
+          "stroke": "#dde0e5",
+          "strokeWidth": 2,
+          "size": "10"
+        },
+        {
+          "tag": "text",
+          "points": [
+            "34,245"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "About these styles",
+          "fontSize": 13,
+          "fontWeight": "500"
+        }
+      ],
+      "inspector-typography-92": [
+        {
+          "tag": "text",
+          "points": [
+            "24,834"
+          ],
+          "fill": "#30343b",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Reset restores the original style and hides help.",
+          "fontSize": 14,
+          "fontWeight": "400"
+        }
+      ]
+    }
+  }
+}

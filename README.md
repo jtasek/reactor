@@ -995,6 +995,11 @@ and on any finding beyond those recorded in `lint-baseline.json`. It compares wi
 `LINT_BASE_REF=origin/master pnpm check`. Remove entries from `lint-baseline.json`
 as files are repaired; never add them.
 
+Files saved by earlier releases live in `tests/compatibility/`, one folder per format version,
+and `tests/compatibility.test.ts` checks that they still open and look the same. After changing
+`SCHEMA_VERSION`, the preview protocol or a variable file version, run `pnpm compat:freeze` to
+keep the new version's files; it never rewrites frozen ones.
+
 `tests/support/store.ts` creates independent stores with in-memory storage,
 IndexedDB (`fake-indexeddb`) and channels; startup is opt-in with
 `store.onInitialize()`. Browser tests use port 4173 and fail rather than test

@@ -1182,3 +1182,29 @@ others played. `/metrics` counts `reactor_prototype_sessions_total{by}`. The win
 `tests/server/betaMeasures.test.ts`. Not yet: telling the author's own sessions apart, so every
 session counts as by others for now (`by_author` stays false); and a dashboard.
 
+## R7 step 2: Compatibility suite
+
+_Recorded 2026-11-21._
+
+`tests/compatibility/` keeps files saved by each release, one folder per format version:
+`documents/v35` (each fixture as a local storage save, its Yjs state as IndexedDB and the server
+keep it, and its looks), `links/v3` (the snapshot the server stores for a shared link, and what
+the runtime draws for each screen) and `tokens/reactor/v1` and `tokens/dtcg/v2025.10` (exported
+variable files and what they read as). The fixtures are the projection parity documents
+(`tests/support/documentFixtures.ts`) plus one with every field type, a rule, groups, a layer,
+a link and a guide, and one DTCG can carry. `tests/compatibility.test.ts` opens every frozen
+file with today's code: documents load without repairs, the Yjs state opens as the same
+document, and canvas and Play draw the same marks; links are still accepted
+(`readsPreviewVersion`, shared by the server and the runtime) and draw the same; variable
+files read the same. A local storage save of the current format must also be written back
+unchanged, so a format change needs a new `SCHEMA_VERSION`.
+
+After bumping `SCHEMA_VERSION`, the preview protocol or a variable file version, or adding a
+fixture, run `pnpm compat:freeze`: it writes the missing folder or files and never rewrites a
+frozen one. A looks or `.read.json` file changes only when a release means to draw or read
+old files differently. Bumping the preview protocol now needs the runtime and server to keep
+reading older snapshots, or the suite fails.
+
+The suite found that loading any document with components reported a repair (so every load
+backed up the local storage save); components are now kept as they are when nothing is dropped.
+

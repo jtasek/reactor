@@ -1,0 +1,67 @@
+{
+  "canvas": {
+    "desktop": {
+      "button": [
+        {
+          "tag": "text",
+          "points": [
+            "20,45.6"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 32
+        }
+      ]
+    },
+    "mobile": {
+      "button": [
+        {
+          "tag": "text",
+          "points": [
+            "20,32.8"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 16
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "desktop": {
+      "button": [
+        {
+          "tag": "text",
+          "points": [
+            "20,45.6"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 32
+        }
+      ]
+    },
+    "mobile": {
+      "button": [
+        {
+          "tag": "text",
+          "points": [
+            "20,32.8"
+          ],
+          "fill": "default",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 16
+        }
+      ]
+    }
+  }
+}

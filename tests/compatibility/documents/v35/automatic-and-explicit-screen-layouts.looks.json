@@ -1,0 +1,93 @@
+{
+  "canvas": {
+    "details:view": {
+      "title": [
+        {
+          "tag": "text",
+          "points": [
+            "24,48"
+          ],
+          "fill": "#112233",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Hello from details",
+          "fontSize": 14
+        }
+      ]
+    },
+    "view": {
+      "next": [
+        {
+          "tag": "text",
+          "points": [
+            "24,111.2"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 14
+        }
+      ],
+      "name": [
+        {
+          "tag": "text",
+          "points": [
+            "24,51.2"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Your name",
+          "fontSize": 14
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "details:view": {
+      "title": [
+        {
+          "tag": "text",
+          "points": [
+            "24,48"
+          ],
+          "fill": "#112233",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Hello from details",
+          "fontSize": 14
+        }
+      ]
+    },
+    "view": {
+      "next": [
+        {
+          "tag": "text",
+          "points": [
+            "24,111.2"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Continue",
+          "fontSize": 14
+        }
+      ],
+      "name": [
+        {
+          "tag": "text",
+          "points": [
+            "24,51.2"
+          ],
+          "fill": "#ddeeff",
+          "opacity": 1,
+          "angle": 0,
+          "text": "Your name",
+          "fontSize": 14
+        }
+      ]
+    }
+  }
+}

@@ -1128,19 +1128,24 @@ const referenceRepairs: {
     groups: withoutMissingMembers,
     layers: withoutMissingMembers,
     components: (component, exists) => {
-        const members = component.sourceShapes
-            ? {
-                  ...component,
-                  shapesIds: component.shapesIds.filter((id) =>
-                      Object.hasOwn(component.sourceShapes ?? {}, id)
-                  )
-              }
-            : withoutMissingMembers(component, exists);
+        const sourceShapes = component.sourceShapes;
+        const kept = sourceShapes
+            ? component.shapesIds.filter((id) => Object.hasOwn(sourceShapes, id))
+            : undefined;
+        const members =
+            kept === undefined
+                ? withoutMissingMembers(component, exists)
+                : kept.length === component.shapesIds.length
+                  ? component
+                  : { ...component, shapesIds: kept };
         const props = members.props?.filter((prop) => members.shapesIds.includes(prop.shapeId));
+        const parentKept = members.parentId === undefined || exists('components', members.parentId);
 
-        return members.parentId === undefined || exists('components', members.parentId)
-            ? { ...members, props }
-            : { ...members, props, parentId: undefined };
+        if (parentKept && props?.length === members.props?.length) {
+            return members;
+        }
+
+        return parentKept ? { ...members, props } : { ...members, props, parentId: undefined };
     },
     links: (link, exists) =>
         [link.source, link.target].every((end) => end === undefined || exists('shapes', end))

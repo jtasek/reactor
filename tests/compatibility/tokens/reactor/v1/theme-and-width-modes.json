@@ -1,0 +1,107 @@
+{
+  "dimensions": [
+    {
+      "defaultModeId": "sm",
+      "id": "media",
+      "modes": {
+        "lg": {
+          "id": "lg",
+          "minWidth": 600,
+          "name": "lg",
+          "order": 2
+        },
+        "sm": {
+          "id": "sm",
+          "minWidth": 400,
+          "name": "sm",
+          "order": 1
+        },
+        "xs": {
+          "id": "xs",
+          "minWidth": 0,
+          "name": "xs",
+          "order": 0
+        }
+      },
+      "name": "MediaSize",
+      "order": 1,
+      "selection": "width",
+      "source": {
+        "packageId": "responsive",
+        "tokenId": "media"
+      }
+    },
+    {
+      "defaultModeId": "light",
+      "id": "theme",
+      "modes": {
+        "dark": {
+          "id": "dark",
+          "name": "Dark",
+          "order": 1
+        },
+        "light": {
+          "id": "light",
+          "name": "Light",
+          "order": 0
+        }
+      },
+      "name": "Theme",
+      "order": 0,
+      "source": {
+        "packageId": "responsive",
+        "tokenId": "theme"
+      }
+    }
+  ],
+  "format": "reactor-design-system",
+  "id": "responsive",
+  "name": "Responsive modes",
+  "variables": [
+    {
+      "dimensionId": "media",
+      "id": "font",
+      "name": "Font size",
+      "source": {
+        "packageId": "responsive",
+        "tokenId": "font"
+      },
+      "type": "number",
+      "values": {
+        "default": 16,
+        "lg": 20,
+        "xs": 14
+      }
+    },
+    {
+      "dimensionId": "theme",
+      "id": "ink",
+      "name": "Ink",
+      "source": {
+        "packageId": "responsive",
+        "tokenId": "ink"
+      },
+      "type": "color",
+      "values": {
+        "dark": "#ddeeff",
+        "default": "#112233"
+      }
+    },
+    {
+      "dimensionId": "media",
+      "id": "width",
+      "name": "Button width",
+      "source": {
+        "packageId": "responsive",
+        "tokenId": "width"
+      },
+      "type": "number",
+      "values": {
+        "default": 120,
+        "lg": 240,
+        "xs": 80
+      }
+    }
+  ],
+  "version": 1
+}

@@ -1,0 +1,2277 @@
+{
+  "version": 35,
+  "currentDocumentId": "inspector-typography",
+  "documents": {
+    "inspector-typography": {
+      "id": "inspector-typography",
+      "author": "anonymous",
+      "name": "Inspector typography",
+      "locked": false,
+      "created": "2026-11-21T12:51:02.443Z",
+      "modified": "2026-11-21T12:51:02.443Z",
+      "createdBy": "anonymous",
+      "modifiedBy": "anonymous",
+      "description": "",
+      "tags": [],
+      "tagTones": {},
+      "grid": {
+        "width": 10,
+        "height": 10,
+        "factor": 10,
+        "visible": true
+      },
+      "camera": {
+        "scale": 0.75,
+        "position": {
+          "x": 360,
+          "y": 60
+        }
+      },
+      "shapes": {
+        "inspector-typography-3": {
+          "id": "inspector-typography-3",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a0",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 430
+          },
+          "cornerRadius": 10,
+          "fill": "#f5f6f8",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-4": {
+          "id": "inspector-typography-4",
+          "name": "Inspector",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a1",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 110,
+            "y": 30
+          },
+          "value": "Inspector",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-5": {
+          "id": "inspector-typography-5",
+          "name": "Properties",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a2",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 74
+          },
+          "value": "Properties",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-6": {
+          "id": "inspector-typography-6",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a3",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 86
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-7": {
+          "id": "inspector-typography-7",
+          "name": "Layout variables",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a4",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 190
+          },
+          "value": "Layout variables",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-8": {
+          "id": "inspector-typography-8",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a5",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 202
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-9": {
+          "id": "inspector-typography-9",
+          "name": "Appearance",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a6",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 306
+          },
+          "value": "Appearance",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-10": {
+          "id": "inspector-typography-10",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a7",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 318
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-11": {
+          "id": "inspector-typography-11",
+          "name": "Placeholder",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a8",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 110
+          },
+          "value": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-12": {
+          "id": "inspector-typography-12",
+          "name": "What do you need?",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "a9",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 138
+          },
+          "value": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-13": {
+          "id": "inspector-typography-13",
+          "name": "Width",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aA",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 232
+          },
+          "value": "Width",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-14": {
+          "id": "inspector-typography-14",
+          "name": "240",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aB",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 210,
+            "y": 232
+          },
+          "value": "240",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-15": {
+          "id": "inspector-typography-15",
+          "name": "Fill",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aC",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 348
+          },
+          "value": "Fill",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-16": {
+          "id": "inspector-typography-16",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aD",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 210,
+            "y": 332
+          },
+          "size": {
+            "width": 24,
+            "height": 24
+          },
+          "cornerRadius": 10,
+          "fill": "#6789e6",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-18": {
+          "id": "inspector-typography-18",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aE",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 430
+          },
+          "cornerRadius": 10,
+          "fill": "#f5f6f8",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-19": {
+          "id": "inspector-typography-19",
+          "name": "Inspector",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aF",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 110,
+            "y": 30
+          },
+          "value": "Inspector",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-20": {
+          "id": "inspector-typography-20",
+          "name": "Properties",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aG",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 74
+          },
+          "value": "Properties",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-21": {
+          "id": "inspector-typography-21",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aH",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 86
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-22": {
+          "id": "inspector-typography-22",
+          "name": "Layout variables",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aI",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 190
+          },
+          "value": "Layout variables",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-23": {
+          "id": "inspector-typography-23",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aJ",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 202
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-24": {
+          "id": "inspector-typography-24",
+          "name": "Appearance",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.442Z",
+          "modified": "2026-11-21T12:51:02.442Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aK",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 306
+          },
+          "value": "Appearance",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-25": {
+          "id": "inspector-typography-25",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aL",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 318
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-26": {
+          "id": "inspector-typography-26",
+          "name": "Placeholder",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aM",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 110
+          },
+          "value": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-27": {
+          "id": "inspector-typography-27",
+          "name": "What do you need?",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aN",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 138
+          },
+          "value": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-28": {
+          "id": "inspector-typography-28",
+          "name": "Width",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aO",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 232
+          },
+          "value": "Width",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-29": {
+          "id": "inspector-typography-29",
+          "name": "240",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aP",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 210,
+            "y": 232
+          },
+          "value": "240",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-30": {
+          "id": "inspector-typography-30",
+          "name": "Fill",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aQ",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 348
+          },
+          "value": "Fill",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-31": {
+          "id": "inspector-typography-31",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aR",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 210,
+            "y": 332
+          },
+          "size": {
+            "width": 24,
+            "height": 24
+          },
+          "cornerRadius": 10,
+          "fill": "#6789e6",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-33": {
+          "id": "inspector-typography-33",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aS",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 430
+          },
+          "cornerRadius": 10,
+          "fill": "#f5f6f8",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-34": {
+          "id": "inspector-typography-34",
+          "name": "Inspector",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aT",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 110,
+            "y": 30
+          },
+          "value": "Inspector",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-35": {
+          "id": "inspector-typography-35",
+          "name": "Properties",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aU",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 74
+          },
+          "value": "Properties",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-36": {
+          "id": "inspector-typography-36",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aV",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 86
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-37": {
+          "id": "inspector-typography-37",
+          "name": "Layout Variables",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aW",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 190
+          },
+          "value": "Layout Variables",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-38": {
+          "id": "inspector-typography-38",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aX",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 202
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-39": {
+          "id": "inspector-typography-39",
+          "name": "Appearance",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aY",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 306
+          },
+          "value": "Appearance",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-40": {
+          "id": "inspector-typography-40",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aZ",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 318
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-41": {
+          "id": "inspector-typography-41",
+          "name": "Placeholder",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aa",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 110
+          },
+          "value": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-42": {
+          "id": "inspector-typography-42",
+          "name": "What do you need?",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ab",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 138
+          },
+          "value": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-43": {
+          "id": "inspector-typography-43",
+          "name": "Width",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ac",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 232
+          },
+          "value": "Width",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-44": {
+          "id": "inspector-typography-44",
+          "name": "240",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ad",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 210,
+            "y": 232
+          },
+          "value": "240",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-45": {
+          "id": "inspector-typography-45",
+          "name": "Fill",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ae",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 348
+          },
+          "value": "Fill",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-46": {
+          "id": "inspector-typography-46",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "af",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 210,
+            "y": 332
+          },
+          "size": {
+            "width": 24,
+            "height": 24
+          },
+          "cornerRadius": 10,
+          "fill": "#6789e6",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-48": {
+          "id": "inspector-typography-48",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ag",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 430
+          },
+          "cornerRadius": 10,
+          "fill": "#f5f6f8",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-49": {
+          "id": "inspector-typography-49",
+          "name": "Inspector",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ah",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 110,
+            "y": 30
+          },
+          "value": "Inspector",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-50": {
+          "id": "inspector-typography-50",
+          "name": "PROPERTIES",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ai",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 74
+          },
+          "value": "PROPERTIES",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-51": {
+          "id": "inspector-typography-51",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aj",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 86
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-52": {
+          "id": "inspector-typography-52",
+          "name": "LAYOUT VARIABLES",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ak",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 190
+          },
+          "value": "LAYOUT VARIABLES",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-53": {
+          "id": "inspector-typography-53",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "al",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 202
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-54": {
+          "id": "inspector-typography-54",
+          "name": "APPEARANCE",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "am",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 18,
+            "y": 306
+          },
+          "value": "APPEARANCE",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-55": {
+          "id": "inspector-typography-55",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "an",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 12,
+            "y": 318
+          },
+          "size": {
+            "width": 296,
+            "height": 68
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-56": {
+          "id": "inspector-typography-56",
+          "name": "Placeholder",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ao",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 110
+          },
+          "value": "Placeholder",
+          "fontSize": 12,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-57": {
+          "id": "inspector-typography-57",
+          "name": "What do you need?",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ap",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 138
+          },
+          "value": "What do you need?",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-58": {
+          "id": "inspector-typography-58",
+          "name": "Width",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aq",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 232
+          },
+          "value": "Width",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-59": {
+          "id": "inspector-typography-59",
+          "name": "240",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ar",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 210,
+            "y": 232
+          },
+          "value": "240",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-60": {
+          "id": "inspector-typography-60",
+          "name": "Fill",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "as",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 348
+          },
+          "value": "Fill",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-61": {
+          "id": "inspector-typography-61",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "at",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 210,
+            "y": 332
+          },
+          "size": {
+            "width": 24,
+            "height": 24
+          },
+          "cornerRadius": 10,
+          "fill": "#6789e6",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-62": {
+          "id": "inspector-typography-62",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "au",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 420,
+            "height": 860
+          },
+          "cornerRadius": 10,
+          "fill": "#ffffff",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-63": {
+          "id": "inspector-typography-63",
+          "name": "Inspector typography",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "av",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 42
+          },
+          "value": "Inspector typography",
+          "fontSize": 24,
+          "fontWeight": 600,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-64": {
+          "id": "inspector-typography-64",
+          "name": "Choose a style to compare the headings.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "aw",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 72
+          },
+          "value": "Choose a style to compare the headings.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-65": {
+          "id": "inspector-typography-65",
+          "name": "Inspector comparison",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ax",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {},
+          "componentId": "inspector-typography-2",
+          "position": {
+            "x": 50,
+            "y": 260
+          },
+          "overrides": {}
+        },
+        "inspector-typography-66": {
+          "id": "inspector-typography-66",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "ay",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 180,
+            "height": 48
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-67": {
+          "id": "inspector-typography-67",
+          "name": "Sentence · Medium",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "az",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 10,
+            "y": 29
+          },
+          "value": "Sentence · Medium",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-69": {
+          "id": "inspector-typography-69",
+          "name": "Sentence · Medium",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b00",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "changeVariant",
+              "instanceId": "inspector-typography-65",
+              "variantId": "inspector-typography-2"
+            }
+          },
+          "componentId": "inspector-typography-68",
+          "position": {
+            "x": 24,
+            "y": 106
+          },
+          "overrides": {}
+        },
+        "inspector-typography-70": {
+          "id": "inspector-typography-70",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b01",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 180,
+            "height": 48
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-71": {
+          "id": "inspector-typography-71",
+          "name": "Sentence · Regular",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b02",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 10,
+            "y": 29
+          },
+          "value": "Sentence · Regular",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-73": {
+          "id": "inspector-typography-73",
+          "name": "Sentence · Regular",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b03",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "changeVariant",
+              "instanceId": "inspector-typography-65",
+              "variantId": "inspector-typography-17"
+            }
+          },
+          "componentId": "inspector-typography-72",
+          "position": {
+            "x": 216,
+            "y": 106
+          },
+          "overrides": {}
+        },
+        "inspector-typography-74": {
+          "id": "inspector-typography-74",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b04",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 180,
+            "height": 48
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-75": {
+          "id": "inspector-typography-75",
+          "name": "Title · Semibold",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b05",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 10,
+            "y": 29
+          },
+          "value": "Title · Semibold",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-77": {
+          "id": "inspector-typography-77",
+          "name": "Title · Semibold",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b06",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "changeVariant",
+              "instanceId": "inspector-typography-65",
+              "variantId": "inspector-typography-32"
+            }
+          },
+          "componentId": "inspector-typography-76",
+          "position": {
+            "x": 24,
+            "y": 166
+          },
+          "overrides": {}
+        },
+        "inspector-typography-78": {
+          "id": "inspector-typography-78",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b07",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 180,
+            "height": 48
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-79": {
+          "id": "inspector-typography-79",
+          "name": "Uppercase · Semibold",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b08",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 10,
+            "y": 29
+          },
+          "value": "Uppercase · Semibold",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-81": {
+          "id": "inspector-typography-81",
+          "name": "Uppercase · Semibold",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b09",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "changeVariant",
+              "instanceId": "inspector-typography-65",
+              "variantId": "inspector-typography-47"
+            }
+          },
+          "componentId": "inspector-typography-80",
+          "position": {
+            "x": 216,
+            "y": 166
+          },
+          "overrides": {}
+        },
+        "inspector-typography-83": {
+          "id": "inspector-typography-83",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0A",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 320,
+            "height": 88
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-84": {
+          "id": "inspector-typography-84",
+          "name": "Use quieter headings to emphasize values.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0B",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 14,
+            "y": 28
+          },
+          "value": "Use quieter headings to emphasize values.",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-85": {
+          "id": "inspector-typography-85",
+          "name": "Sentence case is easier to scan.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0C",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 14,
+            "y": 52
+          },
+          "value": "Sentence case is easier to scan.",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-86": {
+          "id": "inspector-typography-86",
+          "name": "Try each style, then reset to compare again.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0D",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 14,
+            "y": 74
+          },
+          "value": "Try each style, then reset to compare again.",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-87": {
+          "id": "inspector-typography-87",
+          "name": "Inspector help",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0E",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "prototypeVisible": false,
+          "modeOverrides": {},
+          "interactions": {},
+          "componentId": "inspector-typography-82",
+          "position": {
+            "x": 50,
+            "y": 710
+          },
+          "overrides": {}
+        },
+        "inspector-typography-88": {
+          "id": "inspector-typography-88",
+          "name": "Surface",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0F",
+          "rotation": 0,
+          "children": [],
+          "type": "rectangle",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 180,
+            "height": 32
+          },
+          "cornerRadius": 10,
+          "fill": "#eef2fc",
+          "stroke": "#dde0e5"
+        },
+        "inspector-typography-89": {
+          "id": "inspector-typography-89",
+          "name": "About these styles",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0G",
+          "rotation": 0,
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 10,
+            "y": 23
+          },
+          "value": "About these styles",
+          "fontSize": 13,
+          "fontWeight": 500,
+          "fontColor": "#30343b"
+        },
+        "inspector-typography-91": {
+          "id": "inspector-typography-91",
+          "name": "About these styles",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0H",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "instance",
+          "modeOverrides": {},
+          "interactions": {
+            "activate": {
+              "type": "toggleVisibility",
+              "instanceId": "inspector-typography-87"
+            }
+          },
+          "componentId": "inspector-typography-90",
+          "position": {
+            "x": 24,
+            "y": 222
+          },
+          "overrides": {}
+        },
+        "inspector-typography-92": {
+          "id": "inspector-typography-92",
+          "name": "Reset restores the original style and hides help.",
+          "locked": false,
+          "visible": true,
+          "created": "2026-11-21T12:51:02.443Z",
+          "modified": "2026-11-21T12:51:02.443Z",
+          "createdBy": "anonymous",
+          "modifiedBy": "anonymous",
+          "order": "b0I",
+          "rotation": 0,
+          "parentFrameId": "inspector-typography-0",
+          "children": [],
+          "type": "text",
+          "position": {
+            "x": 24,
+            "y": 834
+          },
+          "value": "Reset restores the original style and hides help.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fontColor": "#30343b"
+        }
+      },
+      "frames": {
+        "inspector-typography-0": {
+          "id": "inspector-typography-0",
+          "name": "Typography comparison",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "screen",
+          "definitionOnly": true,
+          "responsiveLayouts": {},
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 420,
+            "height": 860
+          }
+        },
+        "inspector-typography-1": {
+          "id": "inspector-typography-1",
+          "name": "Desktop",
+          "locked": false,
+          "visible": true,
+          "bindings": {},
+          "modeOverrides": {},
+          "kind": "view",
+          "screenId": "inspector-typography-0",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "width": 420,
+            "height": 860
+          }
+        }
+      },
+      "groups": {},
+      "layers": {},
+      "components": {
+        "inspector-typography-2": {
+          "id": "inspector-typography-2",
+          "name": "Sentence · Medium",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-3",
+            "inspector-typography-4",
+            "inspector-typography-5",
+            "inspector-typography-6",
+            "inspector-typography-7",
+            "inspector-typography-8",
+            "inspector-typography-9",
+            "inspector-typography-10",
+            "inspector-typography-11",
+            "inspector-typography-12",
+            "inspector-typography-13",
+            "inspector-typography-14",
+            "inspector-typography-15",
+            "inspector-typography-16"
+          ],
+          "variantIds": [
+            "inspector-typography-17",
+            "inspector-typography-32",
+            "inspector-typography-47"
+          ],
+          "interactions": {},
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "placeholder",
+              "label": "Placeholder",
+              "shapeId": "inspector-typography-12",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-17": {
+          "id": "inspector-typography-17",
+          "name": "Sentence · Regular",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-18",
+            "inspector-typography-19",
+            "inspector-typography-20",
+            "inspector-typography-21",
+            "inspector-typography-22",
+            "inspector-typography-23",
+            "inspector-typography-24",
+            "inspector-typography-25",
+            "inspector-typography-26",
+            "inspector-typography-27",
+            "inspector-typography-28",
+            "inspector-typography-29",
+            "inspector-typography-30",
+            "inspector-typography-31"
+          ],
+          "interactions": {},
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "placeholder",
+              "label": "Placeholder",
+              "shapeId": "inspector-typography-27",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-32": {
+          "id": "inspector-typography-32",
+          "name": "Title · Semibold",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-33",
+            "inspector-typography-34",
+            "inspector-typography-35",
+            "inspector-typography-36",
+            "inspector-typography-37",
+            "inspector-typography-38",
+            "inspector-typography-39",
+            "inspector-typography-40",
+            "inspector-typography-41",
+            "inspector-typography-42",
+            "inspector-typography-43",
+            "inspector-typography-44",
+            "inspector-typography-45",
+            "inspector-typography-46"
+          ],
+          "interactions": {},
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "placeholder",
+              "label": "Placeholder",
+              "shapeId": "inspector-typography-42",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-47": {
+          "id": "inspector-typography-47",
+          "name": "Uppercase · Semibold",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-48",
+            "inspector-typography-49",
+            "inspector-typography-50",
+            "inspector-typography-51",
+            "inspector-typography-52",
+            "inspector-typography-53",
+            "inspector-typography-54",
+            "inspector-typography-55",
+            "inspector-typography-56",
+            "inspector-typography-57",
+            "inspector-typography-58",
+            "inspector-typography-59",
+            "inspector-typography-60",
+            "inspector-typography-61"
+          ],
+          "interactions": {},
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "placeholder",
+              "label": "Placeholder",
+              "shapeId": "inspector-typography-57",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-68": {
+          "id": "inspector-typography-68",
+          "name": "Sentence · Medium button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-66",
+            "inspector-typography-67"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "inspector-typography-67",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-72": {
+          "id": "inspector-typography-72",
+          "name": "Sentence · Regular button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-70",
+            "inspector-typography-71"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "inspector-typography-71",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-76": {
+          "id": "inspector-typography-76",
+          "name": "Title · Semibold button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-74",
+            "inspector-typography-75"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "inspector-typography-75",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-80": {
+          "id": "inspector-typography-80",
+          "name": "Uppercase · Semibold button",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-78",
+            "inspector-typography-79"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "inspector-typography-79",
+              "key": "text"
+            }
+          ]
+        },
+        "inspector-typography-82": {
+          "id": "inspector-typography-82",
+          "name": "Inspector help",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-83",
+            "inspector-typography-84",
+            "inspector-typography-85",
+            "inspector-typography-86"
+          ],
+          "interactions": {},
+          "sourceOnly": true
+        },
+        "inspector-typography-90": {
+          "id": "inspector-typography-90",
+          "name": "Help toggle",
+          "locked": false,
+          "visible": true,
+          "shapesIds": [
+            "inspector-typography-88",
+            "inspector-typography-89"
+          ],
+          "interaction": {
+            "role": "button",
+            "props": {
+              "label": "label"
+            }
+          },
+          "interactions": {
+            "activate": null
+          },
+          "sourceOnly": true,
+          "props": [
+            {
+              "id": "label",
+              "label": "Label",
+              "shapeId": "inspector-typography-89",
+              "key": "text"
+            }
+          ]
+        }
+      },
+      "links": {},
+      "guides": {},
+      "prototypeBooleans": {},
+      "dataEntities": {},
+      "dataFields": {},
+      "dataRecords": {},
+      "dataRules": {},
+      "dimensions": {},
+      "variables": {}
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "canvas": {
+    "desktop": {
+      "body": [
+        {
+          "tag": "rect",
+          "points": [
+            "10,10",
+            "290,10",
+            "290,50",
+            "10,50"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ]
+    },
+    "mobile": {
+      "compact-body": [
+        {
+          "tag": "rect",
+          "points": [
+            "20,20",
+            "220,20",
+            "220,50",
+            "20,50"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ]
+    }
+  },
+  "outside": [],
+  "prototype": {
+    "desktop": {
+      "body": [
+        {
+          "tag": "rect",
+          "points": [
+            "10,10",
+            "290,10",
+            "290,50",
+            "10,50"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ]
+    },
+    "mobile": {
+      "compact-body": [
+        {
+          "tag": "rect",
+          "points": [
+            "20,20",
+            "220,20",
+            "220,50",
+            "20,50"
+          ],
+          "fill": "none",
+          "opacity": 1,
+          "stroke": "var(--shape-stroke-color)",
+          "strokeWidth": 2
+        }
+      ]
+    }
+  }
+}

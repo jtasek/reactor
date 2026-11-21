@@ -1,0 +1,59 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$extensions": {
+    "io.github.jtasek.reactor": {
+      "version": 1,
+      "id": "plain-tokens",
+      "name": "Plain tokens"
+    }
+  },
+  "Accent": {
+    "$type": "color",
+    "$value": "{Brand}",
+    "$extensions": {
+      "io.github.jtasek.reactor": {
+        "id": "accent",
+        "source": {
+          "packageId": "plain-tokens",
+          "tokenId": "accent"
+        },
+        "fallback": "#2457d6"
+      }
+    }
+  },
+  "Brand": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [
+        0.1411764705882353,
+        0.3411764705882353,
+        0.8392156862745098
+      ],
+      "alpha": 1,
+      "hex": "#2457d6"
+    },
+    "$extensions": {
+      "io.github.jtasek.reactor": {
+        "id": "brand",
+        "source": {
+          "packageId": "plain-tokens",
+          "tokenId": "brand"
+        }
+      }
+    }
+  },
+  "Card width": {
+    "$type": "number",
+    "$value": 160,
+    "$extensions": {
+      "io.github.jtasek.reactor": {
+        "id": "card-width",
+        "source": {
+          "packageId": "plain-tokens",
+          "tokenId": "card-width"
+        }
+      }
+    }
+  }
+}
