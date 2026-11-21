@@ -761,7 +761,8 @@ them shared a prototype with at least two screens within a day of signing up (`s
 once that day has passed for all of them); and prototype sessions started that week by people
 other than the link's author (`sessionsByOthers`, `sessionsByAuthors`, `linksPlayedByOthers`).
 A session is one browser's opens of one link, until it leaves the link for half an hour;
-browsers that keep no id run no counted session. `/metrics` counts sessions as
+browsers that keep no id run no counted session. The author's own sessions are not told
+apart yet, so every session counts as by others for now. `/metrics` counts sessions as
 `reactor_prototype_sessions_total`. The windows are `BETA_MEASURES` in
 [server/services/prototypeLinks.ts](server/services/prototypeLinks.ts).
 
