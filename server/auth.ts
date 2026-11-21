@@ -72,8 +72,9 @@ export function createAuth({
 
                     closing.delete(user.id);
 
+                    // The account is gone either way; the sync's session check closes what this misses.
                     if (close && open) {
-                        await close(open);
+                        await close(open).catch(() => undefined);
                     }
                 }
             }

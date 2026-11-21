@@ -141,3 +141,22 @@ it('asks for a recent sign-in, or the password where the account has one', async
     expect((await deleteAccount(served, cookie, { password: account.password })).status).toBe(200);
     expect(await userId(served, account.email)).toBeUndefined();
 });
+
+it('still deletes the account when closing its connections fails', async () => {
+    const served = await serve();
+    const ada = await served.user('ada@example.com');
+    const cy = await served.user('cy@example.com');
+
+    await served.db
+        .insertInto('workspace_members')
+        .values({
+            workspace_id: cy.personal.id,
+            user_id: (await userId(served, 'ada@example.com'))!,
+            role: 'editor'
+        })
+        .execute();
+    vi.spyOn(served.sync, 'closeMember').mockRejectedValue(new Error('closed already'));
+
+    expect((await deleteAccount(served, ada.cookie)).status).toBe(200);
+    expect(await userId(served, 'ada@example.com')).toBeUndefined();
+});
