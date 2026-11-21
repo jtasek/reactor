@@ -64,7 +64,7 @@ export function createAuth({
             deleteUser: {
                 enabled: true,
                 beforeDelete: async (user) => {
-                    closing.set(user.id, await accountReach(db, user.id));
+                    closing.set(user.id, await accountReach(db, user.id, user.email));
                 },
                 afterDelete: async (user) => {
                     const close = closing.get(user.id);

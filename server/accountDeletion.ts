@@ -9,10 +9,17 @@ export interface AccountConnections {
 /**
  * Deleting an account deletes the workspaces it owns, with their documents,
  * history and shared links, and its memberships of others' workspaces, through the
- * tables' cascades. Read before the account goes, `closeConnections` then
- * disconnects everyone from the deleted documents and the person from the rest.
+ * tables' cascades; invitations still waiting for its email address go here. Read
+ * before the account goes, the returned function then disconnects everyone from the
+ * deleted documents and the person from the rest.
  */
-export async function accountReach(db: Db, userId: string) {
+export async function accountReach(db: Db, userId: string, email: string) {
+    await db
+        .deleteFrom('workspace_invitations')
+        .where('email', '=', email.trim().toLowerCase())
+        .where('accepted_at', 'is', null)
+        .execute();
+
     const owned = await db
         .selectFrom('documents')
         .innerJoin('workspaces', 'workspaces.id', 'documents.workspace_id')

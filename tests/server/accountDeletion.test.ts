@@ -59,6 +59,21 @@ it('deletes the account, its workspace with documents, history and links, and it
     ).toBe(204);
 
     const shared = await create(served, ada.cookie, cy.personal.id, 'Shared with Cy');
+    const cyId = (await userId(served, 'cy@example.com'))!;
+    const invite = (id: string, email: string) => ({
+        id,
+        workspace_id: cy.personal.id,
+        email,
+        role: 'viewer' as const,
+        token_hash: id,
+        created_by: cyId,
+        expires_at: new Date(Date.now() + 60_000)
+    });
+
+    await served.db
+        .insertInto('workspace_invitations')
+        .values([invite('to-ada', 'ada@example.com'), invite('to-dee', 'dee@example.com')])
+        .execute();
     const closeDocument = vi.spyOn(served.sync, 'closeDocument');
     const closeMember = vi.spyOn(served.sync, 'closeMember');
 
@@ -100,7 +115,10 @@ it('deletes the account, its workspace with documents, history and links, and it
             .select('user_id')
             .where('workspace_id', '=', cy.personal.id)
             .execute()
-    ).toEqual([{ user_id: (await userId(served, 'cy@example.com'))! }]);
+    ).toEqual([{ user_id: cyId }]);
+    expect(await served.db.selectFrom('workspace_invitations').select('id').execute()).toEqual([
+        { id: 'to-dee' }
+    ]);
 
     expect(closeDocument).toHaveBeenCalledWith(plan.id);
     expect(closeMember).toHaveBeenCalledWith(cy.personal.id, adaId);
