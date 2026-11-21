@@ -76,6 +76,27 @@ export const accounts = {
 
 export type Accounts = typeof accounts;
 
+/** Deletes the signed-in account, with its password when it has one. */
+export const deleteAccountRequest = (password?: string) =>
+    accountRequest('delete-user', password ? { password } : {});
+
+/** Whether the signed-in account has a password, or `undefined` when that cannot be read. */
+export async function hasPassword(): Promise<boolean | undefined> {
+    try {
+        const response = await fetch('/api/auth/list-accounts', { credentials: 'same-origin' });
+
+        if (!response.ok) {
+            return undefined;
+        }
+
+        const linked = (await response.json()) as { providerId: string }[];
+
+        return linked.some(({ providerId }) => providerId === 'credential');
+    } catch {
+        return undefined;
+    }
+}
+
 /** Who is signed in; a server without accounts, or one not answering, has none. */
 export async function readAccount(from: Pick<Accounts, 'session'>): Promise<Account> {
     try {

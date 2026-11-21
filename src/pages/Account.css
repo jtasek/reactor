@@ -113,6 +113,18 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.form .danger {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: var(--panel-content-background);
+  font-weight: var(--font-weight-semibold);
+}
+
+.form .danger:disabled {
+  background: var(--control-background);
+  border-color: var(--action-border);
+}
+
 .form button:disabled,
 .signOut button:disabled {
   color: var(--text-secondary-color);

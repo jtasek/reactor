@@ -743,6 +743,9 @@ R8 and R10 start only if beta users ask for real data and for publishing.
 1. Measure both, weekly, on the server. Acceptance: `tests/server/betaMeasures.test.ts`.
    Partly built; see the [delivery log](DELIVERY_LOG.md#r7-step-1-beta-measures). Open: telling
    the author's own sessions apart from other people's.
+2. People delete their own account from the Account page, with its Personal workspace, documents,
+   history and shared links. Acceptance: `tests/server/accountDeletion.test.ts`.
+   Built; see the [delivery log](DELIVERY_LOG.md#r7-step-2-delete-my-account).
 
 ### R8 One HTTP source (L)
 
