@@ -1,5 +1,7 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
+import { sql } from 'kysely';
 import { socialProvidersFromEnv } from '../../server/oauth';
+import { LEGAL_VERSION } from '../../src/shared/legal';
 import { ORIGIN, cookieHeader, findLink, serve, startAccounts } from './support';
 
 const configured = socialProvidersFromEnv({
@@ -153,6 +155,17 @@ for (const provider of ['google', 'github'] as const) {
             image: profile.image,
             emailVerified: true
         });
+
+        // Signing up through a provider agrees to the Terms once; signing in again keeps that.
+        const agreed = await sql<{
+            legalVersion: string;
+            legalAcceptedAt: Date;
+        }>`select "legalVersion", "legalAcceptedAt" from auth."user" where id = ${first.id}`.execute(
+            db
+        );
+        expect(agreed.rows).toEqual([
+            { legalVersion: LEGAL_VERSION, legalAcceptedAt: expect.any(Date) }
+        ]);
     });
 
     it(`${provider} keeps the name of a confirmed email account it links to`, async () => {

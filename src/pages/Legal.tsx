@@ -3,7 +3,7 @@ import { LEGAL_VERSION } from 'src/shared/legal';
 import styles from './Account.css';
 import { PRIVACY, TERMS } from './legalText';
 
-export const LEGAL_PAGES = { terms: TERMS, privacy: PRIVACY };
+const LEGAL_PAGES = { terms: TERMS, privacy: PRIVACY };
 
 /** The Terms of use or the Privacy policy, readable signed in or out. */
 export const Legal: FC<{ page: keyof typeof LEGAL_PAGES }> = ({ page }) => {

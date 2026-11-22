@@ -54,6 +54,7 @@ export const PRIVACY: LegalText = {
             heading: 'What we keep',
             paragraphs: [
                 'Your account: your name, email address, a hash of your password if you set one, and your photo when you sign in with Google or GitHub.',
+                'Your sign-ins: each session keeps the IP address and the browser it was started from, until it ends or you sign out.',
                 'Your work: the documents, images and history of your workspaces, the shared prototype links you make, and the workspaces you belong to and invitations you send.',
                 'Use of the service: when a shared prototype is opened, a random identifier the browser keeps for that prototype site, and the time. We count these each week to see whether prototypes get used. When the editor fails, it sends us the error message, the page and the app version, which we keep in the server log.'
             ]
@@ -67,7 +68,7 @@ export const PRIVACY: LegalText = {
         {
             heading: 'AI',
             paragraphs: [
-                'When you use an AI feature, what it needs from your document, such as the selected shapes, variables and records, is sent with your request to the AI provider the server is set up with (Anthropic or OpenAI). Workspace owners can turn AI off for their workspace.'
+                'When you use an AI feature, what it needs from your document, such as the selected shapes, variables and records, is sent with your request to the AI provider the server is set up with (Anthropic or OpenAI). Workspace admins can turn AI off for their workspace.'
             ]
         },
         {
