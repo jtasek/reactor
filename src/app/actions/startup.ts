@@ -86,7 +86,9 @@ function registerRoutes(effects: Context['effects'], actions: Context['actions']
         '/signin': () => effects.redirect(`/login${window.location.search}`),
         '/reset-password': () => actions.showAccount('login'),
         '/sharing': actions.showSharing,
-        '/invite': actions.showInvitation
+        '/invite': actions.showInvitation,
+        '/terms': () => actions.showLegal('terms'),
+        '/privacy': () => actions.showLegal('privacy')
     });
 }
 

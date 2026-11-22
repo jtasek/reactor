@@ -1198,3 +1198,16 @@ it goes and then disconnects everyone from the deleted documents and the person 
 The browser removes the account's local copy as signing out does and opens
 `/login?accountDeleted`. Covered by `tests/server/accountDeletion.test.ts`,
 `tests/signOut.test.ts` and `tests/browser/deleteAccount.spec.ts`.
+
+## R7 step 3: Terms and privacy
+
+_Recorded 2026-11-21._
+
+`/terms` and `/privacy` show the Terms of use and the Privacy policy, signed in or out, from
+`src/pages/legalText.ts`, in their own chunk. The sign-in form says "By continuing, you agree to
+the Terms of use and the Privacy policy" in every mode that can create an account (password,
+email link, Google and GitHub), not in password reset. Better Auth's user create hook stores
+`legalVersion` (`LEGAL_VERSION` in `src/shared/legal.ts`, the date shown on both pages) and
+`legalAcceptedAt` on each new account; a request cannot set them, and the session does not
+return them. Accounts made before this have neither. Covered by
+`tests/server/legalAgreement.test.ts` and `tests/browser/legal.spec.ts`.
