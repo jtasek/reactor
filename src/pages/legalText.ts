@@ -56,7 +56,8 @@ export const PRIVACY: LegalText = {
                 'Your account: your name, email address, a hash of your password if you set one, and your photo when you sign in with Google or GitHub.',
                 'Your sign-ins: each session keeps the IP address and the browser it was started from, until it ends or you sign out.',
                 'Your work: the documents, images and history of your workspaces, the shared prototype links you make, and the workspaces you belong to and invitations you send.',
-                'Use of the service: when a shared prototype is opened, a random identifier the browser keeps for that prototype site, and the time. We count these each week to see whether prototypes get used. When the editor fails, it sends us the error message, the page and the app version, which we keep in the server log.'
+                'Use of the service: when a shared prototype is opened, a random identifier the browser keeps for that prototype site, and the time. We count these each week to see whether prototypes get used. When the editor fails, it sends us the error message, the page and the app version, which we keep in the server log.',
+                'Feedback you send from the editor: your message, the page you sent it from and the app version, with your account, so we can answer you.'
             ]
         },
         {

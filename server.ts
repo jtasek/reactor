@@ -36,7 +36,8 @@ app.use(
         metrics,
         prototypes: accounts?.sharedPrototypes,
         firstLinks: accounts?.firstSharedLinks,
-        beta: accounts?.betaMeasures
+        beta: accounts?.betaMeasures,
+        feedback: accounts?.feedback
     })
 );
 app.use(browserErrors({ metrics, log: console }));

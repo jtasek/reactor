@@ -126,7 +126,8 @@ const digest = (value: string) => createHash('sha256').update(value).digest();
 /**
  * `GET /metrics` in the Prometheus text format, `GET /metrics/prototypes`, what each
  * shared prototype was opened by, `GET /metrics/first-links`, how long each person took
- * to share their first link, and `GET /metrics/beta`, R7's weekly measures, for whoever sends `token` as a bearer token. Without a token,
+ * to share their first link, `GET /metrics/beta`, R7's weekly measures, and `GET /metrics/feedback`,
+ * what people sent from the editor, for whoever sends `token` as a bearer token. Without a token,
  * none exists.
  */
 export function metricsRoutes({
@@ -134,7 +135,8 @@ export function metricsRoutes({
     metrics,
     prototypes,
     firstLinks,
-    beta
+    beta,
+    feedback
 }: {
     token?: string;
     metrics: Metrics;
@@ -144,6 +146,8 @@ export function metricsRoutes({
     firstLinks?: () => Promise<unknown>;
     /** R7's weekly beta measures; without accounts there are none. */
     beta?: () => Promise<unknown>;
+    /** The newest feedback; without accounts there is none. */
+    feedback?: () => Promise<unknown>;
 }): Router {
     const router = express.Router();
     if (!token) {
@@ -171,6 +175,9 @@ export function metricsRoutes({
     });
     router.get('/metrics/beta', async (_req, res) => {
         res.json(beta ? await beta() : []);
+    });
+    router.get('/metrics/feedback', async (_req, res) => {
+        res.json(feedback ? await feedback() : []);
     });
 
     return router;

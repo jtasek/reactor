@@ -18,6 +18,7 @@ import { useAiAvailable } from 'src/app/aiHooks';
 import { useAccount, useActions, useControls } from 'src/app/hooks';
 import { RULER_SIZE_PX } from 'src/app/rulers';
 import { Icon } from '../Icon';
+import { SendFeedback } from '../Feedback';
 import { DOCK_GEOMETRY_STYLE } from '../PanelLayout/geometry';
 import styles from './styles.css';
 
@@ -125,6 +126,12 @@ export const ApplicationBar: FC = () => {
                     >
                         <Icon icon={{ component: Sparkles, size: 20 }} />
                     </button>
+                </>
+            )}
+            {account.kind === 'signedIn' && (
+                <>
+                    <span className={styles.divider} aria-hidden="true" />
+                    <SendFeedback className={styles.button} />
                 </>
             )}
         </nav>

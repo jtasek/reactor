@@ -757,6 +757,9 @@ R8 and R10 start only if beta users ask for real data and for publishing.
 5. The server refuses requests and sync from an account that has not agreed to the current terms.
    Acceptance: `tests/server/legalAgreement.test.ts`. Built; see the
    [delivery log](DELIVERY_LOG.md#r7-step-5-enforce-the-terms-on-the-server).
+6. Signed-in people send feedback from the editor; the server keeps it with their account and
+   lists it behind the metrics token. Acceptance: `tests/server/feedback.test.ts`. Built; see the
+   [delivery log](DELIVERY_LOG.md#r7-step-6-send-feedback).
 
 ### R8 One HTTP source (L)
 

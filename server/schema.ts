@@ -140,6 +140,15 @@ export interface Database {
         output_tokens: Generated<number>;
         created_at: Generated<Date>;
     };
+    feedback: {
+        id: string;
+        user_id: string;
+        message: string;
+        /** The editor page's path it was sent from. */
+        page: string;
+        release: string;
+        created_at: Generated<Date>;
+    };
 }
 
 export type Db = Kysely<Database>;
