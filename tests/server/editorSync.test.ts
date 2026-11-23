@@ -6,6 +6,7 @@ import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
 import { termsAsked } from 'src/app/termsCheck';
+import { LEGAL_VERSION } from 'src/shared/legal';
 import { sql } from 'kysely';
 import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
 import {
@@ -146,6 +147,8 @@ async function device(
     class BrowserSocket extends WebSocket {
         constructor(address: string, protocols?: string | string[]) {
             super(address, protocols, { headers: { cookie, origin: ORIGIN } });
+            // As in a browser, closing a socket that is still connecting only fails it.
+            this.on('error', () => {});
         }
     }
 
@@ -227,6 +230,13 @@ describe('editor sync', () => {
 
         await vi.waitFor(() => expect(termsAsked()).toBeGreaterThan(asked));
         expect(documentIds(editor)).toEqual([documentId]);
+
+        // Once the account agrees, the editor connects again and its changes reach others.
+        await sql`update auth."user" set "legalVersion" = ${LEGAL_VERSION}`.execute(served.db);
+        const other = await device(served, cookie);
+
+        editor.store.actions.addShape(rectangle);
+        await vi.waitFor(() => expect(shapeCount(other, documentId)).toBe(1), { timeout: 10_000 });
     });
 
     it('keeps a document made after the server turned it away, for the build that reloads', async () => {
