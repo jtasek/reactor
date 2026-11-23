@@ -104,7 +104,9 @@ describe('keeping images', () => {
         expect(added).toEqual({ source: `asset:${await pngHash()}`, ratio: 2 });
         expect(await assets.url(added.source)).toMatch(/^blob:/);
         expect(await assets.url(added.source)).toBe(await assets.url(added.source));
-        expect(await assets.url('/images/avatar.jpg')).toBe('/images/avatar.jpg');
+        expect(await assets.url('https://example.com/photo.jpg')).toBe(
+            'https://example.com/photo.jpg'
+        );
         expect(await assets.url('asset:missing')).toBeUndefined();
     });
 });
