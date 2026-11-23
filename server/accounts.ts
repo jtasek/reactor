@@ -9,6 +9,7 @@ import type { Metrics } from './metrics.ts';
 import { previewConfiguration } from './preview.ts';
 import { configuresAi, providerFromEnv } from './ai.ts';
 import { createApi } from './api.ts';
+import { listFeedback } from './feedback.ts';
 import { UNUSED_ASSET_GRACE_MS, deleteUnusedAssets, postgresBlobs } from './assets.ts';
 import { authHandler, createAuth, migrateAuth } from './auth.ts';
 import { socialProvidersFromEnv } from './oauth.ts';
@@ -116,6 +117,7 @@ export async function startAccounts(
         sharedPrototypes: () => sharedPrototypes(db),
         firstSharedLinks: () => firstSharedLinks(db),
         betaMeasures: () => betaMeasures(db, { ...BETA_MEASURES, now: new Date() }),
+        feedback: () => listFeedback(db),
         close: () => {
             clearTimeout(firstCleanup);
             clearInterval(cleanups);

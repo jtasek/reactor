@@ -766,6 +766,12 @@ apart yet, so every session counts as by others for now. `/metrics` counts sessi
 `reactor_prototype_sessions_total`. The windows are `BETA_MEASURES` in
 [server/services/prototypeLinks.ts](server/services/prototypeLinks.ts).
 
+`GET /metrics/feedback` lists the newest 200 feedback messages people sent with Send feedback
+in the editor's application bar, newest first, with the sender's email address, the page path
+and the editor's document format. Only signed-in accounts that agreed to the current terms can
+send it, at most 10 an hour each (`FEEDBACK_LIMITS` in [server/feedback.ts](server/feedback.ts)),
+and deleting an account deletes its feedback. `/metrics` counts it as `reactor_feedback_total`.
+
 The editor sends errors nothing handled, up to ten per page load and each message once, to
 `POST /api/client-errors`, signed in or not. The server takes them only from its own pages,
 at most 20 a minute per address and 600 in all, and logs each as `browserError` with its

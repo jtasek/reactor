@@ -7,6 +7,7 @@ import pg from 'pg';
 import type { AiLimits } from '../../server/ai';
 import type { AiProvider } from '../../server/aiTasks';
 import { createApi } from '../../server/api';
+import { listFeedback } from '../../server/feedback';
 import { authHandler, createAuth, migrateAuth } from '../../server/auth';
 import { migrateApp } from '../../server/migrations';
 import type { Database } from '../../server/schema';
@@ -319,7 +320,8 @@ export async function startServer({
             metrics,
             prototypes: () => sharedPrototypes(accounts.db),
             firstLinks: () => firstSharedLinks(accounts.db),
-            beta: () => betaMeasures(accounts.db, { ...BETA_MEASURES, now: now?.() ?? new Date() })
+            beta: () => betaMeasures(accounts.db, { ...BETA_MEASURES, now: now?.() ?? new Date() }),
+            feedback: () => listFeedback(accounts.db)
         })
     );
     app.use(browserErrors({ metrics, log: browserLog, limits: browserErrorLimits }));

@@ -1243,3 +1243,17 @@ open one at its next session check, with `TERMS_REQUIRED` (4451, `src/shared/leg
 editor then checks the terms again and shows the dialog, as when new terms are deployed while a
 page is open. Covered by `tests/server/legalAgreement.test.ts`,
 `tests/server/editorSync.test.ts` and `tests/browser/legal.spec.ts`.
+
+## R7 step 6: Send feedback
+
+_Recorded 2026-11-23._
+
+Signed in, the editor's application bar ends with Send feedback, which opens a dialog loaded on
+first use (`src/ui/components/Feedback`). It sends `POST /api/feedback` with the message (at
+most `FEEDBACK_MAX_LENGTH`, 2,000 characters, `src/shared/feedback.ts`), the page path and the
+document format; a failed send keeps the text and says why. The server (`server/feedback.ts`)
+stores it in `feedback` (migration `0013_feedback`) with the account, which cascades on account
+deletion, behind the terms check, at most 10 per account an hour (`FEEDBACK_LIMITS`), and
+counts `reactor_feedback_total`. `GET /metrics/feedback` lists the newest 200 with the sender's
+email address. The Privacy policy says what is kept. Signed-out people have no button. Covered by
+`tests/server/feedback.test.ts` and `tests/browser/feedback.spec.ts`.

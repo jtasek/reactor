@@ -27,6 +27,7 @@ import {
 import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
 import { createInvitations } from './invitations.ts';
 import { legalAgreement, requireTerms } from './legal.ts';
+import { feedbackRoutes } from './feedback.ts';
 import {
     deleteDocumentKeepingHistory,
     listDeletedDocuments,
@@ -189,6 +190,7 @@ export function createApi({
     api.use(legalAgreement(db));
     api.use(requireTerms(db));
     api.use(prototypeLinks(db, previewOrigin, { metrics, log }));
+    api.use(feedbackRoutes(db, { metrics, now }));
     api.use(createInvitations(db));
     api.use(createMembers(db, onAccessChanged, log));
 

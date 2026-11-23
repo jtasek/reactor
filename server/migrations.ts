@@ -360,6 +360,27 @@ const migrations: Record<string, Migration> = {
                 .column('started_at')
                 .execute();
         }
+    },
+    '0013_feedback': {
+        async up(db) {
+            // What people send from the editor's Send feedback; deleted with their account.
+            await db.schema
+                .createTable('feedback')
+                .addColumn('id', 'text', (c) => c.primaryKey())
+                .addColumn('user_id', 'text', (c) =>
+                    c.notNull().references('auth.user.id').onDelete('cascade')
+                )
+                .addColumn('message', 'text', (c) => c.notNull())
+                .addColumn('page', 'text', (c) => c.notNull())
+                .addColumn('release', 'text', (c) => c.notNull())
+                .addColumn('created_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
+                .execute();
+            await db.schema
+                .createIndex('feedback_user_time')
+                .on('feedback')
+                .columns(['user_id', 'created_at'])
+                .execute();
+        }
     }
 };
 
