@@ -11,7 +11,7 @@ const LoadedMoveDocuments = lazy(() =>
 /**
  * Once signed in, offers to move this browser's signed-out documents into the
  * account; on the pages signing in returns to, the Documents page and the editor.
- * It waits for the terms check, so it never opens underneath the terms dialog.
+ * It waits for the terms check, so it never covers the terms dialog.
  * Its code shares the document history's chunk, as neither is needed to start.
  */
 export const MoveDocuments = () => {

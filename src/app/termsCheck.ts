@@ -2,9 +2,9 @@ const listeners = new Set<() => void>();
 let settled: string | null = null;
 
 /**
- * The account whose terms check is done: it has agreed to the current terms, or the
- * check could not run. Other questions for that account, such as moving signed-out
- * documents, wait for it so they never open underneath the terms dialog.
+ * The account whose terms check is done: it agreed to the current terms, or the check
+ * could not run. The offer to move signed-out documents waits for it, so it never
+ * covers the terms dialog.
  */
 export const termsSettled = () => settled;
 
