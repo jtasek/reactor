@@ -1223,6 +1223,9 @@ it. Agree sends `POST /api/legal` with the version the dialog showed; the server
 `legalVersion` and `legalAcceptedAt` only when that is still the current version, and otherwise
 answers 409 `LEGAL_VERSION_CHANGED`, so terms that changed meanwhile are not agreed to unread.
 Changing `LEGAL_VERSION` asks every account again. A signed-in start loads only the check
-(`src/pages/LegalAgreement.tsx`); the dialog loads when it is needed. The server does not refuse other requests from an account that
+(`src/pages/LegalAgreement.tsx`); the dialog loads when it is needed. Only an account that
+agreed to an earlier version is told the terms were updated. The offer to move signed-out
+documents waits until the check is done (`src/app/termsCheck.ts`), so it never opens over the
+terms dialog (`tests/browser/moveDocuments.spec.ts`). The server does not refuse other requests from an account that
 has not agreed. Covered by `tests/server/legalAgreement.test.ts` and
 `tests/browser/legal.spec.ts`.

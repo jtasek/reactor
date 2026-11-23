@@ -1,4 +1,5 @@
 import React, { FC, Suspense, lazy, useEffect, useState } from 'react';
+import { settleTerms } from 'src/app/termsCheck';
 
 const LegalAgreementDialog = lazy(() =>
     import('./LegalAgreementDialog').then((module) => ({ default: module.LegalAgreementDialog }))
@@ -20,23 +21,29 @@ export const legalRequest = (method: string, body?: object) =>
  * before they last changed, are asked once. The dialog loads only when needed.
  */
 export const LegalAgreement: FC<{ owner: string }> = ({ owner }) => {
-    const [current, setCurrent] = useState<string>();
+    const [agreement, setAgreement] = useState<Agreement>();
 
     useEffect(() => {
         void legalRequest('GET')
             .then((response) => (response.ok ? (response.json() as Promise<Agreement>) : undefined))
             .then((agreement) => {
                 if (agreement && agreement.agreed !== agreement.version) {
-                    setCurrent(agreement.version);
+                    setAgreement(agreement);
+                } else {
+                    settleTerms(owner);
                 }
             })
             // Asked again on the next start.
-            .catch(() => undefined);
+            .catch(() => settleTerms(owner));
     }, [owner]);
 
-    return current ? (
+    return agreement ? (
         <Suspense fallback={null}>
-            <LegalAgreementDialog owner={owner} current={current} />
+            <LegalAgreementDialog
+                owner={owner}
+                current={agreement.version}
+                agreedBefore={agreement.agreed !== null}
+            />
         </Suspense>
     ) : null;
 };

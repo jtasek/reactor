@@ -1,14 +1,19 @@
 import React, { FC, useState } from 'react';
+import { settleTerms } from 'src/app/termsCheck';
 import { Dialog } from 'src/ui/components/Dialog';
 import { SignOut } from './Account';
 import styles from './Account.css';
 import { legalRequest } from './LegalAgreement';
 
-/** Asks to agree to `current`, the Terms and Privacy policy version, or to sign out. */
-export const LegalAgreementDialog: FC<{ owner: string; current: string }> = ({
-    owner,
-    current
-}) => {
+/**
+ * Asks to agree to `current`, the Terms and Privacy policy version, or to sign out.
+ * Only an account that agreed to an earlier version is told they were updated.
+ */
+export const LegalAgreementDialog: FC<{
+    owner: string;
+    current: string;
+    agreedBefore: boolean;
+}> = ({ owner, current, agreedBefore }) => {
     const [version, setVersion] = useState<string | undefined>(current);
     const [busy, setBusy] = useState(false);
     const [failure, setFailure] = useState<string>();
@@ -26,6 +31,7 @@ export const LegalAgreementDialog: FC<{ owner: string; current: string }> = ({
 
             if (response.ok) {
                 setVersion(undefined);
+                settleTerms(owner);
             } else {
                 setFailure(
                     response.status === 409
@@ -43,7 +49,11 @@ export const LegalAgreementDialog: FC<{ owner: string; current: string }> = ({
     return (
         <Dialog
             title="Terms of use and Privacy policy"
-            description={`They were updated on ${version}. To keep using Reactor, read and agree to them.`}
+            description={
+                agreedBefore
+                    ? `They were updated on ${current}. To keep using Reactor, read and agree to them.`
+                    : 'To keep using Reactor, read and agree to them.'
+            }
             visible={version !== undefined}
             onClose={() => {}}
             actions={
