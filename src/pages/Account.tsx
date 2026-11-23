@@ -38,7 +38,7 @@ const MODES: Record<Mode, { title: string; submit: string; pending: string }> = 
  * Signs out, after telling the user what would be lost; the page loads again
  * signed out.
  */
-const SignOut: FC<{ owner: string }> = ({ owner }) => {
+export const SignOut: FC<{ owner: string }> = ({ owner }) => {
     const effects = useEffects();
     const reaction = useReaction();
     const [busy, setBusy] = useState(false);

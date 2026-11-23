@@ -750,6 +750,10 @@ R8 and R10 start only if beta users ask for real data and for publishing.
    them, and each new account records the version. Acceptance:
    `tests/server/legalAgreement.test.ts`. Built; see the
    [delivery log](DELIVERY_LOG.md#r7-step-3-terms-and-privacy).
+4. A signed-in account that has not agreed to the current terms version, including accounts made
+   before step 3, is asked once to agree or sign out; agreeing records the version. Acceptance:
+   `tests/server/legalAgreement.test.ts`. Built; see the
+   [delivery log](DELIVERY_LOG.md#r7-step-4-agree-to-new-terms).
 
 ### R8 One HTTP source (L)
 

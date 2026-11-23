@@ -1211,3 +1211,18 @@ email link, Google and GitHub), not in password reset. Better Auth's user create
 `legalAcceptedAt` on each new account; a request cannot set them, and the session does not
 return them. Accounts made before this have neither. Covered by
 `tests/server/legalAgreement.test.ts` and `tests/browser/legal.spec.ts`.
+
+## R7 step 4: Agree to new terms
+
+_Recorded 2026-11-23._
+
+`GET /api/legal` (`server/legal.ts`) answers the current `LEGAL_VERSION` and the version the
+signed-in account agreed to, or `null`. When they differ, the editor shows a dialog on every
+page but `/terms` and `/privacy`, linking both, with Agree and Sign out; Escape does not close
+it. Agree sends `POST /api/legal` with the version the dialog showed; the server stores
+`legalVersion` and `legalAcceptedAt` only when that is still the current version, and otherwise
+answers 409 `LEGAL_VERSION_CHANGED`, so terms that changed meanwhile are not agreed to unread.
+Changing `LEGAL_VERSION` asks every account again. A signed-in start loads only the check
+(`src/pages/LegalAgreement.tsx`); the dialog loads when it is needed. The server does not refuse other requests from an account that
+has not agreed. Covered by `tests/server/legalAgreement.test.ts` and
+`tests/browser/legal.spec.ts`.
