@@ -1226,6 +1226,18 @@ Changing `LEGAL_VERSION` asks every account again. A signed-in start loads only 
 (`src/pages/LegalAgreement.tsx`); the dialog loads when it is needed. Only an account that
 agreed to an earlier version is told the terms were updated. The offer to move signed-out
 documents waits until the check is done (`src/app/termsCheck.ts`), so it never opens over the
-terms dialog (`tests/browser/moveDocuments.spec.ts`). The server does not refuse other requests from an account that
-has not agreed. Covered by `tests/server/legalAgreement.test.ts` and
-`tests/browser/legal.spec.ts`.
+terms dialog (`tests/browser/moveDocuments.spec.ts`). Covered by
+`tests/server/legalAgreement.test.ts` and `tests/browser/legal.spec.ts`.
+
+## R7 step 5: Enforce the terms on the server
+
+_Recorded 2026-11-23._
+
+Until a signed-in account has agreed to the current `LEGAL_VERSION`, the API answers its
+requests with 403 `TERMS_REQUIRED` (`requireTerms` in `server/legal.ts`), except `/api/legal`
+itself, and sync refuses its socket with 403 (counted as `reactor_sync_refused_total`
+`reason="terms"`). Sign-in, sign-out, account deletion and opening shared prototype links are
+not API routes behind the session, so they still work. Agreeing in the dialog loads the page
+again, so what the server refused meanwhile runs at once. A socket already open when
+`LEGAL_VERSION` changes stays open until it reconnects. Covered by
+`tests/server/legalAgreement.test.ts` and `tests/browser/legal.spec.ts`.

@@ -36,7 +36,7 @@ test('every way to sign up says it agrees to the Terms and Privacy policy, which
     await expect(terms.getByRole('heading', { name: 'AI' })).toBeVisible();
 });
 
-test('an account that has not agreed to the current terms is asked once, and agreeing closes it', async ({
+test('an account that has not agreed to the current terms is asked once, and agreeing loads the page again', async ({
     page
 }) => {
     const user = { id: 'legal-ada', name: 'Ada', email: 'ada@example.com' };
@@ -68,7 +68,11 @@ test('an account that has not agreed to the current terms is asked once, and agr
     await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    // The server refused the account's other requests until now, so agreeing loads the page again.
+    const loaded = page.waitForEvent('load');
+
     await dialog.getByRole('button', { name: 'Agree' }).click();
+    await loaded;
     await expect(dialog).toHaveCount(0);
     expect(sent).toEqual({ version: LEGAL_VERSION });
 

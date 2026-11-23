@@ -26,7 +26,7 @@ import {
 } from './workspaces.ts';
 import { createAi, sendsAiRequest, type AiLimits } from './ai.ts';
 import { createInvitations } from './invitations.ts';
-import { legalAgreement } from './legal.ts';
+import { legalAgreement, requireTerms } from './legal.ts';
 import {
     deleteDocumentKeepingHistory,
     listDeletedDocuments,
@@ -186,9 +186,10 @@ export function createApi({
         return next();
     });
 
+    api.use(legalAgreement(db));
+    api.use(requireTerms(db));
     api.use(prototypeLinks(db, previewOrigin, { metrics, log }));
     api.use(createInvitations(db));
-    api.use(legalAgreement(db));
     api.use(createMembers(db, onAccessChanged, log));
 
     api.get('/workspaces', async (req, res) => {

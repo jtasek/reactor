@@ -1,5 +1,4 @@
 import React, { FC, useState } from 'react';
-import { settleTerms } from 'src/app/termsCheck';
 import { Dialog } from 'src/ui/components/Dialog';
 import { SignOut } from './Account';
 import styles from './Account.css';
@@ -14,31 +13,28 @@ export const LegalAgreementDialog: FC<{
     current: string;
     agreedBefore: boolean;
 }> = ({ owner, current, agreedBefore }) => {
-    const [version, setVersion] = useState<string | undefined>(current);
     const [busy, setBusy] = useState(false);
     const [failure, setFailure] = useState<string>();
 
     const agree = async () => {
-        if (!version) {
-            return;
-        }
-
         setBusy(true);
         setFailure(undefined);
 
         try {
-            const response = await legalRequest('POST', { version });
+            const response = await legalRequest('POST', { version: current });
 
             if (response.ok) {
-                setVersion(undefined);
-                settleTerms(owner);
-            } else {
-                setFailure(
-                    response.status === 409
-                        ? 'The terms changed since this page loaded. Reload the page to read them.'
-                        : 'Your agreement could not be saved. Try again.'
-                );
+                // The server refused this account's other requests until now, so the page loads again.
+                window.location.reload();
+
+                return;
             }
+
+            setFailure(
+                response.status === 409
+                    ? 'The terms changed since this page loaded. Reload the page to read them.'
+                    : 'Your agreement could not be saved. Try again.'
+            );
         } catch {
             setFailure('The server could not be reached. Try again.');
         }
@@ -54,7 +50,7 @@ export const LegalAgreementDialog: FC<{
                     ? `They were updated on ${current}. To keep using Reactor, read and agree to them.`
                     : 'To keep using Reactor, read and agree to them.'
             }
-            visible={version !== undefined}
+            visible
             onClose={() => {}}
             actions={
                 <>

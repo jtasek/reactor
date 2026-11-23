@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
 import { dropNewerVersions } from './documentVersions.ts';
 import { insertSnapshot, snapshotDue } from './history.ts';
+import { agreedToTerms } from './legal.ts';
 import { stampPresence, type PresenceUser } from './presence.ts';
 import { restoreContent } from './restoreContent.ts';
 import { SCHEMA_VERSION } from '../src/shared/schemaVersion.ts';
@@ -245,6 +246,13 @@ export function createSync({
             server.handleUpgrade(req, socket, head, (websocket) =>
                 websocket.close(EDITOR_OUTDATED, `${version}`)
             );
+
+            return;
+        }
+
+        if (!(await agreedToTerms(db, userId))) {
+            refused('terms');
+            refuseUpgrade(socket, 403, 'Forbidden');
 
             return;
         }
