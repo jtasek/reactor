@@ -7,6 +7,8 @@ import * as Y from 'yjs';
 import type { Auth } from './auth.ts';
 import { dropNewerVersions } from './documentVersions.ts';
 import { insertSnapshot, snapshotDue } from './history.ts';
+import { agreedToTerms } from './legal.ts';
+import { TERMS_REQUIRED } from '../src/shared/legal.ts';
 import { stampPresence, type PresenceUser } from './presence.ts';
 import { restoreContent } from './restoreContent.ts';
 import { SCHEMA_VERSION } from '../src/shared/schemaVersion.ts';
@@ -249,6 +251,15 @@ export function createSync({
             return;
         }
 
+        if (!(await agreedToTerms(db, userId))) {
+            refused('terms');
+            server.handleUpgrade(req, socket, head, (websocket) =>
+                websocket.close(TERMS_REQUIRED, 'Terms required')
+            );
+
+            return;
+        }
+
         if ((sockets.get(userId) ?? 0) >= MAX_SOCKETS_PER_USER) {
             refused('too-many');
             refuseUpgrade(socket, 429, 'Too Many Requests');
@@ -285,6 +296,11 @@ export function createSync({
 
                 if (current?.user.id !== userId) {
                     websocket.close(4401, 'Session ended');
+                    return;
+                }
+
+                if (!(await agreedToTerms(db, userId).catch(() => true))) {
+                    websocket.close(TERMS_REQUIRED, 'Terms required');
                     return;
                 }
                 try {

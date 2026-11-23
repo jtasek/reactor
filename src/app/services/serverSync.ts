@@ -6,6 +6,8 @@ import type { Document } from '../types';
 import type { Collaboration } from './collaboration';
 import { createAssetSync, type AssetSync, type AssetSyncSource } from './assetSync';
 import { SCHEMA_VERSION } from '../../shared/schemaVersion';
+import { TERMS_REQUIRED } from '../../shared/legal';
+import { askForTerms } from '../termsCheck';
 import { readPeers, type LocalPresence, type Peer } from './presence';
 import {
     MAX_UPLOAD_BYTES,
@@ -688,6 +690,11 @@ export class ServerSync {
             onClose: ({ event }) => {
                 if (event.code === MESSAGE_TOO_BIG) {
                     this.holdBackOversized();
+                }
+
+                // The terms changed while this page was open, as when a new version was deployed.
+                if (event.code === TERMS_REQUIRED) {
+                    askForTerms();
                 }
 
                 if (event.code === EDITOR_OUTDATED && !this.stopped) {
