@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import WebSocket from 'ws';
-import { LEGAL_VERSION } from '../../src/shared/legal';
+import { LEGAL_VERSION, TERMS_REQUIRED } from '../../src/shared/legal';
 import { ORIGIN, cookieHeader, findLink, serve, startAccounts } from './support';
 
 const agreement = async (db: Awaited<ReturnType<typeof startAccounts>>['db'], email: string) =>
@@ -113,17 +113,20 @@ describe('agreeing to the Terms and Privacy policy', () => {
     it('refuses every other request and sync from an account until it agrees', async () => {
         const { db, call, json, user, syncURL } = await serve();
         const { cookie, personal } = await user('ada@example.com');
+        // The code sync closes with, or open when it stays open.
         const syncs = () =>
-            new Promise<number>((resolve) => {
+            new Promise<number | 'open'>((resolve) => {
                 const socket = new WebSocket(syncURL, { headers: { origin: ORIGIN, cookie } });
 
-                socket.on('unexpected-response', (_request, response) =>
-                    resolve(response.statusCode ?? 0)
+                socket.on('close', (code) => resolve(code));
+                socket.on('open', () =>
+                    setTimeout(() => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.close();
+                            resolve('open');
+                        }
+                    }, 100)
                 );
-                socket.on('open', () => {
-                    socket.close();
-                    resolve(101);
-                });
             });
         const requests = () => [
             call('GET', '/workspaces', { cookie }),
@@ -144,7 +147,7 @@ describe('agreeing to the Terms and Privacy policy', () => {
             });
         }
 
-        expect(await syncs()).toBe(403);
+        expect(await syncs()).toBe(TERMS_REQUIRED);
         expect((await call('GET', '/legal', { cookie })).status).toBe(200);
 
         await call('POST', '/legal', { cookie, body: { version: LEGAL_VERSION } });
@@ -153,7 +156,7 @@ describe('agreeing to the Terms and Privacy policy', () => {
 
         expect(workspaces.status).toBe(200);
         expect(created.status).toBe(201);
-        expect(await syncs()).toBe(101);
+        expect(await syncs()).toBe('open');
         expect(await json(call('GET', '/workspaces', { cookie }))).toHaveLength(1);
     });
 });

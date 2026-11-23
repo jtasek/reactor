@@ -1,5 +1,5 @@
-import React, { FC, Suspense, lazy, useEffect, useState } from 'react';
-import { settleTerms } from 'src/app/termsCheck';
+import React, { FC, Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react';
+import { settleTerms, subscribeToTerms, termsAsked } from 'src/app/termsCheck';
 
 const LegalAgreementDialog = lazy(() =>
     import('./LegalAgreementDialog').then((module) => ({ default: module.LegalAgreementDialog }))
@@ -22,6 +22,7 @@ export const legalRequest = (method: string, body?: object) =>
  */
 export const LegalAgreement: FC<{ owner: string }> = ({ owner }) => {
     const [agreement, setAgreement] = useState<Agreement>();
+    const asked = useSyncExternalStore(subscribeToTerms, termsAsked);
 
     useEffect(() => {
         void legalRequest('GET')
@@ -35,7 +36,7 @@ export const LegalAgreement: FC<{ owner: string }> = ({ owner }) => {
             })
             // Asked again on the next start.
             .catch(() => settleTerms(owner));
-    }, [owner]);
+    }, [owner, asked]);
 
     return agreement ? (
         <Suspense fallback={null}>

@@ -3,11 +3,6 @@ import { sql } from 'kysely';
 import type { Db } from './schema.ts';
 import { LEGAL_VERSION } from '../src/shared/legal.ts';
 
-/**
- * The Terms and Privacy policy version the signed-in user agreed to, and agreeing
- * to the current one. Accounts made before the terms, or before they changed, have
- * an older version or none, and the editor asks them once.
- */
 const agreedVersion = async (db: Db, userId: string) =>
     (
         await sql<{ legalVersion: string | null }>`
@@ -29,6 +24,11 @@ export const requireTerms =
         res.status(403).json({ code: 'TERMS_REQUIRED', version: LEGAL_VERSION });
     };
 
+/**
+ * The Terms and Privacy policy version the signed-in user agreed to, and agreeing
+ * to the current one. Accounts made before the terms, or before they changed, have
+ * an older version or none, and the editor asks them once.
+ */
 export function legalAgreement(db: Db) {
     const router = express.Router();
 

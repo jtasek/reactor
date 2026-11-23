@@ -5,6 +5,8 @@ import type { Api } from 'src/app/services/api';
 import type { AssetServer } from 'src/app/services/assetSync';
 import { DocumentDatabase } from 'src/app/services/documentDatabase';
 import { isReadOnly } from 'src/app/documentAccess';
+import { termsAsked } from 'src/app/termsCheck';
+import { sql } from 'kysely';
 import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
 import {
     DEFAULT_DOCUMENT_SIZE,
@@ -207,6 +209,24 @@ describe('editor sync', () => {
             })
         );
         expect(isReadOnly(older.store.state, documentId)).toBe(true);
+    });
+
+    it('asks for the terms again and keeps its documents once the account must agree to new ones', async () => {
+        const served = await serve({ sessionCheck: 50 });
+        const { cookie, personal } = await served.user('ada@example.com');
+        const editor = await device(served, cookie);
+        const [documentId] = documentIds(editor);
+
+        await vi.waitFor(async () =>
+            expect(await serverDocuments(served, cookie, personal.id)).toHaveLength(1)
+        );
+
+        const asked = termsAsked();
+
+        await sql`update auth."user" set "legalVersion" = '1999-01-01'`.execute(served.db);
+
+        await vi.waitFor(() => expect(termsAsked()).toBeGreaterThan(asked));
+        expect(documentIds(editor)).toEqual([documentId]);
     });
 
     it('keeps a document made after the server turned it away, for the build that reloads', async () => {

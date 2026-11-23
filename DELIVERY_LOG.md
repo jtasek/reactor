@@ -1235,9 +1235,11 @@ _Recorded 2026-11-23._
 
 Until a signed-in account has agreed to the current `LEGAL_VERSION`, the API answers its
 requests with 403 `TERMS_REQUIRED` (`requireTerms` in `server/legal.ts`), except `/api/legal`
-itself, and sync refuses its socket with 403 (counted as `reactor_sync_refused_total`
+itself, and sync refuses its socket (counted as `reactor_sync_refused_total`
 `reason="terms"`). Sign-in, sign-out, account deletion and opening shared prototype links are
 not API routes behind the session, so they still work. Agreeing in the dialog loads the page
-again, so what the server refused meanwhile runs at once. A socket already open when
-`LEGAL_VERSION` changes stays open until it reconnects. Covered by
-`tests/server/legalAgreement.test.ts` and `tests/browser/legal.spec.ts`.
+again, so what the server refused meanwhile runs at once. Sync closes a refused socket, and an
+open one at its next session check, with `TERMS_REQUIRED` (4451, `src/shared/legal.ts`); the
+editor then checks the terms again and shows the dialog, as when new terms are deployed while a
+page is open. Covered by `tests/server/legalAgreement.test.ts`,
+`tests/server/editorSync.test.ts` and `tests/browser/legal.spec.ts`.
