@@ -82,7 +82,11 @@ export const Shell: FC = () => {
                     {legal && <Legal page={currentPage} />}
                     {currentPage === 'sharing' && <Sharing />}
                     {currentPage === 'invitation' && <Invitation />}
-                    {account.kind === 'signedIn' && !legal && <LegalAgreement owner={account.id} />}
+                </Suspense>
+            )}
+            {!loading && account.kind === 'signedIn' && !legal && (
+                <Suspense fallback={null}>
+                    <LegalAgreement owner={account.id} />
                 </Suspense>
             )}
         </>
