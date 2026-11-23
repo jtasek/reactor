@@ -62,6 +62,9 @@ test('an account that has not agreed to the current terms is asked once, and agr
     const dialog = page.getByRole('dialog', { name: 'Terms of use and Privacy policy' });
 
     await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAccessibleDescription(
+        'To keep using Reactor, read and agree to them.'
+    );
     await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Sign out' })).toBeVisible();

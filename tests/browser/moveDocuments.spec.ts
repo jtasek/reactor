@@ -3,6 +3,7 @@ import { Collaboration } from 'src/app/services/collaboration';
 import { createDocument, createShape } from 'src/app/factories';
 import { DEFAULT_DOCUMENT_SIZE } from 'src/app/services/documentSize';
 import type { Document } from 'src/app/types';
+import { LEGAL_VERSION } from 'src/shared/legal';
 
 const user = { id: 'move-documents-user', name: 'Ada', email: 'ada@example.com' };
 const image = { hash: 'cafe', type: 'image/png', bytes: [137, 80, 78, 71] };
@@ -209,4 +210,29 @@ test('keeps signed-out documents in this browser when skipped, and does not ask 
     await expect(page.getByText('Plan', { exact: true })).toHaveCount(0);
     expect(created).not.toContain('plan');
     expect(await documentIds(page, 'reactor')).toContain('plan');
+});
+
+test('asks to move documents only once the account agreed to updated terms', async ({ page }) => {
+    await signInWith(page, [drawing('plan', 'Plan')]);
+    let agreed: string | null = '2020-01-01';
+
+    await page.route('**/api/legal', async (route) => {
+        if (route.request().method() === 'POST') {
+            agreed = LEGAL_VERSION;
+            await route.fulfill({ status: 204 });
+        } else {
+            await route.fulfill({ json: { version: LEGAL_VERSION, agreed } });
+        }
+    });
+    await page.reload();
+
+    const terms = page.getByRole('dialog', { name: 'Terms of use and Privacy policy' });
+    await expect(terms).toHaveAccessibleDescription(
+        `They were updated on ${LEGAL_VERSION}. To keep using Reactor, read and agree to them.`
+    );
+    await expect(offer(page)).toHaveCount(0);
+
+    await terms.getByRole('button', { name: 'Agree' }).click();
+    await expect(terms).toHaveCount(0);
+    await expect(offer(page)).toBeVisible();
 });
