@@ -1,6 +1,6 @@
 import { editorLoaded, subscribeToEditorHelpers } from '../editorHelpers';
 import React, { FC, Suspense, lazy, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
-import { useActions, useCurrentPage, useLoading } from '../hooks';
+import { useAccount, useActions, useCurrentPage, useLoading } from '../hooks';
 import { useClipboardDriver } from 'src/events/drivers/useClipboardDriver';
 import { useKeyboardDriver } from 'src/events/drivers/useKeyboardDriver';
 import { usePreventNativePinchZoom } from './usePreventNativePinchZoom';
@@ -14,6 +14,9 @@ const Account = lazy(() =>
     import('../../pages/Account').then((module) => ({ default: module.Account }))
 );
 const Legal = lazy(() => import('../../pages/Legal').then((module) => ({ default: module.Legal })));
+const LegalAgreement = lazy(() =>
+    import('../../pages/LegalAgreement').then((module) => ({ default: module.LegalAgreement }))
+);
 const Documents = lazy(() =>
     import('../../pages/Documents').then((module) => ({ default: module.Documents }))
 );
@@ -53,6 +56,8 @@ export const Shell: FC = () => {
 
     const currentPage = useCurrentPage();
     const loading = useLoading();
+    const account = useAccount();
+    const legal = currentPage === 'terms' || currentPage === 'privacy';
 
     // The editor's code downloads while the documents load, rather than after them.
     useEffect(() => {
@@ -74,11 +79,10 @@ export const Shell: FC = () => {
                     {(currentPage === 'account' || currentPage === 'login') && (
                         <Account login={currentPage === 'login'} />
                     )}
-                    {(currentPage === 'terms' || currentPage === 'privacy') && (
-                        <Legal page={currentPage} />
-                    )}
+                    {legal && <Legal page={currentPage} />}
                     {currentPage === 'sharing' && <Sharing />}
                     {currentPage === 'invitation' && <Invitation />}
+                    {account.kind === 'signedIn' && !legal && <LegalAgreement owner={account.id} />}
                 </Suspense>
             )}
         </>
