@@ -78,6 +78,22 @@ describe('sending feedback from the editor', () => {
         expect(await listed(served)).toHaveLength(FEEDBACK_LIMITS.perAccount);
     });
 
+    it('keeps the limit when messages are sent at once', async () => {
+        const served = await serve({ metricsToken: TOKEN });
+        const { cookie } = await served.user('ada@example.com');
+        const statuses = await Promise.all(
+            Array.from(
+                { length: FEEDBACK_LIMITS.perAccount + 5 },
+                async (_, sent) => (await send(served, cookie, { message: `Note ${sent}` })).status
+            )
+        );
+
+        expect(statuses.filter((status) => status === 204)).toHaveLength(
+            FEEDBACK_LIMITS.perAccount
+        );
+        expect(statuses.filter((status) => status === 429)).toHaveLength(5);
+    });
+
     it('refuses an account that has not agreed to the current terms', async () => {
         const served = await serve();
         const { cookie } = await served.user('ada@example.com');

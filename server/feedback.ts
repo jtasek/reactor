@@ -48,28 +48,42 @@ export function feedbackRoutes(
         }
 
         const since = new Date(now().getTime() - limits.windowMs);
-        const { sent } = await db
-            .selectFrom('feedback')
-            .select((eb) => eb.fn.countAll<string>().as('sent'))
-            .where('user_id', '=', req.userId)
-            .where('created_at', '>', since)
-            .executeTakeFirstOrThrow();
+        // One account's messages are counted one at a time, so several sent at once cannot pass the limit together.
+        const kept = await db.transaction().execute(async (trx) => {
+            await sql`select pg_advisory_xact_lock(hashtextextended(${`feedback:person:${req.userId}`}, 0))`.execute(
+                trx
+            );
 
-        if (Number(sent) >= limits.perAccount) {
+            const { sent } = await trx
+                .selectFrom('feedback')
+                .select((eb) => eb.fn.countAll<string>().as('sent'))
+                .where('user_id', '=', req.userId)
+                .where('created_at', '>', since)
+                .executeTakeFirstOrThrow();
+
+            if (Number(sent) >= limits.perAccount) {
+                return false;
+            }
+
+            await trx
+                .insertInto('feedback')
+                .values({
+                    id: randomUUID(),
+                    user_id: req.userId,
+                    message: message.trim(),
+                    page: text(req.body?.page, 200),
+                    release: text(req.body?.release, 40),
+                    created_at: now()
+                })
+                .execute();
+
+            return true;
+        });
+
+        if (!kept) {
             return res.status(429).json({ code: 'TOO_MUCH_FEEDBACK' });
         }
 
-        await db
-            .insertInto('feedback')
-            .values({
-                id: randomUUID(),
-                user_id: req.userId,
-                message: message.trim(),
-                page: text(req.body?.page, 200),
-                release: text(req.body?.release, 40),
-                created_at: now()
-            })
-            .execute();
         metrics.count('reactor_feedback_total', 'Feedback messages people sent from the editor.');
 
         return res.status(204).end();

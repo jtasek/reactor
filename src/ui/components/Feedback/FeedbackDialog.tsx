@@ -4,17 +4,33 @@ import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
-const sendFeedback = (message: string) =>
-    fetch('/api/feedback', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-            message,
-            page: window.location.pathname,
-            release: `${SCHEMA_VERSION}`
-        })
-    });
+/** Sends `message`; null once it is sent, otherwise why it was not. */
+async function sendFeedback(message: string) {
+    let response: Response;
+
+    try {
+        response = await fetch('/api/feedback', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                message,
+                page: window.location.pathname,
+                release: `${SCHEMA_VERSION}`
+            })
+        });
+    } catch {
+        return 'The server could not be reached. Try again.';
+    }
+
+    if (response.ok) {
+        return null;
+    }
+
+    return response.status === 429
+        ? 'You sent a lot of feedback in the last hour. Try again later.'
+        : 'Your feedback could not be sent. Try again.';
+}
 
 /** Sends a message to the people making Reactor; what was written stays when sending fails. */
 export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -28,22 +44,15 @@ export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
         setBusy(true);
         setFailure(undefined);
 
-        try {
-            const response = await sendFeedback(message);
+        const problem = await sendFeedback(message);
 
-            if (response.ok) {
-                setSent(true);
-            } else {
-                setFailure(
-                    response.status === 429
-                        ? 'You sent a lot of feedback in the last hour. Try again later.'
-                        : 'Your feedback could not be sent. Try again.'
-                );
-            }
-        } catch {
-            setFailure('The server could not be reached. Try again.');
+        if (problem === null) {
+            setSent(true);
+
+            return;
         }
 
+        setFailure(problem);
         setBusy(false);
     };
 
