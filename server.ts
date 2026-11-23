@@ -63,7 +63,6 @@ app.use(devMiddleware);
 app.use(hotMiddleware);
 
 app.use('/icons', express.static(path.join(__dirname, 'static', 'icons')));
-app.use('/images', express.static(path.join(__dirname, 'static', 'images')));
 app.use('/fonts', express.static(path.join(__dirname, 'static', 'fonts')));
 app.use('/styles', express.static(path.join(__dirname, 'static', 'styles')));
 

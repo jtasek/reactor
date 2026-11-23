@@ -149,7 +149,6 @@ app.all('/api/*splat', (_req, res) => {
 // Static asset folders referenced by absolute URLs in the app (not content-hashed).
 const assetOptions = { maxAge: '1d', index: false, redirect: false };
 app.use('/icons', express.static(path.join(STATIC_DIR, 'icons'), assetOptions));
-app.use('/images', express.static(path.join(STATIC_DIR, 'images'), assetOptions));
 app.use('/fonts', express.static(path.join(STATIC_DIR, 'fonts'), assetOptions));
 // The hashed bundles use the design tokens these stylesheets define, so a browser checks
 // them again on every load rather than pairing new bundles with yesterday's tokens.
