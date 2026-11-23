@@ -1,11 +1,10 @@
 import React, { FC } from 'react';
-import { DocumentList, Layout, MenuBar } from 'src/ui/components';
+import { DocumentList } from 'src/ui/components';
 import { MoveDocuments } from 'src/ui/components/MoveDocuments';
 
 export const Documents: FC = () => (
-    <Layout>
-        <MenuBar />
+    <div>
         <DocumentList />
         <MoveDocuments />
-    </Layout>
+    </div>
 );

@@ -424,12 +424,6 @@ export const selectComponentChild: ActionWithParam<{
     actions.ui.showControl('inspector');
 };
 
-export const unselectComponent: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.selected = false;
-};
-
 export const lockComponent: ActionWithParam<string> = ({ state }, componentId) => {
     const component = getComponent(state, componentId);
 
@@ -440,18 +434,6 @@ export const unlockComponent: ActionWithParam<string> = ({ state }, componentId)
     const component = getComponent(state, componentId);
 
     component.locked = false;
-};
-
-export const showComponent: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.visible = true;
-};
-
-export const hideComponent: ActionWithParam<string> = ({ state }, componentId) => {
-    const component = getComponent(state, componentId);
-
-    component.visible = false;
 };
 
 export const updateComponent: ActionWithParam<

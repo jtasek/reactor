@@ -4,7 +4,7 @@ import { drawRect, openEditor, pointer } from './support/editor';
 test('the status bar’s slots follow the document, the selection, the pointer and the camera', async ({
     page
 }) => {
-    await openEditor(page, ['Menu Bar']);
+    await openEditor(page);
 
     const slot = (name: string) => page.locator(`#status-${name}`);
 

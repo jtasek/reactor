@@ -16,7 +16,7 @@ const shapeCount = (page: Page, row: number) =>
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
 async function drawShapeAndShowDocuments(page: Page) {
-    await openEditor(page, ['Menu Bar']);
+    await openEditor(page);
     await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 });
     await showDocuments(page);
 }
@@ -260,8 +260,8 @@ test('shortcuts do not change the shapes of a document that is not shown', async
 test('documents created or deleted in one tab are in the others', async ({ page }) => {
     const otherTab = await page.context().newPage();
 
-    await openEditor(page, ['Menu Bar']);
-    await openEditor(otherTab, ['Menu Bar']);
+    await openEditor(page);
+    await openEditor(otherTab);
     await showDocuments(page);
     await showDocuments(otherTab);
     await expect(rows(otherTab)).toHaveCount(1);

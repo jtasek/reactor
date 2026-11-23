@@ -7,10 +7,10 @@ import {
     createReactionHook,
     createStateHook
 } from 'overmind-react';
-import { commandsFor, commandsIn, getCommand, getCommands } from './actions';
+import { commandsFor, commandsIn, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
-import { isShapeLocked, isShapeVisible } from './utils';
+import { isShapeLocked } from './utils';
 import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
@@ -58,10 +58,6 @@ export const useDebugMode = () => {
     return useConfig().debugMode;
 };
 
-export const useCommand = (commandId: string) => {
-    return getCommand(commandId);
-};
-
 export const useCommands = () => {
     return getCommands();
 };
@@ -97,10 +93,6 @@ export const useComponentSource = (componentId: string | null) =>
     useAppState((state) =>
         componentId === null ? null : componentSource(state.currentDocument, componentId)
     );
-
-export const useEvents = () => {
-    return useAppState((state) => state.events);
-};
 
 export const useKeyboard = () => {
     return useAppState((state) => state.events.keyboard);
@@ -272,11 +264,6 @@ export const useShape = (id: string) => {
     return useAppState((state) => renderedShape(state.currentDocument, id));
 };
 
-/** Whether the shape is drawn: see `isShapeVisible`. */
-export const useShapeVisible = (id: string) => {
-    return useAppState((state) => isShapeVisible(state.currentDocument, id));
-};
-
 /** Whether the shape can be edited: see `isShapeLocked`. */
 export const useShapeLocked = (id: string) => {
     return useAppState((state) => isShapeLocked(state.currentDocument, id));
@@ -415,14 +402,6 @@ export const useShapesInSelectedGroupsIds = () => {
     });
 };
 
-export const useGroups = () => {
-    return useCurrentDocument()?.groups ?? [];
-};
-
-export const useLinks = () => {
-    return useCurrentDocument()?.links ?? [];
-};
-
 /** The one layer this screen shows, if it shows only one. */
 export const useShownLayerId = () => {
     return useAppState((state) => {
@@ -434,10 +413,6 @@ export const useShownLayerId = () => {
 
 export const useLayer = (id: string) => {
     return useCurrentDocument()?.layers[id];
-};
-
-export const useLayers = () => {
-    return useCurrentDocument()?.layers ?? [];
 };
 
 export const useLog = () => {

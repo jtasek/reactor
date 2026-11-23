@@ -16,8 +16,6 @@ import {
     Explorer,
     GroupPanel,
     LayerPanel,
-    Layout,
-    MenuBar,
     Minimap,
     Inspector,
     StatusBar,
@@ -58,12 +56,11 @@ export const Designer: FC = () => {
     }
 
     return (
-        <Layout>
+        <div>
             <CommandAvailability />
             <ApplicationBar />
             <CommandBar />
             <CommandLine />
-            <MenuBar />
             <Canvas />
             <ContextMenu />
             <PanelLayout toolbar={<ToolBar />}>
@@ -125,6 +122,6 @@ export const Designer: FC = () => {
             <MoveDocuments />
             <DocumentSize />
             <FirstRun />
-        </Layout>
+        </div>
     );
 };

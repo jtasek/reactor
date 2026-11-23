@@ -59,11 +59,6 @@ export const state: UI = {
         name: 'Layer Panel',
         visible: false
     },
-    menuBar: {
-        id: 'menuBar',
-        name: 'Menu Bar',
-        visible: false
-    },
     miniMap: {
         id: 'miniMap',
         name: 'Minimap',

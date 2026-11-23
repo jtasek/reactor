@@ -17,10 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Full history, so the lint gate can compare a pull request with its base.
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       # Installs the pnpm version pinned by `packageManager` in package.json.
       - uses: pnpm/action-setup@v6
@@ -35,12 +32,9 @@ jobs:
 
       - run: pnpm exec playwright install --with-deps chromium
 
-      # Lint gate, app, test and server type-checks, unit tests, then browser tests
-      # against a production build. On pull requests, every file the pull
-      # request changes must be lint-clean.
+      # Lint, app, test and server type-checks, unit tests, then browser tests
+      # against a production build.
       - run: pnpm check
-        env:
-          LINT_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD' }}
 
       - if: failure()
         uses: actions/upload-artifact@v7

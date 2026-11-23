@@ -31,12 +31,6 @@ export const addGuide: ActionWithParam<Partial<Guide>> = ({ state }, options) =>
     setGuide(state, guide);
 };
 
-export const cloneGuide: ActionWithParam<string> = ({ state, effects }, guideId) => {
-    const guide = getGuide(state, guideId);
-
-    setGuide(state, { ...guide, id: effects.newId() });
-};
-
 export const removeGuide: ActionWithParam<string> = ({ state }, guideId) => {
     const guide = state.currentDocument.guides[guideId];
     if (!guide || guide.locked || state.currentDocument.locked) {
@@ -77,28 +71,10 @@ export const removeSelectedGuides: Action = ({ state, actions }) => {
     });
 };
 
-export const unselectGuide: ActionWithParam<string> = ({ state }, guideId) => {
-    const guide = getGuide(state, guideId);
-
-    guide.selected = false;
-};
-
 export const lockGuide: ActionWithParam<string> = ({ state }, guideId) => {
     const guide = getGuide(state, guideId);
 
     guide.locked = true;
-};
-
-export const unlockGuide: ActionWithParam<string> = ({ state }, guideId) => {
-    const guide = getGuide(state, guideId);
-
-    guide.locked = false;
-};
-
-export const showGuide: ActionWithParam<string> = ({ state }, guideId) => {
-    const guide = getGuide(state, guideId);
-
-    guide.visible = true;
 };
 
 export const hideGuide: ActionWithParam<string> = ({ state }, guideId) => {

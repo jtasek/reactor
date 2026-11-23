@@ -30,10 +30,6 @@ export function assertNever(value: never): never {
     throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
 }
 
-export function getRandomNumber(max: number): number {
-    return Math.floor(Math.random() * max);
-}
-
 export function debounce<A extends unknown[]>(
     fn: (...args: A) => void,
     delay: number
