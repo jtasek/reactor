@@ -1,6 +1,5 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
-    label: string;
     message: string;
   }
 }

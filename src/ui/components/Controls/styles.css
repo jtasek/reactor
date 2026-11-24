@@ -83,6 +83,34 @@
     width: 100%;
 }
 
+.multiline {
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+}
+
+.select {
+    display: grid;
+    min-width: 0;
+}
+
+.select > * {
+    grid-area: 1 / 1;
+}
+
+.select select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 2rem;
+}
+
+.select svg {
+    align-self: center;
+    color: var(--text-secondary-color);
+    justify-self: end;
+    margin-right: 0.75rem;
+    pointer-events: none;
+}
+
 .input:focus {
     background: var(--control-background-active);
     border-color: var(--action-border);

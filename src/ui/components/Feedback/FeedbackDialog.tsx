@@ -1,6 +1,7 @@
-import React, { FC, useId, useState } from 'react';
+import React, { FC, useState } from 'react';
 import { FEEDBACK_MAX_LENGTH } from 'src/shared/feedback';
 import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
+import { TextArea } from '../Controls';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
@@ -38,7 +39,6 @@ export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
     const [busy, setBusy] = useState(false);
     const [sent, setSent] = useState(false);
     const [failure, setFailure] = useState<string>();
-    const fieldId = useId();
 
     const send = async () => {
         setBusy(true);
@@ -89,12 +89,9 @@ export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
                 </>
             }
         >
-            <label className={styles.label} htmlFor={fieldId}>
-                Your feedback
-            </label>
-            <textarea
-                id={fieldId}
+            <TextArea
                 className={styles.message}
+                label="Your feedback"
                 rows={6}
                 maxLength={FEEDBACK_MAX_LENGTH}
                 value={message}

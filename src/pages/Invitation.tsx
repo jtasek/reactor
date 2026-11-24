@@ -8,6 +8,7 @@ import {
     type InvitationPreview
 } from 'src/app/services/invitations';
 import { SignInForm } from './Account';
+import { Button } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const Invitation: FC = () => {
@@ -112,13 +113,13 @@ const InvitationDetails: FC<{ token?: string }> = ({ token }) => {
                                         If you already belong to this workspace, your existing
                                         access stays unchanged.
                                     </p>
-                                    <button type="button" disabled={busy} onClick={accept}>
+                                    <Button kind="primary" disabled={busy} onClick={accept}>
                                         {busy
                                             ? 'Joining…'
                                             : preview.accepted
                                               ? 'Open workspace documents'
                                               : 'Accept invitation'}
-                                    </button>
+                                    </Button>
                                 </>
                             ) : (
                                 !problem && <p role="status">Checking invitation…</p>
@@ -131,9 +132,7 @@ const InvitationDetails: FC<{ token?: string }> = ({ token }) => {
                         <div role="alert">
                             <p>{problem}</p>
                             {!preview && (
-                                <button type="button" onClick={() => setAttempt(attempt + 1)}>
-                                    Try again
-                                </button>
+                                <Button onClick={() => setAttempt(attempt + 1)}>Try again</Button>
                             )}
                         </div>
                     )}
