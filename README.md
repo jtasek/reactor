@@ -1,8 +1,9 @@
 # reactor
 
-A browser-based editor for prototypes, diagrams and mockups: draw shapes, links,
-layers, groups and guides on a canvas, and keep documents in the browser or, signed
-in, on a server that syncs them between devices and people.
+A browser-based editor for designing and prototyping apps: draw pages and reusable
+components, give them variables, data and interactions, play them as a prototype and share
+it, with AI to make and change designs from words. Documents are kept in the browser or,
+signed in, on a server that syncs them between devices and people.
 
 ## Requirements
 
@@ -21,805 +22,112 @@ pnpm start
 ```
 
 Then open http://localhost:4000. Without a database, the editor runs signed out and
-keeps documents in the browser.
+keeps documents in the browser. While the server offers no AI (none configured, or signed
+out), the development build's AI chat answers from a local test model in the browser
+(`src/ai/localModel.ts`); any build does the same with `?ai=local`, until `?ai=server`.
+
+To try Prototype, sharing and Download locally, run `pnpm start:local` instead: it builds the
+preview runtime and starts the editor on http://localhost:4000 and the runtime on port 4001
+(`PORT` and `PREVIEW_PORT` change them). Open `localhost`, not `127.0.0.1`.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `pnpm start` | Development server with hot reload on port 4000 |
-| `pnpm build` | Production build into `dist/` |
+| `pnpm start:local` | Development server plus the preview runtime on loopback origins |
+| `pnpm build` | Production build of the editor (`dist/`) and the preview runtime (`dist-preview/`) |
 | `pnpm serve` | Production server for `dist/` (run `pnpm build` first) |
-| `pnpm check` | Lint gate, type checks, unit tests and browser tests |
-| `pnpm test` | Unit and store tests; `pnpm test:watch` reruns them on change |
+| `pnpm serve:preview` | Preview runtime server for `dist-preview/` |
+| `pnpm check` | What CI runs: lint (scripts and CSS), type checks, unit tests and browser tests |
+| `pnpm test` | Unit, store and server tests; `pnpm test:watch` reruns them on change |
 | `pnpm test:browser` | Browser tests (Chromium) against a production build |
 | `pnpm typecheck` | Type checks for the app, the tests and the server |
-| `pnpm lint` | Full lint report; `pnpm lint:fix` applies automatic fixes |
+| `pnpm lint` | Lint report, failing on any finding; `pnpm lint:fix` applies automatic fixes |
+| `pnpm ai:eval`, `pnpm ai:record` | Live AI evaluation of the edit cases; `ai:record` also replaces the recordings |
+| `pnpm ai:screenshots:prepare`, `pnpm ai:screenshots:eval` | Screenshot-to-design references, and the live run against them |
 
-`docker compose up --build` runs the production server in a container with
-PostgreSQL; see Accounts below.
+## Configuration
 
-## Server settings
+The servers read their settings from the environment.
 
 | Variable | Meaning |
 |---|---|
 | `PORT` | Port to listen on; 4000 by default |
 | `HOST` | Address to listen on; `localhost` for the development server, `0.0.0.0` for the production server |
-| `LOG_LEVEL` | Production server log level; `info` by default |
+| `LOG_LEVEL` | Production server log level: `fatal`, `error`, `warn`, `info` (default), `debug`, `trace` or `silent` |
 | `TRUST_PROXY` | Reverse proxies whose `X-Forwarded-*` headers the production server trusts: a hop count such as `1`, `true`, or addresses and subnets such as `loopback, 10.0.0.0/8`; none by default. Set it behind a proxy, since sign-in is rate limited per client address |
-| `METRICS_TOKEN` | Turns on `/metrics` and its `/metrics/…` lists for requests sending it as `Authorization: Bearer <token>`; off by default |
+| `DATABASE_URL` | PostgreSQL connection string; turns accounts, syncing and sharing on |
+| `BETTER_AUTH_URL` | The address people open the editor at, such as `https://reactor.example.com` |
+| `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional; both turn on Google sign-in |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Optional; both turn on GitHub sign-in |
+| `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production with `DATABASE_URL`, the development server logs email without it |
+| `MAIL_FROM` | Sender address; `no-reply` at the editor's host by default |
+| `AI_PROVIDER` | Turns AI on for signed-in people: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |
+| `AI_API_KEY` | The provider's key, kept on the server; required for `anthropic` (`ANTHROPIC_API_KEY` still works without `AI_PROVIDER`) |
+| `AI_BASE_URL` | Where the `openai` provider's API is; `https://api.openai.com/v1` by default |
+| `AI_EDIT_MODEL` | The model for edits; `claude-haiku-5-5` by default for `anthropic`, required for `openai` |
+| `PREVIEW_ORIGIN`, `EDITOR_ORIGIN` | The preview runtime's and the editor's origins, the same on both servers (`EDITOR_ORIGIN` falls back to `BETTER_AUTH_URL`); without `PREVIEW_ORIGIN`, Prototype, shared links and Download are off |
+| `PREVIEW_ALLOW_LOCALHOST` | `true` allows loopback origins for the preview runtime (local testing only) |
+| `METRICS_TOKEN` | Turns on `/metrics` and its lists for requests sending it as `Authorization: Bearer <token>`; off by default |
 
-The production server stops at start with a clear message when `PORT` or
-`TRUST_PROXY` is invalid; `LOG_LEVEL` must be one of `fatal`, `error`, `warn`,
-`info`, `debug`, `trace` or `silent`. Account settings are listed under Accounts.
+The server stops at start with a clear message when a setting is invalid, such as `PORT`,
+`TRUST_PROXY`, the preview origins, or only one of a provider's credential pair.
 
-## Using the editor
+## Running it
 
-Tools draw on the canvas; the control panel (top right) shows or hides the tool
-bar, side bar, panels and other parts of the editor.
+`docker compose up --build` runs the production server with PostgreSQL: set
+`POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` and `SMTP_URL` first. The server creates and
+migrates its tables on start.
 
-| Key | Action |
-|---|---|
-| `s` | Select tool: click a shape, or drag to select shapes a box touches |
-| `r`, `c`, `e`, `l`, `p`, `t`, `i` | Rectangle, circle, ellipse, line, pen, text and image tools |
-| Delete or Backspace | Delete the selection |
-| Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z | Undo and redo your own changes, a drag or a paste as one step; other people's stay as they are |
-| Ctrl/Cmd+D | Clone the selection; the clones become the selection |
-| Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V | Copy, cut and paste the selection, also between documents and tabs. A paste is centered where you last pressed on the canvas, or in the middle of the view when that place is out of sight |
-| Ctrl/Cmd+G, Ctrl/Cmd+Shift+G | Group and ungroup the selection. A group is selected, moved, turned and scaled as one; click a shape in a selected group, or double-click it, to select that shape alone |
-| Ctrl/Cmd+Alt+G | Remove the shapes selected inside a group from it |
-| Ctrl/Cmd+Alt+L, Ctrl/Cmd+Alt+Shift+L | Move the selection to a new layer, take it off its layer |
-| `h` | Highlight the selected shapes' layer: show only it, or every layer again |
-| `]`, `[` | Bring the selection to the front, send it to the back |
-| Ctrl while dragging, Cmd on a Mac | Move without snapping to other shapes' edges and centers |
-| Shift+A, Shift+C, Shift+D | Align the selection's left edges, centers or right edges |
-| Shift+W, Shift+M, Shift+S | Align the selection's top edges, middles or bottom edges |
-| Shift+X, Shift+Y | Space the selection with equal gaps, horizontally or vertically; Space equally (equal distances between centers) is in the Inspector, with all the others |
-| Shift+H, Alt+Shift+H | Hide the selection; show every hidden shape, group and layer |
-| `k`, Shift+K | Lock and unlock the selection |
-| `+` or `=`, `-`, `0` | Zoom in, zoom out, reset zoom |
-| Ctrl/Cmd+K | Open the Command Line |
-
-The Explorer has two views. **Objects** shows actual containment: Canvas holds top-level
-frames and loose artwork, and frames contain their child frames, groups and shapes.
-Pages are listed under **Pages**. Draw with **Frame** (`f`), then select **Page** in
-Inspector’s **Type** field; only a frame on Canvas can be a page. Names, geometry and artwork
-stay in place; many pages and ordinary frames can coexist on the same canvas. The words the
-editor uses are listed in the [glossary](APPLICATION_PLAN.md#glossary).
-Component definitions stay under Components, separate from scene objects.
-To create a manual component variant, select a source under **Components** and choose
-**Inspector → Variants → Create variant**. Its artwork is copied into an independently
-editable source, retaining exposed property IDs, bindings and roles. Rename and edit the
-new source, then use **Variants of …** to return to the family. Creation is one undo step.
-You can also link a separately authored compatible source with **Link existing variant…**.
-Select an instance to
-choose either source in **Inspector → Component properties → Variant**. Both sources remain
-editable as components. Linking requires matching exposed property IDs, usable fields and role/action settings;
-create the family before exposing properties if the sources were authored separately.
-Matching source shape names let later exposed properties share an ID across the family.
-Inspector names incompatible or missing shared properties on the family, alternate and selected
-instance. These warnings do not change your selections, overrides or actions. When an alternate
-loses a shared property, its instance override remains available when switching back to the
-default. Property remapping is not yet available; choose a compatible source or create a fresh
-variant from the family. Role/action differences are reported because family instances keep the
-family’s semantics unless explicitly overridden.
-If an alternate is unavailable, the instance keeps its choice and draws the default; its selector
-shows **Unavailable variant — showing default** until you explicitly choose another source.
-Use the remove button next to an alternate under **Variants** to unlink it; instances that chose it
-go back to the default. Deleting an alternate component unlinks it too.
-
-**Layers** lists each global layer once, across all screens. Use its **New layer** button
-to create one. Drag a shape or group onto a layer to move it there, or onto **No layer**
-to remove its layer membership without changing its parent frame. A group is on one
-layer with all its shapes. A layer's name selects it; its **Highlight layer** action shows
-only that layer and unlayered artwork. **Show all layers**, available in either view,
-restores the full view. Layer Hide/Lock applies to its members across screens.
-
-Search filters the current view; matching objects retain their frame or layer ancestry,
-and matching frames include their whole subtree. Disclosure arrows collapse containers.
-Switching views preserves selection and each view's collapse state while Explorer stays open.
-
-The image tool asks for a PNG, JPEG, GIF or WebP file of 5 MB or less, then draws it
-at its own proportions where you drag.
-
-Create component, in the selection's menu and the context menu, turns the selected
-shapes into a component and puts an instance of it in their place. Editing the
-component's source changes every instance; an instance can override the props its
-source exposes, reset them, or be detached into plain shapes. The Library control
-copies another document's component here and lists the copies, to place or inspect;
-a copy shows when its source has changed and is updated on request.
-
-Select an instance inside a Screen view and choose **Select component source** to edit its
-children in place, including through rotated instances and instances positioned by a stack.
-The instance keeps its placement while you edit; the stack reflows when you leave. Use
-**Back to canvas** or Escape to restore your original view and selection. Edits update every instance.
-
-Shortcuts do nothing while a text field has focus. Enable **Command Line** in the Control Panel
-to search commands by name or description. Arrow keys select suggestions; Enter chooses one,
-then Enter or the named action button executes it. Creation and selection-edit suggestions expose editable parameters. A command
-such as `Rectangle tool` activates drawing; `rectangle w=160 h=48` creates a shape immediately.
-
-Command Line selection edits use `width=240 height=48` (or `w=240 h=48`),
-`radius=12` (or `r=12`), and `move x=16 y=-8` for relative movement.
-Radius rounds rectangles or changes a circle’s radius. Width and height follow
-the Inspector’s editable sizing rules; an image keeps its proportions, so set its
-width or its height, not both. Stack-managed positions cannot be moved, and a move
-needs a non-zero offset.
-Each command edits the complete selection as one undo step, or reports a problem
-without changing anything. Screen view edits change shared source artwork.
-
-With a frame or Screen view selected, `w=390 h=844` resizes it and
-`move x=24 y=-8` moves it. A frame moves with its contents; a Screen view moves
-independently. `gap=16 padding=24` edits an existing Row or Column stack, keeping
-its direction and alignment. For a Screen view, these stack inputs belong to the
-active shared layout and affect every view using that layout. Resize a view first,
-then edit its stack in a separate command, since its width may select another layout.
-Hug/fill dimensions and stack-managed positions remain controlled by layout.
-Explicit numeric edits detach only the edited inputs from their variables.
-
-The Command Line opens as a searchable command palette. Exact matches rank first;
-the target stays visible above the results or parameter editor. Choose Resize selection,
-Move selection, Set radius or Edit stack spacing to edit without remembering syntax.
-The guided Bind variable picker searches compatible variables by name or ID and shows values
-resolved for the current Screen view, including inherited and responsive modes. Selecting a
-variable only updates the draft. Its mode and source appear beneath the results; selections
-with different effective values show “Mixed values”. Apply remains a single undo step.
-
-Choose Edit colors or Edit text for literal values, or Bind variable / Remove variable binding
-for a property and a compatible variable. Typed examples: `fill=#3366ff stroke=#112233`,
-`text="Continue" fs=18 fc=#ffffff`, `bind property=fill variable="brand/primary"`,
-`unbind property=fill`. Variable references accept a unique exact name or an ID. Bindings
-keep mode inheritance; removing one keeps its stored base value. Text follows the Inspector's
-template rules: `text="Hi ${Person}"` follows the variable; `\${` in the Text field stays
-literal. Edit colors appears for shapes with a fill or stroke; text color is in Edit text.
-Literal edits detach only affected bindings. Each command applies to the
-entire editable selection as one undo step, or changes nothing if a target is incompatible.
-While typing, the palette suggests property names and compatible variable references at the
-end of the command. Tab inserts the highlighted suggestion; arrow keys followed by Enter
-also insert it. Completion never applies an edit. Enter otherwise keeps its existing apply
-behavior. Escape dismisses suggestions without clearing the command. Variable suggestions
-insert stable IDs and preserve preceding arguments, including quoted text.
-Typed and guided selection edits show a live, read-only summary before Apply: affected
-objects, stored before/after values, binding changes and validation errors. Typing validation
-waits 120 ms; selection and value changes refresh the summary. Nothing is applied until Apply
-(or Enter), which revalidates the current selection and creates one undo step. The existing
-selection-change confirmation still applies. Summaries show up to eight affected objects.
-Blank selection fields stay unchanged. Typed aliases and guided fields use the same
-validated commands. Escape returns from parameters to search, then closes the palette;
-Choosing a guided action focuses its first field; Tab moves between fields. Results use action icons
-and show existing canvas shortcuts beside commands and tools. Arrow keys move from the highlighted
-result. Successful edits keep it open, while activating a drawing tool
-closes it. Ask AI opens an unsent draft in the existing chat and closes the palette only
-when the handoff succeeds; existing drafts and proposals are preserved. The palette loads
-on demand when enabled from More panels → Command Line, or with Ctrl/Cmd+K. If the
-selection changes while a typed edit waits, the first Enter only confirms the new target;
-press it again to apply. Edit stack spacing is unavailable until the frame (or a view's
-active layout) has a Row or Column stack.
-
-The empty palette shows up to five recent successful commands for the current document,
-above the suggested actions. Choose one to review or adjust its parameters, or use
-**Repeat last command** to run it on the current selection; the palette shows which command
-it runs, and why when it can't. Repeats use the normal validation and undo path. History stays
-in this tab session, survives closing the palette, and clears on reload; it is never part
-of the document or shared with collaborators. **Clear recent commands** clears this document’s
-list. Failed commands, Undo/Redo and AI chat drafts are not recorded.
-
-Examples:
-
-- `rectangle w=160 h=48 fill=#3366ff`
-- `circle r=24 x=100 y=100`
-- `text text="Hello world" fs=24`
-
-Aliases are `w` → `width`, `h` → `height`, `r` → `radius`, `fs` / `font-size` → `fontSize`,
-and `text` → `value`. Property names ignore case. Supplying an alias and its full name together
-is an error. New shapes are centered inside the selected frame or Screen view, or in the visible canvas
-when no container is selected. A view wider or taller than its Screen centers inside the Screen, so
-the shape stays visible everywhere the Screen is shown. With a container selected, `x` and `y` are relative to its top-left;
-a Screen view edits its active shared layout, including automatic width selection. Stack layout
-controls child placement where applicable. Locked or unavailable targets refuse creation.
-Without a selected container, coordinates are canvas coordinates. Rectangle coordinates specify
-its top-left, circle coordinates its center, and text coordinates its text origin. Creation uses the normal validation and undo flow.
-
-When AI is available, **Ask AI** opens the existing chat with an unsent draft. Existing chat drafts
-and pending proposals are preserved. Text is only sent to the model when you send it from chat.
-
-Input:
-
-- Mouse and pen draw, select, move, resize and rotate shapes; a drag commits on
-  release, and is undone if it is interrupted, as by the context menu or leaving
-  the window.
-- The scroll wheel pans the canvas; a trackpad pinch (or Ctrl and the wheel) zooms
-  at the pointer.
-- On a touchscreen, one finger acts as the mouse and two fingers pinch to zoom.
-  Touch input is tested with simulated touches; it has not yet been checked on a
-  physical touch device.
-- The editor's buttons, lists and panels can be used from the keyboard; drawing
-  on the canvas needs a pointer.
-
-### Frames
-
-Choose **Frame** in the tool bar, or press **F**, then drag a frame on the canvas. Select it
-by its boundary or name, or from Explorer. Drag the boundary to move it; use its corner
-handles to resize it. Inspector edits its name, X/Y, width and height; press Enter or leave
-the field to commit. Arrow keys nudge a selected frame. Copy, Cut, Paste, Clone, Delete and
-Undo/Redo work with frames, including across documents.
-
-Use Inspector’s **Parent** control to attach selected shapes or a frame to another frame;
-choose **Canvas** to release them. Explorer nests frames with their shapes and groups;
-collapse a frame to hide its tree contents. Searching for artwork reveals its frame ancestors,
-and searching for a frame shows its complete subtree. Membership is explicit:
-drawing inside a boundary does not attach an object, and reparenting preserves its canvas
-position. Reparenting a grouped shape moves the whole group into the same frame.
-
-Moving a frame carries its nested frames and artwork. Resizing changes only the boundary;
-it does not scale or lay out its contents. A locked descendant or a group split across frames blocks moving the frame; Inspector explains why.
-**Delete** removes only the boundary and releases its children in place; **Cut** and **Clone**
-include the subtree. Copy/paste retains groups, variables and component dependencies.
-Frames and their memberships are saved and shared; selection stays local. Concurrent parent
-cycles appear as roots with an Inspector diagnostic and can be repaired through Parent.
-
-Hide a frame in Explorer to hide its nested frames and artwork everywhere, including previews.
-Locking a frame prevents edits to its descendants, including reparenting; their individual
-Hide/Lock flags stay intact. Inspector explains inherited restrictions. Show or unlock the
-parent in Explorer to recover; **Show all** also reveals hidden frames, except inside a
-locked frame. Hiding a frame unselects the shapes in it. A remote Hide or Lock
-cancels a descendant drag on its next pointer event without losing that remote change.
-In the selected frame's Inspector, choose **Layout → Row** or **Column** for a
-stack, or **Free** for manual placement. Set **Gap**, uniform **Padding** and cross-axis
-**Alignment** (Start, Center or End). Children start with fixed sizes; groups occupy one slot,
-hidden items occupy none, and overflow remains visible with a warning. **Stack order** in a
-child's Parent section controls its slot independently of drawing order.
-
-Resize frames and stack rectangles/images in Inspector; images keep their aspect ratio.
-Text uses its font controls and instances their source dimensions. Canvas transforms that
-would conflict with stack placement are unavailable; choose another parent for free editing.
-Choosing Free, detaching a child or deleting its boundary preserves visible positions.
-The **Sizing** section offers independent Width/Height modes on frames and individual,
-unrotated stack rectangles: **Fixed**, **Hug contents** or **Fill available**, plus optional
-**Min/Max width/height** (blank means no constraint). A leaf rectangle hugs its authored size;
-a frame hugs its shown children plus gaps and padding. Fill shares remaining main-axis space
-equally, redistributing space at minimums/maximums; on the cross axis it fills the inner size.
-Minimums take precedence over maximums and may overflow. Unsupported combinations and
-conflicting constraints show diagnostics. A hug/fill sizing cycle uses authored fallback
-sizes for the cyclic axes; select Fixed on one participating axis to break it. Layout sizes
-are local projections, never shared writes. Switching an axis to Fixed keeps its visible size.
-Images retain intrinsic aspect ratio, while text, groups and instances keep their existing
-sizes; new sizing rules on these or rotated rectangles are not exposed. Drag-to-reorder,
-clipping and interactive screen behavior remain later increments.
-
-### Separate designs
-
-Select a page at a size (for example **Home · Mobile**), then use **Inspector → Design → Shows**
-to choose its design. The page's own artwork is its **Main design**. Enter a **Separate design**
-name and choose **Create separate design** to start a separate tree as a copy of the design
-shown, then edit it there; edits don't reach the other designs.
-**Edit design settings** opens the design's name, stack and padding controls; its size follows the page at that size.
-Sizes showing the same design share its artwork; other designs stay separate. Place reusable
-component instances in each tree to share component definitions while keeping instance values.
-
-All designs belong to one page and retain its navigation destination. Preview starts with
-its launch size's selected design and viewport. Choose **Auto · Width** on a size and add
-rules under **Automatic design**. Each rule names a design and its minimum width in pixels.
-The greatest minimum at or below the page's width wins; below all rules, the main design is used.
-Rules can also select the main design explicitly. Existing sizes keep their manual choices.
-Duplicate thresholds resolve by layout ID and show an unreachable-rule diagnostic.
-
-Preview's **Width** changes the viewport for every navigation destination. Its **Layout**
-picker inspects Auto, Default or an alternate for the current screen, without saving a choice
-to the document. Explicit inspection choices persist across width changes and navigation,
-and are discarded when Preview closes. Width-selected modes follow the inspection width,
-while explicit and manual mode choices remain fixed. Other destinations retain their height constraints.
-Mode authoring and instance values stay intact.
-
-To keep typed input across layouts, select corresponding Input instances and give them the
-same **Role → Input identity**. They must use the same component family and exposed Value
-property ID (text). Labels never establish identity. The identity must be unique within the
-active layout; duplicates warn and do not share values. Inputs without matching identities,
-with different value properties/components, or absent from the newly selected layout reset
-to their authored value. Restart preview clears all typed values. Button actions come from the
-active instance/source configuration and keep their logical screen destinations.
-A missing layout falls back to Default with a diagnostic. Deleting a layout boundary releases
-its artwork to Canvas and retains the screen and its views. Undo restores it.
-
-### Component roles
-
-Select a component source or one instance and use **Inspector → Role** to choose Text, Input,
-Button, List or Image. Roles are explicit; existing artwork gets none automatically. Expose
-source properties first (select a source shape and use its property exposure controls), then
-link each role field to a compatible exposed property. Values continue to come from those
-properties, including text templates, variables and instance overrides. Diagnostics identify
-missing required fields or broken links without discarding the settings.
-
-An instance starts **From source**. Editing its role settings creates a custom configuration;
-**None** removes its role, and **From source** restores inheritance while keeping its visual
-property overrides. Imported library sources stay read-only; their instances may customize
-roles locally. These settings are saved, copied, shared and undoable. List currently declares
-its label; item data and repetition come later.
-
-### Component interactions
-
-Select a component source or instance and open **Inspector → Interactions**. **Activate** can
-navigate to a logical screen or do nothing. An instance can also choose **From source** to follow
-the component's action independently of its role and visual values. Screen names update in the
-picker after a rename; deleted, hidden or nested destinations remain saved as unavailable until
-you choose another destination or remove the action. Library imports omit document-local targets.
-
-Use **Preview** to run the action: click or activate a focused button with the keyboard; inputs
-activate on Enter. Canvas clicks always select and edit. Existing Button navigation keeps working,
-and changing a role no longer removes its action. Legacy custom instance roles retain their old
-action (including no action); choose **From source** in Interactions to opt into independent
-action inheritance. Responsive variants use the family action, while each screen layout keeps
-its authored instances. Open **Flow** from the application bar or the `Open flow` command to connect screens in a
-separate workspace. Each screen definition appears once, including its controls across authored
-layouts and variants. Selecting a control reveals its action editor and **Connect to** buttons;
-**Visibility and state…** reveals the remaining settings. Use **On activation** to remove
-an action or restore **From source** inheritance. Shared source controls are labeled because
-editing them affects every use. Choose a starting screen to check reachability; unavailable
-navigation targets remain visible for repair. Arrange the diagram by dragging screen headings
-or using their arrow keys. These device-local positions do not change canvas geometry. Flow
-edits actions; only explicitly opened Preview executes them.
-
-## Saving
-
-Documents are saved in the `reactor` IndexedDB database: an index of documents, and
-each document's changes as Yjs updates of their own, merged into one once 100 add
-up. Only durable content is saved; derived indexes and selections are rebuilt on
-load. Open tabs share their changes and the documents they create and delete
-through a BroadcastChannel; a tab shown again after missing messages catches up
-from the others and from the database. The document shown and each document's
-camera are saved per device under `reactor:view`. Cloned documents have independent
-content but preserve internal IDs, which are scoped to each document.
-
-The first start with this storage moves the version 4 `reactor` localStorage
-payload into the database, backed up first under `reactor:backup:*`; the payload
-itself is left as it was. Snapshots from versions 1-3 are validated and migrated
-first. Loading repairs content: missing, invalid or tied draw orders get new ones,
-references to missing shapes or components are dropped as deleting them would, and
-a member listed twice is kept once. Repeated loads reuse identical backups.
-Unsupported or malformed data remains untouched, shows a notification, and nothing
-is saved that session. A document that fails to load is kept as it was saved, with
-a notice, and the others load; if the database cannot be listed at all, nothing is
-written over it that session, and the status bar says so. When a tab on an older version saves to local storage
-after the move, the next start says so once; that save is kept but not shown.
-
-Saving is **on by default** (`config.autoSave`); with it off, documents still load
-but none are written. Runtime-only changes, such as selection, hover and measured
-bounds, are never saved. The status bar shows whether changes are saved, being
-saved, syncing, offline or not saved; when saving stops, a notice says why, and it goes away once
-saving works again. After a write fails, a document is saved whole on its next
-change.
-
-## Accounts
-
-Accounts are optional: without `DATABASE_URL`, the editor is used signed out and
-keeps documents only in the browser. With it, the server signs people in through
-Better Auth at `/api/auth`, keeping accounts and sessions in the `auth` schema of
-that PostgreSQL database and creating or updating its tables on start. People
-confirm their email address before signing in with a password, or sign in with a
-link sent by email. Google and GitHub sign-in are optional: configure either provider's
-client ID and secret below and its button appears on the login and account pages. Provider names
-are available publicly at `/api/sign-in/providers`; credentials stay on the server.
-
-Register these callback URLs in the provider's OAuth application, using your
-`BETTER_AUTH_URL` origin:
+**Sign-in providers.** Register these callback URLs in the provider's OAuth application, on
+your `BETTER_AUTH_URL` origin (or `http://localhost:4000` in development):
 
 - Google: `https://reactor.example.com/api/auth/callback/google`
 - GitHub: `https://reactor.example.com/api/auth/callback/github`
 
-Use the same paths on `http://localhost:4000` for local development. Google uses
-OpenID/email/profile scopes; GitHub uses read:user and user:email. A new account
-takes the provider's name and profile photo, and each later sign-in refreshes only
-the photo, so the account keeps its own name and email. Signing in with a provider
-links to an account of the same email address only once that address is confirmed.
-The account UI displays the photo with a user-icon fallback, loaded only from
-Google's and GitHub's image hosts. Document attribution still stores names, so those avatars cannot yet
-be matched reliably to account photos. No OAuth credentials means email sign-in
-continues unchanged; configuring only one of a provider's credential pair fails startup.
+**Preview runtime.** Prototype, shared links and Download play documents in a separate static
+server (`pnpm serve:preview`, or `node server.preview.ts` in the same image). It must be on an
+app subdomain of a different site from the editor (different final two hostname labels, no IP
+address), both over HTTPS, without the editor's cookies, and deployed from the same release as
+the editor.
 
-The login page, `/login`, is the single authentication entry point; `/signin` redirects
-there. The account page, `/account`, shows the signed-in profile and sign-out controls;
-signed-out visitors are sent to login with Account as their return destination. Both
-pages share the same frame and controls. Google, GitHub, password and email-link sign-in
-open the requested app page, or Documents by default. Return destinations are limited
-to known app pages. Invitation callbacks continue to use `/invite` without its secret.
-
-Email, provider and mode controls share one pending/error state. Signup and email-link
-requests open a **Check your email** step with an editable address and a 30-second resend
-cooldown. Signup resends verification rather than creating another account; confirming
-the address signs the person in automatically. Authentication POST handling loads only
-when used. The editor also works without signing in.
-
-**Forgot password?** sends a recovery email without revealing whether the address has an
-account. Its link opens `/reset-password`, expires after one hour and works once. Resetting
-requires a matching new password, revokes the account's sessions, and returns to sign-in.
-The reset token stays in the URL fragment until success; invitation secrets stay in the
-original tab and are never included in recovery requests. Recovery preserves the allowed
-return destination and uses the same check-email and resend controls.
-
-Signed out, the editor says once, and again at 3 documents,
-that documents are kept only in this browser. Signed in, documents sync with the
-server, and the browser keeps a copy of them in a database of the account's own
-(`reactor-<user id>`), apart from the ones kept signed out. Signing out waits for
-changes still on their way to the server, says what would be lost if some cannot
-be sent, then removes that copy and its cached permissions from the browser and
-returns to `/login`. Open your account from your name or avatar and choose **Sign out**.
-
-Signed in, the API at `/api` lists the user's workspaces, starting with a personal
-one created on first use, and lists, creates and deletes a workspace's documents.
-Reading needs the viewer role, creating editor, and deleting admin; a workspace or
-document the user may not read answers as missing. A client may choose a new
-document's id (a UUID), so documents made offline keep theirs; creating one again
-in the same workspace returns it, and an id taken elsewhere is refused. Requests that change anything
-must come from the editor's own address and send JSON. The app's tables sit next
-to Better Auth's schema and are created or updated on start.
-
-Open **Sharing** from the application bar or Documents page to invite someone as
-an `editor` or `viewer`. Only workspace admins can create and revoke invitations.
-Choose the workspace, recipient email and access level, then copy and send the
-invitation link. The recipient signs in with the invited email, reviews the workspace
-and role, and explicitly accepts. Google and GitHub sign-in retain the invitation in
-tab-scoped storage, with token-free authentication callbacks. After email sign-in,
-return to the original invitation tab or reopen the invitation link.
-Invitations cover all documents in the workspace, including future documents, and
-expire after seven days. The API does not send invitation emails.
-
-All paths below start with `/api` and require a session. POST and DELETE requests
-also require the editor's Origin; POST bodies are JSON.
-
-| Request | Body / result |
-|---|---|
-| `POST /workspaces/:workspaceId/invitations` | `{ "email": "person@example.com", "role": "editor" }`; returns the invitation summary and a secret `token` once, replacing any pending invitation for that email |
-| `GET /workspaces/:workspaceId/invitations` | Admin-only list of pending, unexpired invitations, without tokens |
-| `DELETE /workspaces/:workspaceId/invitations/:invitationId` | Admin-only revocation of a pending invitation; does not remove an accepted membership |
-| `POST /invitations/inspect` | `{ "token": "…" }`; shows the workspace name and invited role only to the signed-in, verified recipient, without granting access |
-| `POST /invitations/accept` | `{ "token": "…" }`; grants membership and returns `workspaceId`, the effective `role` and `alreadyMember` |
-
-Treat tokens as secrets: they are stored only as hashes and sent in request bodies,
-never URL paths or query strings. Acceptance preserves an existing member's role.
-A consumed token cannot restore removed membership, and an invitation stops working
-if its creator is no longer an admin. Inspecting a consumed token also requires the
-original accepting account to remain a member; matching the email alone is insufficient.
-The Members section of Sharing lists names, profile photos and access. Admins can
-switch an editor to viewer (or back) and confirm removal from the whole workspace.
-Owner and admin memberships are protected here. Removing a member also revokes
-pending invitations for their email; a new invitation can grant access again.
-
-| Request | Body / result |
-|---|---|
-| `GET /workspaces/:workspaceId/members` | Admin-only member list with `id`, `name`, `email`, `image`, effective `role` and `owner` |
-| `PATCH /workspaces/:workspaceId/members/:userId` | `{ "role": "viewer" }` or `editor`; changes an existing non-admin member, returns 204 |
-| `DELETE /workspaces/:workspaceId/members/:userId` | Removes a non-admin member and their pending invitations, returns 204 |
-
-These paths start with `/api` and use the same session/Origin rules as invitations.
-Changes disconnect only the affected member's document connections on this server.
-Incoming messages recheck membership, and idle connections recheck it at least every
-minute. After a downgrade, the viewer reloads the server snapshot, discarding edits
-that were made offline but no longer permitted, including their cached updates.
-Other tabs cannot reintroduce those edits into a viewer's document.
-
-Admin promotion, ownership transfer, document invitations, viewer links and presence
-remain separate roadmap steps. Viewer documents open in a live,
-read-only preview with zoom and Fit controls, without
-editor commands or property panels. Rename, tag editing and deletion are unavailable
-for viewers. Editors may edit, while document deletion stays admin-only. Cached viewer
-permissions survive offline restarts; server documents with unknown access, including
-those newly received from another tab, stay read-only until permissions can be checked. Permission state is local to the account,
-never shared document data, and the server still independently enforces access.
-
-Documents sync over a WebSocket at `/sync`, which needs the session cookie and the
-editor's own address. Opening a document needs the viewer role; a viewer's
-connection is read-only, so the server drops the changes it sends. Each document's
-content is kept in PostgreSQL as one compacted Yjs update, saved a few seconds after
-changes and when the server stops. Deleting a document disconnects everyone from
-it, and a socket closes within a minute of its session ending. Signed in, the
-editor syncs every document over one socket: a new device shows the account's
-documents, documents made or deleted offline are sent once the server can be
-reached, and one deleted elsewhere is removed. It uploads the images a document
-shows that the server lacks for it, and fetches the ones the browser lacks, so a
-document shows its images on every device.
-
-| Variable | Meaning |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string; turns accounts on |
-| `BETTER_AUTH_URL` | The address people open the editor at, such as `https://reactor.example.com` |
-| `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional Google OAuth credentials; both required to enable Google sign-in |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Optional GitHub OAuth credentials; both required to enable GitHub sign-in |
-| `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production |
-| `MAIL_FROM` | Sender address; defaults to `no-reply` at the editor's host |
-| `AI_PROVIDER` | Turns AI on for people signed in: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |
-| `AI_API_KEY` | The provider's key, kept on the server; required for `anthropic` |
-| `AI_BASE_URL` | Where the `openai` provider's API is; defaults to `https://api.openai.com/v1` |
-| `AI_EDIT_MODEL` | The model for edits; defaults to `claude-haiku-5-5` for `anthropic`, required for `openai` |
-
-The original `ANTHROPIC_API_KEY` setup still works: without `AI_PROVIDER` it selects
-Anthropic. An explicit `AI_PROVIDER` takes precedence, and `AI_API_KEY` overrides the
-legacy key for Anthropic.
-
-For an OpenAI-compatible endpoint, set `AI_PROVIDER=openai`, `AI_BASE_URL` to its
-API base (including `/v1` when required), and `AI_EDIT_MODEL` to its model ID.
-Set `AI_API_KEY` if the endpoint needs one; local endpoints may leave it empty.
-The endpoint must support streamed Chat Completions with function tools, and the
-chosen model must support images when a request attaches one.
-
-With `AI_PROVIDER`, the API's `/api/ai` gateway sends a request to change a
-document, by someone who may edit it, to the model and streams back the operations it
-proposes, which the editor checks before showing; a problem goes back to the model once.
-Each person may make 100 requests a day, and use 2 million tokens, and each workspace 500
-requests and 10 million tokens, one request of a person at a time.
-
-AI is on for every workspace until an admin turns it off on Sharing (the AI card), which the
-API takes as `PUT /api/workspaces/:workspaceId/ai` with `{ "enabled": false }`. The gateway
-then refuses that workspace's requests with `AI_OFF`, and the editor hides Edit with words in
-its documents. A request sends the person's words and the selected part of the document, or
-the whole document, to the configured provider. Reactor keeps only the `ai_requests` row (who,
-when, which document, the model and the tokens), not the words, what was sent or the answer (which reaches the document only when accepted);
-the conversation stays in the server's memory for 5 minutes, for one repair.
-
-Edit with words (`W`, or its application-bar button) opens a movable, dockable chat
-window. Messages and proposals stay in the conversation; Accept applies a proposal as one
-undo step, and Discard leaves the document unchanged. The canvas stays editable beside the
-chat. Stop cancels a request, and New chat clears the local conversation. With a
-selection, it sends only those shapes, their groups, and the variables and component
-sources they use. Without a selection it uses the document and its design system. Each
-message uses the current context, which the chat shows above its composer. Context is
-limited to 32 KiB of UTF-8 JSON and 300 records, including frames, dimensions and component-source shapes. If it
-is too large, nothing is sent: select fewer items or shorten their text. Context stays
-whole rather than being silently truncated. These are transport limits, not a count of any
-provider's tokens; the gateway still accounts for provider-reported token use.
-
-**Trying the chat without the server.** With no AI on the server (no database, no
-`AI_PROVIDER`, or signed out), `pnpm start` answers the chat from a local test model
-instead (`src/ai/localModel.ts`): scripted proposals made in the browser, with no AI and
-nothing sent anywhere. Any build does the same once opened with `?ai=local` (kept for the
-tab; `?ai=server` goes back).
-
-It reads a request by matching its words loosely against small vocabularies
-(`src/ai/local/`): actions, shapes, colours, edges and the properties of the shapes the
-request is about. A mistyped word counts as the term it resembles (“widht 200”, “algin top”),
-short words and words that start differently never do, and the limits are in `MATCHING`
-(`src/ai/local/fuzzy.ts`). A request is about the shapes it names, `all circles` or
-`everything`, else the selection.
-
-- **Add:** `add 3 red circles radius 20`, `add text "Hello" font size 32 bold`; rectangle,
-  square, circle, ellipse, line and text, placed on Canvas below the existing artwork.
-- **Properties, by name:** name, text, fill, stroke, font color, font size, font weight,
-  opacity, rotation, corner radius, radius, width, height, X and Y, each only on shapes that
-  have it: `corner radius 12 and fill green`, `opacity 50%`, `w=240 h=48`.
-- **By an amount:** `wider by 40`, `bigger`, `increase font size by 4`, `rotate 45`.
-- **Arrange:** `move right 40`, `move to 100, 200`, `align left|right|top|bottom|center|middle`,
-  `distribute horizontally|vertically`, `duplicate`, `group as "Header"`, `ungroup`, `delete`.
-- **Ask:** `props` lists what the selection has; `help` gives two examples each of adding,
-  changing and arranging, about the selected shapes with their values now; `help all` lists
-  everything, written from the vocabularies.
-
-As you type, the prompt shows the rest of a sentence that fits the selection in grey, and Tab
-takes it (`src/ai/local/complete.ts`, sentences in `COMPLETION`). Only the local model
-completes; the server's AI takes any words.
-
-A request it cannot read gets a short answer: the words it missed, near matches, and what
-the selection can change. A command of the app that is not a document change, such as Zoom in
-or Undo, is named with its shortcut. Answers in words may mark a `# title`, `**topic**` lines
-(a blank line ends the topic) and examples between backticks (`Words.tsx`); with the local model an example fills the
-prompt when pressed.
-
-`/slow …` streams slowly for Stop, `/repair …` sends a broken change first so the repair
-round runs (both take a request, or add a rectangle), `/words …` answers in words only, and
-`/fail limit|busy|off|forbidden|refused|incomplete|network` shows each problem the server
-can report.
-
-For single-column screenshot recreation, the AI can call `composeScreen` with ordered text and
-labeled controls, padding, gaps and an optional bottom footer. Reactor measures wrapped text
-and calculates vertical positions rather than asking the model to guess baselines. This is
-one-time authoring layout; the resulting shapes remain ordinary editable artwork. Controls reuse the supplied
-components and resolve their public label/placeholder property IDs. Each control declares
-Button or Input; a unique matching library component can be selected without an ID, while
-ambiguous libraries require an explicit choice. An ID with the wrong role is rejected.
-Provider schemas separate buttons from inputs and omit component IDs when there is only one
-matching component. A dedicated footer owns matching text and removes its duplicate from the
-column. Repairs of a composed screen must still supply a screen and its artwork; unrelated
-edits or empty frames cannot replace the failed composition.
-Color variable IDs produce
-bindings, as do exact, unambiguous palette matches. Ambiguous matches require an explicit ID.
-Overlapping text/controls and content outside the screen are rejected through the existing repair
-flow. The positioned composition reader remains compatible; other drawing tools support
-multi-column and decorative artwork. These checks do not establish screenshot fidelity.
-
-The client expands the composition into ordinary frame/shape operations, assigns ownership from
-the explicit screen container and validates the whole batch before offering Accept. No document
-changes occur during generation. The lower-level `addScreen` and individual operations remain
-compatible. Entirely detached artwork in legacy screenshot proposals is sent through
-the existing single repair; ordinary Canvas edits and intentionally empty screens stay supported.
-
-AI proposals can also create shared screens, equal Screen views and alternate screen layouts,
-and edit existing frames or width-based layout rules. Shapes belong to a screen or layout,
-never to a view. Explicit view choices and independent theme modes stay unchanged unless
-requested. A selected frame or Screen view sends its source artwork and frame dependencies;
-shape selections include their owning frames. All operations are checked together before Accept,
-including rule ownership, distinct width thresholds, locked records and reference validity.
-
-### Screenshot-generation evaluation
-
-`pnpm ai:screenshots:prepare` renders 30 reproducible references through Reactor's SVG
-export and Chromium: all 12 starter-template screens, 12 alternate-palette versions and
-six heading-copy variants. These are correlated synthetic designs, not 30 independent
-real-world examples. No production documents are used. The model sees only the screenshot,
-the template's reusable controls and five color variables, never the target screen graph.
-
-`pnpm ai:screenshots:eval` uses the configured provider through the real gateway, validation,
-one repair, proposal acceptance, collaboration and undo. For example, with an image-capable
-model available in LM Studio:
-
-```sh
-AI_PROVIDER=openai \
-AI_BASE_URL=http://127.0.0.1:1234/v1 \
-AI_EDIT_MODEL=qwen3-vl-8b-instruct \
-AI_SCREENSHOT_OUTPUT=test-results/qwen-screenshots-run-1 \
-pnpm ai:screenshots:eval
-```
-
-Set `AI_SCREENSHOT_OUTPUT` to a fresh directory for every preparation or live run. The default
-is `test-results/ai-screenshots`; existing reports are never overwritten. The local endpoint
-needs no API key unless configured to require one. Model availability does not establish
-image/tool support: the live run measures the actual installed model. Keep normal gateway
-timeouts and run serially; do not run other heavy workloads during latency measurements.
-
-The output includes `index.html` with reference/generated PNG pairs, source SVGs, supplied
-context and prompts, proposals, raw provider events, per-case diagnostics, timings and provider-reported usage.
-`report.json` updates after every case; `complete: false` means the run is partial. In preparation
-mode, `kind: prepared` is not a model-quality result. Ordinary tests never call the model.
-
-Automated diagnostics check one 480×640 screen/view, unchanged library artwork, matched
-control labels, button/input roles and input hints reusing supplied component IDs (70% per screen),
-unexpected repeated screen text, and authored colors within
-CIE76 ΔE 2 of a supplied palette color using its variable binding. These are structural
-checks, not pixel similarity or proof of visual fidelity. The run fails if any case fails its
-automated checks; the report retains failures instead of retrying until a passing sample.
-Completion p95 is measured against the roadmap's 20-second target separately from the
-five-second editing target used by `ai:eval`.
-
-Two independent people must fill in `ratings.json` after comparing the image pairs. A
-**usable start** preserves the main hierarchy, visible content and control layout, with no
-major omissions, overlaps or clipping, and can be refined without rebuilding the screen.
-Record concrete defects in notes. A missing generated image is not a usable start. At least
-24 of the 30 cases must receive a positive rating from both reviewers for the 80% target;
-missing ratings are unreviewed, never passes. The generated report leaves human quality
-unrated; do not infer it from automated pass rates. Broader screenshot quality needs a
-separate, independently sourced reference set.
-
-### AI evaluations
-
-`pnpm test tests/ai/cases.test.ts` runs forty-four edit cases through both provider adapters,
-the real gateway and two collaborating editor copies. It checks the requested result,
-no changes before acceptance, sharing after acceptance and one-step undo. Separate proposal
-tests check cancellation, refusals, malformed replies and the one-repair limit.
-The original six cases use saved event fixtures; the other thirty-eight have explicitly
-hand-authored `reference` rounds in their `case.ts`. These exercise the protocol and editor,
-not model quality. A provider recording, when present, takes precedence over a reference.
-The three `data-*` cases (R5.5) build an entity from a description, from pasted CSV and with
-references to existing records; each passes when at least 90% of the expected fields have the
-right type, every record passes validation, the entity has the asked-for records and a list
-is bound to it.
-
-With the provider environment above configured, `pnpm ai:eval` makes live calls on the
-forty-four fixtures without replacing recordings. It writes `test-results/ai-eval.json`, including
-per-case diagnostics, first-try and after-repair validity, semantic pass rate, first-operation
-p50 and completion p95, and provider-reported tokens across both attempts. These timings
-include the local gateway and validation, exclude test setup, and preserve provider streaming.
-No production documents are sent. `pnpm ai:record` also makes live calls and replaces that
-provider's recordings; review them before committing.
-
-Live gates require 90% first-try validity, 97% validity after one repair, 97% of cases satisfying
-the requested edit, first-operation p50 at most 2 seconds, and completion p95 at most 5 seconds.
-Any atomicity, collaboration or undo failure fails the run independently of these rates.
-Set `AI_EVAL_BASELINE` to a previous live report to fail on a semantic pass-rate drop greater
-than three percentage points. It must cover the same provider and case suite; the model may
-change. Without a baseline, the absolute gates still run and the report says `baseline: null`.
-For a flat-rate cost estimate, supply both `AI_EVAL_INPUT_USD_PER_MILLION` and
-`AI_EVAL_OUTPUT_USD_PER_MILLION`. Missing usage or prices produces an unknown cost, not zero.
-This estimate does not account for cache discounts or other provider fees.
-
-The **AI evaluation** workflow runs nightly at 03:20 UTC, or manually, only after the repository
-variable `AI_EVAL_ENABLED=true` is set. Configure repository variables `AI_PROVIDER`,
-`AI_EDIT_MODEL`, optional `AI_BASE_URL` and the optional prices, plus secret `AI_API_KEY` when
-required by the endpoint. Its report is retained as the `ai-eval` artifact. After establishing
-a baseline, set `AI_EVAL_BASELINE_RUN` to that workflow run's ID. Baselines expire after 90 days;
-renew the pin deliberately, and establish a new baseline when the case suite changes.
-Run live evaluations again before changing the model or system instructions. Offline results
-do not establish the R2 model-quality gate or replace testing with people outside the team.
-
-Without `SMTP_URL`, the development server writes email to its log instead.
-`compose.yaml` runs the editor with a PostgreSQL database: set `POSTGRES_PASSWORD`,
-`BETTER_AUTH_SECRET` and `SMTP_URL`, then run `docker compose up --build`. Server
-tests run against PGlite, PostgreSQL built to run inside the test process. With
-`TEST_DATABASE_URL` set to a PostgreSQL server (its `postgres` database, by a user that may
-create databases), they run there instead, each test on its own copy of an empty database.
+**AI.** For an OpenAI-compatible endpoint, set `AI_PROVIDER=openai`, `AI_BASE_URL` to its API
+base (with `/v1` when required) and `AI_EDIT_MODEL`; it must stream Chat Completions with
+function tools, and take images for screenshot requests. A request sends the person's words
+and the selected part of the document, or the whole document, to the provider. The server
+keeps only an `ai_requests` row (who, when, which document, the model and the tokens), and
+the limits per person and workspace are `AI_LIMITS` in [server/ai.ts](server/ai.ts).
+Workspace admins can turn AI off on Sharing.
 
 ## Metrics and error reports
 
-With `METRICS_TOKEN` set, `GET /metrics` answers the server's metrics in the Prometheus text
-format: sync sockets open, opened and refused, documents saved and failed saves, AI turns by
-task and outcome with their time to the first operation and to the end, AI refusals, prototype
-snapshots published and refused, prototype links opened, and browser error reports. Counters
-start at zero with each process.
+With `METRICS_TOKEN` set, these answer requests that send it:
 
-`GET /metrics/prototypes` lists every prototype link shared, newest first, with its workspace,
-document, who shared it, its number of screens, distinct players, opens and last open. Links
-stay listed after they are revoked or expire (`expiresAt` is then null). A player is a browser:
-the `/share` page keeps a random id on the preview site and sends it when it opens a link, and
-the server stores only a hash of it with the link's id, so one browser is not recognizable
-across links. Nothing is sent to a third party.
+| Path | What it gives |
+|---|---|
+| `/metrics` | Server metrics in the Prometheus text format: sync sockets, saves, AI turns and timings, prototype links and sessions, feedback and browser errors. Counters start at zero with each process |
+| `/metrics/prototypes` | Every prototype link shared, newest first, with its screens, distinct players, opens and last open |
+| `/metrics/first-links` | Each person's first shared link and how long it took them |
+| `/metrics/beta` | The R7 measures for the last 12 weeks (UTC, from Monday): sign-ups, sign-ups that shared a two-screen prototype within a day, and prototype sessions; windows in `BETA_MEASURES` ([server/services/prototypeLinks.ts](server/services/prototypeLinks.ts)) |
+| `/metrics/feedback` | The newest 200 messages sent with Send feedback, with the sender's email, page and document format |
 
-`GET /metrics/first-links` lists each person's first shared link, newest first: when they
-started, the earlier of their account's creation and the shared document's creation as the
-editor reports it, when they shared it and the seconds between. `/metrics` has the same time
-as the `reactor_first_shared_link_seconds` histogram, observed once per person.
-
-`GET /metrics/beta` has R7's measures for each of the last 12 weeks, newest first, weeks
-starting on Monday in UTC: `signUps`, the accounts created that week; `activated`, how many of
-them shared a prototype with at least two screens within a day of signing up (`signUpsFinal`
-once that day has passed for all of them); and prototype sessions started that week by people
-other than the link's author (`sessionsByOthers`, `sessionsByAuthors`, `linksPlayedByOthers`).
-A session is one browser's opens of one link, until it leaves the link for half an hour;
-browsers that keep no id run no counted session. The author's own sessions are not told
-apart yet, so every session counts as by others for now. `/metrics` counts sessions as
-`reactor_prototype_sessions_total`. The windows are `BETA_MEASURES` in
-[server/services/prototypeLinks.ts](server/services/prototypeLinks.ts).
-
-`GET /metrics/feedback` lists the newest 200 feedback messages people sent with Send feedback
-in the editor's application bar, newest first, with the sender's email address, the page path
-and the editor's document format. Only signed-in accounts that agreed to the current terms can
-send it, at most 10 an hour each (`FEEDBACK_LIMITS` in [server/feedback.ts](server/feedback.ts)),
-and deleting an account deletes its feedback. `/metrics` counts it as `reactor_feedback_total`.
-
-The editor sends errors nothing handled, up to ten per page load and each message once, to
-`POST /api/client-errors`, signed in or not. The server takes them only from its own pages,
-at most 20 a minute per address and 600 in all, and logs each as `browserError` with its
-message, stack, page path (without query or fragment) and document format.
+Players are counted by a random id the `/share` page keeps per browser; the server stores only
+its hash with the link. The editor sends unhandled errors to `POST /api/client-errors`, which
+the server logs as `browserError`. Nothing is sent to a third party.
 
 ## History and backups
 
-Signed in, the server keeps earlier states of each document as snapshots. When a
-document is saved and its last snapshot is an hour old or more, the content saved
-before is kept as a snapshot first, so each one holds the document as it was before
-a stretch of changes. Snapshots from the last day are all kept; older ones only as each
-document's last of the day (UTC), for 30 days. The hourly cleanup prunes them.
+Signed in, the server keeps earlier states of each document as snapshots in the same
+database: all from the last day, then each document's last of the day for 30 days, and a
+deleted document's last content for 30 days. Editors restore them from Document history;
+admins restore deleted documents from Documents → Recently Deleted. Snapshots are not backups.
 
-Restoring a snapshot brings the document back to it as a new change that everyone
-with the document open receives; entries that already match are left alone, so
-others' edits elsewhere merge. The content it replaced is kept as a snapshot first,
-so a restore can be undone by restoring that one. Restore leaves the record of which
-editor formats wrote to the document, so older editors stay view only, and a snapshot
-written by a newer format than the server serves (as after a rollback) cannot be
-restored. Shared undo stays per person and per session.
-
-In the editor, **Document history** in the command bar (signed in, as an editor or
-admin of the document) lists the versions the server keeps, newest first, and draws the
-one chosen. **Restore this version** restores it; each copy of the editor with the
-document open then clears its undo history, so undo cannot reach past the restore.
-A version made by a newer release is listed but cannot be restored.
-
-Deleting a document keeps its last content, including changes not saved yet, as a
-snapshot, with the images it used, for 30 days. A workspace admin can restore it as
-a new document in the same workspace, with its images and history; the cleanup spares
-those images until then. Signed in, Documents → **Recently Deleted** lists them under
-**Kept on the server** with **Restore**, below the documents this browser keeps there.
-
-| Request | Body / result |
-|---|---|
-| `GET /documents/:documentId/history` | Viewer: snapshots newest first, with `id`, `createdAt`, `reason` (`scheduled`, `before-restore` or `deleted`), `version`, `size` and `restorable` |
-| `GET /documents/:documentId/history/:snapshotId` | Viewer: the snapshot's content as one Yjs update (`application/octet-stream`) |
-| `POST /documents/:documentId/history/:snapshotId/restore` | Editor: restores it, returns 204; 409 `NEWER_FORMAT` for a snapshot the server cannot restore |
-| `GET /workspaces/:workspaceId/deleted-documents` | Admin: deleted documents that can be restored, with `id`, `name` and `deletedAt` |
-| `POST /workspaces/:workspaceId/deleted-documents/:documentId/restore` | Admin: restores one as a new document, returns it with 201 |
-
-Snapshots live in the same PostgreSQL database, so they do not replace backups.
-`scripts/backup-database.sh` writes a `pg_dump` custom-format file of `DATABASE_URL`
-into `BACKUP_DIR` (default `./backups`), checks that `pg_restore` can read it, and
-deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). The URL goes on `pg_dump`'s
-command line, so on a shared machine leave the password out of it and keep it in
-`~/.pgpass` (or `PGPASSFILE`) instead. Run it daily, and copy `BACKUP_DIR` off the
-machine, for example:
+`scripts/backup-database.sh` writes a `pg_dump` custom-format file of `DATABASE_URL` into
+`BACKUP_DIR` (default `./backups`), checks that `pg_restore` can read it, and deletes dumps
+older than `BACKUP_KEEP_DAYS` (default 14). Keep the password in `~/.pgpass` (or `PGPASSFILE`)
+rather than the URL on a shared machine. Run it daily and copy `BACKUP_DIR` off the machine:
 
 ```sh
 # crontab: every day at 03:15
@@ -832,403 +140,60 @@ To restore, stop the app, create an empty database and run
 `pg_restore --no-owner --no-privileges --exit-on-error --dbname=<empty database URL> reactor.dump`,
 then point `DATABASE_URL` at it and start the app, which migrates it if needed.
 
-`scripts/restore-drill.sh` is the restore drill: it backs up `DATABASE_URL`, restores
-the dump into the empty database at `DRILL_DATABASE_URL`, and compares every table's
-row count and a checksum of all document content and snapshots. It refuses a drill
-database that already has tables.
+`scripts/restore-drill.sh` backs up `DATABASE_URL`, restores the dump into the empty database
+at `DRILL_DATABASE_URL`, and compares every table's row count and a checksum of all document
+content and snapshots. Run it against the beta's database before the beta opens, then monthly,
+and add a row here each time.
 
 | Date | Where | Result |
 |---|---|---|
 | 2026-11-14 | Local PostgreSQL 16.15, seeded with 5 accounts, 35 documents (7,000 shapes), 5 deleted documents, 45 snapshots and 40 images | Passed: 716 KB dump restored in 1 s; all 18 tables and both checksums matched, the restored database migrated on start and every document read back |
 
-Run the drill against the beta's database before the beta opens, then monthly, and
-add a row here each time.
+## Architecture
 
-## Variables
+- **Editor** (`src/`): a React 19 and TypeScript single-page app whose state lives in one
+  Overmind store (`src/app/`), with `src/events/`, `src/tools/` and `src/ui/` as its
+  namespaces. Pages are in `src/pages/`, AI in `src/ai/`, export in `src/export/`.
+  Bundled with webpack and SWC; the production build fails beyond the bundle budget in
+  `webpack.config.mjs`.
+- **Saving**: each document is a Yjs document kept in the browser's `reactor` IndexedDB
+  database; open tabs share changes over a BroadcastChannel. Signed in, every document syncs
+  with the server over one WebSocket at `/sync`, and images are content-addressed and synced.
+  Each person undoes only their own changes.
+- **Server** (`server.ts` for development, `server.prod.ts` for production, `server/`):
+  Express with Better Auth sign-in, the workspace and document API at `/api`, sync, the AI
+  gateway at `/api/ai`, prototype links and metrics, on PostgreSQL. The Docker image copies
+  only `server/`, `src/shared/` and the files it lists, so the server imports nothing else
+  from `src/`.
+- **Preview runtime** (`src/preview/`, `server.preview.ts`, `webpack.preview.mjs`): a sandboxed
+  page on its own domain that plays a projection of the document; it serves no accounts or
+  documents and sends nothing back. Download wraps it into one offline HTML file.
 
-The Variables panel creates named colors, numbers, text and booleans. Inspector fields can
-follow a variable, and text can include `${Name}` templates. Renaming a variable preserves
-its references; deleting one leaves the shapes' values in place.
-
-Open **Variables** from the canvas navigation for a full-page workspace at `/variables`.
-The page shows the current document name and save status, Undo/Redo and **Back to canvas**.
-Search variables by name or path, or search the Dimensions tab; the list and editor scroll
-independently. Editing uses the same document values as the canvas, and returning to the
-canvas or using browser Back/Forward asks before discarding an unfinished creation or dimension draft. The compact
-Variables panel remains available under **More panels** for edits beside the canvas.
-
-Choose **New variable** to enter a name, type and value. The workspace shows a list and
-one editor, or an item picker when narrow. The **Dimensions** tab manages optional dimensions
-and modes. The tabs support arrow-key focus and Enter/Space activation. **New variable** or
-**New dimension** stays visible in the toolbar at every panel width; each variable,
-dimension and mode has the same **…** action menu. Creation and dimension forms protect
-unfinished changes; dimension edits are
-applied with **Save changes**. If that dimension changes in another tab, reload it before
-saving. Value edits still apply on Enter or blur (Escape cancels a draft).
-
-Inspector and AI edits of a property, and the hide, show, lock and unlock commands, stop it
-following its variable, even when the written value is unchanged. Dragging, arrow keys and
-Align/Space detach only the axes they move, and dragging back does not restore a binding.
-Resize detaches X or Y only when it moves the left or top edge, both on a turned shape, circle
-or ellipse, and text size; group/component scaling detaches positions and corner
-radius, and rotation detaches the angles and member positions it writes. Radius edits on
-circles/ellipses detach X/Y; text-size edits detach Y because its baseline changes. A handle
-click and measurements preserve bindings. Cancel restores the gesture's bindings and values,
-including concurrent edits; Undo restores the binding together with a completed edit.
-An AI operation can explicitly bind the property again in the same update.
-
-Choose the variable's visible **Value source** to follow
-another of the same type by ID. Renaming the source keeps the alias; the panel shows its chain,
-resolved value and uses. Choose **Own value**
-to detach while keeping the resolved value. Cycles, incompatible types and missing sources
-are rejected. Deleting a source locally converts its direct aliases to resolved literals.
-If a concurrent edit leaves a missing source, the alias uses its retained fallback; a cycle
-introduced by concurrent edits is bounded and reported in the panel. Copy/paste carries alias
-dependencies and retains the existing name-and-type matching policy.
-
-Dimensions and modes are **opt-in**. New documents have none, and each variable starts
-with a single **Value**. Open the **Dimensions** tab in Variables to
-create a dimension such as Appearance or Brand. Add, rename, reorder or delete its modes
-and choose its default. Choose a dimension under **Values depend on** on a color, number or
-text variable, or create one with **New dimension…**. Source and dimension fields stay visible
-in the editor alongside the values.
-The editor shows every mode as a named value row, marking the default. Edit any row directly;
-**Uses Light value**, for example, identifies an unchanged value inherited from Light.
-A value explicitly re-entered in a mode becomes independent even when it matches the default.
-A customized row's **…** menu offers **Reset to Light value** to restore that inheritance.
-Changing the dimension asks for confirmation in a dialog before removing existing mode values.
-The default value is preserved.
-**Manage modes** opens that dimension and offers a direct return to the variable. Mode and
-dimension action menus retain reordering and confirmed deletion without moving the fields.
-**Save changes** and **Cancel** share the bottom action row. The editor scrolls independently
-of the tabs and toolbar. **Preview** opens a compact popover; **Import** and **Export** open
-dedicated dialogs with format selection and import review. These tools do not push the editor
-down. Escape dismisses them and returns focus to their toolbar button.
-
-For responsive sizing, open **Dimensions**, select your size dimension,
-and set **Select modes by → Page width · Sizes**. A document has one Sizes dimension; another
-width-selected one counts as manual. Enter a minimum width in pixels for each
-automatic mode (for example xs: 0, sm: 400, lg: 600). The greatest minimum at or below the
-page's width wins, including exact boundaries. Below every threshold the dimension's
-default applies; an empty minimum leaves that mode available for manual selection only.
-Each Screen view resolves independently as it resizes, including bound font sizes and button
-widths. Theme stays manual unless you explicitly configure width rules for it too.
-Explicit Screen, view, frame and instance mode overrides take precedence; choose **Inherit**
-in Inspector to use the width result. Switching back to Manual selection retains thresholds,
-mode IDs and variable values. Preview uses the launched view's size and resolved modes.
-
-Each document remembers your selected mode per dimension locally. Aliases follow their
-source's dimension; shapes, components and thumbnails use the same context. Renaming a mode
-does not break values or selection because references use IDs. Deleting a mode removes its
-overrides; deleting a dimension returns its variables to base-only values. These definition
-changes can be undone and are shared; preview selections are not shared.
-
-Select a Screen, Screen view, frame or component instance to set **Modes** in Inspector.
-Each dimension starts at **Inherit**. The effective mode and its source appear below the field;
-choose a mode to override that dimension, or Inherit to reset it. Screen choices apply to all
-its views; view choices let Home · Mobile and Home · Desktop show different palettes at once.
-Frames and nested instances can override their inherited modes. These authored choices are
-saved, shared and undoable; the Variables panel's preview remains local. A missing mode stays
-listed with a diagnostic and uses the dimension's default until you choose another or reset it.
-Opening Preview from a view captures its screen-root modes and viewport for that session. Later canvas
-simulation/view changes do not change the session, while descendant overrides still apply.
-
-Number and text modes affect **Screen views, Canvas artwork and Preview**, including nested
-component instances. Numeric bindings support fixed rectangle dimensions, frame width/height,
-stack gap/padding, font size, text wrap width, radius and opacity. Use **Layout variables** in
-Inspector for frame inputs; use the variable picker beside a shape property for artwork.
-Instances inherit their view/frame modes, then apply their own overrides. Explicit exposed
-property overrides take precedence over source bindings.
-
-Text variables can opt into a dimension and supply a different value or template per mode.
-Set **Wrap width (0 = auto)** in the text Inspector to wrap at a maximum width; zero preserves
-single-line text. Wrapped text is also limited to its containing frame's available width.
-A Hug-width frame uses the explicit text wrap limit to avoid a circular width dependency.
-Font metrics, lines and component bounds are measured locally for each instance path, mode
-context and available width. Rendering, selection, hit tests, stack layout, thumbnails and
-Preview share those results; measurements are never saved or synchronized.
-
-Missing/invalid numeric inputs keep authored fallbacks with diagnostics. Position, rotation,
-unsupported shape dimensions and boolean mode values remain at their base values. Existing
-Light/Dark documents migrate to an editable Theme dimension. Dimensions remain opt-in, and
-mode choices affect artwork rather than the editor interface. Native packages and copy/paste
-preserve text mode templates and their dependencies.
-
-Values and template diagnostics share a pure central resolver; saved definitions and clipboard
-transfers retain modes and aliases. The operations API accepts an existing `dimensionId` and
-color, number or text `modeValues` keyed by mode ID; older `darkValue` inputs remain readable for compatibility.
-Design-system packages follow in the
-[variable roadmap](./APPLICATION_PLAN.md#variable-foundation-v1v5-incremental).
-
-## Camera Coordinates
-
-Camera math and zoom bounds live in `src/app/camera.ts`. Camera position and pan
-deltas use surface-local SVG units; positive deltas move content right/down.
-The input adapter converts browser client coordinates through the surface CTM
-before applying the camera transform. Input is ignored when that transform is
-unavailable or singular.
-
-All zoom controls share the 10%-1000% range. Ctrl-wheel pinch is continuous and
-anchored at the pointer; toolbar/tool steps are discrete. Slider zoom preserves
-the current pan position. Touchscreen pinch zooms the same way; see Input above.
-
-## Not yet available
-
-- Images on other devices when signed out: an image is kept in this browser only
-- Moving documents made signed out into an account
-- Inviting someone to a single document (sharing is per workspace)
-- Seeing other people's pointers and selections, and comments
-- Exporting a prototype as a standalone web package
-
-[APPLICATION_PLAN.md](./APPLICATION_PLAN.md) describes the work ahead and its order, and
-[DELIVERY_LOG.md](./DELIVERY_LOG.md) what each step delivered;
-[REFACTOR_PLAN.md](./REFACTOR_PLAN.md) keeps the earlier audit and its phases.
+[AGENTS.md](AGENTS.md) explains the code in depth,
+[APPLICATION_PLAN.md](APPLICATION_PLAN.md) describes the work ahead and its order, and
+[DELIVERY_LOG.md](DELIVERY_LOG.md) what each step delivered.
 
 ## Development
 
-`pnpm check` is what CI runs, with a second job that builds the Docker image,
-runs it and checks it with `node scripts/smoke.mjs <address>`. The **Nightly** workflow
-(02:40 UTC, or manually) runs the browser tests in WebKit (`BROWSERS=webkit pnpm test:browser`)
-and the server tests on PostgreSQL 17. Known flaky browser tests, each with an owner and a fix
-date, are listed in [tests/browser/FLAKY.md](./tests/browser/FLAKY.md). The production build fails when
-the bundle outgrows its budget in `webpack.config.mjs`. Install the test
-browser once with `pnpm exec playwright install chromium` (Linux may need
-`--with-deps`).
+CI runs `pnpm check`, and a second job builds the Docker image, runs it and checks it with
+`node scripts/smoke.mjs <address>`. The **Nightly** workflow runs the browser tests in WebKit
+(`BROWSERS=webkit pnpm test:browser`) and the server tests on PostgreSQL 17. Known flaky browser
+tests are listed in [tests/browser/FLAKY.md](tests/browser/FLAKY.md).
 
-`pnpm lint` fails on any finding.
+Install the test browser once with `pnpm exec playwright install chromium` (Linux may need
+`--with-deps`). Browser tests use port 4173 and start both origins themselves; traces of
+failures are kept in `test-results/`. `tests/support/store.ts` creates independent stores with
+in-memory storage; startup is opt-in with `store.onInitialize()`. Server tests run against
+PGlite, or against a PostgreSQL server with `TEST_DATABASE_URL` (its `postgres` database, by a
+user that may create databases), each test on its own copy of an empty database.
 
-`tests/support/store.ts` creates independent stores with in-memory storage,
-IndexedDB (`fake-indexeddb`) and channels; startup is opt-in with
-`store.onInitialize()`. Browser tests use port 4173 and fail rather than test
-another server that holds it; traces of failures are kept in `test-results/`.
-
-### Design-system packages
-
-Open **Variables → Design-system import / export** to download a versioned
-`design-system.reactor.json` file or import one. Packages contain variables, aliases, text
-references and optional dimensions/modes; they exclude shapes, accounts and local preview state.
-
-Review the matches, then choose **Reuse existing**, **Replace existing**, or **Import separately**.
-Identity matches survive renames. Names alone are shown as conflicts and never trigger an
-unreviewed update. Replace keeps local variable IDs so bound shapes update; separate creates
-independent copies with unique names. One policy applies to all matches in this first version.
-Apply imports as one undo step; cancel or an invalid package leaves the document unchanged.
-Packages are limited to 1 MiB and 1,000 variables/dimensions. Unsupported versions, incomplete
-references and incompatible types or modes are rejected with a message. Reusing a dimension
-requires compatible mode IDs; import separately when its modes differ. Replacing its default
-requires updating every variable assigned to it, so unrelated values cannot silently change.
-
-### DTCG design-token interchange
-
-In **Variables → Design-system import / export**, choose **DTCG (colors / numbers)** to
-import or export the supported [DTCG 2025.10](https://www.designtokens.org/tr/2025.10/format/)
-subset. Opaque sRGB colors convert to Reactor's 8-bit hex values; unitless numbers and aliases
-retain their meaning. Imports still require a preview and confirmation and undo in one step.
-
-Use **Reactor (all definitions)** for modes, text or boolean variables. The first DTCG adapter
-rejects unsupported definitions, including units, transparency, other color spaces, composite
-tokens, descriptions/deprecation and unknown extensions, rather than producing a partial file.
-See [the supported subset](design/design-token-interchange.md) for details and identity rules.
-
-### Prototype player
-
-Choose **Open prototype** on the application bar, run the **Open prototype** command, or open
-`/prototype`. Flow also offers a **Play** link for its chosen starting screen.
-Selecting a canvas Screen view first seeds its viewport, modes and explicit layout choice.
-The player keeps its screen and layout pickers, Mobile/Desktop viewport presets, **Restart prototype**,
-**Settings**, **Flow** and **Share** in one header, which wraps on narrow screens. Settings contains
-**Start screen**, custom **Width** and **Height**, and dimension overrides; they affect only that session. Width-selected dimensions offer **Auto · Viewport width**; other dimensions
-can inherit from each screen or use an explicit mode. Descendant frame and instance overrides
-continue to apply. Navigation retains the session viewport and modes, and compatible input
-values survive responsive layout and component-variant changes. The **Layout** control in the header
-can inspect Auto or an explicit layout without editing the document.
-
-**Restart prototype** clears typed values and temporary layout inspection, returning to the chosen
-start screen with the current viewport/modes. Changing the start screen starts a fresh runtime.
-**Canvas** ends the session. Other open players remain independent. Invalid live edits
-retain the last valid output; diagnostic **Inspect** buttons return to the affected authored
-record. The player requires the separate preview server configured below. The compact canvas
-Preview remains available for side-by-side edits.
-
-### Interactive prototype preview
-
-Designate frames as **Screen** in Inspector, keep them visible directly on **Canvas**, then
-press **Preview** (the play icon on the application bar). Ordinary frames remain containers.
-Nested screens keep their identity but must be moved to Canvas to become destinations. Older
-documents retain their existing screen destinations automatically. Give a
-component or instance an Input or Button role in Inspector and link its exposed properties.
-For a button, **Navigate to** chooses a target screen. Inputs and navigation are local to the
-preview, never saved or synchronized. **Restart preview** clears input edits and returns to the
-first screen. Closing the panel clears its runtime state. Broken role links, hidden/missing
-navigation targets and layout problems retain the last valid preview with a diagnostic.
-Preview supports shape/component SVG artwork, stored raster images and native inputs/button
-overlays. Images are read in the editor from its document database or authorized asset sync,
-verified by content/hash and decoding, and sent as a deduplicated raster table. The sandbox
-cannot fetch images. Missing, invalid or oversized resources retain the last valid preview;
-**Retry preview** tries again after an image arrives. Images keep their intrinsic aspect ratio,
-transforms and opacity, including in nested/library components. Import external images into
-Reactor first. Each image can be up to 5 MiB and a preview's images up to 8 MiB together, counted
-as image file sizes; the drawing has its own 8 MiB limit. Each image is sent to the preview once. Diagram
-connector links are not rendered. List roles are labeled containers; record repetition and
-validation come later.
-
-To share a boolean between prototype controls, select an ordinary component instance on a
-Screen and expand **Inspector → Prototype states → Add state** (for example, `showHelp`).
-Its **True** checkbox sets the initial value. Choose **In prototype → Follow showHelp** on every
-instance it should show/hide, then choose **Toggle state: showHelp** under **On activation**
-on a button. **Set showHelp to true** and **Set showHelp to false** provide explicit
-Open/Close actions: repeating them keeps the same value. Use **Show when → False** on another
-instance to display complementary content. Rename the state in place without changing its bindings.
-
-State is shared across screens within one player session. Reset restores initial values;
-other players and the authored canvas remain unchanged. Hidden inputs retain typed values
-until Reset. Deleting state retains its references for Undo: missing bindings use the instance
-visibility default and Preview reports the missing state. This increment supports booleans
-and ordinary instances, without expressions or stack reflow.
-
-The runtime is a separate static server. It must be on a **different registrable domain** from
-the editor, on an app subdomain, without the editor's cookies. Configure the same
-`PREVIEW_ORIGIN` and `EDITOR_ORIGIN` on both processes, and run `pnpm serve:preview` on that
-origin (the same image can run `node server.preview.ts`). Public origins require HTTPS.
-The origin guard conservatively requires different final two hostname labels, so sites using
-multi-label suffixes must also use a preview domain with different final two labels.
-Deploy the editor and runtime from the same release; an outdated runtime shows an update notice
-before any projection is sent. `pnpm build` builds both the editor (`dist`) and static runtime
-(`dist-preview`). For development,
-`pnpm build:preview` builds the runtime independently. It serves no accounts, documents, APIs or
-external assets; its sandbox disallows same-origin access, forms, popups and top navigation.
-The editor sends a validated projection over a dedicated channel; changes cannot travel back
-into the document. Without configuration, Preview explains that hosting is unavailable.
-
-For local development, one command builds the runtime and starts both servers:
-
-```sh
-pnpm start:local
-```
-
-Open `http://localhost:4000`, not `http://127.0.0.1:4000`: Prototype only loads inside the
-exact editor origin. Ctrl+C stops both servers; if either fails, the other stops too. Stop any existing server on those ports first. Optional `PORT` and `PREVIEW_PORT`
-select distinct local ports (defaults 4000 and 4001). This local-only command sets matching
-loopback origins and retains other environment settings, including accounts and AI. With
-accounts on, set `BETTER_AUTH_URL` to the same editor address; the command warns when it differs.
-Restart it after changing the preview runtime to rebuild it. `pnpm start` remains editor-only;
-production hosting still requires the separate-site configuration above.
-
-To run the processes manually, local testing uses distinct loopback origins with an explicit
-opt-in. In one terminal:
-
-```sh
-PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http://127.0.0.1:4000 PREVIEW_ALLOW_LOCALHOST=true pnpm start
-```
-
-After `pnpm build:preview`, start the runtime in another terminal:
-
-```sh
-PORT=4001 HOST=127.0.0.1 PREVIEW_ORIGIN=http://127.0.0.1:4001 EDITOR_ORIGIN=http://127.0.0.1:4000 PREVIEW_ALLOW_LOCALHOST=true pnpm serve:preview
-```
-
-Use `http://127.0.0.1:4000` for the editor, matching `EDITOR_ORIGIN` exactly. The runtime does
-not hot-reload; rebuild/reopen Preview after changing its implementation. Browser tests start
-both origins automatically and verify native controls, live updates, recovery and isolation.
-
-### Share a prototype
-
-Open **Prototype**, choose its start screen, viewport and modes, then select **Share prototype →
-Create snapshot link**. This requires an account document, a workspace admin and the separate
-preview server configured above. Copy the new link before closing; saved links can be revoked,
-but their secret URLs cannot be retrieved later.
-
-Anyone with the link can play all screens in that snapshot without signing in. The chosen
-viewport, modes, layouts and variants are resolved at publication; recipients can navigate,
-enter local input and reset, but cannot edit the document or change the snapshot's viewport
-context. Later canvas edits stay private. Verified images are embedded in the snapshot.
-
-Links expire after 30 days. **Share prototype** lists active links and offers **Revoke link**.
-Revocation stops future loads, but cannot erase an already opened or downloaded copy. Deleting
-the source document permanently also deletes its links. Each document can have 20 active links;
-a workspace can store 64 MiB of snapshots. Expired snapshots are removed by periodic cleanup.
-
-The public `/share` page runs on the preview domain and can fetch only from the configured
-editor origin. It sends the fragment token in a JSON request without cookies; the server stores
-only its hash. The embedded editor preview retains its network-blocked policy. Deploy both
-servers from the same release. A release that changes the preview protocol leaves older links
-unable to open: recipients are told to ask for a new link, and **Share prototype** marks them
-out of date so an admin can revoke them and share again.
-
-### Download a prototype
-
-Open **Prototype**, choose its start screen, viewport and modes, then select **Download**. The
-browser saves one HTML file named after the document. It holds the same snapshot a shared link
-would, played by the same runtime as Preview, with its images and the drawing font inside the
-file. Open it from disk or put it on any static host: it plays every screen, navigation, input,
-variant, visibility state and list-to-detail record, and **Restart prototype** returns to the
-start. The page's own content policy allows no requests, so it works offline and sends nothing
-anywhere. Downloading needs no account, but does need the separate preview server configured
-above: the editor fetches the runtime's `package.html` from it (`pnpm build:preview` builds that
-page beside the runtime). Record forms stay in the editor's Preview and Prototype for now, as
-with shared links.
-
-### Export SVG
-
-Select a Screen view, a Screen (for example from the Explorer) or visible shapes, then choose
-**Export SVG** on the command bar (or run `export-svg` in the command line).
-The download preserves the canvas's inherited modes, responsive or explicit layout, component
-variants, text and transforms. A Screen view exports its viewport. A Screen exports as authored:
-its own size, default layout and modes, without any view's overrides. Selected objects export
-their artwork bounds with space for strokes. Images are verified and embedded. Like Preview, an
-export takes at most 8 MiB of image data (decoded) in total, and the finished SVG file is
-limited to 32 MiB. Missing images, too many images or invalid geometry show an error instead of
-a partial file.
-
-SVG contains static artwork only: no guides, selection handles, frame labels, navigation or form
-controls. Its background is transparent. Text remains editable SVG text using the canvas font
-fallback (Roboto, then sans-serif); fonts are not embedded. Diagram connectors are not exported.
-
-### Starter templates
-
-Until someone has started a document in this browser, an empty canvas offers List / detail,
-Forms, Sign-in and Settings, or a blank canvas; choosing a drawing tool or drawing also starts
-blank. A document started from a template shows a short guide: change a text, play the
-prototype and share a link, each step checked off once done (the guide is kept per browser and
-can be closed). Signed out, **Share** offers **Sign in to share**; once the document has moved
-into the account, the editor opens it again.
-
-On **Documents**, choose **Templates**, then List / detail, Forms, Sign-in or Settings.
-Each creates a new editable document with three Screen views, reusable controls and a
-connected journey. **New document** still creates a blank document. Open **Prototype**
-to try the buttons and text fields; open **Flow** to change navigation.
-
-The starters include clear empty states with a next action. They are sample prototypes:
-forms do not submit data, sign-in does not authenticate or send email, and settings do not
-change an account. Dimensions and modes are not added automatically.
-
-### Entities and sample records
-
-Open **More panels → Data View** on the canvas. Add an entity (for example, Customers),
-then Text, Number or Boolean fields and sample records. Fields may be required. Save each
-edited name or cell explicitly; invalid values remain in the editor until corrected.
-Field IDs survive renames. Changing a field's type preserves existing record values and
-reports any incompatibilities; Save a corrected value to resolve them. Additions, edits
-and deletions use document undo and collaboration, and persist across reloads.
-
-Data is local sample content stored with the document. List/detail bindings, form expressions,
-external connectors and runtime submission are subsequent R5 increments.
-
-
-### Bound sample lists
-
-Select a component instance and open **Inspector → Repeat with data**. Choose an entity,
-then map the component's exposed properties to compatible fields. The instance's component
-is the item template; unmapped properties and unset optional values keep the template value.
-Set **Item gap** to adjust the space between rows.
-
-Open **Prototype** or **Preview** to see one item per record in Data View order. Inputs keep
-independent local values per item; editing them does not update sample records. The canvas
-and SVG export show the single authored template. Repeated rows extend vertically from its
-position and stay clipped to the screen, without pushing surrounding artwork or creating a
-scrollable list viewport. Detail navigation carrying a selected record comes next.
-
-Changing names preserves bindings. Missing entities, fields or incompatible values show
-validation diagnostics; fix the mapping or choose **Do not repeat**. Copying within a document
-and cloning retain bindings; copying to another document requires matching data IDs or
-rebinding. Published library components omit document-local list bindings.
+**AI evaluations.** `pnpm test tests/ai/cases.test.ts` replays the edit cases through both
+provider adapters, the gateway and two collaborating editors from recordings and hand-written rounds, so it checks
+the protocol and the editor, not model quality. With a provider configured, `pnpm ai:eval`
+calls it live and writes `test-results/ai-eval.json`, with gates on validity, the requested
+result and latency, and `AI_EVAL_BASELINE` set to an earlier report fails on a drop in the
+pass rate. The **AI evaluation** workflow runs it nightly once the repository variable
+`AI_EVAL_ENABLED=true` is set, with `AI_PROVIDER`, `AI_EDIT_MODEL`, optional `AI_BASE_URL`
+and the secret `AI_API_KEY`. `pnpm ai:screenshots:prepare` renders 30 references from the
+starter templates and `pnpm ai:screenshots:eval` runs the model on them, writing a report
+to `AI_SCREENSHOT_OUTPUT` (a fresh directory each run) for two people to rate in `ratings.json`.
