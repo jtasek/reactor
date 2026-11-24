@@ -25,10 +25,6 @@
     background: color-mix(in srgb, var(--button-background), black 6%);
 }
 
-.button:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
 
 .button[data-kind='primary'] {
     --button-background: var(--selection-color);
@@ -53,6 +49,17 @@
 
 .button[data-kind='quiet']:hover:enabled {
     background: none;
+}
+
+.button:disabled {
+    --button-background: var(--field-background);
+    --button-color: var(--text-secondary-color);
+
+    cursor: default;
+}
+
+.button[data-kind='quiet']:disabled {
+    opacity: 0.5;
 }
 
 .field {
