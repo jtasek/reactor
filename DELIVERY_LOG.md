@@ -27,8 +27,7 @@ test. Its cases cover fixed row/column layout, nested/free frames, independent r
 concurrent resize/reorder/reparent/delete, parent cycles, unreadable rules and local undo.
 Derived positions stay outside the shared rules. It does not go through the production
 `Collaboration` service, so stacks laid out again after merges across two production copies
-are now covered by the production stack tests described below. [Spike findings and integration boundaries](design/frame-layout-spike.md)
-record the coordinate-conversion work still needed.
+are now covered by the production stack tests described below.
 
 First canvas increment implemented: draw independent frame boxes with the Frame tool (`f`),
 select by boundary, name or Explorer, move and resize on the canvas, and edit names/geometry
@@ -1257,3 +1256,21 @@ deletion, behind the terms check, at most 10 per account an hour (`FEEDBACK_LIMI
 counts `reactor_feedback_total`. `GET /metrics/feedback` lists the newest 200 with the sender's
 email address. The Privacy policy says what is kept. Signed-out people have no button. Covered by
 `tests/server/feedback.test.ts` and `tests/browser/feedback.spec.ts`.
+
+## Earlier audits and measurements
+
+_Recorded 2026-11-24, when their notes were deleted; the notes stay in git history._
+
+- Repository audit (REFACTOR_PLAN.md, 2026-09-22): phases 1–12 fixed persistence, camera math,
+  gestures, selection, commands, checks, components, collaboration and variables. Touchscreen
+  pinch is covered only by synthetic browser input; it was never checked on a physical touch device.
+- Frame layout spike (2026-10-19): the row/column projection in `tests/spikes/frameLayout.ts`
+  that production stacks (`src/app/frameLayout.ts`) were built from.
+- Frame dragging (2026-10-30): dragging a Screen view went from 33.6 ms to 16.7 ms median per move.
+- Canvas pan and zoom (2026-11-05): camera actions read plain values; script work fell about 16%
+  for pan and 29% for zoom, frame timing unchanged.
+- Screen view component selection (2026-11-05): selecting an instance no longer re-renders every
+  Screen view's shapes (median 299.5 ms to 157 ms).
+- Lucide icons: the sprite UI icons moved to `lucide-react` through the shared `Icon` wrapper.
+- Typography (#469): interface type stays separate from authored artwork, with a 16px floor for
+  touch inputs.

@@ -13,7 +13,6 @@ Planning date: 2026-10-14; variable foundation updated 2026-10-17; screen/view a
 model updated 2026-10-23; current state, budgets and the S1 milestone added 2026-11-09 after a
 roadmap and architecture review. Work is planned unless it says it is built; what each built
 step delivered is in the [delivery log](DELIVERY_LOG.md).
-[REFACTOR_PLAN.md](REFACTOR_PLAN.md) keeps the earlier audit, its dated findings and its phases.
 
 ## Current state
 
@@ -359,7 +358,7 @@ flowchart LR
 ### R0 Baseline (S)
 
 The image-sync tests no longer need a busy machine to finish an upload within a second, and
-README and REFACTOR_PLAN describe what exists. Done when `pnpm check` passes on master.
+README describes what exists. Done when `pnpm check` passes on master.
 
 ### R1 Operations and undo (M)
 

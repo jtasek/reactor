@@ -1,6 +1,5 @@
 /**
- * Times the R4 frame layout spike's projection of one row frame with fixed-size children,
- * as recorded in design/frame-layout-spike.md:
+ * Times the R4 frame layout spike's projection of one row frame with fixed-size children:
  *
  *   node scripts/bench-frame-layout.ts
  *
