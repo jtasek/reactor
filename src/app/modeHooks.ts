@@ -31,10 +31,6 @@ export function artworkModes(state: Context['state'], shape: Shape, viewId?: str
     });
 }
 
-/** Canvas source artwork and each placed view resolve independently, including focused masters. */
-export const useArtworkModes = (shape: Shape, viewId?: string) =>
-    useAppState((state) => artworkModes(state, shape, viewId).modes);
-
 export const useModeFields = (target: ModeTarget) =>
     useAppState((state) => {
         const document = state.currentDocument;

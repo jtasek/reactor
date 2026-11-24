@@ -995,11 +995,7 @@ the bundle outgrows its budget in `webpack.config.mjs`. Install the test
 browser once with `pnpm exec playwright install chromium` (Linux may need
 `--with-deps`).
 
-The lint gate (`pnpm lint:baseline`) fails on any finding in a file that changed
-and on any finding beyond those recorded in `lint-baseline.json`. It compares with
-`HEAD` by default; set `LINT_BASE_REF` to compare a branch, for example
-`LINT_BASE_REF=origin/master pnpm check`. Remove entries from `lint-baseline.json`
-as files are repaired; never add them.
+`pnpm lint` fails on any finding.
 
 `tests/support/store.ts` creates independent stores with in-memory storage,
 IndexedDB (`fake-indexeddb`) and channels; startup is opt-in with

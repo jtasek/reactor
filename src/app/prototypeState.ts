@@ -110,24 +110,6 @@ export function stateActionProblem(
     return undefined;
 }
 
-/** A state action in words: “Set Tab to “Profile””, “Switch Help”, “Reset Count”. */
-export function describeStateAction(
-    document: Pick<Document, 'prototypeBooleans'>,
-    action: StateAction
-): string {
-    const name = document.prototypeBooleans[action.stateId]?.name ?? 'a missing state';
-    switch (action.change) {
-        case 'toggle':
-            return `Switch ${name}`;
-        case 'reset':
-            return `Reset ${name}`;
-        default:
-            return typeof action.value === 'boolean'
-                ? `Turn ${name} ${action.value ? 'on' : 'off'}`
-                : `Set ${name} to ${typeof action.value === 'string' ? `“${action.value}”` : action.value}`;
-    }
-}
-
 const COMPARISON_WORDS: Record<string, string> = {
     equals: 'is',
     notEquals: 'is not',

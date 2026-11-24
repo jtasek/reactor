@@ -14,10 +14,9 @@ The repo uses **pnpm** (see `pnpm-lock.yaml`). Use `pnpm` for installs.
   - By name: `pnpm test -- -t "name of test"`
 - Type-check: `pnpm typecheck` (app via `pnpm tsc`, plus tests via `tsconfig.test.json`).
   Build does emit; these scripts do not.
-- Lint: `pnpm lint` (read-only, `--max-warnings 0`); `pnpm lint:fix` applies fixes;
-  `pnpm lint:baseline` requires touched files to be lint-clean.
+- Lint: `pnpm lint` (read-only, `--max-warnings 0`); `pnpm lint:fix` applies fixes.
 - Browser tests: `pnpm test:browser` (Playwright against the production build). `pnpm check`
-  runs the lint gate, type-checks, unit and browser tests.
+  runs lint, type-checks, unit and browser tests.
 - Production build: `pnpm build` — `NODE_ENV=production` webpack via `webpack.config.mjs`.
   Emits content-hashed JS/CSS, extracted CSS (`mini-css-extract-plugin`), and a generated
   `dist/index.html` (`html-webpack-plugin`, template `src/template.html`). Overmind devtools

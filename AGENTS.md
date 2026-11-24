@@ -192,10 +192,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
 ### Verification baseline (do not treat as regressions)
 
 - Type-checking and all unit and browser tests pass on a clean checkout; keep it that way.
-- `pnpm lint` still reports **existing lint debt**, recorded per file in `lint-baseline.json`
-  (not suppressed). `pnpm lint:baseline` fails on any finding in a file changed relative to
-  `LINT_BASE_REF` (default `HEAD`, so run it before committing) and on findings beyond the
-  recorded counts: fix a touched file's existing findings rather than adding exceptions.
+- `pnpm lint` reports no findings; keep it that way.
 - `pnpm build` finishes without warnings. It fails when the entry bundle exceeds 410 KiB or
   any file 232 KiB (the budget in `webpack.config.mjs`; entry measured at 401.4 KiB on
   2026-11-16). swc compiles `src` to ES2022; raise the budget only for code every page needs as

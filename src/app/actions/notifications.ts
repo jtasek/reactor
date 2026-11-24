@@ -1,12 +1,6 @@
 import { ActionWithParam, SaveStatus } from '../types';
 import { createNotification } from '../factories';
 
-export const displayInfo: ActionWithParam<string> = ({ state }, message) => {
-    const notification = createNotification({ message, type: 'info' });
-
-    state.notifications.push(notification);
-};
-
 export const displaySuccess: ActionWithParam<string> = ({ state }, message) => {
     const notification = createNotification({ message, type: 'success' });
 

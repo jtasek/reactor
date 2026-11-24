@@ -21,7 +21,6 @@ export interface UI {
     };
     groupPanel: Control;
     layerPanel: Control;
-    menuBar: Control;
     miniMap: Control;
     inspector: Control;
     guides: Control;

@@ -33,19 +33,6 @@ export function screenToWorld(screen: Point, camera: Camera): Point | null {
     return isFinitePoint(point) ? point : null;
 }
 
-export function worldToScreen(world: Point, camera: Camera): Point | null {
-    if (!isFinitePoint(world) || !isValidCamera(camera)) {
-        return null;
-    }
-
-    const point = {
-        x: world.x * camera.scale + camera.position.x,
-        y: world.y * camera.scale + camera.position.y
-    };
-
-    return isFinitePoint(point) ? point : null;
-}
-
 export function zoomAt(camera: Camera, scale: number, point?: Point): Camera | null {
     const nextScale = limitScale(scale);
 

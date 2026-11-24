@@ -51,9 +51,6 @@ export const useLibraryUpdateAvailable = (componentId: string) =>
 export const useLibraryUpdateProblem = (componentId: string) =>
     useAppState((state) => libraryUpdateProblem(state, componentId));
 
-export const useComponentCandidates = (componentId: string) =>
-    useAppState((state) => componentCandidates(state.currentDocument, componentId));
-
 export const useSelectedComponentContext = () =>
     useAppState((state) =>
         selectedComponentContext(

@@ -31,12 +31,6 @@ export const addLayer: ActionWithParam<Partial<Layer>> = ({ state }, options) =>
     setLayer(state, layer);
 };
 
-export const cloneLayer: ActionWithParam<string> = ({ state, effects }, layerId) => {
-    const layer = getLayer(state, layerId);
-
-    setLayer(state, { ...layer, id: effects.newId() });
-};
-
 export const removeLayer: ActionWithParam<string> = ({ state }, layerId) => {
     const document = state.currentDocument;
     const layer = document.layers[layerId];
@@ -207,12 +201,6 @@ export const selectExplorerLayer: ActionWithParam<string | null> = (
     document.layers[layerId].selected = true;
 };
 
-export const unselectLayer: ActionWithParam<string> = ({ state }, layerId) => {
-    const layer = getLayer(state, layerId);
-
-    layer.selected = false;
-};
-
 export const toggleLayerLocked: ActionWithParam<string> = ({ state }, layerId) => {
     const layer = getLayer(state, layerId);
 
@@ -223,12 +211,6 @@ export const lockLayer: ActionWithParam<string> = ({ state }, layerId) => {
     const layer = getLayer(state, layerId);
 
     layer.locked = true;
-};
-
-export const unlockLayer: ActionWithParam<string> = ({ state }, layerId) => {
-    const layer = getLayer(state, layerId);
-
-    layer.locked = false;
 };
 
 export const showLayer: ActionWithParam<string> = ({ state }, layerId) => {

@@ -26,44 +26,8 @@ export const addLink: ActionWithParam<Partial<Link>> = ({ state }, options) => {
     setLink(state, link);
 };
 
-export const cloneLink: ActionWithParam<string> = ({ state, effects }, linkId) => {
-    const link = getLink(state, linkId);
-
-    setLink(state, { ...link, id: effects.newId() });
-};
-
 export const removeLink: ActionWithParam<string> = ({ state }, linkId) => {
     deleteLink(state, linkId);
-};
-
-export const unselectLink: ActionWithParam<string> = ({ state }, linkId) => {
-    const link = getLink(state, linkId);
-
-    link.selected = false;
-};
-
-export const lockLink: ActionWithParam<string> = ({ state }, linkId) => {
-    const link = getLink(state, linkId);
-
-    link.locked = true;
-};
-
-export const unlockLink: ActionWithParam<string> = ({ state }, linkId) => {
-    const link = getLink(state, linkId);
-
-    link.locked = false;
-};
-
-export const showLink: ActionWithParam<string> = ({ state }, linkId) => {
-    const link = getLink(state, linkId);
-
-    link.visible = true;
-};
-
-export const hideLink: ActionWithParam<string> = ({ state }, linkId) => {
-    const link = getLink(state, linkId);
-
-    link.visible = false;
 };
 
 export const updateLink: ActionWithParam<Partial<Link> & { id: string }> = ({ state }, options) => {
