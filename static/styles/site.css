@@ -105,8 +105,8 @@ body,
   --accent: #9370db;
   --warning-background: #f6ecd0;
   --warning-color: #8a6100;
-  --error-background: #f6dcdc;
-  --error-color: #b3312f;
+  --error-background: #fbeaeb;
+  --error-color: #bc3a46;
   --text-size: var(--font-size-body);
   --canvas-label-size: var(--font-size-caption);
   --canvas-label-halo-width: 3px;

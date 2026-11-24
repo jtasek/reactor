@@ -1148,6 +1148,9 @@ and disappear on release/cancel. Tests: `guideInspector` and `guideIntersections
   background or box-shadow is not a variable; a line marked `no design token yet` is debt.
   Never remove an outline without drawing the focus ring (`--focus-ring-width` in
   `--focus-ring-color`) on `:focus-visible`.
+- **Controls**: page and dialog buttons and text fields use `Button` (kinds primary,
+  secondary, quiet, destructive) and `Field` from `src/ui/components/Controls` rather than
+  restyling a bare `button` or `input`. The Inspector and canvas controls keep their own.
   A panel's frame (`PanelLayout`) draws the glass; its content does not draw it again but
   sits on lighter cards (`--control-background`, `--radius-md`, `--panel-gap` from the frame)
   with `--hairline-color` between rows, as the Inspector and the Explorer do.

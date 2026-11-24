@@ -78,66 +78,10 @@
   min-width: 0;
 }
 
-.form label {
+.actions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form input {
-  background: var(--field-background);
-  border: 1px solid var(--hairline-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-color);
-  font-size: var(--font-size-touch-input);
-  min-height: 44px;
-  padding: 10px 12px;
-  width: 100%;
-}
-
-.form button,
-.signOut button {
-  background: var(--control-background);
-  border: 1px solid var(--action-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-color);
-  cursor: pointer;
-  min-height: 44px;
-  padding: 10px 12px;
-}
-
-.form .primary {
-  background: var(--selection-color);
-  border-color: var(--selection-color);
-  color: var(--panel-content-background);
-  font-weight: var(--font-weight-semibold);
-}
-
-.form .danger {
-  background: var(--error-color);
-  border-color: var(--error-color);
-  color: var(--panel-content-background);
-  font-weight: var(--font-weight-semibold);
-}
-
-.form .danger:disabled {
-  background: var(--control-background);
-  border-color: var(--action-border);
-}
-
-.form button:disabled,
-.signOut button:disabled {
-  color: var(--text-secondary-color);
-  cursor: default;
-}
-
-.form .link {
-  background: none;
-  border: none;
-  color: var(--selection-color);
-  padding: 4px 0;
-  text-align: left;
-  text-decoration: underline;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .modes {
@@ -169,8 +113,7 @@
   padding-top: 24px;
 }
 
-.page :is(a, input, button):focus-visible,
-.form :is(input, button):focus-visible {
+.page a:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: 2px;
 }
