@@ -189,7 +189,7 @@ async function openWithShapeOnGuide(page: Page) {
     await openEditor(page, ['Rulers']);
     await expect(page.locator('svg#surface [data-ruler="left"]')).toBeVisible();
     await drawRect(page, { x: 400, y: 300 }, { x: 500, y: 400 });
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).uncheck();
     await drag(page, [10, 600], [400, 600]);
     await expect(guideLines(page)).toHaveAttribute('x1', '400');
 }

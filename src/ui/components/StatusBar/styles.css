@@ -9,8 +9,8 @@
   display: flex;
   font-size: var(--font-size-callout);
   flex-direction: row;
+  gap: 16px;
   height: 25px;
-  justify-content: space-between;
   line-height: 25px;
   padding: 0 10px;
   position: fixed;
@@ -20,10 +20,13 @@
 }
 
 .statusBarSlot {
-  text-align: right;
-  width: calc(100% / var(--status-bar-slots));
+  white-space: nowrap;
 }
 
+.statusBarSlot:last-child {
+  margin-left: auto;
+  width: 250px;
+}
 
 .accountLink {
   align-items: center;

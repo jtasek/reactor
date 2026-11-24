@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
     });
 
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
-    await page.goto('/');
+    await page.goto('/?debug=on');
     await expect(page.locator('svg#surface #shapes > g')).toHaveCount(30);
 });
 

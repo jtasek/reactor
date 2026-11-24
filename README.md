@@ -25,6 +25,8 @@ Then open http://localhost:4000. Without a database, the editor runs signed out 
 keeps documents in the browser. While the server offers no AI (none configured, or signed
 out), the development build's AI chat answers from a local test model in the browser
 (`src/ai/localModel.ts`); any build does the same with `?ai=local`, until `?ai=server`.
+`?debug=on` shows developer readouts (status bar pointer and keyboard, Document Info,
+Stats) in that tab until `?debug=off`.
 
 To try Prototype, sharing and Download locally, run `pnpm start:local` instead: it builds the
 preview runtime and starts the editor on http://localhost:4000 and the runtime on port 4001

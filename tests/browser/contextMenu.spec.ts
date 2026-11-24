@@ -25,7 +25,7 @@ test('a press outside the context menu closes it, and does nothing else', async 
     // On a panel: the menu closes too.
     await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
     await expect(menu).toBeVisible();
-    await page.getByText('Saved', { exact: true }).click();
+    await page.locator('#status-message').click();
     await expect(menu).toBeHidden();
 
     // A press on a menu action still picks its tool.

@@ -1,10 +1,33 @@
 import { expect, test } from '@playwright/test';
 import { drawRect, openEditor, pointer } from './support/editor';
 
-test('the status bar’s slots follow the document, the selection, the pointer and the camera', async ({
+test('designers see only designer panels and status, without the debug readouts', async ({
     page
 }) => {
     await openEditor(page);
+
+    await expect(page.locator('[id^="status-"]')).toHaveCount(4);
+    await expect(page.locator('#status-message')).toHaveText('Untitled');
+    await expect(page.locator('#status-mouse')).toHaveCount(0);
+
+    const panels = page.locator('[data-panel="controlPanel"]').getByRole('checkbox');
+    await expect(panels).not.toHaveCount(0);
+    for (const name of [
+        'Surface',
+        'Status Bar',
+        'Context Menu',
+        'Panels',
+        'Stats',
+        'Document Info'
+    ]) {
+        await expect(page.getByRole('checkbox', { name, exact: true })).toHaveCount(0);
+    }
+});
+
+test('the status bar’s slots follow the document, the selection, the pointer and the camera', async ({
+    page
+}) => {
+    await openEditor(page, [], { debug: true });
 
     const slot = (name: string) => page.locator(`#status-${name}`);
 

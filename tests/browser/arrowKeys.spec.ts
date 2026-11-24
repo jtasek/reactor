@@ -11,8 +11,8 @@ test('arrow keys move the selection by the step, or pan the canvas without one',
     const camera = page.locator('svg#surface #camera');
 
     // A focused control keeps the arrow keys instead of moving the selection.
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).focus();
-    await expect(page.getByRole('checkbox', { name: 'Tool Bar', exact: true })).toBeFocused();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).focus();
+    await expect(page.getByRole('checkbox', { name: 'Toolbar', exact: true })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(rect).toHaveAttribute('x', '100');
 
