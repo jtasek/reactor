@@ -1,8 +1,15 @@
 import { Check, Copy, Link2, Share } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
-import { Button, Field, Problem } from 'src/ui/components/Controls';
+import { Button, Problem } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
-import React, { useEffect, useRef, useState } from 'react';
+import {
+    drawingDocument,
+    drawScreen,
+    ScreenThumbnail
+} from 'src/ui/components/DocumentList/DocumentThumbnail';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { screenFrames } from 'src/app/screens';
+import { ordered } from 'src/app/variableModes';
 import { useAppState, useEffects } from 'src/app/hooks';
 import { projectPreview, type PreviewSession, type PreviewInspection } from 'src/preview/project';
 import { createPreviewResources } from 'src/preview/resources';
@@ -15,6 +22,58 @@ import {
 import { markFirstRunStep, openAfterSignIn } from 'src/app/firstRun';
 import { loginFrom } from 'src/app/services/accounts';
 import styles from './Prototype.css';
+
+/** What a new link opens: the start page as drawn, its page count, size and modes. */
+function ShareSummary({ session, title }: { session: PreviewSession; title: string }) {
+    const document = useAppState((state) => state.currentDocument);
+    const picture = useMemo(
+        () =>
+            session.screenId
+                ? drawScreen(
+                      document,
+                      drawingDocument(document, session.modes),
+                      session.screenId,
+                      session.modes
+                  )
+                : undefined,
+        [document, session.screenId, session.modes]
+    );
+    const pages = screenFrames(document).length;
+    const modes = ordered(document.dimensions).flatMap((dimension) => {
+        const mode = dimension.modes[session.modes[dimension.id]];
+
+        return mode ? [mode.name] : [];
+    });
+
+    return (
+        <div className={styles.shareSummary}>
+            <span className={styles.sharePicture} aria-hidden="true">
+                {picture ? (
+                    <ScreenThumbnail document={document} drawing={picture} label="Start page" />
+                ) : (
+                    <Icon icon={{ component: Link2, size: 22 }} />
+                )}
+            </span>
+            <div>
+                <h3>{title}</h3>
+                <p>Anyone with the link can play it, no sign-in needed.</p>
+                <ul className={styles.shareChips} aria-label="Link contents">
+                    <li data-accent>
+                        {pages} {pages === 1 ? 'page' : 'pages'}
+                    </li>
+                    {session.viewport && (
+                        <li>
+                            {session.viewport.width} × {session.viewport.height}
+                        </li>
+                    )}
+                    {modes.map((name) => (
+                        <li key={name}>{name}</li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
+}
 
 export function SharePrototype({
     session,
@@ -138,6 +197,15 @@ export function SharePrototype({
             .catch(() => setProblem('Select the link and copy it manually.'));
 
     const signIn = account === 'signedOut' && !member;
+    const create = (
+        <Button
+            kind="primary"
+            disabled={!allowed || pending || busy || !loaded || !session.screenId}
+            onClick={() => void change()}
+        >
+            {pending ? 'Please wait…' : created ? 'Create new link' : 'Create snapshot link'}
+        </Button>
+    );
     const actions = signIn ? (
         <Button
             kind="primary"
@@ -148,6 +216,11 @@ export function SharePrototype({
         >
             Sign in to share
         </Button>
+    ) : created ? (
+        <>
+            <Button onClick={close}>Done</Button>
+            {create}
+        </>
     ) : (
         <>
             {allowed && !loaded && !pending && (
@@ -155,13 +228,7 @@ export function SharePrototype({
                     Retry loading links
                 </Button>
             )}
-            <Button
-                kind="primary"
-                disabled={!allowed || pending || busy || !loaded || !session.screenId}
-                onClick={() => void change()}
-            >
-                {pending ? 'Please wait…' : 'Create snapshot link'}
-            </Button>
+            {create}
         </>
     );
 
@@ -171,27 +238,18 @@ export function SharePrototype({
                 <Icon icon={{ component: Share, size: 18 }} />
                 Share
             </button>
-            <Dialog
-                title="Share prototype"
-                description="Anyone with the link can play it, without signing in."
-                visible={opened}
-                wide
-                onClose={close}
-                actions={actions}
-            >
+            <Dialog title="Share prototype" visible={opened} wide onClose={close} actions={actions}>
                 <div className={styles.sharing}>
-                    <div className={styles.shareIntro}>
-                        <span className={styles.shareMark}>
-                            <Icon icon={{ component: Link2, size: 22 }} />
-                        </span>
-                        <p>
-                            <strong>One link, the whole prototype</strong>
-                            <span>
-                                Every page and image, at the current start page, size and modes.
-                                Links expire after 30 days; later edits stay private.
-                            </span>
-                        </p>
-                    </div>
+                    {opened && (
+                        <ShareSummary
+                            session={session}
+                            title={
+                                created?.url
+                                    ? 'Your link is ready'
+                                    : 'One link, the whole prototype'
+                            }
+                        />
+                    )}
                     {!allowed ? (
                         <p className={styles.shareState}>
                             {member
@@ -206,25 +264,37 @@ export function SharePrototype({
                         <>
                             {created?.url && (
                                 <div className={styles.sharedLink}>
-                                    <Field
-                                        label="Snapshot link"
-                                        readOnly
-                                        value={created.url}
-                                        onFocus={(event) => event.target.select()}
-                                    />
-                                    <Button
-                                        className={styles.copy}
-                                        aria-label={copied ? 'Copied' : 'Copy link'}
-                                        title={copied ? 'Copied' : 'Copy link'}
-                                        onClick={copy}
-                                    >
-                                        <Icon
-                                            icon={{ component: copied ? Check : Copy, size: 18 }}
-                                        />
-                                    </Button>
+                                    <div className={styles.linkRow}>
+                                        <div className={styles.linkPill}>
+                                            <Icon icon={{ component: Link2, size: 18 }} />
+                                            <input
+                                                aria-label="Snapshot link"
+                                                readOnly
+                                                value={created.url}
+                                                onFocus={(event) => event.target.select()}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={styles.copy}
+                                            aria-label={copied ? 'Copied' : 'Copy link'}
+                                            onClick={copy}
+                                        >
+                                            <Icon
+                                                icon={{
+                                                    component: copied ? Check : Copy,
+                                                    size: 18
+                                                }}
+                                            />
+                                            <span className={styles.copyLabel}>
+                                                {copied ? 'Copied' : 'Copy'}
+                                            </span>
+                                        </button>
+                                    </div>
                                     <p className={styles.shareNote}>
                                         Copy it now: saved links can be revoked, but not shown
-                                        again.
+                                        again. Links expire after 30 days and later edits stay
+                                        private.
                                     </p>
                                 </div>
                             )}
@@ -248,12 +318,12 @@ export function SharePrototype({
                                                         </small>
                                                     </span>
                                                     <Button
-                                                        kind="quiet"
+                                                        className={styles.revoke}
                                                         disabled={pending}
                                                         aria-label={`Revoke ${link.name}`}
                                                         onClick={() => void change(link.id)}
                                                     >
-                                                        Revoke link
+                                                        Revoke
                                                     </Button>
                                                 </li>
                                             ))}
