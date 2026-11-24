@@ -22,8 +22,9 @@ pnpm start
 ```
 
 Then open http://localhost:4000. Without a database, the editor runs signed out and
-keeps documents in the browser. With no AI configured, the AI chat answers from a local
-test model in the browser (`src/ai/localModel.ts`); any build does the same with `?ai=local`.
+keeps documents in the browser. While the server offers no AI (none configured, or signed
+out), the development build's AI chat answers from a local test model in the browser
+(`src/ai/localModel.ts`); any build does the same with `?ai=local`, until `?ai=server`.
 
 To try Prototype, sharing and Download locally, run `pnpm start:local` instead: it builds the
 preview runtime and starts the editor on http://localhost:4000 and the runtime on port 4001
@@ -61,18 +62,18 @@ The servers read their settings from the environment.
 | `BETTER_AUTH_SECRET` | At least 32 random characters, used to sign sessions |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional; both turn on Google sign-in |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Optional; both turn on GitHub sign-in |
-| `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production, the development server logs email without it |
+| `SMTP_URL` | SMTP server for email, such as `smtps://user:password@smtp.example.com`; required in production with `DATABASE_URL`, the development server logs email without it |
 | `MAIL_FROM` | Sender address; `no-reply` at the editor's host by default |
 | `AI_PROVIDER` | Turns AI on for signed-in people: `anthropic`, or `openai` for any server speaking OpenAI's Chat Completions API (OpenAI, Mistral, OpenRouter, Ollama, vLLM) |
 | `AI_API_KEY` | The provider's key, kept on the server; required for `anthropic` (`ANTHROPIC_API_KEY` still works without `AI_PROVIDER`) |
 | `AI_BASE_URL` | Where the `openai` provider's API is; `https://api.openai.com/v1` by default |
 | `AI_EDIT_MODEL` | The model for edits; `claude-haiku-5-5` by default for `anthropic`, required for `openai` |
-| `PREVIEW_ORIGIN`, `EDITOR_ORIGIN` | The preview runtime's and the editor's origins, the same on both servers; without them Prototype, shared links and Download are off |
+| `PREVIEW_ORIGIN`, `EDITOR_ORIGIN` | The preview runtime's and the editor's origins, the same on both servers (`EDITOR_ORIGIN` falls back to `BETTER_AUTH_URL`); without `PREVIEW_ORIGIN`, Prototype, shared links and Download are off |
 | `PREVIEW_ALLOW_LOCALHOST` | `true` allows loopback origins for the preview runtime (local testing only) |
 | `METRICS_TOKEN` | Turns on `/metrics` and its lists for requests sending it as `Authorization: Bearer <token>`; off by default |
 
-The production server stops at start with a clear message when a setting is invalid, such as
-`PORT`, `TRUST_PROXY`, or only one of a provider's credential pair.
+The server stops at start with a clear message when a setting is invalid, such as `PORT`,
+`TRUST_PROXY`, the preview origins, or only one of a provider's credential pair.
 
 ## Running it
 
@@ -87,9 +88,10 @@ your `BETTER_AUTH_URL` origin (or `http://localhost:4000` in development):
 - GitHub: `https://reactor.example.com/api/auth/callback/github`
 
 **Preview runtime.** Prototype, shared links and Download play documents in a separate static
-server (`pnpm serve:preview`, or `node server.preview.ts` in the same image). It must be on a
-different registrable domain from the editor (different final two hostname labels), over
-HTTPS, without the editor's cookies, and deployed from the same release as the editor.
+server (`pnpm serve:preview`, or `node server.preview.ts` in the same image). It must be on an
+app subdomain of a different site from the editor (different final two hostname labels, no IP
+address), both over HTTPS, without the editor's cookies, and deployed from the same release as
+the editor.
 
 **AI.** For an OpenAI-compatible endpoint, set `AI_PROVIDER=openai`, `AI_BASE_URL` to its API
 base (with `/v1` when required) and `AI_EDIT_MODEL`; it must stream Chat Completions with
