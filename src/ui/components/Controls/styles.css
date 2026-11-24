@@ -1,0 +1,100 @@
+.button {
+    --button-height: 2.5rem;
+    --button-padding: 0 1rem;
+    --button-radius: 100rem;
+    --button-background: var(--field-background);
+    --button-color: var(--text-color);
+
+    align-items: center;
+    background: var(--button-background);
+    border: 0;
+    border-radius: var(--button-radius);
+    box-sizing: border-box;
+    color: var(--button-color);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+    gap: 0.5rem;
+    justify-content: center;
+    min-height: var(--button-height);
+    padding: var(--button-padding);
+}
+
+.button:hover:enabled {
+    background: color-mix(in srgb, var(--button-background), black 6%);
+}
+
+.button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.button[data-kind='primary'] {
+    --button-background: var(--selection-color);
+    --button-color: var(--on-selection-color);
+}
+
+.button[data-kind='destructive'] {
+    --button-background: var(--error-color);
+    --button-color: var(--on-selection-color);
+}
+
+.button[data-kind='quiet'] {
+    --button-color: var(--selection-color);
+
+    background: none;
+    font-weight: inherit;
+    justify-content: flex-start;
+    min-height: 0;
+    padding: 0.25rem 0;
+    text-decoration: underline;
+}
+
+.button[data-kind='quiet']:hover:enabled {
+    background: none;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.input {
+    --field-height: 2.5rem;
+    --field-radius: var(--radius-md);
+
+    background: var(--field-background);
+    border: 1px solid transparent;
+    border-radius: var(--field-radius);
+    box-sizing: border-box;
+    color: var(--text-color);
+    font: inherit;
+    min-height: var(--field-height);
+    padding: 0 0.75rem;
+    width: 100%;
+}
+
+.input:focus {
+    background: var(--control-background-active);
+    border-color: var(--action-border);
+}
+
+.button:focus-visible,
+.input:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+    .button,
+    .input {
+        --button-height: var(--touch-target);
+        --field-height: var(--touch-target);
+    }
+
+    .input {
+        font-size: var(--font-size-touch-input);
+    }
+}

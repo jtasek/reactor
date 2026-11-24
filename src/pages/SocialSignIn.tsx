@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { PROVIDERS, readProviders, type OAuthProvider } from 'src/app/services/oauth';
+import { Button } from 'src/ui/components/Controls';
 import styles from './Account.css';
 
 /** Why sign-in with a provider failed on its return to the app. */
@@ -59,11 +60,11 @@ export const SocialSignIn: FC<{
     return (
         <div className={styles.social} role="group" aria-label="Social sign-in">
             {providers.map((provider) => (
-                <button key={provider} type="button" onClick={() => onSignIn(provider)}>
+                <Button key={provider} onClick={() => onSignIn(provider)}>
                     {pending === provider ? 'Continuing with' : 'Continue with'}{' '}
                     {PROVIDERS[provider]}
                     {pending === provider && '…'}
-                </button>
+                </Button>
             ))}
             <span>Or use email</span>
         </div>

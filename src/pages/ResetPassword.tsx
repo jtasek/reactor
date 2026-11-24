@@ -9,6 +9,7 @@ import React, {
 import { useEffects } from 'src/app/hooks';
 import { recoverySignInURL, resetPassword } from 'src/app/services/passwordRecovery';
 import { AccountFrame } from './AccountFrame';
+import { Button, Field } from 'src/ui/components/Controls';
 import styles from './Account.css';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -88,9 +89,7 @@ export const ResetPassword: FC = () => {
                     <p role="alert">
                         This reset link is incomplete. Request a new one from sign-in.
                     </p>
-                    <button type="button" onClick={() => reload(signInURL)}>
-                        Back to sign in
-                    </button>
+                    <Button onClick={() => reload(signInURL)}>Back to sign in</Button>
                 </div>
             </AccountFrame>
         );
@@ -113,13 +112,9 @@ export const ResetPassword: FC = () => {
                             continue.
                         </p>
                     )}
-                    <button
-                        type="button"
-                        className={styles.primary}
-                        onClick={() => reload(signInURL)}
-                    >
+                    <Button kind="primary" onClick={() => reload(signInURL)}>
                         Back to sign in
-                    </button>
+                    </Button>
                 </div>
             </AccountFrame>
         );
@@ -132,37 +127,33 @@ export const ResetPassword: FC = () => {
                 <p>Reset links expire after one hour and can be used once.</p>
                 {problem && <p role="alert">{problem}</p>}
                 <fieldset className={styles.fields} disabled={busy}>
-                    <label>
-                        New password
-                        <input
-                            ref={first}
-                            type="password"
-                            autoComplete="new-password"
-                            required
-                            minLength={MIN_PASSWORD_LENGTH}
-                            maxLength={MAX_PASSWORD_LENGTH}
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                        />
-                    </label>
-                    <label>
-                        Confirm new password
-                        <input
-                            type="password"
-                            autoComplete="new-password"
-                            required
-                            minLength={MIN_PASSWORD_LENGTH}
-                            maxLength={MAX_PASSWORD_LENGTH}
-                            value={confirmation}
-                            onChange={(event) => setConfirmation(event.target.value)}
-                        />
-                    </label>
-                    <button type="submit" className={styles.primary}>
+                    <Field
+                        label="New password"
+                        ref={first}
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={MIN_PASSWORD_LENGTH}
+                        maxLength={MAX_PASSWORD_LENGTH}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                    />
+                    <Field
+                        label="Confirm new password"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={MIN_PASSWORD_LENGTH}
+                        maxLength={MAX_PASSWORD_LENGTH}
+                        value={confirmation}
+                        onChange={(event) => setConfirmation(event.target.value)}
+                    />
+                    <Button kind="primary" type="submit">
                         {busy ? 'Updating password…' : 'Update password'}
-                    </button>
-                    <button type="button" className={styles.link} onClick={() => reload(signInURL)}>
+                    </Button>
+                    <Button kind="quiet" onClick={() => reload(signInURL)}>
                         Back to sign in
-                    </button>
+                    </Button>
                 </fieldset>
             </form>
         </AccountFrame>

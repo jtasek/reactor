@@ -11,6 +11,7 @@ import { authenticationURLs, loginURL, resendVerification } from 'src/app/servic
 import { signInWithProvider, type OAuthProvider } from 'src/app/services/oauth';
 import { deleteAccount, signOut, waitForSync } from 'src/app/services/signOut';
 import { Avatars } from 'src/ui/components/Avatars';
+import { Button, Field } from 'src/ui/components/Controls';
 import { SocialSignIn, returnedProblem } from './SocialSignIn';
 import styles from './Account.css';
 import { AccountFrame } from './AccountFrame';
@@ -77,21 +78,23 @@ export const SignOut: FC<{ owner: string }> = ({ owner }) => {
                     {lost} Signing out removes your documents from this browser, and changes the
                     server does not have yet are lost.
                 </p>
-                <button type="button" disabled={busy} onClick={() => leave(true)}>
-                    Sign out anyway
-                </button>{' '}
-                <button type="button" disabled={busy} onClick={() => setLost(undefined)}>
-                    Stay signed in
-                </button>
+                <div className={styles.actions}>
+                    <Button disabled={busy} onClick={() => leave(true)}>
+                        Sign out anyway
+                    </Button>
+                    <Button disabled={busy} onClick={() => setLost(undefined)}>
+                        Stay signed in
+                    </Button>
+                </div>
             </div>
         );
     }
 
     return (
         <>
-            <button type="button" disabled={busy} onClick={() => leave(false)}>
+            <Button disabled={busy} onClick={() => leave(false)}>
                 {busy ? 'Signing out…' : 'Sign out'}
-            </button>
+            </Button>
             {failure && <p role="alert">{failure}</p>}
         </>
     );
@@ -140,47 +143,38 @@ const DeleteAccount: FC<{ account: AccountUser }> = ({ account }) => {
     };
 
     if (!confirming) {
-        return (
-            <button type="button" onClick={() => setConfirming(true)}>
-                Delete account…
-            </button>
-        );
+        return <Button onClick={() => setConfirming(true)}>Delete account…</Button>;
     }
 
     return (
         <form className={styles.form} onSubmit={submit} aria-busy={busy}>
             <fieldset className={styles.fields} disabled={busy}>
-                <label>
-                    Type {account.email} to confirm
-                    <input
-                        value={typed}
-                        onChange={(event) => setTyped(event.target.value)}
-                        ref={confirmation}
-                        autoComplete="off"
-                    />
-                </label>
+                <Field
+                    label={`Type ${account.email} to confirm`}
+                    value={typed}
+                    onChange={(event) => setTyped(event.target.value)}
+                    ref={confirmation}
+                    autoComplete="off"
+                />
                 {needsPassword && (
-                    <label>
-                        Password
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            autoComplete="current-password"
-                            required
-                        />
-                    </label>
+                    <Field
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        autoComplete="current-password"
+                        required
+                    />
                 )}
                 {failure && <p role="alert">{failure}</p>}
-                <button
+                <Button
                     type="submit"
-                    className={styles.danger}
+                    kind="destructive"
                     disabled={!confirmed || needsPassword === undefined}
                 >
                     {busy ? 'Deleting account…' : 'Delete account permanently'}
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     onClick={() => {
                         setConfirming(false);
                         setTyped('');
@@ -189,7 +183,7 @@ const DeleteAccount: FC<{ account: AccountUser }> = ({ account }) => {
                     }}
                 >
                     Cancel
-                </button>
+                </Button>
             </fieldset>
         </form>
     );
@@ -391,16 +385,15 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                 )}
                 <p className={styles.secondary}>If it does not arrive, check your spam folder.</p>
                 {problem && <p role="alert">{problem}</p>}
-                <button type="button" disabled={busy || resendIn > 0} onClick={resend}>
+                <Button disabled={busy || resendIn > 0} onClick={resend}>
                     {busy
                         ? 'Sending email…'
                         : resendIn > 0
                           ? `Resend email in ${resendIn}s`
                           : 'Resend email'}
-                </button>
-                <button
-                    type="button"
-                    className={styles.link}
+                </Button>
+                <Button
+                    kind="quiet"
                     disabled={busy}
                     onClick={() => {
                         setSent(undefined);
@@ -408,7 +401,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                     }}
                 >
                     Use another email
-                </button>
+                </Button>
             </div>
         );
     }
@@ -426,49 +419,43 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                     />
                 )}
                 {mode === 'signUp' && (
-                    <label>
-                        Name
-                        <input
-                            ref={first}
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            autoComplete="name"
-                            required
-                        />
-                    </label>
-                )}
-                <label>
-                    Email
-                    <input
-                        ref={mode === 'signUp' ? undefined : first}
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        autoComplete="email"
+                    <Field
+                        label="Name"
+                        ref={first}
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        autoComplete="name"
                         required
                     />
-                </label>
+                )}
+                <Field
+                    label="Email"
+                    ref={mode === 'signUp' ? undefined : first}
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    required
+                />
                 {(mode === 'signIn' || mode === 'signUp') && (
-                    <label>
-                        Password
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
-                            minLength={8}
-                            required
-                        />
-                    </label>
+                    <Field
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
+                        minLength={8}
+                        required
+                    />
                 )}
                 {mode === 'signIn' && (
-                    <button className={styles.link} type="button" onClick={() => choose('forgot')}>
+                    <Button kind="quiet" onClick={() => choose('forgot')}>
                         Forgot password?
-                    </button>
+                    </Button>
                 )}
-                <button className={styles.primary} type="submit">
+                <Button kind="primary" type="submit">
                     {pending === mode ? MODES[mode].pending : MODES[mode].submit}
-                </button>
+                </Button>
                 {mode !== 'forgot' && (
                     <p className={styles.agreement}>
                         By continuing, you agree to the{' '}
@@ -486,14 +473,9 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                     {(Object.keys(MODES) as Mode[])
                         .filter((other) => other !== mode && other !== 'forgot')
                         .map((other) => (
-                            <button
-                                key={other}
-                                type="button"
-                                className={styles.link}
-                                onClick={() => choose(other)}
-                            >
+                            <Button key={other} kind="quiet" onClick={() => choose(other)}>
                                 {MODES[other].title}
-                            </button>
+                            </Button>
                         ))}
                 </div>
             </fieldset>
