@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { members, type WorkspaceMember } from 'src/app/services/members';
 import { Avatars } from 'src/ui/components/Avatars';
+import { Button, Problem, Select } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: string) => void }> = ({
@@ -87,24 +88,23 @@ export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: stri
                                                 workspace documents, and their pending invitations
                                                 will be revoked.
                                             </p>
-                                            <button
-                                                type="button"
+                                            <Button
+                                                kind="destructive"
                                                 disabled={busy}
                                                 onClick={() => change(person)}
                                             >
                                                 Confirm removal
-                                            </button>
-                                            <button
-                                                type="button"
+                                            </Button>
+                                            <Button
                                                 disabled={busy}
                                                 onClick={() => setRemoving(undefined)}
                                             >
                                                 Cancel
-                                            </button>
+                                            </Button>
                                         </>
                                     ) : (
                                         <>
-                                            <select
+                                            <Select
                                                 aria-label={`Access for ${person.email}`}
                                                 value={person.role}
                                                 disabled={busy}
@@ -117,15 +117,14 @@ export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: stri
                                             >
                                                 <option value="editor">Editor</option>
                                                 <option value="viewer">Viewer</option>
-                                            </select>
-                                            <button
-                                                type="button"
+                                            </Select>
+                                            <Button
                                                 disabled={busy}
                                                 aria-label={`Remove ${person.email}`}
                                                 onClick={() => setRemoving(person.id)}
                                             >
                                                 Remove
-                                            </button>
+                                            </Button>
                                         </>
                                     )}
                                 </div>
@@ -135,12 +134,10 @@ export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: stri
                 </ul>
             )}
             {problem && (
-                <div role="alert">
-                    <p>{problem}</p>
+                <div className={styles.problem}>
+                    <Problem>{problem}</Problem>
                     {people === undefined && (
-                        <button type="button" onClick={() => setAttempt(attempt + 1)}>
-                            Try again
-                        </button>
+                        <Button onClick={() => setAttempt(attempt + 1)}>Try again</Button>
                     )}
                 </div>
             )}

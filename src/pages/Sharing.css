@@ -26,24 +26,11 @@
   padding: 20px;
 }
 
-.card form, .page label { display: grid; gap: 8px; }
+.card form { display: grid; gap: 8px; }
 .card form { margin-top: 16px; }
-.page input, .page select, .page button {
-  background: var(--panel-content-background);
-  border: 1px solid var(--action-border);
-  border-radius: var(--radius-sm);
-  box-sizing: border-box;
-  color: var(--text-color);
-  font: inherit;
-  max-width: 100%;
-  min-height: 36px;
-  padding: 6px 10px;
-}
-
-.page input, .page select { min-width: 0; width: 100%; }
-.page button { cursor: pointer; }
-.page button:disabled { cursor: default; opacity: 0.5; }
-.page :focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
+.card form > button { justify-self: start; }
+.problem { display: grid; gap: 8px; justify-items: start; margin-top: 16px; }
+.page a:focus-visible, .check input:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
 .secondary { color: var(--text-secondary-color); font-size: var(--font-size-body); }
 .result { border-top: 1px solid var(--hairline-color); margin-top: 20px; padding-top: 8px; }
 .result button { margin-top: 12px; }
@@ -55,17 +42,13 @@
 .preview > svg { height: 100%; width: 100%; }
 
 .page nav { align-items: center; display: flex; gap: 8px; min-height: 24px; }
-.card button[type="submit"] { background: var(--selection-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); }
 
 .member { flex-wrap: wrap; }
-.memberActions { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
-.memberActions select { width: auto; }
+.actions, .memberActions { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
 .memberActions p { flex-basis: 100%; }
 
 @media (max-width: 600px) {
   .memberActions { flex-basis: 100%; }
 }
 
-.page button.primary { background: var(--selection-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
 .page label.check { align-items: center; display: flex; gap: 8px; }
-.page .check input { min-height: 0; width: auto; }

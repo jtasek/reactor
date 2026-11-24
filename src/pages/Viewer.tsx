@@ -2,6 +2,7 @@ import React, { FC, useState } from 'react';
 import { isOutdated } from 'src/app/documentAccess';
 import { useAppState, useCurrentDocument } from 'src/app/hooks';
 import { DocumentThumbnail } from 'src/ui/components/DocumentList/DocumentThumbnail';
+import { Button } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 /** A live preview without editor gestures, command bars or editable panels. */
@@ -24,13 +25,9 @@ export const Viewer: FC<{ checking: boolean }> = ({ checking }) => {
                     {interrupted && (
                         <p>Your drag was stopped part way; Reload shows where it ended up.</p>
                     )}
-                    <button
-                        type="button"
-                        className={styles.primary}
-                        onClick={() => window.location.reload()}
-                    >
+                    <Button kind="primary" onClick={() => window.location.reload()}>
                         Reload
-                    </button>
+                    </Button>
                 </div>
             ) : (
                 <p role="status">
@@ -39,24 +36,14 @@ export const Viewer: FC<{ checking: boolean }> = ({ checking }) => {
                         : 'View only — changes from editors appear here automatically.'}
                 </p>
             )}
-            <div role="group" aria-label="Preview zoom">
-                <button
-                    type="button"
-                    disabled={zoom <= 1}
-                    onClick={() => setZoom(Math.max(1, zoom - 0.5))}
-                >
+            <div role="group" aria-label="Preview zoom" className={styles.actions}>
+                <Button disabled={zoom <= 1} onClick={() => setZoom(Math.max(1, zoom - 0.5))}>
                     Zoom out
-                </button>{' '}
-                <button
-                    type="button"
-                    disabled={zoom >= 4}
-                    onClick={() => setZoom(Math.min(4, zoom + 0.5))}
-                >
+                </Button>
+                <Button disabled={zoom >= 4} onClick={() => setZoom(Math.min(4, zoom + 0.5))}>
                     Zoom in
-                </button>{' '}
-                <button type="button" onClick={() => setZoom(1)}>
-                    Fit
-                </button>
+                </Button>
+                <Button onClick={() => setZoom(1)}>Fit</Button>
             </div>
             <div
                 className={styles.preview}

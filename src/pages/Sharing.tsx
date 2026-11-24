@@ -11,6 +11,7 @@ import {
     type InvitationRole
 } from 'src/app/services/invitations';
 import { Avatars } from 'src/ui/components/Avatars';
+import { Button, Field, Problem, Select } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const Sharing: FC = () => {
@@ -145,64 +146,59 @@ export const Sharing: FC = () => {
                             <>
                                 <section className={styles.card} aria-labelledby="invite-heading">
                                     <h2 id="invite-heading">Invite to a workspace</h2>
-                                    <label>
-                                        Workspace
-                                        <select
-                                            disabled={busy}
-                                            value={workspaceId}
-                                            onChange={(event) => {
-                                                setProblem(undefined);
-                                                setWorkspaceId(event.target.value);
-                                            }}
-                                        >
-                                            {workspaces.map((workspace) => (
-                                                <option key={workspace.id} value={workspace.id}>
-                                                    {workspace.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
+                                    <Select
+                                        label="Workspace"
+                                        disabled={busy}
+                                        value={workspaceId}
+                                        onChange={(event) => {
+                                            setProblem(undefined);
+                                            setWorkspaceId(event.target.value);
+                                        }}
+                                    >
+                                        {workspaces.map((workspace) => (
+                                            <option key={workspace.id} value={workspace.id}>
+                                                {workspace.name}
+                                            </option>
+                                        ))}
+                                    </Select>
                                     <form onSubmit={invite}>
-                                        <label>
-                                            Email
-                                            <input
-                                                type="email"
-                                                autoComplete="email"
-                                                required
-                                                maxLength={254}
-                                                value={email}
-                                                disabled={busy}
-                                                onChange={(event) => setEmail(event.target.value)}
-                                            />
-                                        </label>
-                                        <label>
-                                            Access
-                                            <select
-                                                value={role}
-                                                disabled={busy}
-                                                onChange={(event) =>
-                                                    setRole(event.target.value as InvitationRole)
-                                                }
-                                            >
-                                                <option value="editor">
-                                                    Editor — can edit documents
-                                                </option>
-                                                <option value="viewer">
-                                                    Viewer — can view documents
-                                                </option>
-                                            </select>
-                                        </label>
+                                        <Field
+                                            label="Email"
+                                            type="email"
+                                            autoComplete="email"
+                                            required
+                                            maxLength={254}
+                                            value={email}
+                                            disabled={busy}
+                                            onChange={(event) => setEmail(event.target.value)}
+                                        />
+                                        <Select
+                                            label="Access"
+                                            value={role}
+                                            disabled={busy}
+                                            onChange={(event) =>
+                                                setRole(event.target.value as InvitationRole)
+                                            }
+                                        >
+                                            <option value="editor">
+                                                Editor — can edit documents
+                                            </option>
+                                            <option value="viewer">
+                                                Viewer — can view documents
+                                            </option>
+                                        </Select>
                                         <p className={styles.secondary}>
                                             Only this email address can accept. Links expire after 7
                                             days. Creating another invitation for the same email
                                             replaces its pending link.
                                         </p>
-                                        <button
+                                        <Button
+                                            kind="primary"
                                             type="submit"
                                             disabled={busy || !workspaceId || pending === undefined}
                                         >
                                             {busy ? 'Please wait…' : 'Create invitation'}
-                                        </button>
+                                        </Button>
                                     </form>
                                     {link && (
                                         <div role="status" className={styles.result}>
@@ -210,18 +206,16 @@ export const Sharing: FC = () => {
                                                 Invitation ready. Copy the link and send it to the
                                                 recipient.
                                             </p>
-                                            <label>
-                                                Invitation link
-                                                <input
-                                                    type="text"
-                                                    readOnly
-                                                    value={link}
-                                                    onFocus={(event) => event.target.select()}
-                                                />
-                                            </label>
-                                            <button type="button" onClick={copy}>
+                                            <Field
+                                                label="Invitation link"
+                                                type="text"
+                                                readOnly
+                                                value={link}
+                                                onFocus={(event) => event.target.select()}
+                                            />
+                                            <Button onClick={copy}>
                                                 {copied ? 'Copied' : 'Copy invitation link'}
-                                            </button>
+                                            </Button>
                                         </div>
                                     )}
                                 </section>
@@ -310,14 +304,13 @@ export const Sharing: FC = () => {
                                                             </time>
                                                         </span>
                                                     </div>
-                                                    <button
-                                                        type="button"
+                                                    <Button
                                                         disabled={busy}
                                                         aria-label={`Revoke invitation for ${item.email}`}
                                                         onClick={() => revoke(item.id)}
                                                     >
                                                         Revoke
-                                                    </button>
+                                                    </Button>
                                                 </li>
                                             ))}
                                         </ul>
@@ -328,11 +321,9 @@ export const Sharing: FC = () => {
                     </>
                 )}
                 {problem && (
-                    <div role="alert">
-                        <p>{problem}</p>
-                        <button type="button" onClick={() => reloadPage()}>
-                            Reload
-                        </button>
+                    <div className={styles.problem}>
+                        <Problem>{problem}</Problem>
+                        <Button onClick={() => reloadPage()}>Reload</Button>
                     </div>
                 )}
             </div>

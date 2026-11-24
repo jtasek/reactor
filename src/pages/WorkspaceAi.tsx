@@ -2,6 +2,7 @@ import React, { FC, useState } from 'react';
 import { AI_DISCLOSURE } from 'src/ai/disclosure';
 import { sharingRequest } from 'src/app/services/invitations';
 import type { Workspace } from 'src/app/services/api';
+import { Problem } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 /** An admin's switch for AI in a workspace, with what AI sends and what is kept. */
@@ -50,7 +51,7 @@ export const WorkspaceAi: FC<{ workspace: Workspace; onChanged: (ai: boolean) =>
             </p>
             <p className={styles.secondary}>{AI_DISCLOSURE.sent}</p>
             <p className={styles.secondary}>{AI_DISCLOSURE.kept}</p>
-            {problem && <p role="alert">{problem}</p>}
+            {problem && <Problem>{problem}</Problem>}
         </section>
     );
 };

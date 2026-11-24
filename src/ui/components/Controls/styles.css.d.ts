@@ -3,6 +3,9 @@ declare namespace StylesCssNamespace {
     button: string;
     field: string;
     input: string;
+    multiline: string;
+    problem: string;
+    select: string;
   }
 }
 
