@@ -4,6 +4,7 @@ import { useActions, useCurrentDocument, useEffects } from 'src/app/hooks';
 import { useVariables, useVariableUses } from 'src/app/variableHooks';
 import { ordered } from 'src/app/variableModes';
 import { Icon } from '../Icon';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 import { Packages } from './Packages';
 import { DimensionEditor } from './Dimensions';
@@ -389,18 +390,15 @@ function VariablePanel({ fullPage = false }: { fullPage?: boolean }) {
                     onClose={() => setPending(undefined)}
                     actions={
                         <>
-                            <button type="button" onClick={() => setPending(undefined)}>
-                                Keep editing
-                            </button>
-                            <button
-                                type="button"
-                                data-variant="destructive"
+                            <Button onClick={() => setPending(undefined)}>Keep editing</Button>
+                            <Button
+                                kind="destructive"
                                 onClick={() =>
                                     pending === 'canvas' ? returnToCanvas() : show(pending)
                                 }
                             >
                                 Discard changes
-                            </button>
+                            </Button>
                         </>
                     }
                 />

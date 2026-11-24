@@ -1,4 +1,5 @@
 import React, { FC, useState } from 'react';
+import { Button } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
 import { SignOut } from './Account';
 import styles from './Account.css';
@@ -51,13 +52,12 @@ export const LegalAgreementDialog: FC<{
                     : 'To keep using Reactor, read and agree to them.'
             }
             visible
-            onClose={() => {}}
             actions={
                 <>
                     <SignOut owner={owner} />
-                    <button type="button" data-variant="primary" disabled={busy} onClick={agree}>
+                    <Button kind="primary" disabled={busy} onClick={agree}>
                         {busy ? 'Saving…' : 'Agree'}
-                    </button>
+                    </Button>
                 </>
             }
         >

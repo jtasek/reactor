@@ -8,6 +8,7 @@ import {
     type Snapshot,
     type SnapshotReason
 } from 'src/app/services/documentHistory';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 import { DocumentThumbnail } from '../DocumentList/DocumentThumbnail';
 import styles from './styles.css';
@@ -110,17 +111,13 @@ export const DocumentHistory: FC<{ documentId: string }> = ({ documentId }) => {
             onClose={() => closeDocumentHistory()}
             actions={
                 <>
-                    <button type="button" onClick={() => closeDocumentHistory()}>
-                        Close
-                    </button>
-                    <button
-                        type="button"
-                        data-variant="primary"
+                    <Button
+                        kind="primary"
                         disabled={!chosen?.restorable || restoring}
                         onClick={() => void restore()}
                     >
                         {restoring ? 'Restoring…' : 'Restore this version'}
-                    </button>
+                    </Button>
                 </>
             }
         >

@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react';
 import { FEEDBACK_MAX_LENGTH } from 'src/shared/feedback';
 import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
-import { Problem, TextArea } from '../Controls';
+import { Button, Problem, TextArea } from '../Controls';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
@@ -75,17 +75,14 @@ export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
             onClose={onClose}
             actions={
                 <>
-                    <button type="button" onClick={onClose}>
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        data-variant="primary"
+                    <Button onClick={onClose}>Cancel</Button>
+                    <Button
+                        kind="primary"
                         disabled={busy || message.trim().length === 0}
                         onClick={send}
                     >
                         {busy ? 'Sending…' : 'Send'}
-                    </button>
+                    </Button>
                 </>
             }
         >
