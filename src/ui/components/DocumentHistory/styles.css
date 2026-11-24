@@ -43,7 +43,7 @@
 }
 
 .versions button[aria-pressed='true'] {
-    background: color-mix(in srgb, var(--primary-action-color) 14%, transparent);
+    background: color-mix(in srgb, var(--selection-color) 14%, transparent);
 }
 
 .versions small {

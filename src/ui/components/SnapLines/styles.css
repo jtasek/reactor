@@ -11,7 +11,7 @@
 }
 
 .line {
-    stroke: var(--primary-action-color);
+    stroke: var(--guide-color);
     stroke-width: 1;
 }
 
@@ -28,13 +28,13 @@
 }
 
 .distanceLabel {
-    fill: var(--primary-action-color);
+    fill: var(--guide-color);
     stroke: var(--surface);
     stroke-width: var(--canvas-label-halo-width);
 }
 
 .gapLabel {
     fill: var(--surface);
-    stroke: var(--primary-action-color);
+    stroke: var(--guide-color);
     stroke-width: 10px;
 }
