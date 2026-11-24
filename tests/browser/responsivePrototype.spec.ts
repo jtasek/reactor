@@ -1,4 +1,4 @@
-import { setPrototypeSetting } from './support/prototypeControls';
+import { expectPrototypeSetting, setPrototypeSetting } from './support/prototypeControls';
 import { expect, test, type Page } from '@playwright/test';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { prototypeDocument } from '../support/prototype';
@@ -36,8 +36,8 @@ test('launches from a view, carries viewport and modes across navigation and pre
     ).toBe(false);
     await page.getByRole('link', { name: 'Open prototype' }).click();
     const runtime = player(page);
-    await expect(page.getByLabel('Prototype width', { exact: true })).toHaveValue('320');
-    await expect(page.getByLabel('Prototype Theme')).toHaveValue('dark');
+    await expectPrototypeSetting(page, 'Prototype width', '320');
+    await expectPrototypeSetting(page, 'Prototype Theme', 'dark');
     await expect(runtime.locator('svg')).toHaveAttribute('width', '320');
     const input = runtime.getByRole('textbox', { name: 'Your name', exact: true });
     await input.fill('Ada');
@@ -52,7 +52,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     expect(Math.abs(bounds!.x + bounds!.width / 2 - stage!.x - stage!.width / 2)).toBeLessThan(2);
     await expect(runtime.getByRole('button', { name: 'Restart preview' })).toHaveCount(0);
     await width(page, '0');
-    await expect(page.getByLabel('Prototype width', { exact: true })).toHaveValue('800');
+    await expectPrototypeSetting(page, 'Prototype width', '800');
     await setPrototypeSetting(page, 'Prototype height', '900');
     await runtime.getByRole('button', { name: 'Continue', exact: true }).press('Enter');
     await expect(page.getByLabel('Preview page')).toHaveValue('details');
@@ -81,7 +81,10 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await page.getByRole('button', { name: 'Prototype settings', exact: true }).click();
     await expect(page.getByLabel('Prototype width', { exact: true })).toBeVisible();
     await page.screenshot({ path: 'test-results/prototype-narrow.png' });
-    await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await page
+        .getByRole('dialog', { name: 'Prototype settings' })
+        .getByRole('button', { name: 'Close', exact: true })
+        .click();
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByLabel('Preview page')).toHaveValue('home');
     await expect(input).toHaveValue('Your name');
@@ -96,7 +99,7 @@ test('launches from a view, carries viewport and modes across navigation and pre
     ).toHaveValue('320');
     await page.getByRole('link', { name: 'Open prototype' }).click();
     await expect(input).toHaveValue('Your name');
-    await expect(page.getByLabel('Prototype Theme')).toHaveValue('dark');
+    await expectPrototypeSetting(page, 'Prototype Theme', 'dark');
 });
 
 test('keeps simultaneous sessions independent and retains valid output through live invalid and valid edits', async ({
@@ -112,7 +115,7 @@ test('keeps simultaneous sessions independent and retains valid output through l
     await width(page, '800');
     const second = await context.newPage();
     await second.goto('/prototype');
-    await expect(second.getByLabel('Prototype width', { exact: true })).toHaveValue('320');
+    await expectPrototypeSetting(second, 'Prototype width', '320');
     await expect(
         player(second).getByRole('textbox', { name: 'Your name', exact: true })
     ).toHaveValue('Your name');
@@ -187,7 +190,7 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await page.getByRole('button', { name: 'More for Details', exact: true }).click();
     await page.getByRole('menuitemradio', { name: 'Start here', exact: true }).click();
     await page.getByRole('link', { name: 'Play prototype', exact: true }).click();
-    await expect(page.getByLabel('Start page')).toHaveValue('details');
+    await expectPrototypeSetting(page, 'Start page', 'details');
     await expect(page.getByLabel('Preview page')).toHaveValue('details');
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByLabel('Preview page')).toHaveValue('details');
@@ -236,7 +239,10 @@ test('keeps setup out of the player, restores settings focus and preserves input
     await expect(input).toHaveValue('Ada');
     // Custom stays chosen, so the menu matches what the person picked.
     await page.getByLabel('Viewport preset').selectOption('custom');
-    await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await page
+        .getByRole('dialog', { name: 'Prototype settings' })
+        .getByRole('button', { name: 'Close', exact: true })
+        .click();
     await expect(page.getByLabel('Viewport preset')).toHaveValue('custom');
     await page.getByLabel('Viewport preset').selectOption('mobile');
     await expect(page.getByLabel('Viewport preset')).toHaveValue('mobile');

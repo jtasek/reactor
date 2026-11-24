@@ -310,32 +310,11 @@
     justify-content: space-between;
 }
 
-.field {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--panel-gap);
-    margin: 8px 0;
-    min-width: 0;
-}
-
 .fieldLabel {
     color: var(--text-secondary-color);
     flex: 0 0 64px;
     font-size: var(--font-size-callout);
     overflow-wrap: anywhere;
-}
-
-.field > input,
-.field > .valueInput {
-    flex: 1;
-    min-width: 90px;
-}
-
-.variables select.source {
-    flex: 1;
-    max-width: 100%;
-    width: 0;
 }
 
 .valueInput {

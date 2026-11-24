@@ -428,9 +428,9 @@ export const useLog = () => {
     );
 };
 
-/** This copy's color preview context; it is not document content. */
+/** This copy's color preview context; it is not document content. A document not open here, such as a template preview, has none. */
 export const useVariableContext = (documentId?: string) =>
     useAppState((state) => {
         const document = state.documents[documentId ?? state.currentDocumentId];
-        return variableContext(document, state.previewModes[document.id]);
+        return document ? variableContext(document, state.previewModes[document.id]) : {};
     });

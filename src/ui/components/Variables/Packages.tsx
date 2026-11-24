@@ -15,7 +15,7 @@ import {
 } from 'src/app/designSystemPackages';
 import type { DesignSystemPackage, ImportChoice } from 'src/app/designSystemPackages';
 import styles from './styles.css';
-import { Button } from '../Controls';
+import { Button, Select } from '../Controls';
 import { Dialog } from '../Dialog';
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -157,24 +157,21 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
             }
         >
             <div className={`${styles.variables} ${styles.packageContent}`}>
-                <label className={styles.field}>
-                    <span>Format</span>
-                    <select
-                        className={styles.source}
-                        aria-label="Design-system format"
-                        value={format}
-                        onChange={(event) => {
-                            reading.current++;
-                            setFormat(event.target.value === 'dtcg' ? 'dtcg' : 'native');
-                            setData(undefined);
-                            setProblem('');
-                            setNotice('');
-                        }}
-                    >
-                        <option value="native">Reactor (all definitions)</option>
-                        <option value="dtcg">DTCG (colors / numbers)</option>
-                    </select>
-                </label>
+                <Select
+                    label="Format"
+                    aria-label="Design-system format"
+                    value={format}
+                    onChange={(event) => {
+                        reading.current++;
+                        setFormat(event.target.value === 'dtcg' ? 'dtcg' : 'native');
+                        setData(undefined);
+                        setProblem('');
+                        setNotice('');
+                    }}
+                >
+                    <option value="native">Reactor (all definitions)</option>
+                    <option value="dtcg">DTCG (colors / numbers)</option>
+                </Select>
                 {format === 'dtcg' && (
                     <p className={styles.resolution}>
                         Supports opaque sRGB as 8-bit colors, unitless numbers and aliases.
@@ -259,19 +256,16 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
                                 );
                             })}
                         </ul>
-                        <label className={styles.field}>
-                            <span>Matches</span>
-                            <select
-                                className={styles.source}
-                                aria-label="Import conflict handling"
-                                value={choice}
-                                onChange={(event) => setChoice(event.target.value as ImportChoice)}
-                            >
-                                <option value="reuse">Reuse existing</option>
-                                <option value="replace">Replace existing</option>
-                                <option value="separate">Import separately</option>
-                            </select>
-                        </label>
+                        <Select
+                            label="Matches"
+                            aria-label="Import conflict handling"
+                            value={choice}
+                            onChange={(event) => setChoice(event.target.value as ImportChoice)}
+                        >
+                            <option value="reuse">Reuse existing</option>
+                            <option value="replace">Replace existing</option>
+                            <option value="separate">Import separately</option>
+                        </Select>
                         <p className={styles.resolution}>
                             {choice === 'reuse'
                                 ? 'Keep matching local definitions. Add new tokens and connect their references to the matches.'

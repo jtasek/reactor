@@ -1,9 +1,8 @@
 declare namespace TemplatesCssNamespace {
   export interface ITemplatesCss {
     card: string;
-    dialog: string;
     grid: string;
-    header: string;
+    picture: string;
   }
 }
 

@@ -12,15 +12,11 @@
         'Segoe UI',
         sans-serif;
 }
-.header,
-.settings header,
-.sharing header {
+.header {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-}
-.header {
     padding: 8px 16px;
     background: var(--control-background);
     border-bottom: 1px solid var(--hairline-color);
@@ -114,38 +110,13 @@
     min-height: 500px;
     padding: 16px;
 }
-.settings {
-    margin: auto;
-    padding: 24px;
-    width: min(420px, calc(100vw - 32px));
-    max-height: calc(100vh - 32px);
-    overflow: auto;
-    box-sizing: border-box;
-    background: var(--surface);
-    color: var(--text-color);
-    border: 1px solid var(--hairline-color);
-    border-radius: 20px;
-    box-shadow: var(--box-shadow-hover);
-}
-.settings::backdrop {
-    background: var(--backdrop);
-}
-.settings h2 {
-    font-size: var(--font-size-title-2);
-    flex: 1;
-    margin: 0;
-}
 .controls {
     display: grid;
     gap: 16px;
-    margin-top: 20px;
 }
 .controls label {
     display: grid;
     gap: 6px;
-}
-.controls input {
-    width: 100%;
 }
 .controls p {
     color: var(--text-secondary-color);
@@ -175,59 +146,106 @@
     }
 }
 .sharing {
-    margin: auto;
-    box-sizing: border-box;
-    width: min(640px, calc(100vw - 32px));
-    max-height: calc(100vh - 32px);
-    overflow: auto;
-    color: var(--text-color);
-    background: var(--surface);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-sm);
-    padding: 16px;
+    display: grid;
+    gap: 16px;
+    margin-top: 4px;
 }
-.sharing h2 {
-    font-size: var(--font-size-title-2);
+.shareNote {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+.shareIntro {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border-radius: var(--border-radius);
+    background: color-mix(in srgb, var(--selection-color) 8%, var(--surface));
+}
+.shareMark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--selection-color);
+}
+.shareMark svg {
+    stroke: var(--selection-color);
+    stroke-width: 2.25;
+}
+.shareIntro p {
+    display: grid;
+    gap: 2px;
     margin: 0;
 }
-.sharing ul {
-    display: grid;
-    gap: 12px;
-    padding: 0;
-    list-style: none;
-    width: 100%;
+.shareIntro span {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
 }
-.sharing li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+.shareState {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: var(--border-radius);
+    background: var(--warning-background);
+    color: var(--warning-color);
 }
 .sharedLink {
     display: flex;
     flex-wrap: wrap;
     align-items: end;
     gap: 8px;
-    width: 100%;
 }
-.sharedLink label {
+.sharedLink > label {
+    flex: 1 1 16rem;
+}
+.sharedLink .copy {
+    --button-min-width: var(--button-height);
+    --button-padding: 0;
+}
+.sharedLink > p {
+    flex-basis: 100%;
+}
+.links h3 {
+    margin: 0 0 6px;
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-semibold);
+}
+.links ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--hairline-color);
+    border-radius: var(--border-radius);
+}
+.links li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+}
+.links li + li {
+    border-top: 1px solid var(--hairline-color);
+}
+.links li > span {
     display: grid;
-    gap: 6px;
-    flex: 1;
-    min-width: 180px;
+    min-width: 0;
 }
-.sharedLink input {
-    width: 100%;
-    box-sizing: border-box;
+.links strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-.sharing::backdrop {
-    background: var(--backdrop);
+.links small {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
+.links small[data-outdated] {
+    color: var(--error-color);
 }
 
 .dimensions {
@@ -260,33 +278,72 @@
     }
 }
 .contexts {
+    --context-label-width: 4.5rem;
+
     display: grid;
-    gap: 12px;
+    gap: 10px;
     margin: 0;
-    padding: 12px;
-    border: 1px solid var(--hairline-color);
-    border-radius: var(--radius-md);
+    padding: 0;
+    border: 0;
+    min-width: 0;
 }
 .contexts legend {
-    padding: 0 4px;
+    padding: 0;
+    margin-bottom: 8px;
 }
 .contexts [role='group'] {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
+    padding-left: var(--context-label-width);
 }
 .contexts [role='group'] > span {
-    min-width: 64px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    line-height: 2rem;
     color: var(--text-secondary-color);
 }
 .controls .contexts label {
+    position: relative;
     display: inline-flex;
     gap: 6px;
     align-items: center;
+    min-height: 2rem;
+    padding: 0 0.875rem;
+    border-radius: 100rem;
+    background: var(--field-background);
+    color: var(--text-secondary-color);
+    cursor: pointer;
 }
-.controls .contexts input {
-    width: auto;
-    min-height: 0;
-    padding: 0;
+.controls .contexts label:has(:checked) {
+    background: color-mix(in srgb, var(--selection-color) 12%, var(--surface));
+    color: var(--selection-color);
+}
+.controls .contexts label:has(:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+.controls .combinations {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    background: var(--field-background);
+    color: var(--text-color);
+}
+.combinations svg {
+    flex: none;
+    margin-top: 2px;
+    color: var(--text-secondary-color);
+}
+.contexts input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
 }

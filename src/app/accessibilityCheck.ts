@@ -478,3 +478,25 @@ export function accessibilityContext(issues: readonly AccessibilityIssue[]) {
         }))
     };
 }
+
+export const ISSUE_PRIORITIES = ['must', 'should', 'nice'] as const;
+export type IssuePriority = (typeof ISSUE_PRIORITIES)[number];
+
+/**
+ * Must have: what stops someone using the page (Tab going backwards, text below the large-text
+ * contrast). Should have: the rest of the start state. Nice to have: what only a variant or a
+ * hidden state shows.
+ */
+export function issuePriority(
+    { problem }: AccessibilityIssue,
+    rules: AccessibilityRules
+): IssuePriority {
+    if (
+        problem.kind === 'focusOrder' ||
+        (problem.kind === 'contrast' && problem.ratio < rules.largeTextContrast)
+    ) {
+        return 'must';
+    }
+
+    return problem.when ? 'nice' : 'should';
+}

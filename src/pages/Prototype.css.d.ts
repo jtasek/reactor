@@ -1,15 +1,21 @@
 declare namespace PrototypeCssNamespace {
   export interface IPrototypeCss {
+    combinations: string;
     contexts: string;
     controls: string;
+    copy: string;
     dimensions: string;
     documentName: string;
     header: string;
     headerActions: string;
     identity: string;
+    links: string;
     player: string;
     prototype: string;
-    settings: string;
+    shareIntro: string;
+    shareMark: string;
+    shareNote: string;
+    shareState: string;
     sharedLink: string;
     sharing: string;
     toolbarSlot: string;

@@ -9,7 +9,6 @@ declare namespace StylesCssNamespace {
         detail: string;
         editorFields: string;
         empty: string;
-        field: string;
         fieldLabel: string;
         formActions: string;
         formField: string;
@@ -39,7 +38,6 @@ declare namespace StylesCssNamespace {
         section: string;
         sectionHeading: string;
         sidebar: string;
-        source: string;
         swatch: string;
         toolbar: string;
         utilities: string;

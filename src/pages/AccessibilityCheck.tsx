@@ -1,11 +1,23 @@
-import { Accessibility } from 'lucide-react';
+import {
+    Accessibility,
+    ArrowDownUp,
+    CircleAlert,
+    CircleCheck,
+    Contrast,
+    Crosshair,
+    Tag
+} from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from 'src/ui/components/Icon';
+import { Button, Problem } from 'src/ui/components/Controls';
+import { Dialog } from 'src/ui/components/Dialog';
 import { useActions, useAppState } from 'src/app/hooks';
 import {
     accessibilityContext,
     accessibilityIssues,
     checkAccessibility,
+    issuePriority,
+    ISSUE_PRIORITIES,
     fixOperations,
     type AccessibilityIssue,
     type CheckContext,
@@ -22,6 +34,10 @@ import styles from './AccessibilityCheck.css';
 
 const sendToLocalModel: Send = (path, body, signal) =>
     import('src/ai/localModel').then(({ localSend }) => localSend(path, body, signal));
+
+const PRIORITY_NAMES = { must: 'Must have', should: 'Should have', nice: 'Nice to have' };
+
+const KIND_ICONS = { contrast: Contrast, name: Tag, focusOrder: ArrowDownUp };
 
 const FIX_PROMPT = 'Fix the accessibility problems the check found.';
 
@@ -53,7 +69,7 @@ export function AccessibilityCheck({
     const rules = useAppState((state) => state.config.accessibility);
     const ai = useAppState((state) => state.ai);
     const { applyOperations, checkOperations } = useActions();
-    const dialog = useRef<HTMLDialogElement>(null);
+    const [opened, setOpened] = useState(false);
     const [checked, setChecked] = useState<Checked>();
     const [running, setRunning] = useState(false);
     const [proposal, setProposal] = useState<Proposal>({ status: 'idle' });
@@ -76,12 +92,12 @@ export function AccessibilityCheck({
     };
     const open = () => {
         setProposal({ status: 'idle' });
-        dialog.current?.showModal();
+        setOpened(true);
         run();
     };
     const close = () => {
         request.current?.abort();
-        dialog.current?.close();
+        setOpened(false);
     };
 
     const send: Send | null | undefined =
@@ -155,7 +171,10 @@ export function AccessibilityCheck({
         run();
     };
 
-    const pages = [...new Set(issues.map(({ screenName }) => screenName))];
+    const ranked = ISSUE_PRIORITIES.map((priority) => ({
+        priority,
+        issues: issues.filter((issue) => issuePriority(issue, rules) === priority)
+    })).filter((group) => group.issues.length);
     const failed = checked?.contexts.filter(({ problem }) => problem) ?? [];
     const every = checked?.contexts.length ?? 0;
 
@@ -165,67 +184,34 @@ export function AccessibilityCheck({
                 <Icon icon={{ component: Accessibility, size: 18 }} />
                 Accessibility
             </button>
-            <dialog
-                ref={dialog}
-                className={styles.check}
-                aria-labelledby="accessibility-check-title"
-                onClose={() => request.current?.abort()}
-            >
-                <header>
-                    <h2 id="accessibility-check-title">Accessibility</h2>
-                    <button onClick={close}>Done</button>
-                </header>
+            <Dialog title="Accessibility" visible={opened} wide onClose={close}>
                 {'problem' in contexts ? (
                     <p role="status">{contexts.problem} Change it in Settings.</p>
                 ) : running || !checked ? (
                     <p role="status">Checking {contexts.contexts.length} modes and sizes…</p>
                 ) : (
                     <>
-                        <p role="status" className={styles.summary}>
-                            {issues.length === 0
-                                ? `No problems in ${every} ${every === 1 ? 'context' : 'contexts'}.`
-                                : `${issues.length} ${issues.length === 1 ? 'problem' : 'problems'} in ${every} ${every === 1 ? 'context' : 'contexts'}; ${fixable.length} can be fixed here.`}
-                        </p>
-                        <p className={styles.covered}>
-                            Checked: {contexts.contexts.map(({ name }) => name).join(', ')}
-                        </p>
-                        {failed.map(({ context, problem }) => (
-                            <p key={context.id} className={styles.failed}>
-                                {context.name} could not be drawn: {problem}
-                            </p>
-                        ))}
-                        {pages.map((page) => (
-                            <section key={page} aria-label={page}>
-                                <h3>{page}</h3>
-                                <ul className={styles.issues}>
-                                    {issues
-                                        .filter(({ screenName }) => screenName === page)
-                                        .map((issue) => (
-                                            <li key={issue.id}>
-                                                <p>{issue.message}</p>
-                                                <p className={styles.where}>
-                                                    {issue.contexts.length === every
-                                                        ? 'In every context'
-                                                        : `In ${issue.contexts.join(', ')}`}
-                                                </p>
-                                                <p className={styles.fix}>
-                                                    {issue.fix?.text ?? issue.advice}
-                                                </p>
-                                                {issue.shapeId && (
-                                                    <button
-                                                        onClick={() => {
-                                                            close();
-                                                            onShow(issue.shapeId!);
-                                                        }}
-                                                    >
-                                                        Show
-                                                    </button>
-                                                )}
-                                            </li>
-                                        ))}
-                                </ul>
-                            </section>
-                        ))}
+                        <div
+                            className={styles.summary}
+                            data-clear={issues.length === 0 || undefined}
+                        >
+                            <Icon
+                                icon={{
+                                    component: issues.length === 0 ? CircleCheck : CircleAlert,
+                                    size: 20
+                                }}
+                            />
+                            <div>
+                                <p role="status">
+                                    {issues.length === 0
+                                        ? `No problems in ${every} ${every === 1 ? 'context' : 'contexts'}.`
+                                        : `${issues.length} ${issues.length === 1 ? 'problem' : 'problems'} in ${every} ${every === 1 ? 'context' : 'contexts'}; ${fixable.length} can be fixed here.`}
+                                </p>
+                                <p className={styles.covered}>
+                                    Checked: {contexts.contexts.map(({ name }) => name).join(', ')}
+                                </p>
+                            </div>
+                        </div>
                         {issues.length > 0 && (
                             <footer className={styles.footer}>
                                 {proposal.status === 'proposed' ? (
@@ -237,14 +223,20 @@ export function AccessibilityCheck({
                                 ) : proposal.status === 'proposing' ? (
                                     <>
                                         <p role="status">Proposing fixes…</p>
-                                        <button onClick={proposal.stop}>Stop</button>
+                                        <Button onClick={proposal.stop}>Stop</Button>
                                     </>
                                 ) : (
                                     <>
                                         {proposal.status === 'failed' && (
-                                            <p role="alert">{proposal.problem}</p>
+                                            <Problem>{proposal.problem}</Problem>
                                         )}
-                                        <button
+                                        <p className={styles.note}>
+                                            {send === null
+                                                ? 'Shows the changes the check suggests before anything changes.'
+                                                : 'AI proposes the changes; nothing changes until you accept.'}
+                                        </p>
+                                        <Button
+                                            kind="primary"
                                             disabled={
                                                 document.locked ||
                                                 (send === null && fixable.length === 0)
@@ -252,19 +244,95 @@ export function AccessibilityCheck({
                                             onClick={() => void proposeFixes()}
                                         >
                                             {send === null ? 'Review fixes' : 'Propose fixes'}
-                                        </button>
-                                        <p className={styles.where}>
-                                            {send === null
-                                                ? 'Shows the changes the check suggests before anything changes.'
-                                                : 'AI proposes the changes; nothing changes until you accept.'}
-                                        </p>
+                                        </Button>
                                     </>
                                 )}
                             </footer>
                         )}
+                        {failed.map(({ context, problem }) => (
+                            <Problem key={context.id}>
+                                {context.name} could not be drawn: {problem}
+                            </Problem>
+                        ))}
+                        {ranked.map((group) => (
+                            <section
+                                key={group.priority}
+                                aria-label={PRIORITY_NAMES[group.priority]}
+                                data-priority={group.priority}
+                            >
+                                <h3 className={styles.priority}>
+                                    {PRIORITY_NAMES[group.priority]}
+                                    <span>{group.issues.length}</span>
+                                </h3>
+                                <ul className={styles.issues}>
+                                    {group.issues.map((issue) => (
+                                        <li key={issue.id} data-kind={issue.problem.kind}>
+                                            <span className={styles.kind}>
+                                                <Icon
+                                                    icon={{
+                                                        component: KIND_ICONS[issue.problem.kind],
+                                                        size: 16
+                                                    }}
+                                                />
+                                            </span>
+                                            <div className={styles.issueText}>
+                                                <p className={styles.message}>{issue.message}</p>
+                                                <p className={styles.fix}>
+                                                    {issue.fix?.text ?? issue.advice}
+                                                </p>
+                                                <p className={styles.tags}>
+                                                    {issue.problem.kind === 'contrast' && (
+                                                        <span
+                                                            className={styles.sample}
+                                                            style={{
+                                                                color: issue.problem.color,
+                                                                background: issue.problem.background
+                                                            }}
+                                                            aria-hidden="true"
+                                                        >
+                                                            Aa
+                                                        </span>
+                                                    )}
+                                                    <span className={styles.where}>
+                                                        {issue.screenName}
+                                                    </span>
+                                                    <span className={styles.where}>
+                                                        {issue.contexts.length === every
+                                                            ? 'In every context'
+                                                            : `In ${issue.contexts.join(', ')}`}
+                                                    </span>
+                                                    {issue.fix && (
+                                                        <span className={styles.fixable}>
+                                                            Can be fixed here
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                            {issue.shapeId && (
+                                                <Button
+                                                    className={styles.show}
+                                                    onClick={() => {
+                                                        close();
+                                                        onShow(issue.shapeId!);
+                                                    }}
+                                                >
+                                                    <Icon
+                                                        icon={{
+                                                            component: Crosshair,
+                                                            size: 14
+                                                        }}
+                                                    />
+                                                    Show
+                                                </Button>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        ))}
                     </>
                 )}
-            </dialog>
+            </Dialog>
         </>
     );
 }
@@ -293,10 +361,10 @@ function ProposalReview({
                 </ul>
             )}
             <div className={styles.actions}>
-                <button onClick={onDiscard}>Discard</button>
-                <button disabled={proposed.length === 0} onClick={onAccept}>
+                <Button onClick={onDiscard}>Discard</Button>
+                <Button kind="primary" disabled={proposed.length === 0} onClick={onAccept}>
                     Accept
-                </button>
+                </Button>
             </div>
         </div>
     );
