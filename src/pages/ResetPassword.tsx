@@ -9,7 +9,7 @@ import React, {
 import { useEffects } from 'src/app/hooks';
 import { recoverySignInURL, resetPassword } from 'src/app/services/passwordRecovery';
 import { AccountFrame } from './AccountFrame';
-import { Button, Field } from 'src/ui/components/Controls';
+import { Button, Field, Problem } from 'src/ui/components/Controls';
 import styles from './Account.css';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -86,9 +86,9 @@ export const ResetPassword: FC = () => {
             <AccountFrame onBack={back}>
                 <div className={styles.form}>
                     <h1>Reset your password</h1>
-                    <p role="alert">
+                    <Problem>
                         This reset link is incomplete. Request a new one from sign-in.
-                    </p>
+                    </Problem>
                     <Button onClick={() => reload(signInURL)}>Back to sign in</Button>
                 </div>
             </AccountFrame>
@@ -125,7 +125,6 @@ export const ResetPassword: FC = () => {
             <form className={styles.form} onSubmit={submit} aria-busy={busy}>
                 <h1>Choose a new password</h1>
                 <p>Reset links expire after one hour and can be used once.</p>
-                {problem && <p role="alert">{problem}</p>}
                 <fieldset className={styles.fields} disabled={busy}>
                     <Field
                         label="New password"
@@ -148,6 +147,7 @@ export const ResetPassword: FC = () => {
                         value={confirmation}
                         onChange={(event) => setConfirmation(event.target.value)}
                     />
+                    {problem && <Problem>{problem}</Problem>}
                     <Button kind="primary" type="submit">
                         {busy ? 'Updating password…' : 'Update password'}
                     </Button>

@@ -52,10 +52,9 @@
   line-height: 1.4;
 }
 
-.form h1:focus,
-.form h2:focus {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: 4px;
+/* Headings take focus only from script, to be read out; they are not controls. */
+.form [tabindex='-1']:focus {
+  outline: none;
 }
 
 .secondary,

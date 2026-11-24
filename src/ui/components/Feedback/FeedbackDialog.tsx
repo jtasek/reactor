@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react';
 import { FEEDBACK_MAX_LENGTH } from 'src/shared/feedback';
 import { SCHEMA_VERSION } from 'src/shared/schemaVersion';
-import { TextArea } from '../Controls';
+import { Problem, TextArea } from '../Controls';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
@@ -97,7 +97,7 @@ export const FeedbackDialog: FC<{ onClose: () => void }> = ({ onClose }) => {
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
             />
-            {failure && <p role="alert">{failure}</p>}
+            {failure && <Problem>{failure}</Problem>}
         </Dialog>
     );
 };

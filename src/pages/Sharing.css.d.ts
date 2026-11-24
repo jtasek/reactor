@@ -10,6 +10,7 @@ declare namespace SharingCssNamespace {
     page: string;
     person: string;
     preview: string;
+    problem: string;
     result: string;
     secondary: string;
   }

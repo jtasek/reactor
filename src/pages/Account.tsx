@@ -11,7 +11,7 @@ import { authenticationURLs, loginURL, resendVerification } from 'src/app/servic
 import { signInWithProvider, type OAuthProvider } from 'src/app/services/oauth';
 import { deleteAccount, signOut, waitForSync } from 'src/app/services/signOut';
 import { Avatars } from 'src/ui/components/Avatars';
-import { Button, Field } from 'src/ui/components/Controls';
+import { Button, Field, Problem } from 'src/ui/components/Controls';
 import { SocialSignIn, returnedProblem } from './SocialSignIn';
 import styles from './Account.css';
 import { AccountFrame } from './AccountFrame';
@@ -79,7 +79,7 @@ export const SignOut: FC<{ owner: string }> = ({ owner }) => {
                     server does not have yet are lost.
                 </p>
                 <div className={styles.actions}>
-                    <Button disabled={busy} onClick={() => leave(true)}>
+                    <Button kind="destructive" disabled={busy} onClick={() => leave(true)}>
                         Sign out anyway
                     </Button>
                     <Button disabled={busy} onClick={() => setLost(undefined)}>
@@ -95,7 +95,7 @@ export const SignOut: FC<{ owner: string }> = ({ owner }) => {
             <Button disabled={busy} onClick={() => leave(false)}>
                 {busy ? 'Signing out…' : 'Sign out'}
             </Button>
-            {failure && <p role="alert">{failure}</p>}
+            {failure && <Problem>{failure}</Problem>}
         </>
     );
 };
@@ -166,7 +166,7 @@ const DeleteAccount: FC<{ account: AccountUser }> = ({ account }) => {
                         required
                     />
                 )}
-                {failure && <p role="alert">{failure}</p>}
+                {failure && <Problem>{failure}</Problem>}
                 <Button
                     type="submit"
                     kind="destructive"
@@ -190,7 +190,7 @@ const DeleteAccount: FC<{ account: AccountUser }> = ({ account }) => {
 };
 
 /** A single request state coordinates email, provider sign-in, and email resends. */
-export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
+export const SignInForm: FC<{ returnTo?: string; intro?: string }> = ({ returnTo, intro }) => {
     const { accounts, forgetOwner, reload, reloadPage } = useEffects();
     const urls = authenticationURLs(returnTo);
     const [mode, setMode] = useState<Mode>('signIn');
@@ -384,7 +384,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                     </p>
                 )}
                 <p className={styles.secondary}>If it does not arrive, check your spam folder.</p>
-                {problem && <p role="alert">{problem}</p>}
+                {problem && <Problem>{problem}</Problem>}
                 <Button disabled={busy || resendIn > 0} onClick={resend}>
                     {busy
                         ? 'Sending email…'
@@ -409,7 +409,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
     return (
         <form className={styles.form} onSubmit={submit} aria-busy={busy}>
             <Heading>{MODES[mode].title}</Heading>
-            {problem && <p role="alert">{problem}</p>}
+            {intro && <p className={styles.secondary}>{intro}</p>}
             <fieldset className={styles.fields} disabled={busy}>
                 {mode !== 'forgot' && (
                     <SocialSignIn
@@ -453,6 +453,7 @@ export const SignInForm: FC<{ returnTo?: string }> = ({ returnTo }) => {
                         Forgot password?
                     </Button>
                 )}
+                {problem && <Problem>{problem}</Problem>}
                 <Button kind="primary" type="submit">
                     {pending === mode ? MODES[mode].pending : MODES[mode].submit}
                 </Button>
@@ -540,10 +541,7 @@ export const Account: FC<{ login?: boolean }> = ({ login = false }) => {
                 {new URLSearchParams(window.location.search).has('accountDeleted') && (
                     <p role="status">Your account was deleted.</p>
                 )}
-                <p className={styles.secondary}>
-                    Sign in to sync your documents and work together.
-                </p>
-                <SignInForm />
+                <SignInForm intro="Sign in to sync your documents and work together." />
             </AccountFrame>
         );
     }

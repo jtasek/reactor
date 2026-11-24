@@ -11,7 +11,7 @@ import {
     type InvitationRole
 } from 'src/app/services/invitations';
 import { Avatars } from 'src/ui/components/Avatars';
-import { Button, Field, Select } from 'src/ui/components/Controls';
+import { Button, Field, Problem, Select } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const Sharing: FC = () => {
@@ -321,8 +321,8 @@ export const Sharing: FC = () => {
                     </>
                 )}
                 {problem && (
-                    <div role="alert">
-                        <p>{problem}</p>
+                    <div className={styles.problem}>
+                        <Problem>{problem}</Problem>
                         <Button onClick={() => reloadPage()}>Reload</Button>
                     </div>
                 )}

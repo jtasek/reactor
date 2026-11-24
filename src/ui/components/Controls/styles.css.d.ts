@@ -4,6 +4,7 @@ declare namespace StylesCssNamespace {
     field: string;
     input: string;
     multiline: string;
+    problem: string;
     select: string;
   }
 }

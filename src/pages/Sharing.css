@@ -28,6 +28,8 @@
 
 .card form { display: grid; gap: 8px; }
 .card form { margin-top: 16px; }
+.card form > button { justify-self: start; }
+.problem { display: grid; gap: 8px; justify-items: start; margin-top: 16px; }
 .page a:focus-visible, .check input:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
 .secondary { color: var(--text-secondary-color); font-size: var(--font-size-body); }
 .result { border-top: 1px solid var(--hairline-color); margin-top: 20px; padding-top: 8px; }

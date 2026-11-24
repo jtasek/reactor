@@ -21,6 +21,12 @@
     padding: var(--button-padding);
 }
 
+.button[data-kind='secondary'] {
+    --button-background: var(--surface);
+
+    border: 1px solid var(--action-border);
+}
+
 .button:hover:enabled {
     background: color-mix(in srgb, var(--button-background), black 6%);
 }
@@ -55,11 +61,20 @@
     --button-background: var(--field-background);
     --button-color: var(--text-secondary-color);
 
+    border-color: transparent;
     cursor: default;
 }
 
-.button[data-kind='quiet']:disabled {
-    opacity: 0.5;
+.problem {
+    align-items: flex-start;
+    color: var(--error-color);
+    display: flex;
+    gap: 0.375rem;
+}
+
+.problem svg {
+    flex: none;
+    margin-top: 0.125rem;
 }
 
 .field {

@@ -1150,7 +1150,8 @@ and disappear on release/cancel. Tests: `guideInspector` and `guideIntersections
   `--focus-ring-color`) on `:focus-visible`.
 - **Controls**: page buttons, text fields, text areas and selects use `Button` (kinds
   primary, secondary, quiet, destructive), `Field`, `TextArea` and `Select` from
-  `src/ui/components/Controls` rather than restyling a bare `button`, `input` or `select`.
+  `src/ui/components/Controls` rather than restyling a bare `button`, `input` or `select`;
+  a failure shows as `Problem`, just above the action that failed.
   Dialog action buttons, the Inspector and canvas controls keep their own for now.
   A panel's frame (`PanelLayout`) draws the glass; its content does not draw it again but
   sits on lighter cards (`--control-background`, `--radius-md`, `--panel-gap` from the frame)

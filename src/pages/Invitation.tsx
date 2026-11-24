@@ -8,7 +8,7 @@ import {
     type InvitationPreview
 } from 'src/app/services/invitations';
 import { SignInForm } from './Account';
-import { Button } from 'src/ui/components/Controls';
+import { Button, Problem } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const Invitation: FC = () => {
@@ -129,8 +129,8 @@ const InvitationDetails: FC<{ token?: string }> = ({ token }) => {
                         <p role="status">Loading account…</p>
                     )}
                     {problem && (
-                        <div role="alert">
-                            <p>{problem}</p>
+                        <div className={styles.problem}>
+                            <Problem>{problem}</Problem>
                             {!preview && (
                                 <Button onClick={() => setAttempt(attempt + 1)}>Try again</Button>
                             )}

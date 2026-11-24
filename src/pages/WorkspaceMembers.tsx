@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
 import { members, type WorkspaceMember } from 'src/app/services/members';
 import { Avatars } from 'src/ui/components/Avatars';
-import { Button, Select } from 'src/ui/components/Controls';
+import { Button, Problem, Select } from 'src/ui/components/Controls';
 import styles from './Sharing.css';
 
 export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: string) => void }> = ({
@@ -134,8 +134,8 @@ export const WorkspaceMembers: FC<{ workspaceId: string; onRemoved: (email: stri
                 </ul>
             )}
             {problem && (
-                <div role="alert">
-                    <p>{problem}</p>
+                <div className={styles.problem}>
+                    <Problem>{problem}</Problem>
                     {people === undefined && (
                         <Button onClick={() => setAttempt(attempt + 1)}>Try again</Button>
                     )}
