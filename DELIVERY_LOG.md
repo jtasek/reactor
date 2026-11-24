@@ -1261,9 +1261,10 @@ email address. The Privacy policy says what is kept. Signed-out people have no b
 
 _Recorded 2026-11-24, when their notes were deleted; the notes stay in git history._
 
-- Repository audit (REFACTOR_PLAN.md, 2026-09-22): phases 1–12 fixed persistence, camera math,
-  gestures, selection, commands, checks, components, collaboration and variables. Touchscreen
-  pinch is covered only by synthetic browser input; it was never checked on a physical touch device.
+- Repository audit (REFACTOR_PLAN.md, 2026-09-22): its phases fixed persistence, camera math,
+  gestures, selection, commands and checks, and led into components, collaboration and variables.
+  Phase 9, plugins and renderers, was designed but never started. Touchscreen pinch is covered
+  only by synthetic browser input; it was never checked on a physical touch device.
 - Frame layout spike (2026-10-19): the row/column projection in `tests/spikes/frameLayout.ts`
   that production stacks (`src/app/frameLayout.ts`) were built from.
 - Frame dragging (2026-10-30): dragging a Screen view went from 33.6 ms to 16.7 ms median per move.
@@ -1271,6 +1272,6 @@ _Recorded 2026-11-24, when their notes were deleted; the notes stay in git histo
   for pan and 29% for zoom, frame timing unchanged.
 - Screen view component selection (2026-11-05): selecting an instance no longer re-renders every
   Screen view's shapes (median 299.5 ms to 157 ms).
-- Lucide icons: the sprite UI icons moved to `lucide-react` through the shared `Icon` wrapper.
-- Typography (#469): interface type stays separate from authored artwork, with a 16px floor for
+- Lucide icons (2026-11-10): the sprite UI icons moved to `lucide-react` through the shared `Icon` wrapper.
+- Typography (#469, 2026-11-07): interface type stays separate from authored artwork, with a 16px floor for
   touch inputs.
