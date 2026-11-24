@@ -51,12 +51,12 @@ export const state: UI = {
     },
     groupPanel: {
         id: 'groupPanel',
-        name: 'Group Panel',
+        name: 'Groups',
         visible: false
     },
     layerPanel: {
         id: 'layerPanel',
-        name: 'Layer Panel',
+        name: 'Layers',
         visible: false
     },
     miniMap: {
@@ -96,7 +96,7 @@ export const state: UI = {
     },
     toolBar: {
         id: 'toolBar',
-        name: 'Tool Bar',
+        name: 'Toolbar',
         visible: true
     },
     variables: {

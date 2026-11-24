@@ -1,5 +1,5 @@
 import { isReadOnly } from 'src/app/documentAccess';
-import { useAppState } from 'src/app/hooks';
+import { useAppState, useDebugMode } from 'src/app/hooks';
 import React, { FC } from 'react';
 
 import {
@@ -46,6 +46,7 @@ export const Designer: FC = () => {
     const { closeAiEdit, closePreview } = useActions();
     const previewOpen = usePreviewOpen();
     const readOnly = useAppState(isReadOnly);
+    const debugMode = useDebugMode();
     const checking = useAppState(
         (state) =>
             !state.documentAccess[state.currentDocumentId] ||
@@ -103,15 +104,19 @@ export const Designer: FC = () => {
                 <DockablePanel id="miniMap" title="Minimap">
                     <Minimap />
                 </DockablePanel>
-                <DockablePanel id="documentInfo" title="Document Info">
-                    <DocumentInfo />
-                </DockablePanel>
+                {debugMode && (
+                    <DockablePanel id="documentInfo" title="Document Info">
+                        <DocumentInfo />
+                    </DockablePanel>
+                )}
                 <DockablePanel id="dataView" title="Data" docking="vertical">
                     <DataView />
                 </DockablePanel>
-                <DockablePanel id="stats" title="Stats" docking="vertical">
-                    <Stats />
-                </DockablePanel>
+                {debugMode && (
+                    <DockablePanel id="stats" title="Stats" docking="vertical">
+                        <Stats />
+                    </DockablePanel>
+                )}
                 <DockablePanel id="variables" title="Variables" docking="vertical">
                     <Variables />
                 </DockablePanel>

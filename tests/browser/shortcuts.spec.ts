@@ -51,7 +51,7 @@ test('the editor opened from the documents list has its tools and shortcuts', as
         .first()
         .click();
     await page.getByRole('button', { name: 'More panels' }).click();
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).check();
     await page.keyboard.press('r');
 
     await expect(activeTool(page)).toHaveAttribute('title', 'Draws a rectangle or square');

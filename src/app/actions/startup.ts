@@ -7,6 +7,7 @@ import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';
 import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 import { DOCUMENTS_LAYOUT_KEY, readDocumentsLayout } from '../documentList';
+import { debugMode } from '../services/debugMode';
 
 export const setEditorReady = ({ state }: Context) => {
     state.editorReady = editorLoaded();
@@ -100,6 +101,7 @@ export const onInitializeOvermind = async (
     const { state, effects, actions } = context;
     const addMutationListener = listenToMutations(instance);
 
+    state.config.debugMode = debugMode();
     registerRoutes(effects, actions);
     effects.clipboard.connect(instance.actions);
     effects.assets.connect(instance.actions);

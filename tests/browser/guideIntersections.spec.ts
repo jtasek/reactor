@@ -74,7 +74,7 @@ async function openShapes(page: Page, screen = false) {
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openEditor(page, ['Rulers', 'Guides']);
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).uncheck();
     await page.getByRole('button', { name: 'More panels' }).click();
     await expect(page.locator('svg#surface [data-ruler]')).toHaveCount(2);
 }

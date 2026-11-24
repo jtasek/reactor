@@ -5,6 +5,7 @@ import {
     useCamera,
     useControls,
     useCurrentPage,
+    useDebugMode,
     useDocumentName,
     useKeyboard,
     usePointerPosition
@@ -94,8 +95,17 @@ const SelectionInfo: FC = () => {
     return <>{`selection: [${length}]`}</>;
 };
 
+type Slot = { name: string; Content: FC };
+
 /** The status bar's slots, in order; each renders again only when what it shows changes. */
-const SLOTS: { name: string; Content: FC }[] = [
+const SLOTS: Slot[] = [
+    { name: 'message', Content: DocumentNameInfo },
+    { name: 'save', Content: SaveStatusInfo },
+    { name: 'account', Content: AccountInfo },
+    { name: 'tools', Content: ZoomSlider }
+];
+
+const DEBUG_SLOTS: Slot[] = [
     { name: 'message', Content: DocumentNameInfo },
     { name: 'save', Content: SaveStatusInfo },
     { name: 'account', Content: AccountInfo },
@@ -108,14 +118,15 @@ const SLOTS: { name: string; Content: FC }[] = [
 
 export const StatusBarContainer: FC = () => {
     const { statusBar } = useControls();
+    const slots = useDebugMode() ? DEBUG_SLOTS : SLOTS;
 
     if (!statusBar.visible) {
         return null;
     }
 
     return (
-        <StatusBar slots={SLOTS.length}>
-            {SLOTS.map(({ name, Content }) => (
+        <StatusBar slots={slots.length}>
+            {slots.map(({ name, Content }) => (
                 <StatusBarSlot key={name} name={name}>
                     <Content />
                 </StatusBarSlot>

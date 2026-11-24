@@ -91,7 +91,7 @@ test('tools and explorer can be shown independently', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'More panels' }).click();
     const panel = page.locator('[data-panel="explorer"]');
-    const tools = page.getByRole('checkbox', { name: 'Tool Bar', exact: true });
+    const tools = page.getByRole('checkbox', { name: 'Toolbar', exact: true });
     const explorer = page.getByRole('checkbox', { name: 'Explorer', exact: true });
     const toolbar = page.getByRole('list', { name: 'Tools' });
 
@@ -373,7 +373,7 @@ test('vertical panels reject horizontal docks by keyboard, drag and saved placem
 });
 
 test('Stats is off until chosen and docks only to the sides', async ({ page }) => {
-    await openEditor(page);
+    await openEditor(page, [], { debug: true });
     const panel = page.locator('[data-panel="stats"]');
     await expect(panel).toHaveCount(0);
 
@@ -578,9 +578,7 @@ test('a panel goes where it is dropped among the panels docked with it, also aft
     await page.reload();
     await expect(page.locator('svg#surface')).toBeVisible();
     await page.getByRole('button', { name: 'More panels' }).click();
-    for (const control of ['Control Panel', 'Explorer']) {
-        await page.getByRole('checkbox', { name: control, exact: true }).check();
-    }
+    await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
     await expect.poll(() => dockOrder(page, 'right')).toEqual([lower, upper]);
 });
 

@@ -6,7 +6,7 @@ import { openEditor } from './support/editor';
 async function openWithGuide(page: Page) {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openEditor(page, ['Inspector', 'Rulers', 'Guides']);
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).uncheck();
     await page.getByRole('button', { name: 'More panels' }).click();
     await expect(page.locator('svg#surface [data-ruler]')).toHaveCount(2);
     await page.mouse.move(10, 300);
@@ -25,7 +25,7 @@ test('edits guide orientation and one coordinate, with cancel, locking and dragg
 }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openEditor(page, ['Inspector', 'Rulers', 'Guides']);
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).uncheck();
     await page.getByRole('button', { name: 'More panels' }).click();
     await expect(page.locator('svg#surface [data-ruler]')).toHaveCount(2);
     await page.mouse.move(10, 300);
@@ -129,7 +129,7 @@ test('a drag that starts on a locked guide draws a marquee; a click selects it',
     await page.addInitScript((raw) => localStorage.setItem('reactor', raw), JSON.stringify(saved));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openEditor(page, ['Inspector', 'Rulers', 'Guides']);
-    await page.getByRole('checkbox', { name: 'Tool Bar', exact: true }).uncheck();
+    await page.getByRole('checkbox', { name: 'Toolbar', exact: true }).uncheck();
     await page.getByRole('button', { name: 'More panels' }).click();
     const surface = (await page.locator('svg#surface').boundingBox())!;
     const at = Number(await page.locator('svg#surface #guides > line').getAttribute('x1'));

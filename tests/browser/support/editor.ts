@@ -58,14 +58,17 @@ export async function expandExplorer(page: Page) {
 
 /**
  * Opens the editor with the drawing tools, plus any other `controls`, shown. With the
- * Explorer, its rows all start open, unless `closedExplorer`.
+ * Explorer, its rows all start open, unless `closedExplorer`. Debug panels open in debug mode.
  */
 export async function openEditor(
     page: Page,
     controls: string[] = [],
-    { closedExplorer = false } = {}
+    {
+        closedExplorer = false,
+        debug = controls.includes('Document Info') || controls.includes('Stats')
+    } = {}
 ) {
-    await page.goto('/');
+    await page.goto(debug ? '/?debug=on' : '/');
     await expect(page.locator('svg#surface')).toBeVisible();
     await page.getByRole('button', { name: 'More panels' }).click();
 
@@ -75,7 +78,7 @@ export async function openEditor(
     if (!controls.includes('Explorer')) {
         await page.getByRole('checkbox', { name: 'Explorer', exact: true }).uncheck();
     }
-    for (const control of ['Tool Bar', ...controls]) {
+    for (const control of ['Toolbar', ...controls]) {
         await page.getByRole('checkbox', { name: control, exact: true }).check();
     }
     if (controls.includes('Explorer') && !closedExplorer) {
