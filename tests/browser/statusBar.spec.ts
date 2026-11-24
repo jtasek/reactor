@@ -16,7 +16,7 @@ test('designers see only designer panels and status, without the debug readouts'
         'Surface',
         'Status Bar',
         'Context Menu',
-        'Control Panel',
+        'Panels',
         'Stats',
         'Document Info'
     ]) {

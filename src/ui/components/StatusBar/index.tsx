@@ -95,38 +95,32 @@ const SelectionInfo: FC = () => {
     return <>{`selection: [${length}]`}</>;
 };
 
-type Slot = { name: string; Content: FC };
-
-/** The status bar's slots, in order; each renders again only when what it shows changes. */
-const SLOTS: Slot[] = [
+/**
+ * The status bar's slots, in order; each renders again only when what it shows changes.
+ * The readouts show only in debug mode.
+ */
+const SLOTS: { name: string; Content: FC; debug?: boolean }[] = [
     { name: 'message', Content: DocumentNameInfo },
     { name: 'save', Content: SaveStatusInfo },
     { name: 'account', Content: AccountInfo },
-    { name: 'tools', Content: ZoomSlider }
-];
-
-const DEBUG_SLOTS: Slot[] = [
-    { name: 'message', Content: DocumentNameInfo },
-    { name: 'save', Content: SaveStatusInfo },
-    { name: 'account', Content: AccountInfo },
-    { name: 'selection', Content: SelectionInfo },
-    { name: 'keyboard', Content: KeyboardInfo },
-    { name: 'mouse', Content: MouseInfo },
-    { name: 'camera', Content: CameraInfo },
+    { name: 'selection', Content: SelectionInfo, debug: true },
+    { name: 'keyboard', Content: KeyboardInfo, debug: true },
+    { name: 'mouse', Content: MouseInfo, debug: true },
+    { name: 'camera', Content: CameraInfo, debug: true },
     { name: 'tools', Content: ZoomSlider }
 ];
 
 export const StatusBarContainer: FC = () => {
     const { statusBar } = useControls();
-    const slots = useDebugMode() ? DEBUG_SLOTS : SLOTS;
+    const debugMode = useDebugMode();
 
     if (!statusBar.visible) {
         return null;
     }
 
     return (
-        <StatusBar slots={slots.length}>
-            {slots.map(({ name, Content }) => (
+        <StatusBar>
+            {SLOTS.filter(({ debug }) => debugMode || !debug).map(({ name, Content }) => (
                 <StatusBarSlot key={name} name={name}>
                     <Content />
                 </StatusBarSlot>

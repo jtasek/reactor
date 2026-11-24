@@ -23,7 +23,7 @@ export const state: UI = {
     },
     controlPanel: {
         id: 'controlPanel',
-        name: 'Control Panel',
+        name: 'Panels',
         visible: false
     },
     dataView: {
