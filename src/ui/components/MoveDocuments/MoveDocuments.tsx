@@ -8,6 +8,7 @@ import {
     type SignedOutDocument
 } from 'src/app/services/signedOutDocuments';
 import { MAX_UPLOAD_BYTES, formatSize } from 'src/app/services/documentSize';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 import styles from './styles.css';
 
@@ -98,22 +99,17 @@ export const MoveDocuments: FC<{ owner: string }> = ({ owner }) => {
             onClose={dismiss}
             actions={
                 <>
-                    <button type="button" disabled={moving} onClick={keep}>
+                    <Button disabled={moving} onClick={keep}>
                         Keep in this browser
-                    </button>
+                    </Button>
                     {movable.length > 0 && (
-                        <button
-                            type="button"
-                            data-variant="primary"
-                            disabled={moving}
-                            onClick={() => void move()}
-                        >
+                        <Button kind="primary" disabled={moving} onClick={() => void move()}>
                             {moving
                                 ? 'Moving…'
                                 : movable.length === 1
                                   ? 'Move document'
                                   : `Move ${movable.length} documents`}
-                        </button>
+                        </Button>
                     )}
                 </>
             }

@@ -3,7 +3,6 @@ declare namespace StylesCssNamespace {
     activeZone: string;
     centerColumn: string;
     closable: string;
-    close: string;
     closeCorner: string;
     column: string;
     content: string;

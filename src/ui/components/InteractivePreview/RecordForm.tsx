@@ -3,6 +3,7 @@ import type { Document } from 'src/app/types';
 import type { DataField, DataRecord } from 'src/app/dataTypes';
 import { fieldChoices } from 'src/app/data';
 import { checkRecordDraft } from 'src/preview/recordForms';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog/Dialog';
 import styles from './recordForm.css';
 
@@ -41,17 +42,15 @@ export function RecordForm({
             onClose={close}
             actions={
                 <>
-                    <button type="button" onClick={close}>
-                        Cancel
-                    </button>
-                    <button
+                    <Button onClick={close}>Cancel</Button>
+                    <Button
+                        kind="primary"
                         type="submit"
                         form={id}
-                        data-variant="primary"
                         disabled={pending || changed || !fields.length}
                     >
                         {pending ? 'Saving…' : 'Save'}
-                    </button>
+                    </Button>
                 </>
             }
         >

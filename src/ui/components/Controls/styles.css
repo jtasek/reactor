@@ -65,6 +65,61 @@
     cursor: default;
 }
 
+.close {
+    --close-size: 18px;
+    --close-color: #7b7e86;
+    --close-background: rgba(0, 0, 0, .06);
+    --close-background-hover: rgba(0, 0, 0, .11);
+
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--close-color);
+    cursor: pointer;
+    display: flex;
+    flex: none;
+    height: var(--close-target, 1.75rem);
+    justify-content: center;
+    padding: 0;
+    position: relative;
+    width: var(--close-target, 1.75rem);
+}
+
+.close::before {
+    background: var(--close-background);
+    border-radius: 50%;
+    content: '';
+    height: var(--close-size);
+    position: absolute;
+    width: var(--close-size);
+}
+
+.close > svg {
+    position: relative;
+}
+
+.close:hover:enabled {
+    color: var(--text-color);
+}
+
+.close:hover:enabled::before {
+    background: var(--close-background-hover);
+}
+
+.close:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.close:focus-visible {
+    outline: none;
+}
+
+.close:focus-visible::before {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 1px;
+}
+
 .problem {
     align-items: flex-start;
     color: var(--error-color);

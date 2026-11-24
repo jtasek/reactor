@@ -3,25 +3,18 @@
     --dialog-padding: 1.25rem;
     --dialog-heading-gap: 0.75rem;
     --dialog-action-gap: 0.5rem;
-    --dialog-button-padding: 0.5rem 0.75rem;
-    --dialog-button-radius: 100rem;
-    --dialog-radius: 0.625rem;
-    --dialog-primary-background: var(--selection-color);
-    --dialog-primary-hover-background: color-mix(in srgb, var(--selection-color) 90%, black);
-    --dialog-primary-text: var(--on-selection-color);
-    --dialog-destructive-background: var(--error-color);
-    --dialog-destructive-hover-background: color-mix(in srgb, var(--error-color) 90%, black);
-    --dialog-text-color: var(--ink-strong);
-    --dialog-emphasis-weight: 600;
+
     background: var(--surface);
-    backdrop-filter: var(--backdrop-filter);
     border: 0;
-    border-radius: var(--dialog-radius);
+    border-radius: var(--border-radius);
     box-shadow: var(--box-shadow-hover);
-    color: var(--dialog-text-color);
+    box-sizing: border-box;
+    color: var(--ink-strong);
     line-height: 1.5;
     margin: auto;
+    max-height: calc(100dvh - 2 * var(--dialog-padding));
     max-width: min(90vw, var(--dialog-max-width));
+    overflow: auto;
     padding: var(--dialog-padding);
 }
 
@@ -35,55 +28,37 @@
     font-family: inherit;
 }
 
-.dialog h2 {
-    font-size: var(--font-size-title-2);
-    font-weight: var(--dialog-emphasis-weight);
-    letter-spacing: var(--tracking-title);
-    line-height: var(--line-height-title-2);
-    margin-bottom: var(--dialog-heading-gap);
+.dialog::backdrop {
+    background: var(--backdrop);
 }
 
-.dialog::backdrop {
-    backdrop-filter: var(--backdrop-filter);
-    background: var(--backdrop);
+.header {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--dialog-heading-gap);
+    justify-content: space-between;
+    margin: calc(var(--dialog-padding) / -4) calc(var(--dialog-padding) / -2)
+        var(--dialog-heading-gap) 0;
+}
+
+.header h2 {
+    font-size: var(--font-size-title-2);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-title);
+    line-height: var(--line-height-title-2);
+    margin: calc(var(--dialog-padding) / 4) 0 0;
 }
 
 .actions {
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
     gap: var(--dialog-action-gap);
     justify-content: flex-end;
     margin-top: var(--dialog-padding);
 }
 
-.actions button {
-    border: 0;
-    border-radius: var(--dialog-button-radius);
-    cursor: pointer;
-    font: inherit;
-    font-weight: var(--dialog-emphasis-weight);
-    padding: var(--dialog-button-padding);
-}
-
-.actions button:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.actions button[data-variant='primary'] {
-    background: var(--dialog-primary-background);
-    color: var(--dialog-primary-text);
-}
-
-.actions button[data-variant='primary']:hover:enabled {
-    background: var(--dialog-primary-hover-background);
-}
-
-.actions button[data-variant='destructive'] {
-    background: var(--dialog-destructive-background);
-    color: var(--dialog-primary-text);
-}
-
-.actions button[data-variant='destructive']:hover {
-    background: var(--dialog-destructive-hover-background);
+@media (max-width: 36rem) {
+    .actions > * {
+        flex: 1 1 0;
+    }
 }

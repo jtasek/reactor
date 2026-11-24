@@ -15,6 +15,7 @@ import {
 } from 'src/app/designSystemPackages';
 import type { DesignSystemPackage, ImportChoice } from 'src/app/designSystemPackages';
 import styles from './styles.css';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -138,32 +139,19 @@ function PackageControls({ mode, onClose }: { mode: 'import' | 'export'; onClose
             onClose={onClose}
             actions={
                 mode === 'export' ? (
-                    <>
-                        <button type="button" onClick={onClose}>
-                            Close
-                        </button>
-                        <button
-                            type="button"
-                            data-variant="primary"
-                            disabled={unsupported.length > 0}
-                            onClick={exportPackage}
-                        >
-                            Export design system
-                        </button>
-                    </>
+                    <Button
+                        kind="primary"
+                        disabled={unsupported.length > 0}
+                        onClick={exportPackage}
+                    >
+                        Export design system
+                    </Button>
                 ) : data ? (
                     <>
-                        <button type="button" onClick={onClose}>
-                            Cancel import
-                        </button>
-                        <button
-                            type="button"
-                            data-variant="primary"
-                            disabled={document.locked}
-                            onClick={apply}
-                        >
+                        <Button onClick={onClose}>Cancel import</Button>
+                        <Button kind="primary" disabled={document.locked} onClick={apply}>
                             Apply import
-                        </button>
+                        </Button>
                     </>
                 ) : undefined
             }

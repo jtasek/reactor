@@ -3,10 +3,6 @@
     --panel-max-height: min(70vh, 700px);
     --panel-max-width: min(90vw, 420px);
     --panel-grip-size: 14px;
-    --panel-close-size: 18px;
-    --panel-close-color: #7b7e86;
-    --panel-close-background: rgba(0, 0, 0, .06);
-    --panel-close-background-hover: rgba(0, 0, 0, .11);
     --dock-zone-transition-duration: 0.12s;
     --panel-lifted-opacity: 0.92;
     inset: 0;
@@ -146,53 +142,11 @@
 }
 
 .closeCorner {
+    --close-target: var(--panel-header-height);
+
     position: absolute;
     right: 0;
     top: 0;
-}
-
-.close {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: var(--panel-close-color);
-    cursor: pointer;
-    display: flex;
-    height: var(--panel-header-height);
-    justify-content: center;
-    padding: 0;
-    position: relative;
-    width: var(--panel-header-height);
-}
-
-.close::before {
-    background: var(--panel-close-background);
-    border-radius: 50%;
-    content: '';
-    height: var(--panel-close-size);
-    position: absolute;
-    width: var(--panel-close-size);
-}
-
-.close > svg {
-    position: relative;
-}
-
-.close:hover {
-    color: var(--text-color);
-}
-
-.close:hover::before {
-    background: var(--panel-close-background-hover);
-}
-
-.close:focus-visible {
-    outline: none;
-}
-
-.close:focus-visible::before {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: 1px;
 }
 
 .handle:focus-visible {

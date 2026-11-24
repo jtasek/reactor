@@ -11,7 +11,7 @@ import React, {
     useState
 } from 'react';
 import type { PanelPlacement } from 'src/app/types';
-import { X } from 'lucide-react';
+import { CloseButton } from '../Controls';
 import { useActions, useControls, usePanelLayout } from 'src/app/hooks';
 import { beyondClickSlip } from 'src/events/gestures';
 import styles from './styles.css';
@@ -847,15 +847,7 @@ export const PanelLayout: FC<{ children: ReactNode; toolbar?: ReactNode }> = ({
                 {close && (
                     // Wrapped, so `> button` stays the panel's header.
                     <div className={styles.closeCorner}>
-                        <button
-                            type="button"
-                            className={styles.close}
-                            aria-label={`Close ${title}`}
-                            title={`Close ${title}`}
-                            onClick={close}
-                        >
-                            <X aria-hidden="true" focusable="false" size={10} strokeWidth={2.6} />
-                        </button>
+                        <CloseButton label={`Close ${title}`} onClick={close} />
                     </div>
                 )}
                 <div className={styles.content}>{content}</div>

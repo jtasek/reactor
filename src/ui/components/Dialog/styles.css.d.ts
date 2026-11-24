@@ -2,6 +2,7 @@ declare namespace StylesCssNamespace {
   export interface IStylesCss {
     actions: string;
     dialog: string;
+    header: string;
   }
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useActions, useDocumentReset } from 'src/app/hooks';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 
 export const ResetDocumentDialog = () => {
@@ -18,12 +19,10 @@ export const ResetDocumentDialog = () => {
             onClose={() => cancelDocumentReset()}
             actions={
                 <>
-                    <button type="button" onClick={() => cancelDocumentReset()}>
-                        Cancel
-                    </button>
-                    <button type="button" data-variant="primary" onClick={() => resetDocument()}>
+                    <Button onClick={() => cancelDocumentReset()}>Cancel</Button>
+                    <Button kind="destructive" onClick={() => resetDocument()}>
                         Reset document
-                    </button>
+                    </Button>
                 </>
             }
         />

@@ -4,6 +4,7 @@ import type { Variable } from 'src/app/types';
 import { ordered } from 'src/app/variableModes';
 import { variableDependencies } from 'src/app/variables';
 import styles from './styles.css';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 
 /** Variables this one may follow without making a loop, plus the one it follows. */
@@ -103,12 +104,11 @@ export function VariableBindings({
                             onClose={() => setPending(undefined)}
                             actions={
                                 <>
-                                    <button type="button" onClick={() => setPending(undefined)}>
+                                    <Button onClick={() => setPending(undefined)}>
                                         Keep dimension
-                                    </button>
-                                    <button
-                                        type="button"
-                                        data-variant="primary"
+                                    </Button>
+                                    <Button
+                                        kind="primary"
                                         disabled={document.locked}
                                         onClick={() => {
                                             setVariableDimension({
@@ -119,7 +119,7 @@ export function VariableBindings({
                                         }}
                                     >
                                         Change dimension
-                                    </button>
+                                    </Button>
                                 </>
                             }
                         />

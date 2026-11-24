@@ -1,6 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
     button: string;
+    close: string;
     field: string;
     input: string;
     multiline: string;

@@ -12,6 +12,7 @@ import React, {
 import { useActions, useDocument } from 'src/app/hooks';
 import { daysLeftInRecentlyDeleted, documentModifiedLabel } from 'src/app/documentList';
 import { tagKey, type TagTone } from 'src/app/tagTones';
+import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
 import { CalendarDays, Clock, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Avatars } from '../Avatars';
@@ -316,12 +317,10 @@ export const DocumentCard: FC<Props> = ({
                 onClose={cancelDelete}
                 actions={
                     <>
-                        <button type="button" onClick={cancelDelete}>
-                            Cancel
-                        </button>
-                        <button type="button" data-variant="destructive" onClick={remove}>
+                        <Button onClick={cancelDelete}>Cancel</Button>
+                        <Button kind="destructive" onClick={remove}>
                             Delete
-                        </button>
+                        </Button>
                     </>
                 }
             />

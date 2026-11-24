@@ -1,12 +1,16 @@
 import React, { FC, ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { CloseButton } from '../Controls';
 import styles from './styles.css';
+
+const FOCUSABLE = 'button:enabled, input:enabled, select:enabled, textarea:enabled, a[href]';
 
 export interface Props {
     title: string;
-    description: string;
+    description?: string;
     visible: boolean;
-    onClose: () => void;
+    /** Left out for a dialog that must be answered with one of its actions. */
+    onClose?: () => void;
     actions?: ReactNode;
     children?: ReactNode;
     /** Wide, for a dialog that shows a list beside a preview. */
@@ -23,6 +27,7 @@ export const Dialog: FC<Props> = ({
     wide = false
 }) => {
     const ref = useRef<HTMLDialogElement>(null);
+    const close = useRef<HTMLButtonElement>(null);
     const titleId = useId();
     const descriptionId = useId();
 
@@ -33,6 +38,12 @@ export const Dialog: FC<Props> = ({
         const stopShortcuts = (event: KeyboardEvent) => event.stopPropagation();
         dialog.addEventListener('keydown', stopShortcuts);
         dialog.showModal();
+        // Opening lands on the first answer or field rather than on the ×.
+        if (document.activeElement === close.current) {
+            [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)]
+                .find((element) => element !== close.current)
+                ?.focus();
+        }
         return () => {
             dialog.close();
             dialog.removeEventListener('keydown', stopShortcuts);
@@ -48,22 +59,19 @@ export const Dialog: FC<Props> = ({
             className={styles.dialog}
             data-wide={wide || undefined}
             aria-labelledby={titleId}
-            aria-describedby={descriptionId}
+            aria-describedby={description ? descriptionId : undefined}
             onCancel={(event) => {
                 event.preventDefault();
-                onClose();
+                onClose?.();
             }}
         >
-            <h2 id={titleId}>{title}</h2>
-            <p id={descriptionId}>{description}</p>
+            <header className={styles.header}>
+                <h2 id={titleId}>{title}</h2>
+                {onClose && <CloseButton ref={close} label="Close" onClick={onClose} />}
+            </header>
+            {description && <p id={descriptionId}>{description}</p>}
             {children}
-            <div className={styles.actions}>
-                {actions ?? (
-                    <button type="button" onClick={onClose}>
-                        Close
-                    </button>
-                )}
-            </div>
+            {actions && <div className={styles.actions}>{actions}</div>}
         </dialog>,
         document.body
     );
