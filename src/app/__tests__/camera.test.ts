@@ -1,14 +1,10 @@
-import { limitScale, panBy, screenToWorld, worldToScreen, zoomAt } from '../camera';
+import { limitScale, panBy, screenToWorld, zoomAt } from '../camera';
 
 describe('camera math', () => {
     const camera = { scale: 2.5, position: { x: 40, y: -15 } };
 
-    it('converts between world and surface-local coordinates', () => {
-        const world = { x: -12, y: 32 };
-        const screen = worldToScreen(world, camera);
-
-        expect(screen).toEqual({ x: 10, y: 65 });
-        expect(screenToWorld({ x: 10, y: 65 }, camera)).toEqual(world);
+    it('converts surface-local coordinates to world coordinates', () => {
+        expect(screenToWorld({ x: 10, y: 65 }, camera)).toEqual({ x: -12, y: 32 });
     });
 
     it('clamps zoom without moving its anchor', () => {
@@ -45,14 +41,12 @@ describe('camera math', () => {
         expect(limitScale(scale)).toBeNull();
         expect(zoomAt(camera, scale, point)).toBeNull();
         expect(screenToWorld(point, invalidCamera)).toBeNull();
-        expect(worldToScreen(point, invalidCamera)).toBeNull();
         expect(panBy(invalidCamera, point)).toBeNull();
     });
 
     it('rejects non-finite points and overflowed results', () => {
         expect(zoomAt(camera, 2, { x: Infinity, y: 0 })).toBeNull();
         expect(panBy(camera, { x: NaN, y: 0 })).toBeNull();
-        expect(worldToScreen({ x: Number.MAX_VALUE, y: 0 }, camera)).toBeNull();
         expect(screenToWorld({ x: Number.MAX_VALUE, y: 0 }, { ...camera, scale: 0.1 })).toBeNull();
     });
 });

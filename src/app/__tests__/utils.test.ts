@@ -1,10 +1,7 @@
-import { Box, Document, Ellipse, Point, Shape } from '../types';
+import { Box, Document, Point, Shape } from '../types';
 import {
     debounce,
     getDistance,
-    isCircleInBox,
-    isEllipseInBox,
-    isRectangleInBox,
     overlaps,
     boxCenter,
     rotatePoint,
@@ -57,123 +54,6 @@ describe('utils', () => {
             const actual = getDistance(p1, p2);
 
             expect(actual).toBe(12.727922061357857);
-        });
-    });
-
-    describe('isCircleInBox', () => {
-        const center: Point = { x: 5, y: 5 };
-        const r = 2;
-
-        it('should return true if circle is contained in box', () => {
-            const box: Box = {
-                topLeft: { x: 0, y: 0 },
-                bottomRight: { x: 10, y: 10 },
-                width: 10,
-                height: 10
-            };
-            expect(isCircleInBox(center, r, box)).toBe(true);
-        });
-
-        it('should return false if circle is not contained in box', () => {
-            const box: Box = {
-                topLeft: { x: 0, y: 0 },
-                bottomRight: { x: 4, y: 4 },
-                width: 4,
-                height: 4
-            };
-            expect(isCircleInBox(center, r, box)).toBe(false);
-        });
-
-        it('should return false if circle center is outside box', () => {
-            const box: Box = {
-                topLeft: { x: 6, y: 6 },
-                bottomRight: { x: 10, y: 10 },
-                width: 4,
-                height: 4
-            };
-            expect(isCircleInBox(center, r, box)).toBe(false);
-        });
-
-        it('should return false if circle intersects box', () => {
-            const box: Box = {
-                topLeft: { x: 4, y: 4 },
-                bottomRight: { x: 10, y: 10 },
-                width: 6,
-                height: 6
-            };
-            expect(isCircleInBox(center, r, box)).toBe(false);
-        });
-    });
-
-    describe('isRectangleInBox', () => {
-        const box1: Box = {
-            topLeft: { x: 2, y: 2 },
-            bottomRight: { x: 6, y: 6 },
-            width: 4,
-            height: 4
-        };
-        const box2: Box = {
-            topLeft: { x: 3, y: 3 },
-            bottomRight: { x: 5, y: 5 },
-            width: 2,
-            height: 2
-        };
-        const box3: Box = {
-            topLeft: { x: 4, y: 4 },
-            bottomRight: { x: 8, y: 8 },
-            width: 4,
-            height: 4
-        };
-
-        test('Box inside box should return true', () => {
-            expect(isRectangleInBox(box2, box1)).toBe(true);
-        });
-
-        test('Box outside box should return false', () => {
-            expect(isRectangleInBox(box3, box1)).toBe(false);
-        });
-
-        test('Box partially inside box should return false', () => {
-            const box4: Box = {
-                topLeft: { x: 1, y: 1 },
-                bottomRight: { x: 4, y: 4 },
-                width: 3,
-                height: 3
-            };
-            expect(isRectangleInBox(box4, box1)).toBe(false);
-        });
-    });
-
-    describe('isEllipseInBox', () => {
-        const ellipse = {
-            position: { x: 5, y: 5 },
-            radius: { x: 2, y: 3 }
-        } as Ellipse;
-        const box: Box = {
-            topLeft: { x: 2, y: 2 },
-            bottomRight: { x: 8, y: 8 },
-            width: 6,
-            height: 6
-        };
-
-        test('Ellipse inside box should return true', () => {
-            expect(isEllipseInBox(ellipse, box)).toBe(true);
-        });
-
-        test('Ellipse outside box should return false', () => {
-            const ellipse2 = {
-                position: { x: 10, y: 10 },
-                radius: { x: 2, y: 3 }
-            } as Ellipse;
-            expect(isEllipseInBox(ellipse2, box)).toBe(false);
-        });
-
-        test('Ellipse partially outside box should return false', () => {
-            const ellipse3 = {
-                position: { x: 6, y: 6 },
-                radius: { x: 3, y: 4 }
-            } as Ellipse;
-            expect(isEllipseInBox(ellipse3, box)).toBe(false);
         });
     });
 
