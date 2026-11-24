@@ -63,7 +63,7 @@
 /* Where a dragged panel would go among the panels of the dock under the pointer. */
 .dropMarker {
     align-self: stretch;
-    background: var(--accent);
+    background: var(--selection-color);
     border-radius: 2px;
     flex: none;
     height: 3px;
