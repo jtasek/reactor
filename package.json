@@ -6,7 +6,7 @@
   "bugs": {
     "url": "https://github.com/jtasek/reactor/issues"
   },
-  "description": "The future of the web development",
+  "description": "Design and prototype apps in the browser, with AI",
   "homepage": "https://github.com/jtasek/reactor#readme",
   "license": "MIT",
   "type": "module",
@@ -16,11 +16,10 @@
   },
   "keywords": [
     "design",
-    "diagram",
+    "design-tokens",
     "mockup",
-    "modeling",
     "prototype",
-    "uml",
+    "ui",
     "wireframe"
   ],
   "repository": {

@@ -126,7 +126,7 @@ The repo uses **pnpm** (`pnpm@11.5.0`, see `pnpm-lock.yaml`). Use `pnpm` for ins
   (`server/accounts.ts`) turns accounts on when `DATABASE_URL` is set and both servers mount
   Better Auth at `/api/auth/*splat`; without it the editor runs signed out. Server tests
   (`tests/server/`) run Better Auth against PGlite, with email in an outbox; see README
-  "Accounts" for the variables. The app's tables are Kysely migrations in
+  "Configuration" for the variables. The app's tables are Kysely migrations in
   `server/migrations.ts` (add new ones, never edit released ones), workspace queries live in
   `server/workspaces.ts`, and `server/api.ts` is the `/api` router, which checks the
   session, the `Origin` of changes and the role on every request. `server/sync.ts` serves
