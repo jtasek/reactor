@@ -383,9 +383,9 @@ re-renders.** Components never mutate state directly.
   clipboard and paste through the root actions it is connected to at startup.
   Shortcuts and the clipboard act only while `takesEditorInput` (`src/events/input.ts`).
 - **Tools** (`src/tools/`): drawing/selection tools; tool state lives in the `tools` namespace.
-- **Renderers** (planned, not built yet): `APPLICATION_PLAN.md` orders the work ahead,
-  starting with SVG export and a standalone web package; it does not plan XML, Canvas or
-  plugin hosting, so do not build REFACTOR_PLAN's Phase 9 plugins and renderers.
+- **Renderers**: SVG export (`src/commands/export.ts`) and the standalone web package
+  (`src/preview/standalonePackage.ts`) are built. `APPLICATION_PLAN.md` does not plan XML,
+  Canvas or plugin hosting, so do not build plugins or other renderers.
 - Entry: `src/index.tsx` creates the Overmind instance and wraps `<Shell>` in the
   overmind-react `<Provider>`. `Shell` switches between `Designer` and `Documents` pages.
 
