@@ -107,8 +107,8 @@
 }
 
 .form .primary {
-  background: var(--primary-action-color);
-  border-color: var(--primary-action-color);
+  background: var(--selection-color);
+  border-color: var(--selection-color);
   color: var(--panel-content-background);
   font-weight: var(--font-weight-semibold);
 }

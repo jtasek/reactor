@@ -55,7 +55,7 @@
 .preview > svg { height: 100%; width: 100%; }
 
 .page nav { align-items: center; display: flex; gap: 8px; min-height: 24px; }
-.card button[type="submit"] { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); }
+.card button[type="submit"] { background: var(--selection-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); }
 
 .member { flex-wrap: wrap; }
 .memberActions { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
@@ -66,6 +66,6 @@
   .memberActions { flex-basis: 100%; }
 }
 
-.page button.primary { background: var(--primary-action-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
+.page button.primary { background: var(--selection-color); color: var(--panel-content-background); font-weight: var(--font-weight-semibold); margin-bottom: 12px; }
 .page label.check { align-items: center; display: flex; gap: 8px; }
 .page .check input { min-height: 0; width: auto; }
