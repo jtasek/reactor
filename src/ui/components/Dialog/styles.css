@@ -56,3 +56,9 @@
     justify-content: flex-end;
     margin-top: var(--dialog-padding);
 }
+
+@media (max-width: 36rem) {
+    .actions > * {
+        flex: 1 1 0;
+    }
+}
