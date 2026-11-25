@@ -31,6 +31,7 @@ declare namespace StylesCssNamespace {
     search: string;
     subtitle: string;
     tagFilter: string;
+    templateMark: string;
     thumbnail: string;
     thumbnailEmpty: string;
     thumbnailSvg: string;

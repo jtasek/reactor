@@ -1,7 +1,9 @@
+import { LayoutTemplate } from 'lucide-react';
 import React, { FC } from 'react';
 
 import {
     useAccount,
+    useAppState,
     useCamera,
     useControls,
     useCurrentPage,
@@ -85,8 +87,19 @@ const CameraInfo: FC = () => {
 
 const DocumentNameInfo: FC = () => {
     const name = useDocumentName();
+    const template = useAppState((state) => state.currentDocument.template);
 
-    return <>{name}</>;
+    return (
+        <>
+            {name}
+            {template && (
+                <span className={styles.template}>
+                    <LayoutTemplate size={12} strokeWidth={1.75} aria-hidden="true" />
+                    Template
+                </span>
+            )}
+        </>
+    );
 };
 
 const SelectionInfo: FC = () => {

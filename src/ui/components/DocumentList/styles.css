@@ -414,6 +414,14 @@
     padding: 0 2px;
 }
 
+.templateMark {
+    align-items: center;
+    color: var(--document-secondary-color);
+    display: inline-flex;
+    font-size: var(--font-size-callout);
+    gap: 4px;
+}
+
 .iconActions {
     align-items: center;
     border: 1px solid transparent;
@@ -496,7 +504,7 @@
     white-space: nowrap;
 }
 
-.documentList .toast button {
+.toastRegion .toast button {
     color: var(--selection-color);
     flex: none;
     font-weight: var(--font-weight-medium);

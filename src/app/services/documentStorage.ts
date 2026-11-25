@@ -109,6 +109,7 @@ export type DocumentFields = Pick<
     | 'modifiedBy'
     | 'name'
     | 'description'
+    | 'template'
     | 'locked'
     | 'grid'
     | 'tags'
@@ -1212,6 +1213,7 @@ function readFields(d: Record<string, unknown>): DocumentFields {
         modifiedBy: text(d.modifiedBy),
         ...(d.deleted === undefined ? {} : { deleted: date(d.deleted) }),
         ...(d.description === undefined ? {} : { description: text(d.description) }),
+        ...(d.template === true ? { template: true } : {}),
         tags: list(d.tags, text),
         tagTones: tones(d.tagTones),
         grid: {

@@ -3,6 +3,7 @@ declare namespace StylesCssNamespace {
     accountLink: string;
     statusBar: string;
     statusBarSlot: string;
+    template: string;
   }
 }
 

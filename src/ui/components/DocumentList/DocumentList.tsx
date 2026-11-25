@@ -35,6 +35,7 @@ import { DocumentCard } from './DocumentCard';
 import { DocumentsBar } from './DocumentsBar';
 import { FilterMenu } from './FilterMenu';
 import tagStyles from './tags.css';
+import { RESTORED_NOTICE_MS, UNDO_DELETE_MS } from './notices';
 import styles from './styles.css';
 
 const TemplatePicker = lazy(
@@ -78,11 +79,6 @@ const SORTS: Record<DocumentSort, (first: Listed, second: Listed) => number> = {
         second.modified.getTime() - first.modified.getTime()
 };
 
-/** How long the offer to undo moving a document to Recently Deleted stays. */
-const UNDO_DELETE_MS = 8000;
-/** How long the notice that a document came back from the server stays. */
-const RESTORED_NOTICE_MS = 5000;
-
 const DATE_OPTIONS: { value: DocumentDateFilter; label: string }[] = [
     { value: 'all', label: 'Any time' },
     { value: 'today', label: 'Today' },
@@ -103,6 +99,7 @@ export const DocumentList: FC<Props> = ({
     const [showDeleted, setShowDeleted] = useState(false);
     const [trashed, setTrashed] = useState<{ id: string; name: string } | null>(null);
     const [restored, setRestored] = useState<string | null>(null);
+    const [savedTemplate, setSavedTemplate] = useState<string | null>(null);
     const signedIn = useAppState((state) => state.account.kind === 'signedIn');
     const undoButton = useRef<HTMLButtonElement>(null);
     const [query, setQuery] = useState('');
@@ -157,6 +154,16 @@ export const DocumentList: FC<Props> = ({
         return () => window.clearTimeout(timer);
     }, [restored]);
 
+    useEffect(() => {
+        if (!savedTemplate) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => setSavedTemplate(null), UNDO_DELETE_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [savedTemplate]);
+
     const undoDelete = () => {
         if (trashed && documents.some(({ id }) => id === trashed.id)) {
             restoreDocument(trashed.id);
@@ -200,7 +207,12 @@ export const DocumentList: FC<Props> = ({
         <main className={styles.documentList}>
             {templatesOpen && (
                 <Suspense fallback={<p role="status">Loading templates…</p>}>
-                    <TemplatePicker onClose={() => setTemplatesOpen(false)} />
+                    <TemplatePicker
+                        trashed={trashed}
+                        onTrashed={setTrashed}
+                        onUndo={undoDelete}
+                        onClose={() => setTemplatesOpen(false)}
+                    />
                 </Suspense>
             )}
             <div className={styles.panel}>
@@ -352,6 +364,7 @@ export const DocumentList: FC<Props> = ({
                             onFilterTag={filterTag}
                             onTagTone={onTagTone}
                             onTrashed={setTrashed}
+                            onSavedAsTemplate={setSavedTemplate}
                             now={now}
                         />
                     ))}
@@ -387,6 +400,20 @@ export const DocumentList: FC<Props> = ({
                     {restored && (
                         <div className={styles.toast}>
                             <span>Restored “{restored}” to Documents</span>
+                        </div>
+                    )}
+                    {savedTemplate && (
+                        <div className={styles.toast}>
+                            <span>Saved “{savedTemplate}” as a template</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSavedTemplate(null);
+                                    setTemplatesOpen(true);
+                                }}
+                            >
+                                Show templates
+                            </button>
                         </div>
                     )}
                     {trashed && (

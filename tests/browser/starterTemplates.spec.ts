@@ -96,3 +96,74 @@ for (const journey of [
         await expect(player.getByRole('button', { name: journey.end, exact: true })).toBeVisible();
     });
 }
+
+test('saves a document as a template, finds it by search and starts a new document from it', async ({
+    page
+}) => {
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await page.getByRole('button', { name: 'Use Sign-in template', exact: true }).click();
+    await expect(page.locator('#screen-views > g')).toHaveCount(3);
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Save Sign-in starter as a template' }).click();
+    await expect(page.getByText('Saved “Sign-in starter” as a template')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Documents' }).getByRole('listitem')).toHaveCount(
+        2
+    );
+    await page.getByRole('button', { name: 'Show templates' }).click();
+    const picker = page.getByRole('dialog', { name: 'Start with a template' });
+    const yours = picker.getByRole('region', { name: 'Your templates' });
+    await expect(yours.getByRole('button', { name: 'Use Sign-in starter template' })).toBeVisible();
+    await picker.getByRole('searchbox', { name: 'Search templates' }).fill('journey');
+    await expect(yours.getByRole('button', { name: /^Use .* template$/ })).toHaveCount(0);
+    await expect(picker.getByRole('button', { name: 'Use Sign-in template' })).toHaveCount(1);
+    await picker.getByRole('searchbox', { name: 'Search templates' }).fill('zzz');
+    await expect(picker.getByText('No templates match “zzz”.')).toBeVisible();
+    await picker.getByRole('searchbox', { name: 'Search templates' }).fill('sign');
+    await yours.getByRole('button', { name: 'Use Sign-in starter template' }).click();
+    await expect(picker).toHaveCount(0);
+    await expect(page.locator('#screen-views > g')).toHaveCount(3);
+    await page.reload();
+    await page.goto('/documents');
+    await expect(page.getByRole('list', { name: 'Documents' }).getByRole('listitem')).toHaveCount(
+        3
+    );
+    await expect(page.getByRole('button', { name: 'Open Sign-in starter 2' })).toBeVisible();
+});
+
+test('marks templates while editing, undoes a delete in the picker and tags deleted templates', async ({
+    page
+}) => {
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await page.getByRole('button', { name: 'Use Sign-in template', exact: true }).click();
+    await expect(page.locator('#screen-views > g')).toHaveCount(3);
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Save Sign-in starter as a template' }).click();
+    await page.getByRole('button', { name: 'Show templates' }).click();
+    const picker = page.getByRole('dialog', { name: 'Start with a template' });
+    const yours = picker.getByRole('region', { name: 'Your templates' });
+
+    await picker.getByRole('button', { name: 'Delete Sign-in starter template' }).click();
+    await expect(picker.getByRole('status')).toHaveText(
+        'Moved “Sign-in starter” to Recently DeletedUndo'
+    );
+    await expect(yours).toHaveCount(0);
+    await expect(picker.getByRole('button', { name: 'Undo' })).toBeFocused();
+    await picker.getByRole('button', { name: 'Undo' }).click();
+    await expect(picker.getByRole('status')).toBeEmpty();
+    await expect(yours.getByRole('button', { name: 'Use Sign-in starter template' })).toBeVisible();
+
+    await picker.getByRole('button', { name: 'Edit Sign-in starter template' }).click();
+    await expect(page.locator('#status-message')).toHaveText('Sign-in starterTemplate');
+
+    await page.goto('/documents');
+    await page.getByRole('button', { name: 'Templates', exact: true }).click();
+    await picker.getByRole('button', { name: 'Delete Sign-in starter template' }).click();
+    await picker.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByText('Moved “Sign-in starter” to Recently Deleted')).toBeVisible();
+    await page.getByRole('button', { name: /^Recently Deleted/ }).click();
+    const deleted = page.getByRole('list', { name: 'Documents' }).getByRole('listitem');
+    await expect(deleted).toHaveCount(1);
+    await expect(deleted.getByText('Template', { exact: true })).toBeVisible();
+});

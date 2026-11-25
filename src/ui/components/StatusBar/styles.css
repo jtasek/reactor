@@ -28,6 +28,19 @@
   width: 250px;
 }
 
+.template {
+  align-items: center;
+  background: color-mix(in srgb, var(--selection-color) 10%, transparent);
+  border-radius: 100px;
+  color: var(--selection-color);
+  display: inline-flex;
+  gap: 4px;
+  line-height: 18px;
+  margin-left: 8px;
+  padding: 0 7px 0 6px;
+  vertical-align: 1px;
+}
+
 .accountLink {
   align-items: center;
   display: inline-flex;
