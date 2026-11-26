@@ -1,5 +1,5 @@
 import { Monitor, RotateCwSquare, Smartphone, Tablet } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { type ReactNode, useState } from 'react';
 import {
     DEVICE_SIZES,
     deviceOfSize,
@@ -37,7 +37,16 @@ function Outline({ kind, size }: { kind: DeviceKind; size: Size }) {
 }
 
 /** Picks the Prototype's size from phones, tablets and desktops, upright or turned. */
-export function DevicePicker({ size, onSize }: { size: Size; onSize: (size: Size) => void }) {
+export function DevicePicker({
+    size,
+    onSize,
+    children
+}: {
+    size: Size;
+    onSize: (size: Size) => void;
+    /** The width and height fields, shown as the chosen device's size. */
+    children: ReactNode;
+}) {
     const devices = DEVICE_SIZES;
     const current = deviceOfSize(devices, size);
     const [kind, setKind] = useState<DeviceKind>(current?.kind ?? 'phone');
@@ -99,6 +108,10 @@ export function DevicePicker({ size, onSize }: { size: Size; onSize: (size: Size
                         </label>
                     );
                 })}
+            </div>
+            <div className={styles.deviceSize}>
+                <span className={styles.deviceSizeFields}>{children}</span>
+                <span className={styles.deviceSizeName}>{current?.name ?? 'Custom size'}</span>
             </div>
         </fieldset>
     );

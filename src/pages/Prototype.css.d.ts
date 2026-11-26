@@ -9,9 +9,11 @@ declare namespace PrototypeCssNamespace {
     deviceBar: string;
     deviceKinds: string;
     deviceList: string;
+    deviceSize: string;
+    deviceSizeFields: string;
+    deviceSizeName: string;
     deviceText: string;
     devices: string;
-    dimensions: string;
     documentName: string;
     header: string;
     headerActions: string;

@@ -481,6 +481,49 @@
     border-color: var(--selection-color);
     background: color-mix(in srgb, var(--selection-color) 14%, var(--surface));
 }
+.deviceSize {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: var(--border-radius);
+    background: var(--field-background);
+}
+.deviceSizeFields {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--text-secondary-color);
+}
+.controls .deviceSizeFields label {
+    position: relative;
+    display: block;
+    width: 6.5rem;
+}
+.deviceSizeFields label > span {
+    position: absolute;
+    top: 50%;
+    left: 0.625rem;
+    transform: translateY(-50%);
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    pointer-events: none;
+}
+.deviceSizeFields input {
+    padding-left: 1.75rem;
+    background: var(--surface);
+    font-variant-numeric: tabular-nums;
+}
+@media (pointer: fine) {
+    .deviceSizeFields input {
+        --field-height: 2rem;
+    }
+}
+.deviceSizeName {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+}
 .deviceText {
     display: grid;
     min-width: 0;
@@ -495,12 +538,6 @@
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
     font-variant-numeric: tabular-nums;
-}
-
-.dimensions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
 }
 
 .viewportSummary {

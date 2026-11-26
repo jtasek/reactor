@@ -76,7 +76,7 @@ function ViewportField({
 
     return (
         <Field
-            label={label}
+            label={<span title={label}>{label[0]}</span>}
             aria-label={`Prototype ${label.toLowerCase()}`}
             type="number"
             min="1"
@@ -223,19 +223,19 @@ function PrototypeWorkspace() {
                     <DevicePicker
                         size={session.viewport!}
                         onSize={(viewport) => setSession((previous) => ({ ...previous, viewport }))}
-                    />
-                    <div className={styles.dimensions}>
+                    >
                         <ViewportField
                             label="Width"
                             value={session.viewport!.width}
                             change={(value) => resize('width', value)}
                         />
+                        <span aria-hidden="true">×</span>
                         <ViewportField
                             label="Height"
                             value={session.viewport!.height}
                             change={(value) => resize('height', value)}
                         />
-                    </div>
+                    </DevicePicker>
                     {ordered(document.dimensions).map((dimension) => (
                         <Select
                             key={dimension.id}
