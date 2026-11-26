@@ -8,6 +8,9 @@ import {
 import { getPathBoundingBox } from 'src/app/utils';
 import { hitTestShape } from 'src/app/geometry';
 import { createShape } from 'src/app/factories';
+import { isClosedShape } from 'src/app/utils';
+import { SHAPE_PROPERTIES } from 'src/app/properties';
+import type { Shape } from 'src/app/types';
 
 const corner = { x: 0, y: 0 };
 const curve = [
@@ -54,5 +57,16 @@ describe('paths', () => {
         expect(hitTestShape(shape(true), { x: 50, y: 50 }, 2)).toBe(true);
         expect(hitTestShape(shape(false), { x: 50, y: 50 }, 2)).toBe(false);
         expect(hitTestShape(shape(true), { x: 2, y: 50 }, 3)).toBe(true);
+    });
+
+    it('take a fill only once closed', () => {
+        const fill = SHAPE_PROPERTIES.find((property) => property.key === 'fill')!;
+        const open = { type: 'path', points: [], fill: '#ff0000' } as unknown as Shape;
+        const closed = { ...open, closed: true } as Shape;
+
+        expect(isClosedShape(open)).toBe(false);
+        expect(isClosedShape(closed)).toBe(true);
+        expect(fill.read(open, undefined!)).toBeUndefined();
+        expect(fill.read(closed, undefined!)).toBe('#ff0000');
     });
 });

@@ -141,7 +141,6 @@ export interface Property extends Term<PropertyId> {
 }
 
 const sized = new Set(['rectangle', 'image', 'instance']);
-const filled = new Set(['rectangle', 'ellipse', 'path']);
 const stroked = new Set(['rectangle', 'ellipse', 'path', 'line']);
 const positive = (value: string | number) => (typeof value === 'number' && value > 0 ? value : 0);
 
@@ -236,8 +235,14 @@ export const PROPERTIES: Property[] = [
         ['font color', 'text color', 'color', 'colour', 'fc'],
         (shape) => shape.type === 'text'
     ),
-    color('fill', 'fill', ['fill', 'background', 'color', 'colour', 'bg'], (shape) =>
-        filled.has(String(shape.type))
+    color(
+        'fill',
+        'fill',
+        ['fill', 'background', 'color', 'colour', 'bg'],
+        (shape) =>
+            shape.type === 'rectangle' ||
+            shape.type === 'ellipse' ||
+            (shape.type === 'path' && shape.closed === true)
     ),
     color('stroke', 'stroke', ['stroke', 'outline', 'border', 'line color'], (shape) =>
         stroked.has(String(shape.type))
