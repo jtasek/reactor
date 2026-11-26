@@ -1,5 +1,5 @@
 import { Label } from 'src/ui/components/Label';
-import { PenTool as PenIcon } from 'lucide-react';
+import { Pencil as PencilIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
@@ -25,7 +25,7 @@ interface Props {
 }
 
 export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Pen x' : undefined;
+    const name = designMode ? 'Pencil x' : undefined;
     const points = path.map(({ x, y }) => ({ x, y }));
 
     return {
@@ -60,11 +60,11 @@ export const DesignPen: FC = () => {
 
 export const PenCommand: Command = {
     id: 'pen',
-    name: 'Pen',
+    name: 'Pencil',
     category: 'shapes',
-    description: 'Draws a line',
+    description: 'Draws a freehand line',
     icon: {
-        component: PenIcon,
+        component: PencilIcon,
         color: 'rgba(255,255,255)',
         size: 24
     },

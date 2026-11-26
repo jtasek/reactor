@@ -9,5 +9,6 @@ export { MoveTool } from './components/Move';
 export { PenTool } from './components/Pen';
 export { FrameTool } from './components/Frame';
 export { RectTool } from './components/Rect';
+export { SquareTool } from './components/Square';
 export { SelectTool } from './components/Select';
 export { TextTool } from './components/Text';

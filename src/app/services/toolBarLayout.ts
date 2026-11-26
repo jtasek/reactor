@@ -6,11 +6,13 @@
 export const TOOL_BAR_LAYOUT: readonly (readonly string[])[] = [
     ['select', 'move'],
     ['frame'],
-    ['rectangle', 'ellipse', 'circle'],
+    ['rectangle', 'square'],
+    ['ellipse', 'circle'],
     ['text'],
     ['image'],
     ['instance'],
-    ['line', 'pen']
+    ['line'],
+    ['pen']
 ];
 
 /** `tools` in the bar's slots, as `TOOL_BAR_LAYOUT` places them. */
