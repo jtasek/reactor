@@ -96,20 +96,22 @@ function at(store: Store, path: string) {
 }
 
 /**
- * Whether a change that only added or removed shapes leaves what `reads` read as
- * it was. Reading one shape by id tracks the whole shape table, so without this
- * every shape on the canvas renders again when any shape is added or removed.
+ * Whether a change leaves what `reads` read as it was. Reading one shape by id
+ * tracks the whole shape table, so without this every shape on the canvas
+ * renders again when any shape is added or removed.
  *
  * A change to a shape it read by id comes as a change to that shape's own path,
  * so the table itself can be left out, unless the render went through the whole
- * table or read the shape list. A derived value that reads either is asked again:
- * if it answers the same, nothing this render used has changed.
+ * table or read the shape list. A path the render read only through derived
+ * values, such as the gesture behind `keepsShapeBounds`, can be left out too.
+ * Those derived values are asked again: if they answer the same, nothing this
+ * render used has changed.
  */
-function onlyOtherShapesChanged(reads: Reads, hits: string[], now: (path: string) => unknown) {
+function nothingReadChanged(reads: Reads, hits: string[], now: (path: string) => unknown) {
     const unaffected = hits.every(
         (path) =>
-            SHAPE_SET.test(path) &&
-            (!reads.direct.has(path) || (path.endsWith('.shapes') && !reads.wholeTables.has(path)))
+            !reads.direct.has(path) ||
+            (SHAPE_SET.test(path) && path.endsWith('.shapes') && !reads.wholeTables.has(path))
     );
 
     return unaffected && reads.derived.every(({ path, value }) => sameValue(now(path), value));
@@ -258,7 +260,7 @@ export function trackShapeReads(store: Store) {
                     return values.get(path);
                 };
 
-                if (!seeing.has(store) || !onlyOtherShapesChanged(reads, hits, now)) {
+                if (!seeing.has(store) || !nothingReadChanged(reads, hits, now)) {
                     onChange();
                 }
             });

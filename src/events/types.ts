@@ -183,6 +183,8 @@ export interface Pointer {
      */
     lastPress: { documentId: string; position: Point } | null;
     gesture: Gesture;
+    /** Whether the gesture keeps the bounds of the shapes it edits: see `KEEPS_SHAPE_BOUNDS`. */
+    keepsShapeBounds: boolean;
     /** Local projected editing address, retained for text placement and group entry. */
     screenView: ScreenViewAddress | null;
     /** The view under an idle pointer, distinct from the retained editing address. */

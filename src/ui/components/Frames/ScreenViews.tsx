@@ -42,10 +42,8 @@ const ProjectedSelectionControls: FC<{ shape: Shape; viewId: string; placedOffse
     const grouped = useShapesInSelectedGroupsIds();
     const gesture = useGesture();
     const ownsGesture = 'screenView' in gesture && gesture.screenView?.address.viewId === viewId;
-    const large = useLargeSelection();
 
-    // In a large selection only its one box is drawn: see `LARGE_SELECTION`.
-    if (large || grouped.includes(shape.id)) {
+    if (grouped.includes(shape.id)) {
         return null;
     }
 
@@ -87,6 +85,7 @@ const ProjectedSelection: FC<{
     placedOffset: boolean;
 }> = ({ shape, bounds, viewId, placedOffset }) => {
     const selected = useShapeSelected(shape.id);
+    const large = useLargeSelection();
 
     if (!selected) {
         return null;
@@ -105,7 +104,14 @@ const ProjectedSelection: FC<{
                 vectorEffect="non-scaling-stroke"
                 pointerEvents="none"
             />
-            <ProjectedSelectionControls shape={shape} viewId={viewId} placedOffset={placedOffset} />
+            {/* In a large selection only its one box is drawn: see `LARGE_SELECTION`. */}
+            {!large && (
+                <ProjectedSelectionControls
+                    shape={shape}
+                    viewId={viewId}
+                    placedOffset={placedOffset}
+                />
+            )}
         </>
     );
 };
@@ -344,8 +350,13 @@ const ScreenViewPlacement: FC<{
     );
 };
 
-/** Optional placements of one screen share its source artwork and resolve layout per viewport. */
-export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true }) => {
+/**
+ * Optional placements of one screen share its source artwork and resolve layout per viewport.
+ * Memoized: the Canvas renders again with every selection change, and these read every shape.
+ */
+export const ScreenViews: FC<{ interactive?: boolean }> = memo(function ScreenViews({
+    interactive = true
+}) {
     const items = useAppState((state) => {
         if (state.currentDocument.editingComponentId && !state.events.pointer.screenView) {
             return [];
@@ -406,4 +417,4 @@ export const ScreenViews: FC<{ interactive?: boolean }> = ({ interactive = true 
             ))}
         </g>
     );
-};
+});

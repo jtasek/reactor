@@ -1,7 +1,6 @@
 import type { Context } from 'src/app';
 import { instanceComponentId } from 'src/app/componentSource';
 import type { Box, Document } from 'src/app/types';
-import { KEEPS_SHAPE_BOUNDS } from 'src/events/gestures';
 
 /** Whether a frame, or a frame it is in, is the selected frame. */
 const inSelectedFrame = (document: Document, frameId: string | undefined) => {
@@ -78,10 +77,10 @@ export const isMeasuringShape = (state: Context['state'], id: string, visible: b
             state.enteredComponentId !== null ||
             sourceSelected(document, instanceComponentId(document, shape));
 
-        return !sourceEdited || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+        return !sourceEdited || !state.events.pointer.keepsShapeBounds;
     }
 
-    return !shape?.selected || !KEEPS_SHAPE_BOUNDS[state.events.pointer.gesture.kind];
+    return !shape?.selected || !state.events.pointer.keepsShapeBounds;
 };
 
 type Measurement = { id: string; bounds: Box };
