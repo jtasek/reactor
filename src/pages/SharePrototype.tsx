@@ -1,6 +1,15 @@
-import { Share } from 'lucide-react';
+import { Check, Copy, Link2, Share } from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
-import React, { useEffect, useRef, useState } from 'react';
+import { Button, Problem } from 'src/ui/components/Controls';
+import { Dialog } from 'src/ui/components/Dialog';
+import {
+    drawingDocument,
+    drawScreen,
+    ScreenThumbnail
+} from 'src/ui/components/DocumentList/DocumentThumbnail';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { screenFrames } from 'src/app/screens';
+import { ordered } from 'src/app/variableModes';
 import { useAppState, useEffects } from 'src/app/hooks';
 import { projectPreview, type PreviewSession, type PreviewInspection } from 'src/preview/project';
 import { createPreviewResources } from 'src/preview/resources';
@@ -13,6 +22,58 @@ import {
 import { markFirstRunStep, openAfterSignIn } from 'src/app/firstRun';
 import { loginFrom } from 'src/app/services/accounts';
 import styles from './Prototype.css';
+
+/** What a new link opens: the start page as drawn, its page count, size and modes. */
+function ShareSummary({ session, title }: { session: PreviewSession; title: string }) {
+    const document = useAppState((state) => state.currentDocument);
+    const picture = useMemo(
+        () =>
+            session.screenId
+                ? drawScreen(
+                      document,
+                      drawingDocument(document, session.modes),
+                      session.screenId,
+                      session.modes
+                  )
+                : undefined,
+        [document, session.screenId, session.modes]
+    );
+    const pages = screenFrames(document).length;
+    const modes = ordered(document.dimensions).flatMap((dimension) => {
+        const mode = dimension.modes[session.modes[dimension.id]];
+
+        return mode ? [mode.name] : [];
+    });
+
+    return (
+        <div className={styles.shareSummary}>
+            <span className={styles.sharePicture} aria-hidden="true">
+                {picture ? (
+                    <ScreenThumbnail document={document} drawing={picture} label="Start page" />
+                ) : (
+                    <Icon icon={{ component: Link2, size: 22 }} />
+                )}
+            </span>
+            <div>
+                <h3>{title}</h3>
+                <p>Anyone with the link can play it, no sign-in needed.</p>
+                <ul className={styles.shareChips} aria-label="Link contents">
+                    <li data-accent>
+                        {pages} {pages === 1 ? 'page' : 'pages'}
+                    </li>
+                    {session.viewport && (
+                        <li>
+                            {session.viewport.width} × {session.viewport.height}
+                        </li>
+                    )}
+                    {modes.map((name) => (
+                        <li key={name}>{name}</li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
+}
 
 export function SharePrototype({
     session,
@@ -42,16 +103,6 @@ export function SharePrototype({
     const [loaded, setLoaded] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const operation = useRef<AbortController | null>(null);
-    const dialog = useRef<HTMLDialogElement>(null);
-    const launcher = useRef<HTMLButtonElement>(null);
-    useEffect(() => {
-        if (opened) {
-            const trigger = launcher.current;
-            dialog.current?.showModal();
-
-            return () => trigger?.focus();
-        }
-    }, [opened]);
 
     useEffect(() => {
         if (!opened || !allowed) {
@@ -134,143 +185,159 @@ export function SharePrototype({
         }
     }
 
+    const close = () => {
+        if (!pending) {
+            setOpened(false);
+        }
+    };
+    const copy = () =>
+        void navigator.clipboard
+            .writeText(created!.url!)
+            .then(() => setCopied(true))
+            .catch(() => setProblem('Select the link and copy it manually.'));
+
+    const signIn = account === 'signedOut' && !member;
+    const create = (
+        <Button
+            kind="primary"
+            disabled={!allowed || pending || busy || !loaded || !session.screenId}
+            onClick={() => void change()}
+        >
+            {pending ? 'Please wait…' : created ? 'Create new link' : 'Create snapshot link'}
+        </Button>
+    );
+    const actions = signIn ? (
+        <Button
+            kind="primary"
+            onClick={() => {
+                openAfterSignIn(document.id);
+                navigate(loginFrom('designer'));
+            }}
+        >
+            Sign in to share
+        </Button>
+    ) : created ? (
+        <>
+            <Button onClick={close}>Done</Button>
+            {create}
+        </>
+    ) : (
+        <>
+            {allowed && !loaded && !pending && (
+                <Button onClick={() => setAttempt((value) => value + 1)}>
+                    Retry loading links
+                </Button>
+            )}
+            {create}
+        </>
+    );
+
     return (
         <>
-            <button ref={launcher} aria-label="Share prototype" onClick={() => setOpened(true)}>
+            <button aria-label="Share prototype" onClick={() => setOpened(true)}>
                 <Icon icon={{ component: Share, size: 18 }} />
                 Share
             </button>
-            {opened && (
-                <dialog
-                    ref={dialog}
-                    className={styles.sharing}
-                    aria-label="Share prototype"
-                    onCancel={(event) => {
-                        if (pending) {
-                            event.preventDefault();
-
-                            return;
-                        }
-                        setOpened(false);
-                    }}
-                    onClose={() => setOpened(false)}
-                >
-                    <header>
-                        <h2>Share prototype</h2>
-                        <button disabled={pending} onClick={() => setOpened(false)}>
-                            Close sharing
-                        </button>
-                    </header>
-                    <p>
-                        Anyone with the link can play this snapshot without signing in. It includes
-                        all prototype pages and images, using the current start page, viewport and
-                        modes. Later edits stay private.
-                    </p>
-                    <p>
-                        Links expire after 30 days. Revoking a link prevents future loads; it cannot
-                        erase a copy already opened or downloaded.
-                    </p>
+            <Dialog title="Share prototype" visible={opened} wide onClose={close} actions={actions}>
+                <div className={styles.sharing}>
+                    {opened && (
+                        <ShareSummary
+                            session={session}
+                            title={
+                                created?.url
+                                    ? 'Your link is ready'
+                                    : 'One link, the whole prototype'
+                            }
+                        />
+                    )}
                     {!allowed ? (
-                        member ? (
-                            <p>
-                                Only workspace admins can create and revoke public links for this
-                                document.
-                            </p>
-                        ) : account === 'signedOut' ? (
-                            <>
-                                <p>
-                                    Sign in to create a link. Reactor then offers to move this
-                                    document into your account.
-                                </p>
-                                <button
-                                    onClick={() => {
-                                        openAfterSignIn(document.id);
-                                        navigate(loginFrom('designer'));
-                                    }}
-                                >
-                                    Sign in to share
-                                </button>
-                            </>
-                        ) : account === 'signedIn' ? (
-                            <p>
-                                Save this document to your account. A workspace admin can then
-                                create and revoke public links.
-                            </p>
-                        ) : (
-                            account === 'unavailable' && (
-                                <p>Sharing links needs a Reactor server with accounts.</p>
-                            )
-                        )
+                        <p className={styles.shareState}>
+                            {member
+                                ? 'Only workspace admins can create and revoke public links for this document.'
+                                : account === 'signedOut'
+                                  ? 'Sign in to create a link. Reactor then offers to move this document into your account.'
+                                  : account === 'signedIn'
+                                    ? 'Save this document to your account. A workspace admin can then create and revoke public links.'
+                                    : 'Sharing links needs a Reactor server with accounts.'}
+                        </p>
                     ) : (
                         <>
-                            <button
-                                disabled={pending || busy || !loaded || !session.screenId}
-                                onClick={() => void change()}
-                            >
-                                {pending ? 'Please wait…' : 'Create snapshot link'}
-                            </button>
-                            {!loaded && !pending && (
-                                <button onClick={() => setAttempt((value) => value + 1)}>
-                                    Retry loading links
-                                </button>
-                            )}
                             {created?.url && (
                                 <div className={styles.sharedLink}>
-                                    <label>
-                                        Snapshot link
-                                        <input
-                                            aria-label="Snapshot link"
-                                            readOnly
-                                            value={created.url}
-                                            onFocus={(event) => event.target.select()}
-                                        />
-                                    </label>
-                                    <button
-                                        onClick={() => {
-                                            void navigator.clipboard
-                                                .writeText(created.url!)
-                                                .then(() => setCopied(true))
-                                                .catch(() =>
-                                                    setProblem(
-                                                        'Select the link and copy it manually.'
-                                                    )
-                                                );
-                                        }}
-                                    >
-                                        {copied ? 'Copied' : 'Copy link'}
-                                    </button>
-                                    <p>
-                                        Copy this link now. Saved links below can be revoked, but
-                                        their secret URLs cannot be retrieved.
+                                    <div className={styles.linkRow}>
+                                        <div className={styles.linkPill}>
+                                            <Icon icon={{ component: Link2, size: 18 }} />
+                                            <input
+                                                aria-label="Snapshot link"
+                                                readOnly
+                                                value={created.url}
+                                                onFocus={(event) => event.target.select()}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={styles.copy}
+                                            aria-label={copied ? 'Copied' : 'Copy link'}
+                                            onClick={copy}
+                                        >
+                                            <Icon
+                                                icon={{
+                                                    component: copied ? Check : Copy,
+                                                    size: 18
+                                                }}
+                                            />
+                                            <span className={styles.copyLabel}>
+                                                {copied ? 'Copied' : 'Copy'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <p className={styles.shareNote}>
+                                        Copy it now: saved links can be revoked, but not shown
+                                        again. Links expire after 30 days and later edits stay
+                                        private.
                                     </p>
                                 </div>
                             )}
-                            <ul>
-                                {links.map((link) => (
-                                    <li key={link.id}>
-                                        <span>
-                                            {link.name} · Created{' '}
-                                            {new Date(link.created_at).toLocaleDateString()} ·{' '}
-                                            {link.outdated
-                                                ? 'Out of date, no longer opens. Revoke it and create a new link.'
-                                                : `Expires ${new Date(link.expires_at).toLocaleDateString()}`}
-                                        </span>
-                                        <button
-                                            disabled={pending}
-                                            aria-label={`Revoke ${link.name}`}
-                                            onClick={() => void change(link.id)}
-                                        >
-                                            Revoke link
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                            {loaded && !links.length && <p>No active links.</p>}
+                            {loaded && (
+                                <section className={styles.links} aria-label="Active links">
+                                    <h3>Active links</h3>
+                                    {links.length ? (
+                                        <ul>
+                                            {links.map((link) => (
+                                                <li key={link.id}>
+                                                    <span>
+                                                        <strong>{link.name}</strong>
+                                                        <small
+                                                            data-outdated={
+                                                                link.outdated || undefined
+                                                            }
+                                                        >
+                                                            {link.outdated
+                                                                ? 'Out of date, no longer opens. Revoke it and create a new link.'
+                                                                : `Created ${new Date(link.created_at).toLocaleDateString()} · Expires ${new Date(link.expires_at).toLocaleDateString()}`}
+                                                        </small>
+                                                    </span>
+                                                    <Button
+                                                        className={styles.revoke}
+                                                        disabled={pending}
+                                                        aria-label={`Revoke ${link.name}`}
+                                                        onClick={() => void change(link.id)}
+                                                    >
+                                                        Revoke
+                                                    </Button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className={styles.shareNote}>No active links.</p>
+                                    )}
+                                </section>
+                            )}
                         </>
                     )}
-                    {problem && <p role="alert">{problem}</p>}
-                </dialog>
-            )}
+                    {problem && <Problem>{problem}</Problem>}
+                </div>
+            </Dialog>
         </>
     );
 }

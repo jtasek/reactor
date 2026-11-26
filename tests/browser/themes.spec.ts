@@ -22,7 +22,7 @@ test('checks pages in each mode and size, accepts AI fixes and reports in the do
     await expect(settings.getByRole('group', { name: 'Theme' }).getByLabel('Dark')).toBeChecked();
     await settings.getByRole('group', { name: 'Sizes' }).getByLabel('Tablet').uncheck();
     await expect(settings).toContainText('4 combinations.');
-    await settings.getByRole('button', { name: 'Done' }).click();
+    await settings.getByRole('button', { name: 'Close', exact: true }).click();
 
     await page.getByRole('button', { name: 'Accessibility' }).click();
     const check = page.getByRole('dialog', { name: 'Accessibility' });
@@ -46,7 +46,7 @@ test('checks pages in each mode and size, accepts AI fixes and reports in the do
     await expect(check.getByRole('status')).toHaveText(
         '2 problems in 4 contexts; 0 can be fixed here.'
     );
-    await check.getByRole('button', { name: 'Done' }).click();
+    await check.getByRole('button', { name: 'Close', exact: true }).click();
 
     const downloading = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download prototype' }).click();

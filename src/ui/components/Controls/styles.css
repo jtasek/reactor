@@ -1,5 +1,6 @@
 .button {
     --button-height: 2.5rem;
+    --button-min-width: 6rem;
     --button-padding: 0 1rem;
     --button-radius: 100rem;
     --button-background: var(--field-background);
@@ -18,6 +19,7 @@
     gap: 0.5rem;
     justify-content: center;
     min-height: var(--button-height);
+    min-width: var(--button-min-width);
     padding: var(--button-padding);
 }
 
@@ -44,6 +46,7 @@
 
 .button[data-kind='quiet'] {
     --button-color: var(--selection-color);
+    --button-min-width: 0;
 
     background: none;
     font-weight: inherit;

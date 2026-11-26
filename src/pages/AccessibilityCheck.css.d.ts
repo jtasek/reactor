@@ -1,14 +1,21 @@
 declare namespace AccessibilityCheckCssNamespace {
   export interface IAccessibilityCheckCss {
     actions: string;
-    check: string;
     covered: string;
-    failed: string;
     fix: string;
+    fixable: string;
     footer: string;
+    issueText: string;
     issues: string;
+    kind: string;
+    message: string;
+    note: string;
+    priority: string;
     review: string;
+    sample: string;
+    show: string;
     summary: string;
+    tags: string;
     where: string;
   }
 }

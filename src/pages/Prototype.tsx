@@ -1,5 +1,18 @@
-import { ArrowLeft, RotateCcw, SlidersHorizontal, Workflow } from 'lucide-react';
+import {
+    ArrowLeft,
+    Info,
+    Monitor,
+    Moon,
+    RotateCcw,
+    SlidersHorizontal,
+    Smartphone,
+    Sun,
+    Tablet,
+    Workflow
+} from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
+import { Button, Field, Select } from 'src/ui/components/Controls';
+import { Dialog } from 'src/ui/components/Dialog';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
@@ -29,6 +42,16 @@ export function PrototypePage() {
     return <PrototypeWorkspace key={id} />;
 }
 
+/** A picture for a size by its width: phone, tablet or screen. */
+const deviceIcon = (width: number) => (width < 600 ? Smartphone : width < 1100 ? Tablet : Monitor);
+
+/** A sun or moon for light and dark modes; other modes go without. */
+function ModeMark({ name }: { name: string }) {
+    const mark = /dark|night/i.test(name) ? Moon : /light|day/i.test(name) ? Sun : undefined;
+
+    return mark ? <Icon icon={{ component: mark, size: 14 }} /> : null;
+}
+
 function ViewportField({
     label,
     value,
@@ -51,23 +74,21 @@ function ViewportField({
     };
 
     return (
-        <label>
-            {label}
-            <input
-                aria-label={`Prototype ${label.toLowerCase()}`}
-                type="number"
-                min="1"
-                max="10000"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onBlur={commit}
-                onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                        event.currentTarget.blur();
-                    }
-                }}
-            />
-        </label>
+        <Field
+            label={label}
+            aria-label={`Prototype ${label.toLowerCase()}`}
+            type="number"
+            min="1"
+            max="10000"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={commit}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                    event.currentTarget.blur();
+                }
+            }}
+        />
     );
 }
 
@@ -93,7 +114,7 @@ function PrototypeWorkspace() {
     const contexts = checkContexts(document, presets, choice, rules);
     const toggle = (list: string[], id: string, on: boolean) =>
         on ? [...new Set([...list, id])] : list.filter((item) => item !== id);
-    const settings = useRef<HTMLDialogElement>(null);
+    const [settings, setSettings] = useState(false);
     const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
     // Custom stays chosen while its size still matches a preset.
     const [customPreset, setCustomPreset] = useState(false);
@@ -165,38 +186,39 @@ function PrototypeWorkspace() {
                     <SharePrototype session={session} inspection={inspection} />
                 </div>
             </header>
-            <dialog ref={settings} className={styles.settings} aria-label="Prototype settings">
-                <header>
-                    <h2>Prototype settings</h2>
-                    <button onClick={() => settings.current?.close()}>Done</button>
-                </header>
+            <Dialog
+                title="Prototype settings"
+                visible={settings}
+                onClose={() => setSettings(false)}
+                actions={
+                    <Button kind="primary" onClick={() => setSettings(false)}>
+                        Done
+                    </Button>
+                }
+            >
                 <div className={styles.controls}>
-                    <label>
-                        Start page
-                        <select
-                            aria-label="Start page"
-                            value={session.screenId ?? ''}
-                            onChange={(event) =>
-                                setSession((previous) => ({
-                                    ...previous,
-                                    screenId: event.target.value,
-                                    layoutId: undefined,
-                                    layoutMode: 'auto'
-                                }))
-                            }
-                        >
-                            {!screens.some((screen) => screen.id === session.screenId) && (
-                                <option value={session.screenId ?? ''}>
-                                    Choose an available page
-                                </option>
-                            )}
-                            {screens.map((screen) => (
-                                <option key={screen.id} value={screen.id}>
-                                    {screen.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+                    <Select
+                        label="Start page"
+                        aria-label="Start page"
+                        value={session.screenId ?? ''}
+                        onChange={(event) =>
+                            setSession((previous) => ({
+                                ...previous,
+                                screenId: event.target.value,
+                                layoutId: undefined,
+                                layoutMode: 'auto'
+                            }))
+                        }
+                    >
+                        {!screens.some((screen) => screen.id === session.screenId) && (
+                            <option value={session.screenId ?? ''}>Choose an available page</option>
+                        )}
+                        {screens.map((screen) => (
+                            <option key={screen.id} value={screen.id}>
+                                {screen.name}
+                            </option>
+                        ))}
+                    </Select>
                     <div className={styles.dimensions}>
                         <ViewportField
                             label="Width"
@@ -210,42 +232,41 @@ function PrototypeWorkspace() {
                         />
                     </div>
                     {ordered(document.dimensions).map((dimension) => (
-                        <label key={dimension.id}>
-                            {dimension.name}
-                            <select
-                                aria-label={`Prototype ${dimension.name}`}
-                                value={session.modes[dimension.id] ?? ''}
-                                onChange={(event) =>
-                                    setSession((previous) => {
-                                        const modes = { ...previous.modes };
-                                        if (event.target.value) {
-                                            modes[dimension.id] = event.target.value;
-                                        } else {
-                                            delete modes[dimension.id];
-                                        }
+                        <Select
+                            key={dimension.id}
+                            label={dimension.name}
+                            aria-label={`Prototype ${dimension.name}`}
+                            value={session.modes[dimension.id] ?? ''}
+                            onChange={(event) =>
+                                setSession((previous) => {
+                                    const modes = { ...previous.modes };
+                                    if (event.target.value) {
+                                        modes[dimension.id] = event.target.value;
+                                    } else {
+                                        delete modes[dimension.id];
+                                    }
 
-                                        return { ...previous, modes };
-                                    })
-                                }
-                            >
-                                <option value="">
-                                    {isSizesDimension(document.dimensions, dimension.id)
-                                        ? 'Auto · Viewport width'
-                                        : 'Inherit from page'}
-                                </option>
-                                {session.modes[dimension.id] &&
-                                    !dimension.modes[session.modes[dimension.id]] && (
-                                        <option value={session.modes[dimension.id]}>
-                                            Unavailable mode
-                                        </option>
-                                    )}
-                                {ordered(dimension.modes).map((mode) => (
-                                    <option key={mode.id} value={mode.id}>
-                                        {mode.name}
+                                    return { ...previous, modes };
+                                })
+                            }
+                        >
+                            <option value="">
+                                {isSizesDimension(document.dimensions, dimension.id)
+                                    ? 'Auto · Viewport width'
+                                    : 'Inherit from page'}
+                            </option>
+                            {session.modes[dimension.id] &&
+                                !dimension.modes[session.modes[dimension.id]] && (
+                                    <option value={session.modes[dimension.id]}>
+                                        Unavailable mode
                                     </option>
-                                ))}
-                            </select>
-                        </label>
+                                )}
+                            {ordered(dimension.modes).map((mode) => (
+                                <option key={mode.id} value={mode.id}>
+                                    {mode.name}
+                                </option>
+                            ))}
+                        </Select>
                     ))}
                     <p>
                         Changes apply only to this session. Restart returns to the start page and
@@ -281,6 +302,7 @@ function PrototypeWorkspace() {
                                                 }))
                                             }
                                         />
+                                        <ModeMark name={mode.name} />
                                         {mode.name}
                                     </label>
                                 ))}
@@ -304,18 +326,25 @@ function PrototypeWorkspace() {
                                             }))
                                         }
                                     />
+                                    <Icon
+                                        icon={{
+                                            component: deviceIcon(preset.size.width),
+                                            size: 14
+                                        }}
+                                    />
                                     {preset.name}
                                 </label>
                             ))}
                         </div>
-                        <p>
+                        <p className={styles.combinations}>
+                            <Icon icon={{ component: Info, size: 16 }} />
                             {'problem' in contexts
                                 ? contexts.problem
-                                : `${contexts.contexts.length} ${contexts.contexts.length === 1 ? 'combination' : 'combinations'}. Downloads can be viewed in each.`}
+                                : `The accessibility check and downloads cover ${contexts.contexts.length} ${contexts.contexts.length === 1 ? 'combination' : 'combinations'}. A download can be viewed in each.`}
                         </p>
                     </fieldset>
                 </div>
-            </dialog>
+            </Dialog>
             {session.screenId && !screens.some((screen) => screen.id === session.screenId) && (
                 <p role="status">
                     The start page is unavailable. Open Settings to choose another start page.
@@ -347,7 +376,7 @@ function PrototypeWorkspace() {
                                             );
                                             setCustomPreset(!preset);
                                             if (!preset) {
-                                                settings.current?.showModal();
+                                                setSettings(true);
 
                                                 return;
                                             }
@@ -383,7 +412,7 @@ function PrototypeWorkspace() {
                                     Restart
                                 </button>
                                 <button
-                                    onClick={() => settings.current?.showModal()}
+                                    onClick={() => setSettings(true)}
                                     aria-label="Prototype settings"
                                 >
                                     <Icon icon={{ component: SlidersHorizontal, size: 18 }} />

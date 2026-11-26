@@ -152,7 +152,7 @@ test('shares the chosen context as an independent snapshot, plays without cookie
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(sharing.getByRole('button', { name: 'Copy link' })).toBeVisible();
     await page.screenshot({ path: 'test-results/prototype-sharing-narrow.png' });
-    await sharing.getByRole('button', { name: 'Close sharing' }).click();
+    await sharing.getByRole('button', { name: 'Close', exact: true }).click();
     await setPrototypeSetting(page, 'Prototype width', '320');
 
     await context.addCookies([
@@ -199,13 +199,11 @@ test('public links have a scoped network policy and clear invalid-link errors', 
     await expect(page.getByRole('status')).toHaveText('This prototype link is invalid.');
 });
 
-test('without accounts, sharing says what it needs and offers no publish action', async ({
-    page
-}) => {
+test('without accounts, sharing says what it needs and keeps publishing off', async ({ page }) => {
     await page.goto('/prototype');
     await page.getByRole('button', { name: 'Share prototype', exact: true }).click();
     await expect(page.getByRole('dialog')).toContainText('needs a Reactor server with accounts');
-    await expect(page.getByRole('button', { name: 'Create snapshot link' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Create snapshot link' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Share prototype', exact: true })).toBeFocused();
@@ -256,5 +254,5 @@ test('workspace members who are not admins are told only admins can share', asyn
         'Only workspace admins can create and revoke public links for this document.'
     );
     await expect(page.getByRole('dialog')).not.toContainText('Save this document');
-    await expect(page.getByRole('button', { name: 'Create snapshot link' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Create snapshot link' })).toBeDisabled();
 });

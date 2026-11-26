@@ -1,46 +1,51 @@
-import React, { useEffect, useRef } from 'react';
-import { STARTER_TEMPLATES } from 'src/templates/catalog';
+import React, { useMemo } from 'react';
+import { createDocument } from 'src/app/factories';
+import { screenFrames } from 'src/app/screens';
+import { buildStarterTemplate } from 'src/templates/build';
+import { STARTER_TEMPLATES, type StarterTemplateId } from 'src/templates/catalog';
+import { Problem } from '../Controls';
+import { Dialog } from '../Dialog';
 import { useStartFromTemplate } from '../FirstRun/startFromTemplate';
+import { drawingDocument, drawScreen, ScreenThumbnail } from './DocumentThumbnail';
 import styles from './templates.css';
 
-export default function TemplatePicker({ onClose }: { onClose: () => void }) {
-    const dialog = useRef<HTMLDialogElement>(null);
-    const { create, error } = useStartFromTemplate(onClose);
+/** The template's first page, drawn as it opens. */
+function TemplatePicture({ templateId, name }: { templateId: StarterTemplateId; name: string }) {
+    const picture = useMemo(() => {
+        let next = 0;
+        const document = createDocument(
+            buildStarterTemplate(templateId, () => `preview-${next++}`)
+        );
+        const first = screenFrames(document)[0];
+        const drawing = first && drawScreen(document, drawingDocument(document), first.id);
 
-    useEffect(() => {
-        const previous = document.activeElement;
-        const element = dialog.current;
-        element?.showModal();
-
-        return () => {
-            element?.close();
-
-            if (previous instanceof HTMLElement && previous.isConnected) {
-                previous.focus();
-            }
-        };
-    }, []);
+        return drawing && { document, drawing };
+    }, [templateId]);
 
     return (
-        <dialog
-            ref={dialog}
-            className={styles.dialog}
-            aria-labelledby="template-heading"
-            onCancel={onClose}
+        <span className={styles.picture} aria-hidden="true">
+            {picture && (
+                <ScreenThumbnail
+                    document={picture.document}
+                    drawing={picture.drawing}
+                    label={`First page of ${name}`}
+                />
+            )}
+        </span>
+    );
+}
+
+export default function TemplatePicker({ onClose }: { onClose: () => void }) {
+    const { create, error } = useStartFromTemplate(onClose);
+
+    return (
+        <Dialog
+            title="Start with a template"
+            description="Editable pages, reusable controls and connected journeys. Open Prototype to try them."
+            visible
+            wide
+            onClose={onClose}
         >
-            <header className={styles.header}>
-                <h2 id="template-heading">Start with a template</h2>
-                <button type="button" onClick={onClose}>
-                    Close
-                </button>
-            </header>
-            <p>
-                Editable pages, reusable controls and connected journeys. Open Prototype to try
-                them.
-            </p>
-            <p>
-                Sample content only. These templates do not submit data, send email or sign you in.
-            </p>
             <div className={styles.grid}>
                 {STARTER_TEMPLATES.map((template) => (
                     <button
@@ -51,6 +56,7 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                         aria-describedby={`template-${template.id}-description template-${template.id}-contents`}
                         onClick={() => create(template.id)}
                     >
+                        <TemplatePicture templateId={template.id} name={template.name} />
                         <strong>{template.name}</strong>
                         <span id={`template-${template.id}-description`}>
                             {template.description}
@@ -63,7 +69,7 @@ export default function TemplatePicker({ onClose }: { onClose: () => void }) {
                     </button>
                 ))}
             </div>
-            {error && <p role="alert">{error}</p>}
-        </dialog>
+            {error && <Problem>{error}</Problem>}
+        </Dialog>
     );
 }

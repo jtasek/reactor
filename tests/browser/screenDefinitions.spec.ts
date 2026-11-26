@@ -74,6 +74,10 @@ test('keeps multiple screens and ordinary frames visible, persists conversion, a
     await row(page, 'Checkout').click();
     await page.getByLabel('Frame type', { exact: true }).selectOption('screen');
     await expect(preview.getByLabel('Preview page').locator('option')).toHaveCount(2);
+    // The page list can update before the player has the button's link to the new page.
+    await expect(
+        page.getByText('Continue button links to an unavailable page', { exact: false })
+    ).toHaveCount(0);
     await preview.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(preview.getByLabel('Preview page')).toHaveValue('details');
     await expect(page.locator('svg#surface #frames > [data-frame]')).toHaveCount(3);
