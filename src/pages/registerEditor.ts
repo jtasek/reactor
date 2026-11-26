@@ -80,7 +80,6 @@ import {
     PenTool,
     RectTool,
     SelectTool,
-    SquareTool,
     TextTool
 } from 'src/tools';
 import { registerCommand, registerTool } from 'src/app/actions/startup';
@@ -143,7 +142,6 @@ function registerTools() {
     registerTool(MoveTool);
     registerTool(FrameTool);
     registerTool(RectTool);
-    registerTool(SquareTool);
     registerTool(EllipseTool);
     registerTool(CircleTool);
     registerTool(TextTool);

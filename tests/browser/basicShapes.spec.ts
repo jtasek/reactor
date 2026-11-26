@@ -7,7 +7,6 @@ const PNG = Buffer.from(
 );
 const kinds = [
     ['rectangle', 'r', 'rect'],
-    ['circle', 'c', 'circle'],
     ['ellipse', 'e', 'ellipse'],
     ['line', 'l', 'line'],
     ['pen', 'p', 'polyline'],

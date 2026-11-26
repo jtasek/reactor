@@ -9,8 +9,8 @@ describe('the tool bar layout', () => {
         expect(toolBarSlots(getTools()).map((slot) => slot.map((tool) => tool.id))).toEqual([
             ['select', 'move'],
             ['frame'],
-            ['rectangle', 'square'],
-            ['ellipse', 'circle'],
+            ['rectangle'],
+            ['ellipse'],
             ['text'],
             ['image'],
             ['instance'],
@@ -19,13 +19,9 @@ describe('the tool bar layout', () => {
         ]);
     });
 
-    it('leaves out tools that are not registered and adds unplaced ones at the end', () => {
-        const slots = toolBarSlots([{ id: 'pen' }, { id: 'select' }, { id: 'lasso' }]);
+    it('leaves out tools that are not registered or not placed', () => {
+        const slots = toolBarSlots([{ id: 'pen' }, { id: 'select' }, { id: 'circle' }]);
 
-        expect(slots.map((slot) => slot.map((tool) => tool.id))).toEqual([
-            ['select'],
-            ['pen'],
-            ['lasso']
-        ]);
+        expect(slots.map((slot) => slot.map((tool) => tool.id))).toEqual([['select'], ['pen']]);
     });
 });
