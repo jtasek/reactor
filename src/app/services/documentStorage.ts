@@ -20,6 +20,8 @@ import type {
     Camera,
     Document,
     Shape,
+    Path,
+    PathPoint,
     Point,
     Size,
     Group,
@@ -241,6 +243,16 @@ function point(value: unknown): Point {
     return { x: number(p.x), y: number(p.y) };
 }
 
+function pathPoint(value: unknown): PathPoint {
+    const p = record(value);
+
+    return {
+        ...point(p),
+        ...(p.in !== undefined && { in: point(p.in) }),
+        ...(p.out !== undefined && { out: point(p.out) })
+    };
+}
+
 function size(value: unknown): Size {
     const s = record(value);
 
@@ -394,7 +406,10 @@ export function readBindings(value: unknown): Record<string, string> {
  * Reads how a shape of `shape`'s type is drawn beyond its geometry, leaving out what
  * does not apply to it. Throws when any of it is invalid.
  */
-export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
+export function readShapeStyle(
+    value: unknown,
+    shape: Pick<Shape, 'type'> & Partial<Pick<Path, 'closed'>>
+) {
     const s = record(value);
 
     return {
@@ -437,12 +452,6 @@ export function readShapeGeometry(value: unknown) {
                 size: size(s.size),
                 source: text(s.source)
             };
-        case 'circle':
-            return {
-                type: s.type,
-                position: point(s.position),
-                radius: number(s.radius, 0)
-            };
         case 'ellipse': {
             const radius = point(s.radius);
             number(radius.x, 0);
@@ -452,9 +461,18 @@ export function readShapeGeometry(value: unknown) {
         }
 
         case 'line':
-            return { type: s.type, start: point(s.start), end: point(s.end) };
-        case 'pen':
-            return { type: s.type, points: list(s.points, point) };
+            return {
+                type: s.type,
+                start: point(s.start),
+                end: point(s.end),
+                ...(s.arrow === true && { arrow: true as const })
+            };
+        case 'path':
+            return {
+                type: s.type,
+                points: list(s.points, pathPoint),
+                ...(s.closed === true && { closed: true as const })
+            };
         case 'text':
             return {
                 type: s.type,

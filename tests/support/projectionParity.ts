@@ -109,11 +109,11 @@ interface Paint {
     stroke?: string;
 }
 
-const ART = new Set(['rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
+const ART = new Set(['rect', 'ellipse', 'line', 'polyline', 'path', 'text', 'image']);
 /** Attributes a mark already accounts for, or that change nothing drawn. */
 const READ = new Set(
     [
-        'x y width height rx ry r cx cy x1 y1 x2 y2 points transform opacity',
+        'x y width height rx ry r cx cy x1 y1 x2 y2 points d transform opacity',
         // The canvas paints primitives through CSS, which wins over its own paint attributes.
         'fill stroke stroke-width font-size font-weight style',
         'class href pointer-events'
@@ -158,10 +158,6 @@ function mark(
             }
             break;
         }
-        case 'circle':
-            result.points = [point(matrix, number('cx'), number('cy'))];
-            result.size = `${round(number('r') * scaleOf(matrix))}`;
-            break;
         case 'ellipse':
             result.points = [point(matrix, number('cx'), number('cy'))];
             result.size = `${round(number('rx') * scaleOf(matrix))},${round(number('ry') * scaleOf(matrix))}`;
@@ -181,6 +177,14 @@ function mark(
             for (let index = 0; index < numbers.length; index += 2) {
                 result.points.push(point(matrix, numbers[index], numbers[index + 1]));
             }
+            break;
+        }
+        case 'path': {
+            const numbers = (attrs.d ?? '').match(/-?[\d.]+(?:e[-+]?\d+)?/gi)?.map(Number) ?? [];
+            for (let index = 0; index < numbers.length; index += 2) {
+                result.points.push(point(matrix, numbers[index], numbers[index + 1]));
+            }
+            result.text = (attrs.d ?? '').replace(/[^MLCZ]/g, '');
             break;
         }
         case 'text':

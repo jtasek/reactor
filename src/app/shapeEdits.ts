@@ -1133,8 +1133,7 @@ export const resizeShape = (
  * keeps its proportions, and both when the shape is turned or sized by its radius.
  */
 function unbindResizedAxes(shape: Shape, handle: ResizeHandlerType, original: Shape) {
-    const both =
-        Boolean(original.rotation) || original.type === 'circle' || original.type === 'ellipse';
+    const both = Boolean(original.rotation) || original.type === 'ellipse';
     const { left, top } = movedEdges(handle);
     const proportional = keepsAspectRatio(original);
     const centersX = proportional && (handle === 'middleTop' || handle === 'middleBottom');

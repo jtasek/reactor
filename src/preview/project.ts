@@ -39,7 +39,15 @@ import { applyInstanceOverrides } from '../app/componentProps';
 import { effectiveRoleSettings, resolveComponentRole } from '../app/componentRoles';
 import { themeColors } from '../app/themeColors';
 import { instanceModes, resolveModes } from '../app/inheritedModes';
-import { assertNever, boxCenter, getShapeBounds, DEFAULT_TEXT_FONT_SIZE } from '../app/utils';
+import {
+    assertNever,
+    boxCenter,
+    getShapeBounds,
+    stringifyPath,
+    DEFAULT_TEXT_FONT_SIZE
+} from '../app/utils';
+import { arrowHeadPoints } from '../app/lineGeometry';
+import { pathData } from '../app/pathGeometry';
 import {
     MAX_PREVIEW_NODES,
     type PreviewDrawing,
@@ -502,9 +510,14 @@ export function createArtworkProjector(
             ...dash(shape)
         };
         const group: PreviewNode = { key, tag: 'g', attrs, children: [] };
-        const primitive = (tag: PreviewNode['tag'], attrs: PreviewNode['attrs'], text?: string) => {
+        const primitive = (
+            tag: PreviewNode['tag'],
+            attrs: PreviewNode['attrs'],
+            text?: string,
+            part = 'art'
+        ) => {
             group.children!.push({
-                key: `${key}/art`,
+                key: `${key}/${part}`,
                 tag,
                 attrs,
                 ...(text === undefined ? {} : { text })
@@ -527,14 +540,6 @@ export function createArtworkProjector(
                     ...paint
                 });
                 break;
-            case 'circle':
-                primitive('circle', {
-                    cx: shape.position.x,
-                    cy: shape.position.y,
-                    r: shape.radius,
-                    ...paint
-                });
-                break;
             case 'ellipse':
                 primitive('ellipse', {
                     cx: shape.position.x,
@@ -552,12 +557,21 @@ export function createArtworkProjector(
                     y2: shape.end.y,
                     ...paint
                 });
+                if (shape.arrow) {
+                    primitive(
+                        'polyline',
+                        {
+                            points: stringifyPath(arrowHeadPoints(shape.start, shape.end)),
+                            ...paint,
+                            fill: 'none'
+                        },
+                        undefined,
+                        'head'
+                    );
+                }
                 break;
-            case 'pen':
-                primitive('polyline', {
-                    points: shape.points.map(({ x, y }) => `${x},${y}`).join(' '),
-                    ...paint
-                });
+            case 'path':
+                primitive('path', { d: pathData(shape), ...paint });
                 break;
             case 'text': {
                 const lines = shape.textLayout?.lines ?? [shape.value];

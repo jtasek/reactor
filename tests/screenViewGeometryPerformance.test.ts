@@ -407,11 +407,11 @@ it('keeps screen geometry cached while an unrelated canvas shape is resized or r
 it.each([
     { type: 'rectangle', position: { x: 9000, y: 0 }, size: { width: 100, height: 100 } },
     { type: 'image', position: { x: 9000, y: 0 }, size: { width: 100, height: 100 }, source: '' },
-    { type: 'circle', position: { x: 9050, y: 50 }, radius: 50 },
+    { type: 'ellipse', position: { x: 9050, y: 50 }, radius: { x: 50, y: 50 } },
     { type: 'ellipse', position: { x: 9050, y: 50 }, radius: { x: 50, y: 30 } },
     { type: 'line', start: { x: 9000, y: 0 }, end: { x: 9100, y: 100 } },
     {
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 9000, y: 0 },
             { x: 9050, y: 80 },

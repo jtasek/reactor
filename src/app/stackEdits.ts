@@ -152,7 +152,7 @@ function applyPlacement(original: Shape, shape: Shape) {
                 bindings: shape.bindings
             });
             break;
-        case 'pen':
+        case 'path':
             Object.assign(original, {
                 points: shape.points,
                 bounds: shape.bounds,
@@ -176,7 +176,6 @@ function applyPlacement(original: Shape, shape: Shape) {
             });
             break;
         case 'image':
-        case 'circle':
         case 'ellipse':
         case 'text':
         case 'instance':

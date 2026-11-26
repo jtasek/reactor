@@ -189,7 +189,6 @@ export interface Pointer {
     hoveredScreenViewId: string | null;
     offset: Point;
     path: Point[];
-    radius: number;
     size: Size;
     start: Point;
     topLeft: Point;
@@ -205,6 +204,8 @@ export interface Keyboard {
     typing: boolean;
     /** Whether a held key repeats a shortcut, whose changes are held until it is released. */
     repeating: boolean;
+    /** Whether Space is held over the canvas, which pans it as the Hand tool does. */
+    space: boolean;
 }
 
 export interface Events {

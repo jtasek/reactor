@@ -466,7 +466,7 @@ work, with V3 extended by R4.3–R4.4 and V5 feeding R6. No speculative plugin o
    geometry writes. A move detaches only moved axes and stays detached when dragged back.
    A resize detaches only the coordinates whose top or left edge it may move. Handle clicks
    within a click's slip and measurements preserve bindings; Cancel restores rebased
-   bindings and values, and shared undo restores committed ones. Circle/ellipse radius edits account for
+   bindings and values, and shared undo restores committed ones. Ellipse radius edits account for
    X/Y, and text-size edits account for the baseline's Y coordinate. Covered by
    `tests/geometryBindings.test.ts` and `tests/browser/variables.spec.ts`.
 3. **V3 — Independent dimensions and local context (color increment implemented).**

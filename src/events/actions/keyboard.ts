@@ -51,6 +51,18 @@ export const keyDown: ActionWithParam<KeyboardEvent> = (
     keyboard.shiftKey = event.shiftKey;
 };
 
+/**
+ * Holds Space, which pans the canvas while held, or lets go of it. It is held only
+ * while the pointer is over the canvas; returns whether it is held.
+ */
+export const holdSpace = ({ state }: Context, held: boolean): boolean => {
+    const { keyboard, pointer } = state.events;
+
+    keyboard.space = held && (keyboard.space || pointer.inside);
+
+    return keyboard.space;
+};
+
 export const keyUp: ActionWithParam<KeyboardEvent> = (
     {
         state: {
@@ -132,4 +144,5 @@ export const releaseModifiers: Action = ({ state }) => {
     keyboard.ctrlKey = false;
     keyboard.metaKey = false;
     keyboard.shiftKey = false;
+    keyboard.space = false;
 };

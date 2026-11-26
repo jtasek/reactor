@@ -37,7 +37,7 @@ const LAYOUT = { origin: 40, gap: 24 };
 const NEW_SHAPE = {
     rectangle: { width: 160, height: 48 },
     square: { width: 80, height: 80 },
-    circle: 32,
+    circle: { x: 32, y: 32 },
     ellipse: { x: 48, y: 32 },
     line: 120,
     fontSize: 24,
@@ -262,7 +262,6 @@ export function changeExamples(selected: ShapeFields[]): Array<{ example: string
         ...(has('value') ? [{ example: 'change text to "Hi"' }] : []),
         { example: 'make it green' },
         ...valued('cornerRadius', 'corner radius 12'),
-        ...valued('radius', 'radius 40'),
         ...valued('fontSize', 'font size 32'),
         ...valued('width', 'wider by 40'),
         ...valued('opacity', 'opacity 50%'),
@@ -588,7 +587,6 @@ function change(shape: ShapeFields, wanted: Assignment[]) {
     const draft = { ...shape };
     const changes: Changes = {};
     const missing: string[] = [];
-    const scaled = new Set<string>();
 
     wanted.forEach(({ candidates, value, by }) => {
         const item = candidates
@@ -604,15 +602,7 @@ function change(shape: ShapeFields, wanted: Assignment[]) {
             next = Math.round(Math.max(0, next) * 100) / 100;
         }
 
-        const wrote = item && next !== undefined ? item.write(draft, next) : undefined;
-        // "bigger" scales a circle once, though its radius is both its width and its height.
-        const again =
-            by?.scale && wrote && typeof wrote.radius === 'number' && scaled.has('radius');
-        const written = again ? undefined : wrote;
-
-        if (by?.scale && written) {
-            Object.keys(written).forEach((field) => scaled.add(field));
-        }
+        const written = item && next !== undefined ? item.write(draft, next) : undefined;
 
         if (written) {
             Object.assign(draft, written);
@@ -658,7 +648,8 @@ function targets(request: Request, context: Context): string[] {
 
     if (scope) {
         const noun = request.find(SHAPES)[0];
-        const type = noun?.id === 'square' ? 'rectangle' : noun?.id;
+        const type =
+            noun?.id === 'square' ? 'rectangle' : noun?.id === 'circle' ? 'ellipse' : noun?.id;
 
         request.use(scope);
         if (noun) {
@@ -738,40 +729,33 @@ function add(request: Request, noun: Match<Kind>, context: Context): Reading {
     for (let index = 0; index < count; index++) {
         const numbered = (text: string) => (count > 1 ? `${text} ${index + 1}` : text);
         const base: ShapeFields =
-            kind === 'circle'
+            kind === 'circle' || kind === 'ellipse'
                 ? {
-                      type: 'circle',
+                      type: 'ellipse',
                       position: { x: 0, y: 0 },
-                      radius: NEW_SHAPE.circle,
+                      radius: NEW_SHAPE[kind],
                       fill: NEW_SHAPE.fill
                   }
-                : kind === 'ellipse'
+                : kind === 'line'
                   ? {
-                        type: 'ellipse',
-                        position: { x: 0, y: 0 },
-                        radius: NEW_SHAPE.ellipse,
-                        fill: NEW_SHAPE.fill
+                        type: 'line',
+                        start: { x: 0, y: 0 },
+                        end: { x: NEW_SHAPE.line, y: 0 },
+                        stroke: NEW_SHAPE.stroke
                     }
-                  : kind === 'line'
+                  : kind === 'text'
                     ? {
-                          type: 'line',
-                          start: { x: 0, y: 0 },
-                          end: { x: NEW_SHAPE.line, y: 0 },
-                          stroke: NEW_SHAPE.stroke
+                          type: 'text',
+                          position: { x: 0, y: 0 },
+                          value: numbered(loose ?? 'Text'),
+                          fontSize: NEW_SHAPE.fontSize
                       }
-                    : kind === 'text'
-                      ? {
-                            type: 'text',
-                            position: { x: 0, y: 0 },
-                            value: numbered(loose ?? 'Text'),
-                            fontSize: NEW_SHAPE.fontSize
-                        }
-                      : {
-                            type: 'rectangle',
-                            position: { x: 0, y: 0 },
-                            size: NEW_SHAPE[kind],
-                            fill: NEW_SHAPE.fill
-                        };
+                    : {
+                          type: 'rectangle',
+                          position: { x: 0, y: 0 },
+                          size: NEW_SHAPE[kind],
+                          fill: NEW_SHAPE.fill
+                      };
         const { draft } = change(
             base,
             wanted.map((assignment) =>

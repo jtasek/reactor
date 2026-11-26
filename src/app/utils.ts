@@ -1,9 +1,9 @@
 import { containerStatesOf } from './containerState';
 import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics';
 import { frameState } from './frameState';
+import { mapPathPoints, pathOutline } from './pathGeometry';
 import {
     Box,
-    Circle,
     Component,
     Document,
     Ellipse,
@@ -11,7 +11,7 @@ import {
     Image,
     Layer,
     Line,
-    Pen,
+    Path,
     Point,
     Rectangle,
     ResizeHandlerType,
@@ -64,25 +64,6 @@ export function getRectBoundingBox(rectangle: Pick<Rectangle | Image, 'position'
     };
 }
 
-export function getCircleBoundingBox(circle: Pick<Circle, 'position' | 'radius'>): Box {
-    const topLeft = {
-        x: circle.position.x - circle.radius,
-        y: circle.position.y - circle.radius
-    };
-    const bottomRight = {
-        x: circle.position.x + circle.radius,
-        y: circle.position.y + circle.radius
-    };
-    const diameter = circle.radius * 2;
-
-    return {
-        topLeft,
-        bottomRight,
-        width: diameter,
-        height: diameter
-    };
-}
-
 export function getEllipseBoundingBox(ellipse: Pick<Ellipse, 'position' | 'radius'>): Box {
     const topLeft = {
         x: ellipse.position.x - ellipse.radius.x,
@@ -118,7 +99,9 @@ export function getLineBoundingBox(line: Pick<Line, 'start' | 'end'>): Box {
     return { topLeft, bottomRight, height, width };
 }
 
-export function getPathBoundingBox({ points }: Pick<Pen, 'points'>) {
+export function getPathBoundingBox(path: Pick<Path, 'points' | 'closed'>) {
+    const points = pathOutline(path);
+
     if (points.length === 0) {
         return {
             topLeft: { x: 0, y: 0 },
@@ -187,11 +170,9 @@ export function getBoundingBox(shape: ShapeInput): Box {
     switch (shape.type) {
         case 'line':
             return getLineBoundingBox(shape);
-        case 'circle':
-            return getCircleBoundingBox(shape);
         case 'ellipse':
             return getEllipseBoundingBox(shape);
-        case 'pen':
+        case 'path':
             return getPathBoundingBox(shape);
         case 'text':
             return getTextBoundingBox(shape);
@@ -252,8 +233,6 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 size: { ...shape.size },
                 source: shape.source
             };
-        case 'circle':
-            return { type: shape.type, position: { ...shape.position }, radius: shape.radius };
         case 'ellipse':
             return {
                 type: shape.type,
@@ -261,9 +240,18 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 radius: { ...shape.radius }
             };
         case 'line':
-            return { type: shape.type, start: { ...shape.start }, end: { ...shape.end } };
-        case 'pen':
-            return { type: shape.type, points: shape.points.map((point) => ({ ...point })) };
+            return {
+                type: shape.type,
+                start: { ...shape.start },
+                end: { ...shape.end },
+                ...(shape.arrow && { arrow: shape.arrow })
+            };
+        case 'path':
+            return {
+                type: shape.type,
+                points: mapPathPoints(shape.points, (point) => ({ ...point })),
+                ...(shape.closed && { closed: shape.closed })
+            };
         case 'text':
             return {
                 type: shape.type,
@@ -321,10 +309,9 @@ export const isHexColor = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
 export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
     switch (shape.type) {
         case 'rectangle':
-        case 'circle':
         case 'ellipse':
         case 'line':
-        case 'pen':
+        case 'path':
             return true;
         case 'image':
         case 'text':
@@ -335,16 +322,16 @@ export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
     }
 }
 
-/** Whether a shape encloses an area that a fill colors. */
-export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
+/** Whether a shape encloses an area that a fill colors: a path only once it is closed. */
+export function isClosedShape(shape: Pick<Shape, 'type'> & Partial<Pick<Path, 'closed'>>): boolean {
     switch (shape.type) {
         case 'rectangle':
-        case 'circle':
         case 'ellipse':
             return true;
+        case 'path':
+            return Boolean(shape.closed);
         case 'image':
         case 'line':
-        case 'pen':
         case 'text':
         case 'instance':
             return false;

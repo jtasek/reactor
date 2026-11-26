@@ -6,7 +6,8 @@ import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Tool } from 'src/tools/types';
 import { Pointer } from 'src/events/types';
-import { usePointer } from 'src/app/hooks';
+import { useAppState, usePointer } from 'src/app/hooks';
+import { drawnDrag } from '../../equalSides';
 import { Context } from 'src/app';
 
 /**
@@ -42,11 +43,12 @@ export const createEllipseProps = ({ center, size }: Pointer, designMode = false
 
 export const DesignEllipse: FC = () => {
     const pointer = usePointer();
+    const shiftKey = useAppState((state) => state.events.keyboard.shiftKey);
     if (!pointer.dragging) {
         return null;
     }
 
-    const props = createEllipseProps(pointer, true);
+    const props = createEllipseProps(drawnDrag(pointer, shiftKey), true);
 
     return (
         <>
@@ -75,7 +77,7 @@ export const EllipseCommand: Command = {
     id: 'ellipse',
     name: 'Ellipse',
     category: 'shapes',
-    description: 'Draws an elliptic shape',
+    description: 'Draws an ellipse or circle',
     icon: {
         component: EllipseIcon,
         color: 'rgb(144, 254, 214)',
@@ -86,7 +88,9 @@ export const EllipseCommand: Command = {
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        const shape = createEllipseProps(state.events.pointer);
+        const shape = createEllipseProps(
+            drawnDrag(state.events.pointer, state.events.keyboard.shiftKey)
+        );
 
         actions.drawShape(shape);
     },

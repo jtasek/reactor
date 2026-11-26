@@ -1,4 +1,5 @@
 import type { Box, Corner, Point, ResizeHandlerType, Shape, ShapeInput, Size } from './types';
+import { insidePolygon, mapPathPoints, pathOutline } from './pathGeometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -33,12 +34,11 @@ export function translateShape(shape: ShapeInput, delta: Point): void {
             shape.start = translatePoint(shape.start, delta);
             shape.end = translatePoint(shape.end, delta);
             break;
-        case 'pen':
-            shape.points = shape.points.map((point) => translatePoint(point, delta));
+        case 'path':
+            shape.points = mapPathPoints(shape.points, (point) => translatePoint(point, delta));
             break;
         case 'rectangle':
         case 'image':
-        case 'circle':
         case 'ellipse':
         case 'text':
         case 'instance':
@@ -99,12 +99,6 @@ export function placeShapeFrom(
                 shape.cornerRadius = original.cornerRadius * factor;
             }
             break;
-        case 'circle':
-            if (original.type === 'circle') {
-                shape.position = scaleAndTranslatePoint(original.position);
-                shape.radius = original.radius * factor;
-            }
-            break;
         case 'ellipse':
             if (original.type === 'ellipse') {
                 shape.position = scaleAndTranslatePoint(original.position);
@@ -117,9 +111,9 @@ export function placeShapeFrom(
                 shape.end = scaleAndTranslatePoint(original.end);
             }
             break;
-        case 'pen':
-            if (original.type === 'pen') {
-                shape.points = original.points.map(scaleAndTranslatePoint);
+        case 'path':
+            if (original.type === 'path') {
+                shape.points = mapPathPoints(original.points, scaleAndTranslatePoint);
             }
             break;
         case 'text':
@@ -266,9 +260,8 @@ function keepFlatSides(box: Box, oldBox: Box): Box {
     };
 }
 
-/** Images never letterbox, text scales with its font size, and circles stay round. */
-export const keepsAspectRatio = (shape: Shape) =>
-    shape.type === 'image' || shape.type === 'text' || shape.type === 'circle';
+/** Images never letterbox, and text scales with its font size. */
+export const keepsAspectRatio = (shape: Shape) => shape.type === 'image' || shape.type === 'text';
 
 /** A flat box counts as square. */
 export const aspectRatio = (box: Box) => (box.height > 0 ? box.width / box.height : 1);
@@ -293,7 +286,7 @@ export function resizeShapeFromHandle(
     const free = resizeBox(oldBox, handlerType, local);
     const resized = keepsAspectRatio(original)
         ? resizeAspectBox(oldBox, handlerType, local, aspectRatio(oldBox))
-        : original.type === 'line' || original.type === 'pen'
+        : original.type === 'line' || original.type === 'path'
           ? keepFlatSides(free, oldBox)
           : free;
     const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
@@ -305,11 +298,6 @@ export function resizeShapeFromHandle(
         case 'rectangle':
             shape.position = { x: box.topLeft.x, y: box.topLeft.y };
             shape.size = { width: box.width, height: box.height };
-            break;
-
-        case 'circle':
-            shape.position = boxCenter(box);
-            shape.radius = box.width / 2;
             break;
 
         case 'ellipse':
@@ -324,9 +312,9 @@ export function resizeShapeFromHandle(
             }
             break;
 
-        case 'pen':
-            if (original.type === 'pen') {
-                shape.points = original.points.map((point) =>
+        case 'path':
+            if (original.type === 'path') {
+                shape.points = mapPathPoints(original.points, (point) =>
                     mapPointBetweenBoxes(point, oldBox, box)
                 );
             }
@@ -417,7 +405,7 @@ export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER
 
 /**
  * Whether `point` hits `shape` where it is drawn: within `tolerance` of its
- * outline, or anywhere inside a closed shape (rectangle, image, text, circle,
+ * outline, or anywhere inside a closed shape (rectangle, image, text,
  * ellipse). Lines and pens are open, so only their stroke hits (see
  * `hitsSelectedBox` for dragging a selected one from inside its box). Shapes are drawn
  * rotated about their box center, so the point is tested in the unrotated frame.
@@ -432,8 +420,6 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         case 'text':
         case 'instance':
             return distanceToBox(local, bounds) <= tolerance;
-        case 'circle':
-            return getDistance(local, shape.position) <= shape.radius + tolerance;
         case 'ellipse': {
             // Inflating the radii approximates the band around the outline.
             const dx = (local.x - shape.position.x) / (shape.radius.x + tolerance);
@@ -443,23 +429,30 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         }
         case 'line':
             return distanceToSegment(local, shape.start, shape.end) <= tolerance;
-        case 'pen':
-            return distanceToPolyline(local, shape.points) <= tolerance;
+        case 'path': {
+            const outline = pathOutline(shape);
+
+            return (
+                distanceToPolyline(local, shape.closed ? [...outline, outline[0]] : outline) <=
+                    tolerance ||
+                (Boolean(shape.closed) && insidePolygon(local, outline))
+            );
+        }
         default:
             return assertNever(shape);
     }
 }
 
 /**
- * Whether `point` falls in the box of a selected line or pen, so it can be dragged
+ * Whether `point` falls in the box of a selected line or path, so it can be dragged
  * from inside its selection box. Presses try `hitTestShape` on every shape first, so
  * shapes drawn inside that box can still be pressed.
  */
 export function hitsSelectedBox(shape: Shape, point: Point, tolerance: number): boolean {
-    if (!shape.selected || (shape.type !== 'line' && shape.type !== 'pen')) {
+    if (!shape.selected || (shape.type !== 'line' && shape.type !== 'path')) {
         return false;
     }
-    if (shape.type === 'pen' && shape.points.length === 0) {
+    if (shape.type === 'path' && shape.points.length === 0) {
         return false;
     }
     const bounds = getShapeBounds(shape);

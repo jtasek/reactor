@@ -18,7 +18,6 @@ export const STEPS = {
     move: 20,
     size: 20,
     cornerRadius: 4,
-    radius: 8,
     fontSize: 2,
     fontWeight: 100,
     opacity: 0.1,
@@ -41,16 +40,6 @@ export function box(shape: ShapeFields): Box | undefined {
     const position = xy(shape.position);
 
     switch (shape.type) {
-        case 'circle': {
-            const radius = number(shape.radius);
-
-            return {
-                left: position.x - radius,
-                top: position.y - radius,
-                width: radius * 2,
-                height: radius * 2
-            };
-        }
         case 'ellipse': {
             const radius = xy(shape.radius);
 
@@ -131,7 +120,6 @@ export type PropertyId =
     | 'opacity'
     | 'rotation'
     | 'cornerRadius'
-    | 'radius'
     | 'width'
     | 'height'
     | 'x'
@@ -153,8 +141,7 @@ export interface Property extends Term<PropertyId> {
 }
 
 const sized = new Set(['rectangle', 'image', 'instance']);
-const filled = new Set(['rectangle', 'circle', 'ellipse', 'pen']);
-const stroked = new Set(['rectangle', 'circle', 'ellipse', 'pen', 'line']);
+const stroked = new Set(['rectangle', 'ellipse', 'path', 'line']);
 const positive = (value: string | number) => (typeof value === 'number' && value > 0 ? value : 0);
 
 const color = (
@@ -178,7 +165,7 @@ const dimension = (axis: 'width' | 'height', phrases: string[]): Property => ({
     kind: 'number',
     step: STEPS.size,
     read: (shape) =>
-        sized.has(String(shape.type)) || shape.type === 'circle' || shape.type === 'ellipse'
+        sized.has(String(shape.type)) || shape.type === 'ellipse'
             ? round(box(shape)?.[axis] ?? 0)
             : undefined,
     write: (shape, value) => {
@@ -186,9 +173,6 @@ const dimension = (axis: 'width' | 'height', phrases: string[]): Property => ({
 
         if (!length) {
             return undefined;
-        }
-        if (shape.type === 'circle') {
-            return { radius: length / 2 };
         }
         if (shape.type === 'ellipse') {
             return {
@@ -251,8 +235,14 @@ export const PROPERTIES: Property[] = [
         ['font color', 'text color', 'color', 'colour', 'fc'],
         (shape) => shape.type === 'text'
     ),
-    color('fill', 'fill', ['fill', 'background', 'color', 'colour', 'bg'], (shape) =>
-        filled.has(String(shape.type))
+    color(
+        'fill',
+        'fill',
+        ['fill', 'background', 'color', 'colour', 'bg'],
+        (shape) =>
+            shape.type === 'rectangle' ||
+            shape.type === 'ellipse' ||
+            (shape.type === 'path' && shape.closed === true)
     ),
     color('stroke', 'stroke', ['stroke', 'outline', 'border', 'line color'], (shape) =>
         stroked.has(String(shape.type))
@@ -315,16 +305,6 @@ export const PROPERTIES: Property[] = [
             shape.type === 'rectangle' && typeof value === 'number' && value >= 0
                 ? { cornerRadius: value }
                 : undefined
-    },
-    {
-        id: 'radius',
-        label: 'radius',
-        phrases: ['radius', 'r'],
-        kind: 'number',
-        step: STEPS.radius,
-        read: (shape) => (shape.type === 'circle' ? number(shape.radius) : undefined),
-        write: (shape, value) =>
-            shape.type === 'circle' && positive(value) ? { radius: value } : undefined
     },
     dimension('width', ['width', 'wide', 'w']),
     dimension('height', ['height', 'high', 'tall', 'h']),

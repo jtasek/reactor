@@ -41,7 +41,11 @@ describe('pressing shapes where they are drawn', () => {
     });
 
     it('hits circles and ellipses inside their outline, not their bounding box corners', () => {
-        const circle = setup({ type: 'circle', position: { x: 50, y: 50 }, radius: 50 });
+        const circle = setup({
+            type: 'ellipse',
+            position: { x: 50, y: 50 },
+            radius: { x: 50, y: 50 }
+        });
 
         expect(circle.pressAt(50, 95)).toBe(true);
         expect(circle.pressAt(8, 8)).toBe(false);
@@ -66,7 +70,7 @@ describe('pressing shapes where they are drawn', () => {
         expect(line.pressAt(90, 10)).toBe(true);
 
         const pen = setup({
-            type: 'pen',
+            type: 'path',
             points: [
                 { x: 0, y: 0 },
                 { x: 100, y: 0 },

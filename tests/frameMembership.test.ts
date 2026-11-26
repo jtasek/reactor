@@ -871,7 +871,7 @@ it('moves line and pen geometry without changing the snapshots used by later mov
         selected: false
     });
     store.actions.addShape({
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 130, y: 110 },
             { x: 150, y: 140 }

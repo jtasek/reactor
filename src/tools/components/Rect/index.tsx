@@ -7,7 +7,8 @@ import type { Command, Point, Size } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { limitCornerRadius } from 'src/app/geometry';
-import { usePointer } from 'src/app/hooks';
+import { useAppState, usePointer } from 'src/app/hooks';
+import { drawnDrag } from '../../equalSides';
 import { Context } from 'src/app';
 
 /**
@@ -67,11 +68,12 @@ export const Rect: FC<Props> = ({ name, position, size, selected, cornerRadius =
 
 export const DesignRect: FC = () => {
     const pointer = usePointer();
+    const shiftKey = useAppState((state) => state.events.keyboard.shiftKey);
     if (!pointer.dragging) {
         return null;
     }
 
-    const props = createRectProps(pointer, true);
+    const props = createRectProps(drawnDrag(pointer, shiftKey), true);
 
     return (
         <>
@@ -96,7 +98,9 @@ export const RectCommand: Command = {
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        const shape = createRectProps(state.events.pointer);
+        const shape = createRectProps(
+            drawnDrag(state.events.pointer, state.events.keyboard.shiftKey)
+        );
 
         actions.drawShape(shape);
     },

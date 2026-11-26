@@ -76,13 +76,6 @@ export function parityArtworkDocument() {
         opacity: 0.5,
         fill: '#336699'
     });
-    add('circle', {
-        type: 'circle',
-        parentFrameId: 'art',
-        position: { x: 220, y: 60 },
-        radius: 30,
-        stroke: '#aa0000'
-    });
     add('ellipse', {
         type: 'ellipse',
         parentFrameId: 'art',
@@ -98,8 +91,15 @@ export function parityArtworkDocument() {
         end: { x: 380, y: 140 },
         rotation: 10
     });
-    add('pen', {
-        type: 'pen',
+    add('arrow', {
+        type: 'line',
+        parentFrameId: 'art',
+        start: { x: 220, y: 40 },
+        end: { x: 300, y: 90 },
+        arrow: true
+    });
+    add('path', {
+        type: 'path',
         parentFrameId: 'art',
         points: [
             { x: 20, y: 160 },
@@ -109,6 +109,18 @@ export function parityArtworkDocument() {
         ],
         stroke: '#5500aa',
         opacity: 0.7
+    });
+    add('curve', {
+        type: 'path',
+        parentFrameId: 'art',
+        points: [
+            { x: 200, y: 160, out: { x: 220, y: 130 } },
+            { x: 260, y: 200, in: { x: 240, y: 220 } },
+            { x: 300, y: 160 }
+        ],
+        closed: true,
+        fill: '#ffcc00',
+        rotation: 15
     });
     add('wrapped', {
         type: 'text',

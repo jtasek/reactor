@@ -17,7 +17,13 @@ const shapes = {
         size: { width: 100, height: 40 },
         fill: '#3366ff'
     },
-    dot: { type: 'circle', name: 'Dot', position: { x: 300, y: 100 }, radius: 20, fill: '#e5484d' },
+    dot: {
+        type: 'ellipse',
+        name: 'Dot',
+        position: { x: 300, y: 100 },
+        radius: { x: 20, y: 20 },
+        fill: '#e5484d'
+    },
     title: {
         type: 'text',
         name: 'Title',
@@ -92,15 +98,12 @@ describe('properties of the selection', () => {
     });
 
     it('reads a property as each shape has it', () => {
-        expect(changes('radius 50', ['card', 'dot'])).toEqual({
-            card: { cornerRadius: 50 },
-            dot: { radius: 50 }
-        });
+        expect(changes('radius 50', ['card', 'dot'])).toEqual({ card: { cornerRadius: 50 } });
         expect(changes('make them purple', ['card', 'title'])).toEqual({
             card: { fill: '#8e4ec6' },
             title: { fontColor: '#8e4ec6' }
         });
-        expect(changes('width 80', ['dot'])).toEqual({ dot: { radius: 40 } });
+        expect(changes('width 80', ['dot'])).toEqual({ dot: { radius: { x: 40, y: 20 } } });
         // X and Y are the box's corner, as in the Inspector.
         expect(changes('x 100 y 200', ['dot'])).toEqual({ dot: { position: { x: 120, y: 220 } } });
     });
@@ -117,7 +120,7 @@ describe('properties of the selection', () => {
         });
         expect(changes('make it bigger', ['card', 'dot', 'title'])).toEqual({
             card: { size: { width: 125, height: 50 } },
-            dot: { radius: 25 },
+            dot: { radius: { x: 25, y: 25 } },
             title: { fontSize: 30 }
         });
         expect(changes('increase font size by 4', ['title'])).toEqual({ title: { fontSize: 28 } });
@@ -152,7 +155,7 @@ describe('properties of the selection', () => {
         expect(text).toContain('- width: 100');
         expect(text).not.toContain('font size');
         expect(read('what is the fill?', ['card']).text).not.toContain('width: 100');
-        expect(read('props').text).toContain('4 shapes: 2 rectangles, 1 circle, 1 text');
+        expect(read('props').text).toContain('4 shapes: 2 rectangles, 1 ellipse, 1 text');
     });
 });
 
@@ -219,8 +222,11 @@ describe('arranging', () => {
 
 describe('adding', () => {
     it('adds each kind with the properties it is given', () => {
-        expect(read('add 3 circels radius 20 opacity 50%').operations).toMatchObject(
-            Array(3).fill({ op: 'addShape', shape: { type: 'circle', radius: 20, opacity: 0.5 } })
+        expect(read('add 3 circels opacity 50%').operations).toMatchObject(
+            Array(3).fill({
+                op: 'addShape',
+                shape: { type: 'ellipse', radius: { x: 32, y: 32 }, opacity: 0.5 }
+            })
         );
         expect(read('add text "Hello" font size 32 bold').operations).toMatchObject([
             { shape: { type: 'text', value: 'Hello', fontSize: 32, fontWeight: 700 } }

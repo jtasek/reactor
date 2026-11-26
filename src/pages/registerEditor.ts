@@ -71,13 +71,14 @@ import {
 
 import {
     FrameTool,
-    CircleTool,
+    HandTool,
     EllipseTool,
     ImageTool,
     InstanceTool,
     LineTool,
+    ArrowTool,
     MoveTool,
-    PenTool,
+    PencilTool,
     RectTool,
     SelectTool,
     TextTool
@@ -138,17 +139,18 @@ function registerCommands() {
 }
 
 function registerTools() {
+    registerTool(SelectTool);
+    registerTool(MoveTool);
+    registerTool(HandTool);
     registerTool(FrameTool);
-    registerTool(CircleTool);
+    registerTool(RectTool);
     registerTool(EllipseTool);
+    registerTool(TextTool);
     registerTool(ImageTool);
     registerTool(InstanceTool);
     registerTool(LineTool);
-    registerTool(MoveTool);
-    registerTool(PenTool);
-    registerTool(RectTool);
-    registerTool(SelectTool);
-    registerTool(TextTool);
+    registerTool(ArrowTool);
+    registerTool(PencilTool);
 }
 
 /**

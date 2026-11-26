@@ -57,9 +57,9 @@ describe('the local test model', () => {
 
         const circles = await accept(store, 'Add 3 red circles named "Dot"');
         expect(circles.map(({ type, name, fill }) => ({ type, name, fill }))).toEqual([
-            { type: 'circle', name: 'Dot 1', fill: '#e5484d' },
-            { type: 'circle', name: 'Dot 2', fill: '#e5484d' },
-            { type: 'circle', name: 'Dot 3', fill: '#e5484d' }
+            { type: 'ellipse', name: 'Dot 1', fill: '#e5484d' },
+            { type: 'ellipse', name: 'Dot 2', fill: '#e5484d' },
+            { type: 'ellipse', name: 'Dot 3', fill: '#e5484d' }
         ]);
 
         const shapes = await accept(store, 'add a 200x60 #112233 rectangle');
@@ -67,7 +67,7 @@ describe('the local test model', () => {
         expect(rectangle).toMatchObject({ size: { width: 200, height: 60 }, fill: '#112233' });
         // Below the circles, not over them.
         expect(rectangle.position.y).toBeGreaterThan(
-            Math.max(...circles.map(({ position, radius }) => position.y + Number(radius)))
+            Math.max(...circles.map(({ position, radius }) => position.y + (radius as Point).y))
         );
 
         const texts = await accept(store, 'Add text "Welcome"');
@@ -162,7 +162,7 @@ describe('the local test model', () => {
         expect(events.some((event) => event.type === 'repairing')).toBe(true);
         expect(result).toMatchObject({
             kind: 'proposed',
-            operations: [{ op: 'addShape', shape: { type: 'circle' } }]
+            operations: [{ op: 'addShape', shape: { type: 'ellipse' } }]
         });
         expect((await ask(store, '/repair')).result).toMatchObject({
             kind: 'proposed',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
     MouseEvent,
     PointerEvent as ReactPointerEvent,
@@ -8,9 +8,19 @@ import type {
     TouchEvent
 } from 'react';
 import { clientToSurface, getHandleTarget, screenDeltaToSurface, screenToCanvas } from './helpers';
-import { useActions, useCamera, useControls, useLog } from 'src/app/hooks';
+import {
+    useActions,
+    useActiveToolsIds,
+    useAppState,
+    useCamera,
+    useControls,
+    useLog
+} from 'src/app/hooks';
 import type { TouchContact } from 'src/events/types';
 import { trySetPointerCapture, tryReleasePointerCapture } from './pointerCapture';
+
+const HAND_TOOL_ID = 'hand';
+const MIDDLE_BUTTON = 4;
 
 const screenViewTarget = (target: EventTarget) =>
     target instanceof Element
@@ -27,6 +37,12 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     const handlePointer = useRef<number | null>(null);
     const moveFrame = useRef<number | null>(null);
     const pendingMove = useRef<(() => void) | null>(null);
+    // The pointer dragging the canvas with the Hand, Space or the middle button, and where it last was.
+    const panPointer = useRef<{ id: number; x: number; y: number } | null>(null);
+    const [panning, setPanning] = useState(false);
+    const handActive = useActiveToolsIds().includes(HAND_TOOL_ID);
+    const spaceHeld = useAppState((state) => state.events.keyboard.space);
+    const handReady = handActive || spaceHeld;
 
     const clearMove = useCallback(() => {
         if (moveFrame.current !== null) {
@@ -133,6 +149,15 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
+        if ((event.buttons === 1 && handReady) || event.buttons === MIDDLE_BUTTON) {
+            event.preventDefault();
+            panPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+            setPanning(true);
+            trySetPointerCapture(event.currentTarget, event.pointerId);
+
+            return;
+        }
+
         if (event.buttons !== 1) {
             return;
         }
@@ -182,6 +207,18 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
             return;
         }
 
+        const pan = panPointer.current;
+
+        if (pan) {
+            if (pan.id === event.pointerId) {
+                schedulePan(event.clientX - pan.x, event.clientY - pan.y);
+                pan.x = event.clientX;
+                pan.y = event.clientY;
+            }
+
+            return;
+        }
+
         const svgEl = getSvgElement(event);
         if (!svgEl) {
             return;
@@ -213,7 +250,24 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
         move();
     };
 
+    const endPan = (event: ReactPointerEvent<SVGSVGElement>) => {
+        if (panPointer.current?.id !== event.pointerId) {
+            return false;
+        }
+
+        flushPan();
+        panPointer.current = null;
+        setPanning(false);
+        tryReleasePointerCapture(getSvgElement(event), event.pointerId);
+
+        return true;
+    };
+
     const handlePointerUp: PointerEventHandler<SVGSVGElement> = (event) => {
+        if (endPan(event)) {
+            return;
+        }
+
         if (handlePointer.current === event.pointerId) {
             clearMove();
             handlePointer.current = null;
@@ -246,6 +300,10 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     // The browser took the pointer away (pointercancel) or capture was lost:
     // abandon that pointer's gesture rather than committing it.
     const handlePointerInterrupted: PointerEventHandler<SVGSVGElement> = (event) => {
+        if (endPan(event)) {
+            return;
+        }
+
         if (handlePointer.current === event.pointerId) {
             clearMove();
             handlePointer.current = null;
@@ -372,6 +430,7 @@ export const usePointerAdapter = (svgRef: RefObject<SVGSVGElement | null> | unde
     }, [actions]);
 
     return {
+        pan: panning ? 'grabbing' : handReady ? 'grab' : undefined,
         handleContextMenu,
         handlePointerLeave,
         handleDoubleClick,

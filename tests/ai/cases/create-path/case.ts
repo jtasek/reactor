@@ -9,7 +9,7 @@ export default defineCase({
                 key: 'card',
                 shape: {
                     name: 'Card',
-                    type: 'pen',
+                    type: 'path',
                     points: [
                         { x: 0, y: 0 },
                         { x: 20, y: 40 },
@@ -24,7 +24,7 @@ export default defineCase({
         counts: { shapes: 1, variables: 0, groups: 0 },
         shapes: {
             Card: {
-                type: 'pen',
+                type: 'path',
                 points: [
                     { x: 0, y: 0 },
                     { x: 20, y: 40 },

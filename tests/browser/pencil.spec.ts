@@ -20,11 +20,11 @@ for (const template of [false, true]) {
         await pointer(page, 'pointermove', { x: 950, y: 550 });
         await pointer(page, 'pointermove', { x: 1000, y: 600 });
         await pointer(page, 'pointerup', { x: 1050, y: 550 });
-        const stroke = shapes(page).locator('polyline[data-cy]').last();
+        const stroke = shapes(page).locator('path[data-cy]').last();
         await expect(stroke).toBeVisible();
-        const before = await stroke.getAttribute('points');
+        const before = await stroke.getAttribute('d');
         const at = await stroke.evaluate((element) => {
-            const stroke = element as SVGPolylineElement;
+            const stroke = element as SVGPathElement;
             const box = stroke.getBBox();
             // Inside the selected box, well away from either segment of the V.
             const point = new DOMPoint(
@@ -37,7 +37,7 @@ for (const template of [false, true]) {
         await page.mouse.down();
         await page.mouse.move(at.x + 40, at.y + 30, { steps: 4 });
         await page.mouse.up();
-        await expect(stroke).not.toHaveAttribute('points', before!);
+        await expect(stroke).not.toHaveAttribute('d', before!);
         expect(errors).toEqual([]);
     });
 }
@@ -70,4 +70,43 @@ test('a shape inside a selected line’s box can still be selected and dragged',
     await page.mouse.move(at(360, 160).x, at(360, 160).y, { steps: 4 });
     await page.mouse.up();
     await expect.poll(async () => (await rect.boundingBox())!.x - before.x).toBeCloseTo(40, 0);
+});
+
+test('the Pencil smooths a stroke by the level chosen in the Inspector', async ({ page }) => {
+    await openEditor(page, ['Inspector']);
+    await page.keyboard.press('p');
+    const smoothing = page.getByRole('group', { name: 'Smoothing' });
+    await expect(smoothing.getByRole('button', { name: 'Low' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    const draw = async (y: number) => {
+        await pointer(page, 'pointerdown', { x: 300, y });
+        for (let step = 1; step <= 20; step++) {
+            await pointer(page, 'pointermove', {
+                x: 300 + step * 10,
+                y: y + (step % 2) + step * 3
+            });
+        }
+        await pointer(page, 'pointerup', { x: 500, y: y + 60 });
+        return shapes(page).locator('path[data-cy]').last().getAttribute('d');
+    };
+
+    await smoothing.getByRole('button', { name: 'Off' }).click();
+    const off = await draw(100);
+    expect(off).not.toContain('C');
+    expect(off!.match(/L/g)!.length).toBeGreaterThan(15);
+
+    await page.keyboard.press('p');
+    await smoothing.getByRole('button', { name: 'High' }).click();
+    const high = await draw(300);
+    expect(high!.match(/[LC]/g)!.length).toBeLessThan(5);
+
+    await page.reload();
+    await expect(page.getByText('No shapes selected')).toBeVisible();
+    await page.keyboard.press('p');
+    await expect(smoothing.getByRole('button', { name: 'High' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
 });

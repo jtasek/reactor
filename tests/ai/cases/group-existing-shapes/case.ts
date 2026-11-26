@@ -4,7 +4,7 @@ import { groupNamed } from '../../checks';
 export default {
     fixture: {
         shapes: {
-            avatar: { type: 'circle', position: { x: 60, y: 60 }, radius: 20 },
+            avatar: { type: 'ellipse', position: { x: 60, y: 60 }, radius: { x: 20, y: 20 } },
             fullName: { type: 'text', position: { x: 90, y: 50 }, value: 'Ada Lovelace' },
             footer: {
                 type: 'rectangle',

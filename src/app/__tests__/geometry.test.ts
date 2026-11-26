@@ -26,12 +26,12 @@ describe('geometry', () => {
 
         it('hits a single-point pen near that point and never an empty pen', () => {
             const single = createShape({
-                type: 'pen',
+                type: 'path',
                 points: [{ x: 10, y: 10 }],
                 order: 'a0',
                 name: 'shape'
             });
-            const empty = createShape({ type: 'pen', points: [], order: 'a0', name: 'shape' });
+            const empty = createShape({ type: 'path', points: [], order: 'a0', name: 'shape' });
 
             expect(hitTestShape(single, { x: 10, y: 14 }, 5)).toBe(true);
             expect(hitTestShape(empty, { x: 0, y: 0 }, 5)).toBe(false);

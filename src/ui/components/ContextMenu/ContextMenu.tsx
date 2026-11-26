@@ -47,6 +47,7 @@ import {
     ZoomResetCommand
 } from 'src/commands';
 import { useRegisteredTools } from 'src/tools/components';
+import { toolBarSlots } from 'src/app/services/toolBarLayout';
 import { Icon } from '../Icon';
 import { shortcutLabel, usesCommandKey } from '../CommandBar/shortcutLabel';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
@@ -158,7 +159,9 @@ export const ContextMenu: FC<Props> = ({ position, onPressOutside }) => {
     const [draftName, setDraftName] = useState('');
     const { contextMenu, grid, guides, rulers } = useControls();
     const actions = useActions();
-    const tools = useRegisteredTools().filter((tool) => tool.category === 'shapes');
+    const tools = toolBarSlots(useRegisteredTools())
+        .flat()
+        .filter((tool) => tool.category === 'shapes');
     const target = useContextMenuTarget();
     const layers = useLayerChoices();
     const canMoveToLayer = useCanMoveSelectionToLayer();

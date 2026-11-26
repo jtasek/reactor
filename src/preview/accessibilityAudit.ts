@@ -144,11 +144,11 @@ function paintOf(node: PreviewNode, dx: number, dy: number, alpha: number): Pain
     if (node.tag === 'rect') {
         return { contains: inside(boxOf(attrs, dx, dy)), color, alpha };
     }
-    if (node.tag === 'circle' || node.tag === 'ellipse') {
+    if (node.tag === 'ellipse') {
         const cx = number(attrs.cx, 0) + dx;
         const cy = number(attrs.cy, 0) + dy;
-        const rx = number(node.tag === 'circle' ? attrs.r : attrs.rx, 0);
-        const ry = number(node.tag === 'circle' ? attrs.r : attrs.ry, 0);
+        const rx = number(attrs.rx, 0);
+        const ry = number(attrs.ry, 0);
 
         return {
             contains: (x, y) =>

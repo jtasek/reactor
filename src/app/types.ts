@@ -203,13 +203,6 @@ export interface Image extends ShapeBase {
 }
 
 /** `position` is the center. */
-export interface Circle extends ShapeBase {
-    type: 'circle';
-    position: Point;
-    radius: number;
-}
-
-/** `position` is the center. */
 export interface Ellipse extends ShapeBase {
     type: 'ellipse';
     position: Point;
@@ -220,11 +213,22 @@ export interface Line extends ShapeBase {
     type: 'line';
     start: Point;
     end: Point;
+    /** An arrowhead at `end`. */
+    arrow?: true;
 }
 
-export interface Pen extends ShapeBase {
-    type: 'pen';
-    points: Point[];
+/** A point of a path, with the handles that bend the curve into and out of it. */
+export interface PathPoint extends Point {
+    in?: Point;
+    out?: Point;
+}
+
+/** Straight between points without handles, curved where a handle bends it. */
+export interface Path extends ShapeBase {
+    type: 'path';
+    points: PathPoint[];
+    /** Joins the last point back to the first, enclosing an area a fill colors. */
+    closed?: true;
 }
 
 /** `position` is the left end of the text baseline. */
@@ -351,7 +355,7 @@ export interface RoleSettings {
     controlId?: string;
 }
 
-export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
+export type Shape = Rectangle | Image | Ellipse | Line | Path | Text | InstanceShape;
 
 type ShapeMetadata = Exclude<
     keyof ShapeBase,

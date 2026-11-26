@@ -17,8 +17,11 @@ import {
     boxCenter,
     DEFAULT_TEXT_FONT_SIZE,
     getShapeBounds,
-    rectToBox
+    rectToBox,
+    stringifyPath
 } from 'src/app/utils';
+import { arrowHeadPoints } from 'src/app/lineGeometry';
+import { pathData } from 'src/app/pathGeometry';
 import { useImageUrl } from 'src/app/imageHooks';
 import styles from './styles.css';
 
@@ -197,10 +200,6 @@ function geometry(
                     {...outline}
                 />
             );
-        case 'circle':
-            return (
-                <circle cx={shape.position.x} cy={shape.position.y} r={shape.radius} {...outline} />
-            );
         case 'ellipse':
             return (
                 <ellipse
@@ -213,21 +212,25 @@ function geometry(
             );
         case 'line':
             return (
-                <line
-                    x1={shape.start.x}
-                    y1={shape.start.y}
-                    x2={shape.end.x}
-                    y2={shape.end.y}
-                    {...outline}
-                />
+                <>
+                    <line
+                        x1={shape.start.x}
+                        y1={shape.start.y}
+                        x2={shape.end.x}
+                        y2={shape.end.y}
+                        {...outline}
+                    />
+                    {shape.arrow && (
+                        <polyline
+                            points={stringifyPath(arrowHeadPoints(shape.start, shape.end))}
+                            {...outline}
+                            fill="none"
+                        />
+                    )}
+                </>
             );
-        case 'pen':
-            return (
-                <polyline
-                    points={shape.points.map(({ x, y }) => `${x},${y}`).join(' ')}
-                    {...outline}
-                />
-            );
+        case 'path':
+            return <path d={pathData(shape)} {...outline} />;
         case 'text':
             return (
                 <text

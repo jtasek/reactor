@@ -12,11 +12,11 @@ const shapes: ShapeInput[] = [
         size: { width: 40, height: 20 },
         source: 'image.png'
     },
-    { type: 'circle', position: { x: 50, y: 50 }, radius: 10 },
+    { type: 'ellipse', position: { x: 50, y: 50 }, radius: { x: 10, y: 10 } },
     { type: 'ellipse', position: { x: 50, y: 50 }, radius: { x: 20, y: 10 } },
     { type: 'line', start: { x: 0, y: 0 }, end: { x: 40, y: 30 } },
     {
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 0, y: 0 },
             { x: 10, y: 20 },
@@ -106,7 +106,7 @@ describe('pasting where the canvas was last pressed', () => {
     };
 
     it('centers the pasted shapes there, keeping their layout', () => {
-        // A 40 by 30 rectangle at (10, 20) and a circle of radius 10 at (50, 50): x 10 to 60, y 20 to 60.
+        // A 40 by 30 rectangle at (10, 20) and an ellipse of radius 10 at (50, 50): x 10 to 60, y 20 to 60.
         const { store, ordered } = storeWith(shapes[0], shapes[2]);
         const copied = store.actions.copySelection()!;
 
@@ -115,7 +115,7 @@ describe('pasting where the canvas was last pressed', () => {
 
         expect(ordered().slice(2)).toMatchObject([
             { type: 'rectangle', position: { x: 210, y: 120 } },
-            { type: 'circle', position: { x: 250, y: 150 } }
+            { type: 'ellipse', position: { x: 250, y: 150 } }
         ]);
     });
 
@@ -374,14 +374,14 @@ it('copies selected shapes in drawing order with their group, without layers or 
     store.actions.newDocument();
     store.actions.pasteShapes(copied);
 
-    expect(ordered().map((shape) => shape.type)).toEqual(['circle', 'rectangle']);
+    expect(ordered().map((shape) => shape.type)).toEqual(['ellipse', 'rectangle']);
     expect(ordered().every((shape) => !shape.locked && !shape.parentShapeId)).toBe(true);
     expect(
         Object.values(document().groups).map((group) => ({
             rotation: group.rotation,
             types: group.shapesIds.map((id) => document().shapes[id].type)
         }))
-    ).toEqual([{ rotation: 30, types: ['rectangle', 'circle'] }]);
+    ).toEqual([{ rotation: 30, types: ['rectangle', 'ellipse'] }]);
     expect(Object.values(document().layers)).toEqual([]);
 });
 
@@ -416,7 +416,7 @@ it('cuts the selected shapes it can delete, and keeps locked ones', () => {
 
     store.actions.pasteShapes(cut);
 
-    expect(ordered().map((shape) => shape.type)).toEqual(['rectangle', 'circle']);
+    expect(ordered().map((shape) => shape.type)).toEqual(['rectangle', 'ellipse']);
     expect(ordered()[1]).not.toMatchObject({ id: circle });
     expect(ordered()[1]).toMatchObject({ position: { x: 50, y: 50 } });
 });
@@ -441,7 +441,9 @@ it.each([
         'an invalid shape',
         JSON.stringify({
             format: 'reactor/shapes',
-            shapes: [{ type: 'circle', position: { x: 0, y: 0 }, radius: -1, name: 'c' }]
+            shapes: [
+                { type: 'ellipse', position: { x: 0, y: 0 }, radius: { x: -1, y: -1 }, name: 'c' }
+            ]
         })
     ],
     [
@@ -453,7 +455,7 @@ it.each([
         'a pen with no points',
         JSON.stringify({
             format: 'reactor/shapes',
-            shapes: [{ type: 'pen', points: [], name: 'p' }]
+            shapes: [{ type: 'path', points: [], name: 'p' }]
         })
     ]
 ])('pastes nothing from %s', (_, text) => {

@@ -18,7 +18,7 @@ export const EDIT_ACTIONS = [
     {
         id: 'edit radius',
         name: 'Set radius',
-        description: 'Round rectangles or size circles',
+        description: 'Round rectangle corners',
         keys: ['radius']
     },
     {

@@ -31,10 +31,10 @@ test('a press outside the context menu closes it, and does nothing else', async 
     // A press on a menu action still picks its tool.
     await page.mouse.click(surface.x + 500, surface.y + 300, { button: 'right' });
     await drawShape.click();
-    await menu.getByRole('menuitem', { name: 'Circle' }).click();
+    await menu.getByRole('menuitem', { name: 'Ellipse' }).click();
     await expect(
         page.getByRole('list', { name: 'Tools' }).getByRole('button', { pressed: true })
-    ).toHaveAttribute('title', 'Draws a circle shape');
+    ).toHaveAttribute('title', 'Draws an ellipse or circle');
 });
 
 test('right-clicking a shape offers actions for that shape', async ({ page }) => {
@@ -219,7 +219,7 @@ test('Escape dismisses the menu and it stays in the viewport', async ({ page }) 
 
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowRight');
-    await expect(menu.getByRole('menuitem', { name: 'Circle' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Rectangle' })).toBeVisible();
     await page.keyboard.press('ArrowLeft');
     await expect(menu.getByRole('menuitem', { name: 'Draw shape' })).toBeVisible();
 

@@ -12,7 +12,7 @@ const square = (x: number): ShapeInput => ({
     size: { width: 10, height: 10 }
 });
 
-const circle: ShapeInput = { type: 'circle', position: { x: 0, y: 0 }, radius: 5 };
+const circle: ShapeInput = { type: 'ellipse', position: { x: 0, y: 0 }, radius: { x: 5, y: 5 } };
 
 function setup() {
     const { store } = createTestStore();
@@ -33,7 +33,7 @@ describe('a new shape’s name', () => {
         store.actions.addShape(circle);
         store.actions.addShape(square(40));
 
-        expect(names()).toEqual(['rectangle-1', 'rectangle-2', 'circle-1', 'rectangle-3']);
+        expect(names()).toEqual(['rectangle-1', 'rectangle-2', 'ellipse-1', 'rectangle-3']);
     });
 
     it('goes on from the highest number its type has in the document', () => {

@@ -31,6 +31,8 @@ interface Props {
     anchor?: Element | null;
     /** On narrow windows: a sheet along the bottom edge instead of a menu at a point. */
     sheet?: boolean;
+    /** Ends the menu at `position` instead of starting it there, as above a bar at the bottom. */
+    above?: boolean;
     onClose: () => void;
 }
 
@@ -41,7 +43,15 @@ const MARGIN = 8;
  * filter button. It goes on the page itself, as the panel's glass would clip it.
  * Escape and Tab close it and give focus back to what opened it.
  */
-export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, sheet, onClose }) => {
+export const ExplorerMenu: FC<Props> = ({
+    label,
+    position,
+    items,
+    anchor,
+    sheet,
+    above,
+    onClose
+}) => {
     const menu = useRef<HTMLDivElement>(null);
     const opener = useRef(document.activeElement);
     const [placement, setPlacement] = useState(position);
@@ -49,16 +59,17 @@ export const ExplorerMenu: FC<Props> = ({ label, position, items, anchor, sheet,
     useLayoutEffect(() => {
         const width = menu.current?.offsetWidth ?? 0;
         const height = menu.current?.offsetHeight ?? 0;
+        const y = above ? position.y - height : position.y;
 
         setPlacement({
             x: Math.max(MARGIN, Math.min(position.x, window.innerWidth - width - MARGIN)),
-            y: Math.max(MARGIN, Math.min(position.y, window.innerHeight - height - MARGIN))
+            y: Math.max(MARGIN, Math.min(y, window.innerHeight - height - MARGIN))
         });
         // The menu itself takes the focus when nothing in it can run, so Escape still closes it.
         (
             menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu.current
         )?.focus();
-    }, [position]);
+    }, [position, above]);
 
     useEffect(() => {
         const handlePointerDown = (event: PointerEvent) => {

@@ -38,15 +38,6 @@ const cases = [
         resized: { position: { x: 10, y: 20 }, size: { width: 80, height: 40 } }
     },
     {
-        name: 'circle',
-        shape: { type: 'circle' as const, position: { x: 50, y: 50 }, radius: 10 },
-        bounds: { topLeft: { x: 40, y: 40 }, bottomRight: { x: 60, y: 60 } },
-        moved: { position: { x: 55, y: 45 } },
-        // Circles stay round: the dominant axis sets the diameter.
-        resizeTo: { x: 80, y: 70 },
-        resized: { position: { x: 60, y: 60 }, radius: 20 }
-    },
-    {
         name: 'ellipse',
         shape: {
             type: 'ellipse' as const,
@@ -67,9 +58,9 @@ const cases = [
         resized: { start: { x: 0, y: 0 }, end: { x: 80, y: 60 } }
     },
     {
-        name: 'pen',
+        name: 'path',
         shape: {
-            type: 'pen' as const,
+            type: 'path' as const,
             points: [
                 { x: 0, y: 0 },
                 { x: 10, y: 20 },
@@ -293,7 +284,7 @@ it('points each resize cursor the way its handle points on screen', () => {
 it('lets a selected pencil shape move from its box without enlarging unselected stroke hits', () => {
     const { store } = createTestStore();
     store.actions.addShape({
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 0, y: 0 },
             { x: 50, y: 100 },

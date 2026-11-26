@@ -11,6 +11,7 @@ export const Surface: FC<Props> = ({ children }) => {
     const svgRef = React.useRef<SVGSVGElement>(null);
 
     const {
+        pan,
         handleContextMenu,
         handleDoubleClick,
         handleLostPointerCapture,
@@ -43,6 +44,7 @@ export const Surface: FC<Props> = ({ children }) => {
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
             onTouchStart={handleTouchStart}
+            data-pan={pan}
             style={{
                 touchAction: 'none', // 🔑 prevents native pinch zoom / scrolling
                 userSelect: 'none'
