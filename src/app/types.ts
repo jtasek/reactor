@@ -763,6 +763,8 @@ export type Application = {
     currentDocument: Document;
     /** Local alignment geometry, resolved once for the active canvas or Screen view. */
     alignmentItems: { shapeIds: string[]; box: Box }[];
+    /** The edited Screen view's placed document, while a view is edited: see `pointerDocument`. */
+    pointerViewDocument: Document | null;
     /** The source or child being inspected, on this screen only. */
     selectedComponent?: { documentId: string; componentId: string; shapeId?: string } | null;
     currentPage: string;

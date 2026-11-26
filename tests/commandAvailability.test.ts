@@ -73,6 +73,23 @@ describe('watching the store for command availability', () => {
         stop();
     });
 
+    it('asks no guard at a press on empty canvas and answers once it drags a marquee', () => {
+        const { store, stop } = watchedStore();
+        const guard = vi.spyOn(DeleteCommand, 'canExecute');
+
+        store.actions.events.beginGesture({ pointerId: 1, position: { x: 50, y: 50 } });
+        expect(store.state.events.pointer.gesture.kind).toBe('marquee');
+        expect(guard).not.toHaveBeenCalled();
+
+        store.actions.events.movePointer({ pointerId: 1, position: { x: 150, y: 150 } });
+        expect(store.state.currentDocument.selectedShapesIds).toHaveLength(1);
+        expect(guard).toHaveBeenCalled();
+        expect(commandAvailable(DeleteCommand.id)).toBe(true);
+        guard.mockRestore();
+        store.actions.events.endGesture({ pointerId: 1, position: { x: 150, y: 150 } });
+        stop();
+    });
+
     it('lets go of shapes it no longer reads', () => {
         const { store, stop } = watchedStore();
         const [first] = store.state.currentDocument.shapesIds;

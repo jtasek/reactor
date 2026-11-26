@@ -175,6 +175,15 @@ export const alignmentItems = derived((state: Context['state']) => {
     return editorLoaded() ? editorHelpers().alignment.placedItems(state, items) : [];
 });
 
+/** The edited Screen view's placed document, worked out once per change: see `pointerDocument`. */
+export const pointerViewDocument = derived((state: Context['state']) => {
+    const address = state.events.pointer.screenView;
+
+    return address && address.documentId === state.currentDocument.id && editorLoaded()
+        ? editorHelpers().pointer.placedPointerDocument(state, address)
+        : null;
+});
+
 /** The selected shapes commands may change, kept until they change: see `editableSelectedShapesIds` in `membership.ts`. */
 export const editableSelectedShapesIds = derived((currentDocument: Document) =>
     findEditableSelectedShapesIds(currentDocument)

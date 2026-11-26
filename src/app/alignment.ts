@@ -29,6 +29,19 @@ export function sourceOffsets(state: Context['state'], offsets: Point[]) {
 /** Resolve boxes locally; only their translation deltas are written to shared source shapes. */
 export function placedItems(state: Context['state'], sourceItems: string[][]) {
     const document = state.currentDocument;
+    // A selected local component moves whole, on the Canvas as in a view.
+    const components = document.selectedComponentsIds.map((id) => document.components[id]);
+    const contained = new Set(components.flatMap((component) => component.shapesIds));
+    const items = [
+        ...components.map((component) => component.shapesIds),
+        ...sourceItems.filter((ids) => !ids.some((id) => contained.has(id)))
+    ];
+
+    // Nothing aligns fewer items, so the view they are in need not be placed.
+    if (items.length < ALIGN_MINIMUM) {
+        return [];
+    }
+
     const address = state.events.pointer.screenView;
     const placed = address ? editableScreenView(state, address) : null;
 
@@ -42,14 +55,6 @@ export function placedItems(state: Context['state'], sourceItems: string[][]) {
     if (placed && document.selectedShapesIds.some((id) => !shown.has(id))) {
         return [];
     }
-
-    // A selected local component moves whole, on the Canvas as in a view.
-    const components = document.selectedComponentsIds.map((id) => document.components[id]);
-    const contained = new Set(components.flatMap((component) => component.shapesIds));
-    const items = [
-        ...components.map((component) => component.shapesIds),
-        ...sourceItems.filter((ids) => !ids.some((id) => contained.has(id)))
-    ];
     const owners = placed ? screenOwners(document.frames) : null;
     const focus = placed?.component
         ? document.components[document.editingComponentId ?? '']

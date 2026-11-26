@@ -1,6 +1,7 @@
 import { derived } from 'overmind';
 import { Application, Point, Size } from 'src/app/types';
 import { Pointer } from '../types';
+import { KEEPS_SHAPE_BOUNDS } from '../gestures';
 
 export const center = derived<Pointer, Application, Point>(({ current, start }) => {
     return {
@@ -47,4 +48,9 @@ export const dragging = derived<Pointer, Application, boolean>(
 /** True while a marquee selection is being dragged from empty canvas. */
 export const background = derived<Pointer, Application, boolean>(
     ({ gesture }) => gesture.kind === 'marquee'
+);
+
+/** Whether the gesture keeps the bounds of the shapes it edits: see `KEEPS_SHAPE_BOUNDS`. */
+export const keepsShapeBounds = derived<Pointer, Application, boolean>(
+    ({ gesture }) => KEEPS_SHAPE_BOUNDS[gesture.kind]
 );

@@ -21,3 +21,23 @@ export function deleteIfPresent<T extends object>(object: T, key: keyof T) {
         delete (object as Partial<T>)[key];
     }
 }
+
+/**
+ * Writes `value` to `key` only when it differs from what is there. Every write
+ * marks the derived values that read the key as changed, even one of the same
+ * value, so they would work themselves out again on their next read.
+ */
+export function setIfChanged<T extends object, K extends keyof T>(object: T, key: K, value: T[K]) {
+    const current = object[key];
+    const same =
+        current === value ||
+        (typeof current === 'object' &&
+            typeof value === 'object' &&
+            current !== null &&
+            value !== null &&
+            JSON.stringify(current) === JSON.stringify(value));
+
+    if (!same) {
+        object[key] = value;
+    }
+}

@@ -166,9 +166,12 @@ export function componentScreenView(
     state: Context['state'],
     views?: ReturnType<typeof projectScreenViews>
 ) {
+    if (!state.currentDocument.editingComponentId) {
+        return null;
+    }
     const address = state.events.pointer.screenView;
 
-    if (!state.currentDocument.editingComponentId || !screenViewSource(state, address)) {
+    if (!screenViewSource(state, address)) {
         return null;
     }
     const document = state.currentDocument;
@@ -547,7 +550,7 @@ export function pointerDocument(state: Context['state']): Document {
         return cached;
     }
 
-    const placedDocument = placedPointerDocument(state, address);
+    const placedDocument = state.pointerViewDocument ?? placedPointerDocument(state, address);
 
     if (key) {
         marqueeDocuments.set(key, placedDocument);
@@ -556,7 +559,10 @@ export function pointerDocument(state: Context['state']): Document {
     return placedDocument;
 }
 
-function placedPointerDocument(state: Context['state'], address: ScreenViewAddress): Document {
+export function placedPointerDocument(
+    state: Context['state'],
+    address: ScreenViewAddress
+): Document {
     const document = state.currentDocument;
 
     const projected = editableScreenView(state, address)?.projection;

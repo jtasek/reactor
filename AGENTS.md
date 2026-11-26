@@ -226,8 +226,12 @@ re-renders.** Components never mutate state directly.
   selection readers depend on the selected shapes, not on every shape.
   Each canvas Shape reads the store through `useShapeState` (`src/app/shapeState.ts`):
   reading one shape by id subscribes to the whole shape table, so it skips the render
-  a change brings when that change only adds or removes other shapes and every derived
-  value the Shape read answers the same. Read the shape list, or every shape, to depend
+  a change brings when that change only adds or removes other shapes, or touches only
+  what the Shape read through derived values, and every derived value the Shape read
+  answers the same (so a Shape reads `pointer.keepsShapeBounds`, not the gesture).
+  Write store keys that derived values read with `setIfChanged` (`src/app/untracked.ts`)
+  on hot paths: every write marks those derived values changed, even of the same value.
+  Read the shape list, or every shape, to depend
   on which shapes exist; `Object.keys`, `in` and `Object.hasOwn` on the table are not
   tracked, so a Shape must not decide what to draw by them.
   The pointer drag model lives in `src/events/computed/pointer.ts` (`topLeft`, `size`,

@@ -86,6 +86,18 @@ it('shares one cached set of placed boxes between controls and command execution
     );
 });
 
+it('keeps the placed boxes through a press that changes nothing they read', () => {
+    const { store } = setup();
+    store.actions.events.setScreenView(null);
+    const items = store.state.alignmentItems;
+
+    // Away from the view, so the press stays on the canvas, as the one before it.
+    store.actions.events.beginGesture({ pointerId: 1, position: { x: 2000, y: 2000 } });
+
+    expect(store.state.events.pointer.gesture.kind).toBe('marquee');
+    expect(store.state.alignmentItems).toBe(items);
+});
+
 it.each([
     [SpaceBetweenHorizontallyCommand, { x: 250, y: 170 }],
     [SpaceEquallyHorizontallyCommand, { x: 255, y: 170 }],

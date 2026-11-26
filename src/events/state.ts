@@ -3,6 +3,7 @@ import {
     bottomRight,
     center,
     dragging,
+    keepsShapeBounds,
     offset,
     size,
     topLeft
@@ -17,6 +18,7 @@ export const state: Events = {
         current: { x: 0, y: 0 },
         dragging,
         gesture: { kind: 'idle' },
+        keepsShapeBounds,
         screenView: null,
         hoveredScreenViewId: null,
         inside: false,

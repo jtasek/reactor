@@ -106,6 +106,34 @@ describe('a shape drawn on the canvas', () => {
         ).toBe(1);
     });
 
+    it('renders again for a gesture only when it changes whether the shape is measured', () => {
+        const store = documentOf(3);
+        const [id] = store.state.currentDocument.shapesIds;
+        store.actions.selectShape(id);
+
+        // A marquee from empty canvas keeps no bounds; a drag of the shape does.
+        expect(
+            rendersDuring(
+                store,
+                (state) => readLikeShape(state, id),
+                () =>
+                    store.actions.events.beginGesture({
+                        pointerId: 1,
+                        position: { x: 500, y: 500 }
+                    })
+            )
+        ).toBe(0);
+        store.actions.events.cancelGesture();
+        expect(
+            rendersDuring(
+                store,
+                (state) => readLikeShape(state, id),
+                () => store.actions.events.beginGesture({ pointerId: 1, position: { x: 5, y: 5 } })
+            )
+        ).toBe(1);
+        expect(store.state.events.pointer.gesture.kind).toBe('moving');
+    });
+
     it('renders again when adding another shape moves it in a stack', () => {
         const store = documentOf(3);
         const stackId = store.actions.editFrame({

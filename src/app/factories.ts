@@ -32,6 +32,7 @@ import {
     selectionExtent,
     movableSelectedItems,
     alignmentItems,
+    pointerViewDocument,
     editableSelectedShapesIds,
     variablesIds
 } from './computed/shapes';
@@ -372,6 +373,7 @@ export function createApplication(options: Partial<Application> = {}): Applicati
         currentDocumentId: 'document-1',
         currentDocument,
         alignmentItems,
+        pointerViewDocument,
         currentPage: 'designer',
         enteredGroupId: null,
         enteredComponentId: null,

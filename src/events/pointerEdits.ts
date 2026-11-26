@@ -24,7 +24,7 @@ import { ActionWithParam, Box, Point, Shape } from 'src/app/types';
 import { screenToWorld } from 'src/app/camera';
 import { drawnBox, drawnExtent, groupFrame, shownShapesIds } from 'src/app/membership';
 import { editorHelpers } from 'src/app/editorHelpers';
-import { deleteIfPresent, untracked } from 'src/app/untracked';
+import { deleteIfPresent, setIfChanged, untracked } from 'src/app/untracked';
 import { getShapeBounds, isShapeLocked } from 'src/app/utils';
 import { keepsAspectRatio } from 'src/app/geometry';
 import {
@@ -46,7 +46,7 @@ import {
 /** Snapping, which the editor provides as it loads. */
 const snapping = () => editorHelpers().snapping;
 
-export { componentScreenView } from 'src/app/screenViewEditing';
+export { componentScreenView, placedPointerDocument } from 'src/app/screenViewEditing';
 
 /** A pointer's input; `free` moves without snapping, as while Ctrl or Cmd is held. */
 type PointerInput = { pointerId: number; position: Point; free?: boolean; screenViewId?: string };
@@ -212,7 +212,9 @@ export const beginGesture = (
     }
 
     const previousScreenView = pointer.screenView ? json(pointer.screenView) : null;
-    pointer.screenView =
+    setIfChanged(
+        pointer,
+        'screenView',
         projected && address
             ? {
                   ...address,
@@ -229,8 +231,9 @@ export const beginGesture = (
                           : {})
                   }
               }
-            : address;
-    state.selectedComponent = null;
+            : address
+    );
+    setIfChanged(state, 'selectedComponent', null);
     deleteIfPresent(state.currentDocument, 'surfaceSelected');
     effects.collaboration.pause();
 
