@@ -5,6 +5,12 @@ declare namespace PrototypeCssNamespace {
     controls: string;
     copy: string;
     copyLabel: string;
+    device: string;
+    deviceBar: string;
+    deviceKinds: string;
+    deviceList: string;
+    deviceText: string;
+    devices: string;
     dimensions: string;
     documentName: string;
     header: string;
@@ -13,6 +19,8 @@ declare namespace PrototypeCssNamespace {
     linkPill: string;
     linkRow: string;
     links: string;
+    outline: string;
+    outlineBox: string;
     player: string;
     prototype: string;
     revoke: string;
@@ -24,6 +32,7 @@ declare namespace PrototypeCssNamespace {
     sharedLink: string;
     sharing: string;
     toolbarSlot: string;
+    turn: string;
     viewportSummary: string;
   }
 }

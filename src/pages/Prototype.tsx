@@ -13,6 +13,7 @@ import {
 import { Icon } from 'src/ui/components/Icon';
 import { Button, Field, Select } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
+import { DevicePicker } from './DevicePicker';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
@@ -219,6 +220,10 @@ function PrototypeWorkspace() {
                             </option>
                         ))}
                     </Select>
+                    <DevicePicker
+                        size={session.viewport!}
+                        onSize={(viewport) => setSession((previous) => ({ ...previous, viewport }))}
+                    />
                     <div className={styles.dimensions}>
                         <ViewportField
                             label="Width"

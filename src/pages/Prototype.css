@@ -352,6 +352,151 @@
     color: var(--error-color);
 }
 
+.devices {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+.devices legend {
+    padding: 0;
+    margin-bottom: 8px;
+}
+.deviceBar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.deviceKinds {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 100rem;
+    background: var(--field-background);
+}
+.deviceKinds button,
+.turn {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.75rem;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 100rem;
+    background: transparent;
+    color: var(--text-secondary-color);
+    font: inherit;
+    font-size: var(--font-size-callout);
+    cursor: pointer;
+}
+.deviceKinds button[aria-pressed='true'] {
+    background: var(--surface);
+    box-shadow: var(--box-shadow);
+    color: var(--ink-strong);
+}
+.deviceKinds button {
+    flex: 1;
+    min-width: 0;
+    padding: 0 0.5rem;
+}
+.turn {
+    flex: none;
+    width: 2rem;
+    min-height: 2rem;
+    padding: 0;
+    background: var(--field-background);
+}
+.turn[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--selection-color) 12%, var(--surface));
+    color: var(--selection-color);
+}
+.deviceKinds button:focus-visible,
+.turn:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+.deviceList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 8px;
+}
+.controls .device {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid var(--action-border);
+    border-radius: var(--border-radius);
+    background: var(--surface);
+    cursor: pointer;
+}
+.controls .device:hover {
+    background: color-mix(in srgb, var(--selection-color) 4%, var(--surface));
+}
+.controls .device:has(:checked) {
+    border-color: var(--selection-color);
+    background: color-mix(in srgb, var(--selection-color) 8%, var(--surface));
+}
+.controls .device:has(:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+.device input {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.outlineBox {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+.outline {
+    box-sizing: border-box;
+    border: 1.5px solid var(--text-secondary-color);
+    border-radius: 5px;
+    background: var(--field-background);
+}
+.outline[data-kind='tablet'] {
+    border-radius: 4px;
+}
+.outline[data-kind='desktop'] {
+    border-radius: 2px;
+}
+.device:has(:checked) .outline {
+    border-color: var(--selection-color);
+    background: color-mix(in srgb, var(--selection-color) 14%, var(--surface));
+}
+.deviceText {
+    display: grid;
+    min-width: 0;
+}
+.deviceText span {
+    overflow: hidden;
+    color: var(--ink-strong);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.deviceText small {
+    color: var(--text-secondary-color);
+    font-size: var(--font-size-callout);
+    font-variant-numeric: tabular-nums;
+}
+
 .dimensions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

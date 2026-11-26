@@ -313,3 +313,36 @@ test('keeps navigation in an older runtime without sending unsupported player co
         page.getByRole('button', { name: 'Prototype settings', exact: true })
     ).toBeVisible();
 });
+
+test('picks the prototype size from phones, tablets and desktops, upright or turned', async ({
+    page
+}) => {
+    await seed(page);
+    await page.goto('/prototype');
+    const runtime = player(page);
+    await page.getByRole('button', { name: 'Prototype settings', exact: true }).click();
+    const settings = page.getByRole('dialog', { name: 'Prototype settings' });
+    const devices = settings.getByRole('group', { name: 'Device' });
+
+    await devices.getByRole('button', { name: 'Tablets' }).click();
+    await devices.getByRole('radio', { name: 'iPad Air 820 × 1180' }).check();
+    await expect(settings.getByLabel('Prototype width', { exact: true })).toHaveValue('820');
+    await expect(settings.getByLabel('Prototype height', { exact: true })).toHaveValue('1180');
+
+    await devices.getByRole('button', { name: 'Landscape' }).click();
+    await expect(devices.getByRole('radio', { name: 'iPad Air 1180 × 820' })).toBeChecked();
+    await expect(settings.getByLabel('Prototype width', { exact: true })).toHaveValue('1180');
+
+    await devices.getByRole('button', { name: 'Phones' }).click();
+    await devices.getByRole('radio', { name: 'iPhone 15 852 × 393' }).check();
+    await devices.getByRole('button', { name: 'Landscape' }).click();
+    await expect(devices.getByRole('radio', { name: 'iPhone 15 393 × 852' })).toBeChecked();
+
+    await settings.getByLabel('Prototype width', { exact: true }).fill('500');
+    await settings.getByLabel('Prototype width', { exact: true }).press('Tab');
+    await expect(devices.getByRole('radio', { checked: true })).toHaveCount(0);
+
+    await devices.getByRole('radio', { name: 'iPhone 15 393 × 852' }).check();
+    await settings.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(runtime.locator('svg')).toHaveAttribute('width', '393');
+});
