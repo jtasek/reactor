@@ -546,7 +546,7 @@ describe('changing and deleting with operations', () => {
                 {
                     op: 'updateShape',
                     shape: first,
-                    changes: { type: 'circle' } as UpdateShape['changes']
+                    changes: { type: 'line' } as UpdateShape['changes']
                 }
             ]
         ],
