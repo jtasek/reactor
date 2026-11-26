@@ -16,13 +16,6 @@ export const offset = derived<Pointer, Application, Point>(({ current, start }) 
     };
 });
 
-export const radius = derived<Pointer, Application, number>(({ center, start }) => {
-    const x = center.x - start.x;
-    const y = center.y - start.y;
-
-    return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-});
-
 export const size = derived<Pointer, Application, Size>(({ current, start }) => {
     return {
         width: Math.abs(current.x - start.x),
