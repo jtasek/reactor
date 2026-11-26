@@ -84,7 +84,8 @@ export const keyUp: ActionWithParam<KeyboardEvent> = (
  * keep the browser from also acting on the keys. A command a clipboard event runs
  * is left to the browser.
  */
-export const pressShortcut = ({ state, actions, effects }: Context, press: KeyPress): boolean => {
+export const pressShortcut = (context: Context, press: KeyPress): boolean => {
+    const { state, actions, effects } = context;
     if (!takesEditorInput(state)) {
         return false;
     }
@@ -99,7 +100,9 @@ export const pressShortcut = ({ state, actions, effects }: Context, press: KeyPr
         return true;
     }
 
-    const command = getCommands().find(matches);
+    // Of the commands bound to the keys, the one that can run now, as Escape is bound to several.
+    const bound = getCommands().filter(matches);
+    const command = bound.find((candidate) => candidate.canExecute(context)) ?? bound[0];
 
     // Left to the browser, whose clipboard event runs the command.
     if (command?.clipboardEvent) {

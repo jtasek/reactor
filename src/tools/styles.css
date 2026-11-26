@@ -8,3 +8,18 @@
 .selected {
     stroke: var(--shape-stroke, var(--selection-color));
 }
+
+.penAnchor,
+.penHandle {
+    stroke: var(--selection-color);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.penAnchor {
+    fill: var(--panel-content-background);
+}
+
+.penAnchor[data-closing] {
+    fill: var(--selection-color);
+}

@@ -79,6 +79,8 @@ import {
     ArrowTool,
     MoveTool,
     PencilTool,
+    PenTool,
+    FinishPathCommand,
     RectTool,
     SelectTool,
     TextTool
@@ -98,6 +100,7 @@ function registerCommands() {
     registerCommand(MoveDownCommand);
     registerCommand(CloneCommand);
     registerCommand(CreateComponentCommand);
+    registerCommand(FinishPathCommand);
     registerCommand(LeaveComponentSourceCommand);
     registerCommand(SelectComponentSourceCommand);
     registerCommand(ResetComponentOverridesCommand);
@@ -151,6 +154,7 @@ function registerTools() {
     registerTool(LineTool);
     registerTool(ArrowTool);
     registerTool(PencilTool);
+    registerTool(PenTool);
 }
 
 /**

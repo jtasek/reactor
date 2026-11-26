@@ -1,5 +1,7 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    penAnchor: string;
+    penHandle: string;
     selected: string;
     shape: string;
   }
