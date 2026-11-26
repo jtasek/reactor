@@ -26,10 +26,15 @@ function cameraValue(camera: Camera): Camera {
 export const activateTool = (context: Context, toolId: string) => {
     const { state, actions } = context;
 
+    for (const activeId of state.tools.activeToolsIds) {
+        if (activeId !== toolId) {
+            getToolById(activeId)?.deactivate?.(context);
+        }
+    }
     // Tools are mutually exclusive modes: selecting one replaces any other.
     // Enforcing a single active tool prevents duplicate React keys and a single
-    // drag executing several tools at once (e.g. drawing a rectangle *and* a
-    // circle).
+    // drag executing several tools at once (e.g. drawing a rectangle *and* an
+    // ellipse).
     state.tools.activeToolsIds = [toolId];
     actions.ui.hideContextMenu();
     getToolById(toolId)?.activate?.(context);

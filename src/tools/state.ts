@@ -7,5 +7,6 @@ export const DEFAULT_TOOL_ID = 'select';
 
 export const state: Tools = {
     activeToolsIds: [DEFAULT_TOOL_ID],
-    pencilSmoothing: DEFAULT_SMOOTHING
+    pencilSmoothing: DEFAULT_SMOOTHING,
+    penDraft: null
 };

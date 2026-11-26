@@ -13,7 +13,7 @@ export const TOOL_BAR_LAYOUT: readonly (readonly string[])[] = [
     ['image'],
     ['instance'],
     ['line', 'arrow'],
-    ['pencil']
+    ['pencil', 'pen']
 ];
 
 /** `tools` in the bar's slots, as `TOOL_BAR_LAYOUT` places them. */

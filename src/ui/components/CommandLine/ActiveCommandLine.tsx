@@ -322,9 +322,8 @@ const ActiveCommandLine: FC = () => {
                 ...commands
                     .filter(
                         (command) =>
-                            !['rectangle', 'circle', 'text', 'open-command-line'].includes(
-                                command.id
-                            )
+                            !command.keysOnly &&
+                            !['rectangle', 'text', 'open-command-line'].includes(command.id)
                     )
                     .map((command) => ({
                         id: command.id,

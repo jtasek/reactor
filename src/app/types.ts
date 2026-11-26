@@ -621,6 +621,11 @@ export interface Command {
      * pressed, so it gets the event's data without asking to read the clipboard.
      */
     clipboardEvent?: 'copy' | 'cut' | 'paste';
+    /**
+     * Runs only from its keys: the command line leaves it out, and while it cannot run
+     * its keys are left to the page, as Enter on a focused button.
+     */
+    keysOnly?: true;
     /** Where the command is offered as a button; in the command bar unless named. */
     places?: CommandPlace[];
     /** The items whose menus offer the command. */

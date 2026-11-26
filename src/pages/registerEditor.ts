@@ -79,6 +79,9 @@ import {
     ArrowTool,
     MoveTool,
     PencilTool,
+    PenTool,
+    FinishPathCommand,
+    RemovePathPointCommand,
     RectTool,
     SelectTool,
     TextTool
@@ -86,6 +89,9 @@ import {
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 
 function registerCommands() {
+    // Ahead of Delete and Back to canvas, which share their keys while a path is drawn.
+    registerCommand(RemovePathPointCommand);
+    registerCommand(FinishPathCommand);
     registerCommand(OpenFlowCommand);
     registerCommand(OpenCommandLineCommand);
     registerCommand(OpenPrototypeCommand);
@@ -151,6 +157,7 @@ function registerTools() {
     registerTool(LineTool);
     registerTool(ArrowTool);
     registerTool(PencilTool);
+    registerTool(PenTool);
 }
 
 /**
