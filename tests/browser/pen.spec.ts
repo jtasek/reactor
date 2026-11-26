@@ -53,3 +53,22 @@ test('choosing another tool keeps the path drawn so far', async ({ page }) => {
     await page.keyboard.press('r');
     await expect(shapes(page).locator('path[data-cy]')).toHaveCount(1);
 });
+
+test('Backspace takes back the last point, not the selected shape', async ({ page }) => {
+    await openEditor(page);
+    await page.keyboard.press('Shift+P');
+    await click(page, { x: 300, y: 300 });
+    await click(page, { x: 400, y: 300 });
+    await page.keyboard.press('Enter');
+    const paths = shapes(page).locator('path[data-cy]');
+    await expect(paths).toHaveCount(1);
+
+    await page.keyboard.press('Shift+P');
+    await click(page, { x: 300, y: 400 });
+    await click(page, { x: 400, y: 400 });
+    await page.keyboard.press('Backspace');
+    await click(page, { x: 350, y: 450 });
+    await page.keyboard.press('Enter');
+    await expect(paths).toHaveCount(2);
+    expect(await paths.last().getAttribute('d')).toBe('M300 400L350 450');
+});

@@ -138,3 +138,17 @@ export const FinishPathCommand: Command = {
         context.actions.tools.resetTools();
     }
 };
+
+/** Backspace or Delete takes back the last point placed, rather than deleting the selection. */
+export const RemovePathPointCommand: Command = {
+    id: 'remove-path-point',
+    name: 'Remove last point',
+    category: 'shapes',
+    shortcut: 'delete,backspace',
+    places: [],
+    keysOnly: true,
+    canExecute: ({ state }) => state.tools.penDraft.length > 0,
+    execute: ({ state }) => {
+        state.tools.penDraft.pop();
+    }
+};

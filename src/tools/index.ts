@@ -6,7 +6,7 @@ export { InstanceTool } from './components/Instance';
 export { ArrowTool, LineTool } from './components/Line';
 export { MoveTool } from './components/Move';
 export { PencilTool } from './components/Pencil';
-export { FinishPathCommand, PenTool } from './components/Pen';
+export { FinishPathCommand, PenTool, RemovePathPointCommand } from './components/Pen';
 export { FrameTool } from './components/Frame';
 export { HandTool } from './components/Hand';
 export { RectTool } from './components/Rect';

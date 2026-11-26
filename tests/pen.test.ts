@@ -1,7 +1,12 @@
 import { registerCommand, registerTool } from 'src/app/actions/startup';
 import type { Path } from 'src/app/types';
 import type { KeyPress } from 'src/events/shortcuts';
-import { FinishPathCommand, PenTool, placedPoint } from 'src/tools/components/Pen';
+import {
+    FinishPathCommand,
+    PenTool,
+    RemovePathPointCommand,
+    placedPoint
+} from 'src/tools/components/Pen';
 import { createTestStore } from './support/store';
 
 const escape: KeyPress = {
@@ -14,6 +19,7 @@ const escape: KeyPress = {
 const leaveSomething = vi.fn();
 
 registerTool(PenTool);
+registerCommand(RemovePathPointCommand);
 registerCommand(FinishPathCommand);
 registerCommand({
     id: 'leave-something',
@@ -63,6 +69,19 @@ describe('the Pen', () => {
 
         store.actions.events.pressShortcut(escape);
         expect(leaveSomething).toHaveBeenCalledOnce();
+    });
+
+    it('takes back the last point on Backspace, and leaves Backspace alone after', () => {
+        const { store } = createTestStore();
+        store.actions.tools.activateTool('pen');
+        click(store, 0, 0);
+        click(store, 50, 0);
+
+        expect(store.actions.events.pressShortcut({ ...escape, key: 'Backspace' })).toBe(true);
+        expect(store.state.tools.penDraft).toEqual([{ x: 0, y: 0 }]);
+        store.actions.events.pressShortcut({ ...escape, key: 'Backspace' });
+        expect(store.state.tools.penDraft).toEqual([]);
+        expect(store.actions.events.pressShortcut({ ...escape, key: 'Backspace' })).toBe(false);
     });
 
     it('keeps the path when another tool is chosen, and drops a lone point', () => {
