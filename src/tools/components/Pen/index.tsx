@@ -131,6 +131,7 @@ export const FinishPathCommand: Command = {
     category: 'shapes',
     shortcut: 'enter,escape',
     places: [],
+    keysOnly: true,
     canExecute: ({ state }) => state.tools.penDraft.length > 0,
     execute: (context) => {
         finishPath(context);

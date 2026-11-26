@@ -102,7 +102,9 @@ export const pressShortcut = (context: Context, press: KeyPress): boolean => {
 
     // Of the commands bound to the keys, the one that can run now, as Escape is bound to several.
     const bound = getCommands().filter(matches);
-    const command = bound.find((candidate) => candidate.canExecute(context)) ?? bound[0];
+    const command =
+        bound.find((candidate) => candidate.canExecute(context)) ??
+        bound.find((candidate) => !candidate.keysOnly);
 
     // Left to the browser, whose clipboard event runs the command.
     if (command?.clipboardEvent) {

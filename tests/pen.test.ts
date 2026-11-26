@@ -75,3 +75,11 @@ describe('the Pen', () => {
         expect(store.state.tools.penDraft).toEqual([]);
     });
 });
+
+describe('Enter and Escape without a path being drawn', () => {
+    it('are left to the page, unless another command takes them', () => {
+        const { store } = createTestStore();
+
+        expect(store.actions.events.pressShortcut({ ...escape, key: 'Enter' })).toBe(false);
+    });
+});
