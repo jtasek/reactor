@@ -34,7 +34,7 @@ test('a press outside the context menu closes it, and does nothing else', async 
     await menu.getByRole('menuitem', { name: 'Ellipse' }).click();
     await expect(
         page.getByRole('list', { name: 'Tools' }).getByRole('button', { pressed: true })
-    ).toHaveAttribute('title', 'Draws an elliptic shape');
+    ).toHaveAttribute('title', 'Draws an ellipse or circle');
 });
 
 test('right-clicking a shape offers actions for that shape', async ({ page }) => {

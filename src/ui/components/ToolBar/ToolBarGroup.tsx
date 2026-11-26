@@ -1,4 +1,4 @@
-import React, { FC, useRef, useState } from 'react';
+import React, { FC, useEffect, useRef, useState } from 'react';
 import { ChevronUp } from 'lucide-react';
 
 import styles from './styles.css';
@@ -18,17 +18,22 @@ const mac = usesCommandKey();
 
 /**
  * Similar tools in one slot: the button runs the active one, or else the last one
- * picked from the menu its chevron opens.
+ * used, picked from the menu its chevron opens or by its shortcut.
  */
 export const ToolBarGroup: FC<Props> = ({ tools, activeToolsIds, onClick }) => {
     const [pickedId, setPickedId] = useState(tools[0].id);
     const [menuAt, setMenuAt] = useState<{ x: number; y: number }>();
     const more = useRef<HTMLButtonElement>(null);
-    const shown =
-        tools.find((tool) => activeToolsIds.includes(tool.id)) ??
-        tools.find((tool) => tool.id === pickedId) ??
-        tools[0];
+    const activeId = tools.find((tool) => activeToolsIds.includes(tool.id))?.id;
+    const shown = tools.find((tool) => tool.id === (activeId ?? pickedId)) ?? tools[0];
     const label = `Choose ${tools.map((tool) => tool.name).join(', ')}`;
+
+    // A tool chosen by its shortcut stays on the button too, once it is put down.
+    useEffect(() => {
+        if (activeId) {
+            setPickedId(activeId);
+        }
+    }, [activeId]);
 
     const toggleMenu = () => {
         const slot = more.current?.parentElement?.getBoundingClientRect();
@@ -63,10 +68,7 @@ export const ToolBarGroup: FC<Props> = ({ tools, activeToolsIds, onClick }) => {
                         icon: toolBarIcon(tool),
                         checked: tool.id === shown.id,
                         detail: tool.shortcut && shortcutLabel(tool.shortcut, mac),
-                        onRun: () => {
-                            setPickedId(tool.id);
-                            onClick(tool.id);
-                        }
+                        onRun: () => onClick(tool.id)
                     }))}
                 />
             )}
