@@ -1499,3 +1499,10 @@ added by operations never carry the mark, and a Screen turned into a plain frame
 Start screen picker writes it; the Prototype player opens on `?screen=`, then the view Play was
 pressed on, then the start screen, and its own picker stays session-only.
 Tests: `tests/startScreen.test.ts` and `tests/browser/flows.spec.ts`.
+
+Schema v36 adds `Document.template`: a document saved as a template (Save as template on its
+Documents card, `saveAsTemplate`) is a copy kept out of the Documents list and offered under
+"Yours" in the template picker, which searches names and descriptions. Using one
+(`newDocumentFromSavedTemplate`) copies it into a new document without the mark; new document
+names and the document opened after a delete skip templates. Templates sync, move and delete as
+documents do; a deleted one waits in Recently Deleted.

@@ -513,6 +513,8 @@ export interface Document {
     /** When the document was moved to Recently Deleted, which deletes it for good 30 days later. */
     deleted?: Date;
     description?: string;
+    /** Saved as a template: offered in the template picker instead of among documents. */
+    template?: boolean;
     filter: string;
     grid: Grid;
     componentsIds: string[];

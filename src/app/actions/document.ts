@@ -58,7 +58,7 @@ const replaceCurrentDocument = (state: Application, documentId: string) => {
     state.enteredComponentId = null;
 
     const nextId = Object.keys(state.documents).find(
-        (id) => id !== documentId && !state.documents[id].deleted
+        (id) => id !== documentId && !state.documents[id].deleted && !state.documents[id].template
     );
 
     if (nextId) {
@@ -93,7 +93,11 @@ export const setDocumentsLayout: ActionWithParam<DocumentsLayout> = (
 
 /** The first of `name`, `name 2`, `name 3`… that no document uses yet. */
 const unusedDocumentName = (state: Application, name: (number: number) => string) => {
-    const names = new Set(Object.values(state.documents).map((document) => document.name));
+    const names = new Set(
+        Object.values(state.documents)
+            .filter((document) => !document.template)
+            .map((document) => document.name)
+    );
     let number = 1;
 
     while (names.has(name(number))) {
@@ -164,17 +168,47 @@ export const resetDocument: Action = ({ state }) => {
     state.enteredComponentId = null;
 };
 
-export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
-    const document = getDocument(state, documentId);
-    const copy = copyDocument(document, effects.newId());
+/** A new copy of a document, made here by this person and kept out of Recently Deleted. */
+const ownCopy = (state: Application, document: Document, id: string) => {
+    const copy = copyDocument(document, id);
 
-    copy.name = `${document.name} copy`;
     delete copy.deleted;
     copy.created = new Date();
     copy.modified = new Date(copy.created);
     copy.createdBy = copy.modifiedBy = personName(state);
     state.documentAccess[copy.id] = { role: 'admin' };
     setDocument(state, copy);
+
+    return copy;
+};
+
+export const cloneDocument: ActionWithParam<string> = ({ state, effects }, documentId) => {
+    const document = getDocument(state, documentId);
+
+    ownCopy(state, document, effects.newId()).name = `${document.name} copy`;
+};
+
+/** Keeps a copy of a document as a template; the document itself stays as it is. */
+export const saveAsTemplate: ActionWithParam<string> = ({ state, effects }, documentId) => {
+    ownCopy(state, getDocument(state, documentId), effects.newId()).template = true;
+};
+
+/** Opens a new document made from a saved template. */
+export const newDocumentFromSavedTemplate: ActionWithParam<{ templateId: string; id: string }> = (
+    { state, effects },
+    { templateId, id }
+) => {
+    const template = getDocument(state, templateId);
+    const name = unusedDocumentName(state, (number) =>
+        number === 1 ? template.name : `${template.name} ${number}`
+    );
+    const document = ownCopy(state, template, id);
+
+    delete document.template;
+    document.name = name;
+    state.currentDocumentId = document.id;
+    state.enteredComponentId = null;
+    effects.navigate('/');
 };
 
 /** Records the time of a local edit before it is saved and shared. */

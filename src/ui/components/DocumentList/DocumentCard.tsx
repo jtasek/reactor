@@ -14,7 +14,7 @@ import { daysLeftInRecentlyDeleted, documentModifiedLabel } from 'src/app/docume
 import { tagKey, type TagTone } from 'src/app/tagTones';
 import { Button } from '../Controls';
 import { Dialog } from '../Dialog';
-import { CalendarDays, Clock, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { CalendarDays, Clock, Copy, LayoutTemplate, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Avatars } from '../Avatars';
 import { documentPeople } from './documentPeople';
 import { DocumentTags } from './DocumentTags';
@@ -32,6 +32,8 @@ interface Props {
     onTagTone: (tag: string, tone: TagTone) => void;
     /** Offers to undo moving the document to Recently Deleted. */
     onTrashed: (document: { id: string; name: string }) => void;
+    /** Says the document was kept as a template. */
+    onSavedAsTemplate: (name: string) => void;
     now: Date;
 }
 
@@ -43,6 +45,7 @@ export const DocumentCard: FC<Props> = ({
     onFilterTag,
     onTagTone,
     onTrashed,
+    onSavedAsTemplate,
     now
 }) => {
     const document = useDocument(documentId);
@@ -52,6 +55,7 @@ export const DocumentCard: FC<Props> = ({
     const {
         editDocument,
         cloneDocument,
+        saveAsTemplate,
         removeDocument,
         trashDocument,
         restoreDocument,
@@ -137,6 +141,10 @@ export const DocumentCard: FC<Props> = ({
         }
     };
     const clone = () => cloneDocument(documentId);
+    const keepAsTemplate = () => {
+        saveAsTemplate(documentId);
+        onSavedAsTemplate(document.name);
+    };
     const trash = () => {
         trashDocument(documentId);
         onTrashed({ id: documentId, name: document.name });
@@ -232,7 +240,12 @@ export const DocumentCard: FC<Props> = ({
                 <DocumentThumbnail document={document} />
             </div>
             <div className={styles.cardFooter}>
-                {deleted || readOnly ? (
+                {deleted && document.template ? (
+                    <span className={styles.templateMark}>
+                        <LayoutTemplate size={14} strokeWidth={1.5} aria-hidden="true" />
+                        Template
+                    </span>
+                ) : deleted || readOnly ? (
                     <div />
                 ) : (
                     <DocumentTags
@@ -294,6 +307,15 @@ export const DocumentCard: FC<Props> = ({
                                 onClick={clone}
                             >
                                 <Copy size={16} strokeWidth={1.5} aria-hidden="true" />
+                            </button>
+                            <button
+                                className={styles.iconButton}
+                                type="button"
+                                aria-label={`Save ${document.name} as a template`}
+                                title={`Save ${document.name} as a template`}
+                                onClick={keepAsTemplate}
+                            >
+                                <LayoutTemplate size={16} strokeWidth={1.5} aria-hidden="true" />
                             </button>
                             <button
                                 className={styles.iconButton}

@@ -166,7 +166,10 @@ export function instanceProperties(document: Document, projected: Record<string,
 
 export function componentLibraries(state: Application) {
     return Object.values(state.documents)
-        .filter((document) => document.id !== state.currentDocumentId && !document.deleted)
+        .filter(
+            (document) =>
+                document.id !== state.currentDocumentId && !document.deleted && !document.template
+        )
         .flatMap((document) =>
             Object.values(document.components).map((component) => ({
                 documentId: document.id,
