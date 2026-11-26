@@ -293,6 +293,16 @@ describe('the help', () => {
 
     it('lists everything when asked, with examples that work', () => {
         const selection = ['card', 'plain', 'dot'];
+        const flow = {
+            screens: {
+                home: {
+                    name: 'Home',
+                    controls: { next: { name: 'Next' }, go: { name: 'Continue button' } }
+                },
+                details: { name: 'Details', controls: {} },
+                login: { name: 'Login', controls: {} }
+            }
+        };
 
         expect(read('help all').text).toBe(capabilities());
         expect(read('help everything').text).toBe(capabilities());
@@ -302,8 +312,12 @@ describe('the help', () => {
             examples(capabilities()).filter(
                 (line) =>
                     !/^(\/|props|help)/.test(line) &&
-                    read(line, selection, { row: { name: 'Row', shapes: ['card', 'plain'] } })
-                        .operations.length === 0
+                    interpret(line, {
+                        selection,
+                        shapes,
+                        groups: { row: { name: 'Row', shapes: ['card', 'plain'] } },
+                        flow
+                    }).operations.length === 0
             )
         ).toEqual([]);
     });

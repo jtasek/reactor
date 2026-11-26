@@ -58,7 +58,8 @@ import {
 } from './variables';
 import { resolveVariable, variableProblems, variableDefinition } from './variableResolver';
 import { instanceSource, instanceBox } from './componentSource';
-import { hydrateComponent, readEntity } from './services/documentStorage';
+import { hydrateComponent, readEntity, readInteractions } from './services/documentStorage';
+import { activationProblem } from './interactionEdits';
 import { shapeGeometryKey, shapeGeometry } from './utils';
 import { translateShape } from './geometry';
 import { stageData, writeData, type StagedData } from './dataOperations';
@@ -870,6 +871,17 @@ function stage(
             shape.interactions = { activate: legacyActivation(changes.interaction) };
         }
         Object.assign(shape, structuredClone(changes));
+        if (current.type === 'instance' && 'interactions' in changes && changes.interactions) {
+            // Checked against the action it has now, which may keep a page that is gone.
+            const problem = activationProblem(
+                document,
+                readInteractions(changes.interactions),
+                current
+            );
+            if (problem) {
+                throw new Error(problem);
+            }
+        }
         if (shape.type === 'instance' && changes.interaction === null) {
             delete shape.interaction;
         }

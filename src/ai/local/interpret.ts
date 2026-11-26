@@ -1,5 +1,6 @@
 import * as appCommands from 'src/commands';
 import { mentions, suggestions, type Match, type Term } from './fuzzy';
+import { linkExample, readLink, type FlowContext } from './links';
 import {
     PROPERTIES,
     STEPS,
@@ -23,6 +24,7 @@ export interface Context {
     groups?: Record<string, { name: string; shapes: string[] }>;
     /** What the accessibility check found, with the batch that fixes what it can. */
     accessibility?: { fixes?: Operation[] };
+    flow?: FlowContext;
 }
 
 /** What the local model makes of a request: operations to propose, and words to say. */
@@ -283,6 +285,7 @@ export function help(context: Context = {}): string {
               ? String(selected[0].name ?? '')
               : `${selected.length} shapes`;
     const items = (lines: string[]) => lines.map((line) => `- ${line}`);
+    const link = linkExample(context.flow);
 
     return [
         HELP_LINES.intro,
@@ -296,6 +299,7 @@ export function help(context: Context = {}): string {
         ),
         `**Arrange** ${selected.length === 0 ? HELP_LINES.selectFirst : ''}`.trim(),
         ...items(selected.length > 1 ? HELP_LINES.several : HELP_LINES.one),
+        ...(link ? ['**Link**', ...items([`\`${link}\``])] : []),
         '',
         HELP_LINES.more
     ].join('\n');
@@ -333,6 +337,10 @@ export function capabilities(): string {
         '- `duplicate`',
         '- `group as "Row"` and `ungroup`',
         '- `delete it`',
+        '**Link** pages',
+        '- `open Details when I click Continue`',
+        '- `link Next on Home to Details`',
+        '- `start on Login`',
         '**Which shapes**',
         'the selection, a shape’s name, or `all circles`',
         '**Ask**',
@@ -1062,6 +1070,10 @@ export function interpret(prompt: string, context: Context): Reading {
     }
     if (intents.find(({ id }) => id === 'help')?.at === 0) {
         return says(request.find(EVERYTHING).length > 0 ? capabilities() : help(context));
+    }
+    const linked = readLink(prompt, context.flow);
+    if (linked) {
+        return linked;
     }
     intents.forEach((intent) => request.use(intent));
     readColors(request);

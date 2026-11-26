@@ -102,6 +102,9 @@ describe('AI document context', () => {
         const context = documentContext({
             ...document,
             selectedShapesIds: [],
+            groupsIds: [],
+            layersIds: [],
+            componentsIds: [],
             selectedFrameId: 'view'
         });
 
@@ -126,6 +129,9 @@ describe('AI document context', () => {
         const fallback = documentContext({
             ...document,
             selectedShapesIds: [],
+            groupsIds: [],
+            layersIds: [],
+            componentsIds: [],
             selectedFrameId: 'view'
         });
         expect(fallback.variables.surface.resolved).toMatchObject({
