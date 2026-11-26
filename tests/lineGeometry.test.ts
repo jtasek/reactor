@@ -1,6 +1,8 @@
 import { ARROW_HEAD, arrowHeadPoints, snapToEighth } from 'src/app/lineGeometry';
 import { createLineProps } from 'src/tools/components/Line';
 import type { Pointer } from 'src/events/types';
+import type { Shape } from 'src/app/types';
+import { SHAPE_PROPERTIES, applyProperty } from 'src/app/properties';
 
 describe('lines and arrows', () => {
     it('snap to the nearest 45° and keep their length', () => {
@@ -28,5 +30,17 @@ describe('lines and arrows', () => {
             arrow: true
         });
         expect(createLineProps(pointer)).not.toHaveProperty('arrow');
+    });
+
+    it('adds or removes an arrowhead from the Inspector, on lines only', () => {
+        const end = SHAPE_PROPERTIES.find((property) => property.key === 'arrow')!;
+        const line = { type: 'line' } as Shape;
+
+        expect(end.read(line, undefined!)).toBe('none');
+        applyProperty(end, line, 'arrow');
+        expect(line).toMatchObject({ arrow: true });
+        applyProperty(end, line, 'none');
+        expect(line).not.toHaveProperty('arrow');
+        expect(end.read({ type: 'rectangle' } as Shape, undefined!)).toBeUndefined();
     });
 });

@@ -64,7 +64,6 @@ export const Stats: FC<{ horizontal?: boolean }> = ({ horizontal = false }) => {
                     ['Center', printObject(pointer.center)],
                     ['Size', printObject(pointer.size)],
                     ['Offset', printObject(pointer.offset)],
-                    ['Radius', printObject(pointer.radius)],
                     ['Path', printObject(pointer.path.length)]
                 ]}
             />

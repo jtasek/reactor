@@ -20,6 +20,7 @@ import type {
     Camera,
     Document,
     Shape,
+    Path,
     PathPoint,
     Point,
     Size,
@@ -405,7 +406,10 @@ export function readBindings(value: unknown): Record<string, string> {
  * Reads how a shape of `shape`'s type is drawn beyond its geometry, leaving out what
  * does not apply to it. Throws when any of it is invalid.
  */
-export function readShapeStyle(value: unknown, shape: Pick<Shape, 'type'>) {
+export function readShapeStyle(
+    value: unknown,
+    shape: Pick<Shape, 'type'> & Partial<Pick<Path, 'closed'>>
+) {
     const s = record(value);
 
     return {

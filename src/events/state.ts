@@ -4,7 +4,6 @@ import {
     center,
     dragging,
     offset,
-    radius,
     size,
     topLeft
 } from './computed/pointer';
@@ -24,7 +23,6 @@ export const state: Events = {
         lastPress: null,
         offset,
         path: [],
-        radius,
         size,
         start: { x: 0, y: 0 },
         topLeft

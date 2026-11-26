@@ -322,15 +322,16 @@ export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
     }
 }
 
-/** Whether a shape encloses an area that a fill colors. */
-export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
+/** Whether a shape encloses an area that a fill colors: a path only once it is closed. */
+export function isClosedShape(shape: Pick<Shape, 'type'> & Partial<Pick<Path, 'closed'>>): boolean {
     switch (shape.type) {
         case 'rectangle':
         case 'ellipse':
             return true;
+        case 'path':
+            return Boolean(shape.closed);
         case 'image':
         case 'line':
-        case 'path':
         case 'text':
         case 'instance':
             return false;

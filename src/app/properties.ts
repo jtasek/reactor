@@ -269,6 +269,27 @@ export const SHAPE_PROPERTIES: ShapeProperty[] = [
         }
     },
     {
+        key: 'arrow',
+        label: 'End',
+        group: 'Border',
+        kind: 'choice',
+        options: [
+            { value: 'none', label: 'No arrowhead', icon: 'M3 8h18' },
+            { value: 'arrow', label: 'Arrowhead', icon: 'M3 8h17M15 3l6 5-6 5' }
+        ],
+        read: (shape) => (shape.type === 'line' ? (shape.arrow ? 'arrow' : 'none') : undefined),
+        write: (shape, value) => {
+            if (shape.type !== 'line') {
+                return;
+            }
+            if (value === 'arrow') {
+                shape.arrow = true;
+            } else {
+                delete shape.arrow;
+            }
+        }
+    },
+    {
         key: 'visible',
         label: 'Visible',
         group: 'State',
