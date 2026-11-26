@@ -37,6 +37,7 @@ export const state: Events = {
         shiftKey: false,
         text: '',
         typing: false,
-        repeating: false
+        repeating: false,
+        space: false
     }
 };

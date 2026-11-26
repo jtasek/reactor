@@ -21,3 +21,13 @@
   height: 100%;
   width: 100%;
 }
+
+.surface[data-pan='grab'],
+.surface[data-pan='grab'] * {
+  cursor: grab;
+}
+
+.surface[data-pan='grabbing'],
+.surface[data-pan='grabbing'] * {
+  cursor: grabbing;
+}

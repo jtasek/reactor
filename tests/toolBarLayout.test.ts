@@ -8,6 +8,7 @@ describe('the tool bar layout', () => {
 
         expect(toolBarSlots(getTools()).map((slot) => slot.map((tool) => tool.id))).toEqual([
             ['select', 'move'],
+            ['hand'],
             ['frame'],
             ['rectangle'],
             ['ellipse'],

@@ -20,7 +20,8 @@ const keepLoneAlt = (event: KeyboardEvent) => {
 };
 
 export const useKeyboardAdapter = () => {
-    const { keyDown, keyUp, pressShortcut, releaseKeys, releaseModifiers } = useActions().events;
+    const { holdSpace, keyDown, keyUp, pressShortcut, releaseKeys, releaseModifiers } =
+        useActions().events;
     const log = useLog();
 
     const handleKeyDown = useCallback(
@@ -38,11 +39,18 @@ export const useKeyboardAdapter = () => {
                 return;
             }
 
+            // Over the canvas, Space pans instead of pressing a focused button.
+            if (event.code === 'Space' && holdSpace(true)) {
+                event.preventDefault();
+
+                return;
+            }
+
             if (pressShortcut(keys(event))) {
                 event.preventDefault();
             }
         },
-        [keyDown, log, pressShortcut]
+        [holdSpace, keyDown, log, pressShortcut]
     );
 
     const handleKeyUp = useCallback(
@@ -51,8 +59,11 @@ export const useKeyboardAdapter = () => {
             keyUp(event);
             keepLoneAlt(event);
             releaseKeys();
+            if (event.code === 'Space') {
+                holdSpace(false);
+            }
         },
-        [keyUp, log, releaseKeys]
+        [holdSpace, keyUp, log, releaseKeys]
     );
 
     const handleBlur = useCallback(() => {

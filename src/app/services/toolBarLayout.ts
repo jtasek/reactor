@@ -6,6 +6,7 @@
  */
 export const TOOL_BAR_LAYOUT: readonly (readonly string[])[] = [
     ['select', 'move'],
+    ['hand'],
     ['frame'],
     ['rectangle'],
     ['ellipse'],
