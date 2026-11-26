@@ -1,4 +1,10 @@
 .flow {
+    /* Cards lift off the board as entities do on the Data page. */
+    --flow-card:
+        0 0 0 0.5px var(--hairline-color), 0 1px 2px rgb(0 0 0 / 6%),
+        0 6px 16px -8px rgb(0 0 0 / 14%);
+    --flow-card-selected: 0 8px 22px -10px rgb(26 93 219 / 35%);
+
     box-sizing: border-box;
     height: 100%;
     overflow: hidden;
@@ -372,14 +378,14 @@
     overflow: hidden;
     display: grid;
     place-items: center;
-    border-radius: var(--radius-md);
+    border-radius: 12px;
     background: color-mix(in srgb, var(--field-background) 50%, var(--surface));
-    outline: 1px solid var(--hairline-color);
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--flow-card);
     color: var(--text-secondary-color);
 }
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
+    box-shadow: var(--flow-card-selected);
 }
 /* While a link is drawn: every Screen it may go to, and the one under the pointer. */
 .screen[data-drop='can'] .thumb {
