@@ -597,8 +597,10 @@
 .screen li:has(> button[aria-pressed='true']) .dot {
     border-color: var(--selection-color);
 }
-/* Beside the page name, in the link colour. */
+/* Beside the page name, in the link colour, its words ending at the card's right edge. */
 .flow .add {
+    order: 1;
+    margin-right: -8px;
     flex: none;
     display: inline-flex;
     align-items: center;
