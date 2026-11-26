@@ -67,7 +67,7 @@ describe('the local test model', () => {
         expect(rectangle).toMatchObject({ size: { width: 200, height: 60 }, fill: '#112233' });
         // Below the circles, not over them.
         expect(rectangle.position.y).toBeGreaterThan(
-            Math.max(...circles.map(({ position, radius }) => position.y + Number(radius?.y)))
+            Math.max(...circles.map(({ position, radius }) => position.y + (radius as Point).y))
         );
 
         const texts = await accept(store, 'Add text "Welcome"');
