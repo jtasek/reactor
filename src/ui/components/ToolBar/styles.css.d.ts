@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    more: string;
     toolBar: string;
     toolBarButton: string;
   }

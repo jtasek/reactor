@@ -23,6 +23,11 @@
     width: 40px;
 }
 
+.toolBarButton[data-group='true'] {
+    display: flex;
+    width: 54px;
+}
+
 .toolBarButton button {
     align-items: center;
     background: transparent;
@@ -38,7 +43,19 @@
 }
 
 .toolBarButton button:hover,
-.toolBarButton[data-active='true'] button {
+.toolBarButton[data-active='true'] button:not(.more) {
+    background: var(--control-background-active);
+    color: var(--text-color-hover);
+}
+
+.toolBarButton .more {
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary-color);
+    width: 14px;
+}
+
+.toolBarButton .more:hover,
+.toolBarButton .more[aria-expanded='true'] {
     background: var(--control-background-active);
     color: var(--text-color-hover);
 }

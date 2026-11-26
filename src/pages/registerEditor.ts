@@ -138,17 +138,17 @@ function registerCommands() {
 }
 
 function registerTools() {
+    registerTool(SelectTool);
+    registerTool(MoveTool);
     registerTool(FrameTool);
-    registerTool(CircleTool);
+    registerTool(RectTool);
     registerTool(EllipseTool);
+    registerTool(CircleTool);
+    registerTool(TextTool);
     registerTool(ImageTool);
     registerTool(InstanceTool);
     registerTool(LineTool);
-    registerTool(MoveTool);
     registerTool(PenTool);
-    registerTool(RectTool);
-    registerTool(SelectTool);
-    registerTool(TextTool);
 }
 
 /**

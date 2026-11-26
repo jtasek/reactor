@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 
 import styles from './styles.css';
 
@@ -9,17 +9,19 @@ interface Props {
     tool: Tool;
     active: boolean;
     onClick: (toolId: string) => void;
+    /** Shown after the button, in the same slot. */
+    children?: ReactNode;
 }
 
-const toolBarIcon = (tool: Tool) => {
+export const toolBarIcon = (tool: Tool) => {
     if (!tool.icon) return undefined;
 
     // Tool metadata may color an icon; the glass bar uses one legible icon color.
     return { ...tool.icon, color: undefined };
 };
 
-export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
-    <li className={styles.toolBarButton} data-active={active}>
+export const ToolBarButton: FC<Props> = ({ tool, active, onClick, children }) => (
+    <li className={styles.toolBarButton} data-active={active} data-group={!!children || undefined}>
         <button
             type="button"
             aria-pressed={active}
@@ -28,5 +30,6 @@ export const ToolBarButton: FC<Props> = ({ tool, active, onClick }) => (
         >
             <Icon icon={toolBarIcon(tool)} />
         </button>
+        {children}
     </li>
 );
