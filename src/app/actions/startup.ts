@@ -7,6 +7,7 @@ import { listenToMutations } from '../services/mutations';
 import { documentOwner, readAccount } from '../services/accounts';
 import { PANEL_LAYOUT_KEY, readPanelLayout } from '../panelLayout';
 import { DOCUMENTS_LAYOUT_KEY, readDocumentsLayout } from '../documentList';
+import { SMOOTHING_KEY, readSmoothing } from '../smoothingSetting';
 import { debugMode } from '../services/debugMode';
 
 export const setEditorReady = ({ state }: Context) => {
@@ -114,6 +115,11 @@ export const onInitializeOvermind = async (
         state.config.documentsLayout = readDocumentsLayout(effects.loadState(DOCUMENTS_LAYOUT_KEY));
     } catch {
         // Cards, as by default, when local storage cannot be read.
+    }
+    try {
+        state.tools.pencilSmoothing = readSmoothing(effects.loadState(SMOOTHING_KEY));
+    } catch {
+        // The default level, when local storage cannot be read.
     }
 
     // The documents opened last open while the account is read; the first time, and

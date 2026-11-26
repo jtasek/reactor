@@ -12,6 +12,7 @@ import {
 } from 'src/app/camera';
 import { DEFAULT_TOOL_ID } from './state';
 import type { ImageToPlace } from '../app/services/assets';
+import { SMOOTHING_KEY, type Smoothing } from 'src/app/smoothingSetting';
 
 type ZoomOptions = { scale: number; point?: Point };
 
@@ -32,6 +33,15 @@ export const activateTool = (context: Context, toolId: string) => {
     state.tools.activeToolsIds = [toolId];
     actions.ui.hideContextMenu();
     getToolById(toolId)?.activate?.(context);
+};
+
+export const setPencilSmoothing = ({ state, effects }: Context, smoothing: Smoothing) => {
+    state.tools.pencilSmoothing = smoothing;
+    try {
+        effects.saveState(SMOOTHING_KEY, smoothing);
+    } catch {
+        // Keep the level for this session if local storage is unavailable.
+    }
 };
 
 export const setImageToPlace = ({ state }: Context, image: ImageToPlace) => {

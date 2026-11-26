@@ -71,3 +71,42 @@ test('a shape inside a selected line’s box can still be selected and dragged',
     await page.mouse.up();
     await expect.poll(async () => (await rect.boundingBox())!.x - before.x).toBeCloseTo(40, 0);
 });
+
+test('the Pencil smooths a stroke by the level chosen in the Inspector', async ({ page }) => {
+    await openEditor(page, ['Inspector']);
+    await page.keyboard.press('p');
+    const smoothing = page.getByRole('group', { name: 'Smoothing' });
+    await expect(smoothing.getByRole('button', { name: 'Low' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    const draw = async (y: number) => {
+        await pointer(page, 'pointerdown', { x: 300, y });
+        for (let step = 1; step <= 20; step++) {
+            await pointer(page, 'pointermove', {
+                x: 300 + step * 10,
+                y: y + (step % 2) + step * 3
+            });
+        }
+        await pointer(page, 'pointerup', { x: 500, y: y + 60 });
+        return shapes(page).locator('path[data-cy]').last().getAttribute('d');
+    };
+
+    await smoothing.getByRole('button', { name: 'Off' }).click();
+    const off = await draw(100);
+    expect(off).not.toContain('C');
+    expect(off!.match(/L/g)!.length).toBeGreaterThan(15);
+
+    await page.keyboard.press('p');
+    await smoothing.getByRole('button', { name: 'High' }).click();
+    const high = await draw(300);
+    expect(high!.match(/[LC]/g)!.length).toBeLessThan(5);
+
+    await page.reload();
+    await expect(page.getByText('No shapes selected')).toBeVisible();
+    await page.keyboard.press('p');
+    await expect(smoothing.getByRole('button', { name: 'High' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+});

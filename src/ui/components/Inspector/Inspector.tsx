@@ -7,12 +7,13 @@ import { FrameParent } from './FrameParent';
 import { PropertyField } from './PropertyField';
 import { InspectorTable, PropertyGroup } from './PropertyGroup';
 import { AlignSection } from './AlignSection';
+import { PencilSettings } from './PencilSettings';
 import { ModeFields } from './ModeFields';
 import { InstanceProps } from './InstanceProps';
 import { ComponentDetails, SourceChildBreadcrumb } from './ComponentDetails';
 import { InspectorHeader } from './InspectorHeader';
 import { useComponentExposure, useSelectedComponentContext } from 'src/app/componentHooks';
-import { useActions, useCurrentDocument } from 'src/app/hooks';
+import { useActions, useActiveToolsIds, useCurrentDocument } from 'src/app/hooks';
 import { canBind } from 'src/app/variables';
 import type { SelectionIdentity } from '../selectionIdentity';
 import { groupRows, type PropertyRow, type PropertyValue } from 'src/app/properties';
@@ -49,6 +50,7 @@ export const Inspector: FC<Props> = ({
 }) => {
     const componentContext = useSelectedComponentContext();
     const document = useCurrentDocument();
+    const pencil = useActiveToolsIds().includes('pencil');
     const exposure = useComponentExposure(
         componentContext?.kind === 'child' ? componentContext.componentId : null,
         componentContext?.kind === 'child' ? componentContext.shapeId : null
@@ -129,7 +131,11 @@ export const Inspector: FC<Props> = ({
 
     if (shapeIds.length === 0) {
         if (!identity) {
-            return <div className={styles.inspector}>No shapes selected</div>;
+            return (
+                <div className={styles.inspector}>
+                    {pencil ? <PencilSettings /> : 'No shapes selected'}
+                </div>
+            );
         }
 
         return (
@@ -168,6 +174,7 @@ export const Inspector: FC<Props> = ({
             key="selection"
             className={`${styles.inspector} ${instance ? styles.instanceInspector : ''}`}
         >
+            {pencil && <PencilSettings />}
             {componentContext?.kind === 'child' && (
                 <SourceChildBreadcrumb componentId={componentContext.componentId} />
             )}

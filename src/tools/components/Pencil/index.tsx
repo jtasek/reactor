@@ -7,6 +7,7 @@ import type { Command, PathPoint } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
 import { pathData } from 'src/app/pathGeometry';
+import { smoothStroke } from 'src/app/pathSmoothing';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
@@ -70,8 +71,13 @@ export const PencilCommand: Command = {
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
         const shape = createPencilProps(state.events.pointer);
+        const points = smoothStroke(
+            shape.points,
+            state.tools.pencilSmoothing,
+            state.currentDocument.camera.scale
+        );
 
-        actions.drawShape(shape);
+        actions.drawShape({ ...shape, points });
     },
     shouldDeactivate: function (context: Context): boolean {
         return !context.state.events.pointer.dragging;
