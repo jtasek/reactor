@@ -18,7 +18,9 @@ type Write = { hasChangedValue: boolean };
  * only kept in a set, and each write is checked against it.
  */
 export function storeAnswer<T>(store: Store, read: (state: State) => T) {
+    const flushes = store as unknown as { currentFlushId: number };
     let paths = new Set<string>();
+    let readAt = flushes.currentFlushId;
 
     return {
         read(): T {
@@ -29,10 +31,14 @@ export function storeAnswer<T>(store: Store, read: (state: State) => T) {
                 value = readingDerivedOnce(store, tree, () => read(tree.state as State));
             });
             paths = tree.pathDependencies as Set<string>;
+            readAt = flushes.currentFlushId;
 
             return value;
         },
-        /** Calls `changed` once a flush has changed something the last answer read. */
+        /**
+         * Calls `changed` once a flush has changed something the last answer read,
+         * and at once when the store flushed since that answer.
+         */
         subscribe(changed: () => void) {
             let touched = false;
             // proxy-state-tree's types leave out that these return how to stop.
@@ -53,6 +59,11 @@ export function storeAnswer<T>(store: Store, read: (state: State) => T) {
                     changed();
                 }
             }) as unknown as () => void;
+
+            // A flush between the answer and this subscription went unheard.
+            if (flushes.currentFlushId !== readAt) {
+                changed();
+            }
 
             return () => {
                 stopWrites();

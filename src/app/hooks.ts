@@ -15,7 +15,6 @@ import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { componentSource } from './componentSource';
-import { localComponents } from './componentSelection';
 import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
 import { useCommandEnabled, useCommandsEnabled } from './commandAvailability';
 
@@ -325,50 +324,6 @@ export const useGroupLocked = (id: string) => {
         const group = document.groups[id];
 
         return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
-    });
-};
-
-/**
- * The shapes of the groups not double-clicked into, which are not highlighted
- * one by one under the pointer, as a press there selects their group.
- */
-export const useShapesInClosedGroupsIds = () => {
-    return useAppState((state) => {
-        const document = state.currentDocument;
-        const entered = new Set(
-            (state.enteredComponentId &&
-                document.components[state.enteredComponentId]?.shapesIds) ||
-                []
-        );
-        return [
-            ...Object.values(document.groups)
-                .filter((group) => group.id !== state.enteredGroupId)
-                .flatMap((group) => group.shapesIds)
-                .filter((id) => !entered.has(id)),
-            ...localComponents(document)
-                .filter((component) => component.id !== state.enteredComponentId)
-                .flatMap((component) => component.shapesIds)
-        ];
-    });
-};
-
-/** The shapes of the groups selected as one, which draw one selection for them. */
-export const useShapesInSelectedGroupsIds = () => {
-    return useAppState((state) => {
-        const { groups } = state.currentDocument;
-
-        const document = state.currentDocument;
-        const entered = new Set(
-            (state.enteredComponentId &&
-                document.components[state.enteredComponentId]?.shapesIds) ||
-                []
-        );
-        return [
-            ...document.selectedGroupsIds
-                .flatMap((id) => groups[id].shapesIds)
-                .filter((id) => !entered.has(id)),
-            ...document.selectedComponentsIds.flatMap((id) => document.components[id].shapesIds)
-        ];
     });
 };
 

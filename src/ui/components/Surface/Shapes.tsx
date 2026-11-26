@@ -1,10 +1,7 @@
 import { useScreenSourceShapes } from 'src/app/frameHooks';
 import React, { memo } from 'react';
-import {
-    useShapesIds,
-    useShapesInClosedGroupsIds,
-    useShapesInSelectedGroupsIds
-} from 'src/app/hooks';
+import { useShapesIds } from 'src/app/hooks';
+import { useShapesInClosedGroupsIds, useShapesInSelectedGroupsIds } from 'src/app/selectionHooks';
 import { Shape } from '../Shape/Shape';
 import { ComponentOutlines } from '../Shape/ComponentOutlines';
 import { GroupSelections } from '../GroupSelection';

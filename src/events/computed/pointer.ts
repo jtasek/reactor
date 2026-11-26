@@ -1,7 +1,6 @@
 import { derived } from 'overmind';
 import { Application, Point, Size } from 'src/app/types';
-import { Pointer } from '../types';
-import { KEEPS_SHAPE_BOUNDS } from '../gestures';
+import { Gesture, Pointer } from '../types';
 
 export const center = derived<Pointer, Application, Point>(({ current, start }) => {
     return {
@@ -49,6 +48,32 @@ export const dragging = derived<Pointer, Application, boolean>(
 export const background = derived<Pointer, Application, boolean>(
     ({ gesture }) => gesture.kind === 'marquee'
 );
+
+/**
+ * Whether a gesture keeps the measured bounds of the shapes it edits itself, as
+ * it moves, scales or turns them. Such shapes are not measured again until the
+ * gesture ends: measuring makes the browser lay out, once per shape per frame.
+ * A new kind of gesture has to say which it is.
+ */
+export const KEEPS_SHAPE_BOUNDS: Record<Gesture['kind'], boolean> = {
+    idle: false,
+    editingFrame: true,
+    pinching: false,
+    // The shape drawn is new, and a marquee edits none.
+    drawing: false,
+    marquee: false,
+    moving: true,
+    resizing: true,
+    rotating: true,
+    // Rounding the corners leaves the box they are drawn in as it is.
+    rounding: true,
+    // Margin and padding move shapes in a stack by its layout, not by their bounds.
+    spacing: true,
+    resizingGroup: true,
+    rotatingGroup: true,
+    resizingComponent: true,
+    rotatingComponent: true
+};
 
 /** Whether the gesture keeps the bounds of the shapes it edits: see `KEEPS_SHAPE_BOUNDS`. */
 export const keepsShapeBounds = derived<Pointer, Application, boolean>(
