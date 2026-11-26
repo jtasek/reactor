@@ -8,11 +8,15 @@ import { readingDerivedOnce } from 'src/app/derivedMemo';
 
 type State = Context['state'];
 
-/** Whether each command can run, or null while a gesture is changing shapes or the selection. */
+/** Whether each command can run, or null while a gesture is changing shapes or is a press. */
 function readAvailability(state: State) {
-    const { kind } = state.events.pointer.gesture;
+    const { gesture } = state.events.pointer;
+    const { kind } = gesture;
 
-    if (kind !== 'idle' && kind !== 'drawing' && kind !== 'pinching') {
+    if (
+        (kind !== 'idle' && kind !== 'marquee' && kind !== 'drawing' && kind !== 'pinching') ||
+        (kind === 'marquee' && !gesture.dragged)
+    ) {
         return null;
     }
 
@@ -35,9 +39,11 @@ function readAvailability(state: State) {
  * from the store behind `reaction`. It is the one subscriber to what the guards read, and answers
  * as the store changes, so buttons render with the change that enabled them: a
  * dialog closing hands the focus back to a button that is already enabled.
- * While a gesture is changing shapes or the selection it waits, as no command
- * is taken mid-gesture and guards that read geometry or the whole selection
- * would run on every pointer move, and at the press of each click.
+ * While a gesture is changing shapes it waits, as no command is taken
+ * mid-gesture and guards that read geometry would run on every pointer move.
+ * A press on empty canvas waits too until it drags: as a click it changes
+ * nothing until release, and guards that read a large selection would run
+ * at every press.
  * Returns how to stop.
  *
  * Each answer is tracked afresh. An Overmind reaction keeps every path it has
