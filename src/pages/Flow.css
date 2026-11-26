@@ -50,7 +50,7 @@
     min-height: 32px;
     padding: 0 10px;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 100rem;
     background: transparent;
     text-decoration: none;
     cursor: pointer;
@@ -89,7 +89,7 @@
 }
 .history {
     display: flex;
-    border-radius: var(--radius-sm);
+    border-radius: 100rem;
     background: var(--field-background);
 }
 .history button {
@@ -323,7 +323,7 @@
 }
 .connections > path {
     fill: none;
-    stroke: var(--label-tertiary);
+    stroke: color-mix(in srgb, var(--selection-color) 65%, var(--surface));
     stroke-width: 1.5;
 }
 .connections > path[data-guarded='true'] {
@@ -340,14 +340,6 @@
     stroke: var(--selection-color);
     stroke-width: 2.5;
     stroke-dasharray: 6 5;
-}
-.startMark circle {
-    fill: var(--success-color);
-}
-.startMark path {
-    fill: none;
-    stroke: var(--success-color);
-    stroke-width: 2;
 }
 
 .screen {
@@ -555,7 +547,7 @@
     height: 9px;
     box-sizing: border-box;
     margin-top: -4.5px;
-    border: 1.5px solid var(--label-tertiary);
+    border: 1.5px solid color-mix(in srgb, var(--selection-color) 65%, var(--surface));
     border-radius: 50%;
     background: var(--surface);
     pointer-events: none;

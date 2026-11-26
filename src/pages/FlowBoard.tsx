@@ -625,7 +625,6 @@ export function FlowBoard({
             state.transitions.map((transition) => [transition.key, transition] as const)
         )
     );
-    const start = cards.get(machine.initial ?? '');
 
     return (
         <div
@@ -754,15 +753,6 @@ export function FlowBoard({
                             <path d="M 0 1 L 9 5 L 0 9 z" fill="context-stroke" />
                         </marker>
                     </defs>
-                    {start && (
-                        <g className={styles.startMark} data-flow-start={start.id}>
-                            <circle cx={start.x - 44} cy={start.y + FLOW.thumbHeight - 14} r={5} />
-                            <path
-                                d={`M ${start.x - 39} ${start.y + FLOW.thumbHeight - 14} L ${start.x - 2} ${start.y + FLOW.thumbHeight - 14}`}
-                                markerEnd="url(#flow-arrow)"
-                            />
-                        </g>
-                    )}
                     {links.map((link) => {
                         const transition = transitions.get(link.key);
 
@@ -889,7 +879,11 @@ export function FlowBoard({
                                     onPointerUp={gripUp}
                                     onPointerCancel={gripCancel}
                                 >
-                                    {isStart && <span className={styles.badge}>Start</span>}
+                                    {isStart && (
+                                        <span className={styles.badge} data-flow-start={state.id}>
+                                            Start
+                                        </span>
+                                    )}
                                     <span className={styles.screenName}>{state.name}</span>
                                 </button>
                                 <button

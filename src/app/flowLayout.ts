@@ -13,7 +13,7 @@ export const FLOW = {
     /** Room above the cards for links that travel back or over a column. */
     top: 110,
     lane: 9,
-    corner: 8
+    corner: 14
 } as const;
 
 export interface FlowCard {
