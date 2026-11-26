@@ -189,7 +189,6 @@ export interface Pointer {
     hoveredScreenViewId: string | null;
     offset: Point;
     path: Point[];
-    radius: number;
     size: Size;
     start: Point;
     topLeft: Point;
