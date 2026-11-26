@@ -579,7 +579,7 @@ const shapePlacement = (shape: Shape) => {
     switch (shape.type) {
         case 'line':
             return { start: shape.start, end: shape.end, bounds: shape.bounds };
-        case 'pen':
+        case 'path':
             return { points: shape.points, bounds: shape.bounds };
         case 'rectangle':
         case 'image':

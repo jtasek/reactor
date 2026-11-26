@@ -411,7 +411,7 @@ it.each([
     { type: 'ellipse', position: { x: 9050, y: 50 }, radius: { x: 50, y: 30 } },
     { type: 'line', start: { x: 9000, y: 0 }, end: { x: 9100, y: 100 } },
     {
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 9000, y: 0 },
             { x: 9050, y: 80 },

@@ -40,7 +40,7 @@ export function readCopiedShape(value: unknown): ShapeInput {
     const s = record(value);
     const geometry = readShapeGeometry(value);
 
-    if (geometry.type === 'pen' && geometry.points.length === 0) {
+    if (geometry.type === 'path' && geometry.points.length === 0) {
         throw new Error('A pen needs a point');
     }
 

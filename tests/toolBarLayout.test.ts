@@ -16,13 +16,13 @@ describe('the tool bar layout', () => {
             ['image'],
             ['instance'],
             ['line', 'arrow'],
-            ['pen']
+            ['pencil']
         ]);
     });
 
     it('leaves out tools that are not registered or not placed', () => {
-        const slots = toolBarSlots([{ id: 'pen' }, { id: 'select' }, { id: 'circle' }]);
+        const slots = toolBarSlots([{ id: 'pencil' }, { id: 'select' }, { id: 'circle' }]);
 
-        expect(slots.map((slot) => slot.map((tool) => tool.id))).toEqual([['select'], ['pen']]);
+        expect(slots.map((slot) => slot.map((tool) => tool.id))).toEqual([['select'], ['pencil']]);
     });
 });

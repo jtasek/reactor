@@ -9,7 +9,7 @@ const kinds = [
     ['rectangle', 'r', 'rect'],
     ['ellipse', 'e', 'ellipse'],
     ['line', 'l', 'line'],
-    ['pen', 'p', 'polyline'],
+    ['path', 'p', 'path'],
     ['text', 't', 'text'],
     ['image', 'i', 'image']
 ] as const;
@@ -67,7 +67,7 @@ for (const template of [false, true]) {
             }
             await pointer(page, 'pointerup', {
                 x: kind === 'text' ? 900 : 1020,
-                y: kind === 'text' || kind === 'pen' ? 750 : 830
+                y: kind === 'text' || kind === 'path' ? 750 : 830
             });
             await expect(page.locator('#tools [data-size-label]')).toHaveCount(0);
             if (kind === 'text') {
@@ -83,15 +83,12 @@ for (const template of [false, true]) {
             await pointer(page, 'pointerup', { x: 1500, y: 1000 });
             await expect(handle('rotate')).toHaveCount(0);
             const hit =
-                kind === 'pen'
+                kind === 'path'
                     ? await artwork.evaluate((element) => {
-                          const pen = element as SVGPolylineElement;
-                          const a = pen.points.getItem(0),
-                              b = pen.points.getItem(1);
-                          const point = new DOMPoint(
-                              (a.x + b.x) / 2,
-                              (a.y + b.y) / 2
-                          ).matrixTransform(pen.getScreenCTM()!);
+                          const path = element as SVGPathElement;
+                          // Partway along the stroke, on the first segment.
+                          const { x, y } = path.getPointAtLength(path.getTotalLength() / 8);
+                          const point = new DOMPoint(x, y).matrixTransform(path.getScreenCTM()!);
                           return { x: point.x, y: point.y };
                       })
                     : await center(artwork);
@@ -99,7 +96,7 @@ for (const template of [false, true]) {
             await expect(handle('rotate')).toBeVisible();
 
             const beforeMove = (await artwork.boundingBox())!;
-            const moveFrom = ['line', 'pen'].includes(kind)
+            const moveFrom = ['line', 'path'].includes(kind)
                 ? {
                       x: beforeMove.x + beforeMove.width / 2,
                       y: beforeMove.y + beforeMove.height / 4

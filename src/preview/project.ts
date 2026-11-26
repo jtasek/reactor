@@ -47,6 +47,7 @@ import {
     DEFAULT_TEXT_FONT_SIZE
 } from '../app/utils';
 import { arrowHeadPoints } from '../app/lineGeometry';
+import { pathData } from '../app/pathGeometry';
 import {
     MAX_PREVIEW_NODES,
     type PreviewDrawing,
@@ -569,11 +570,8 @@ export function createArtworkProjector(
                     );
                 }
                 break;
-            case 'pen':
-                primitive('polyline', {
-                    points: shape.points.map(({ x, y }) => `${x},${y}`).join(' '),
-                    ...paint
-                });
+            case 'path':
+                primitive('path', { d: pathData(shape), ...paint });
                 break;
             case 'text': {
                 const lines = shape.textLayout?.lines ?? [shape.value];

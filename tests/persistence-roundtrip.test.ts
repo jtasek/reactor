@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createEllipseProps } from 'src/tools/components/Ellipse';
 import { createImageProps } from 'src/tools/components/Image';
 import { createLineProps } from 'src/tools/components/Line';
-import { createPenProps } from 'src/tools/components/Pen';
+import { createPencilProps } from 'src/tools/components/Pencil';
 import { createRectProps } from 'src/tools/components/Rect';
 import { createTestStore } from './support/store';
 import { createTextProps } from 'src/tools/components/Text';
@@ -23,7 +23,7 @@ describe('real persisted documents', () => {
             createEllipseProps(pointer),
             createImageProps(pointer, { source: 'asset:test', ratio: 1 }),
             createLineProps(pointer),
-            createPenProps(pointer),
+            createPencilProps(pointer),
             createRectProps(pointer),
             createTextProps(pointer, keyboard)
         ];

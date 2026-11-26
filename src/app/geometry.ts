@@ -1,4 +1,5 @@
 import type { Box, Corner, Point, ResizeHandlerType, Shape, ShapeInput, Size } from './types';
+import { insidePolygon, mapPathPoints, pathOutline } from './pathGeometry';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     assertNever,
@@ -33,8 +34,8 @@ export function translateShape(shape: ShapeInput, delta: Point): void {
             shape.start = translatePoint(shape.start, delta);
             shape.end = translatePoint(shape.end, delta);
             break;
-        case 'pen':
-            shape.points = shape.points.map((point) => translatePoint(point, delta));
+        case 'path':
+            shape.points = mapPathPoints(shape.points, (point) => translatePoint(point, delta));
             break;
         case 'rectangle':
         case 'image':
@@ -110,9 +111,9 @@ export function placeShapeFrom(
                 shape.end = scaleAndTranslatePoint(original.end);
             }
             break;
-        case 'pen':
-            if (original.type === 'pen') {
-                shape.points = original.points.map(scaleAndTranslatePoint);
+        case 'path':
+            if (original.type === 'path') {
+                shape.points = mapPathPoints(original.points, scaleAndTranslatePoint);
             }
             break;
         case 'text':
@@ -285,7 +286,7 @@ export function resizeShapeFromHandle(
     const free = resizeBox(oldBox, handlerType, local);
     const resized = keepsAspectRatio(original)
         ? resizeAspectBox(oldBox, handlerType, local, aspectRatio(oldBox))
-        : original.type === 'line' || original.type === 'pen'
+        : original.type === 'line' || original.type === 'path'
           ? keepFlatSides(free, oldBox)
           : free;
     const box = rotation ? keepDrawnPlace(resized, center, rotation) : resized;
@@ -311,9 +312,9 @@ export function resizeShapeFromHandle(
             }
             break;
 
-        case 'pen':
-            if (original.type === 'pen') {
-                shape.points = original.points.map((point) =>
+        case 'path':
+            if (original.type === 'path') {
+                shape.points = mapPathPoints(original.points, (point) =>
                     mapPointBetweenBoxes(point, oldBox, box)
                 );
             }
@@ -428,23 +429,30 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         }
         case 'line':
             return distanceToSegment(local, shape.start, shape.end) <= tolerance;
-        case 'pen':
-            return distanceToPolyline(local, shape.points) <= tolerance;
+        case 'path': {
+            const outline = pathOutline(shape);
+
+            return (
+                distanceToPolyline(local, shape.closed ? [...outline, outline[0]] : outline) <=
+                    tolerance ||
+                (Boolean(shape.closed) && insidePolygon(local, outline))
+            );
+        }
         default:
             return assertNever(shape);
     }
 }
 
 /**
- * Whether `point` falls in the box of a selected line or pen, so it can be dragged
+ * Whether `point` falls in the box of a selected line or path, so it can be dragged
  * from inside its selection box. Presses try `hitTestShape` on every shape first, so
  * shapes drawn inside that box can still be pressed.
  */
 export function hitsSelectedBox(shape: Shape, point: Point, tolerance: number): boolean {
-    if (!shape.selected || (shape.type !== 'line' && shape.type !== 'pen')) {
+    if (!shape.selected || (shape.type !== 'line' && shape.type !== 'path')) {
         return false;
     }
-    if (shape.type === 'pen' && shape.points.length === 0) {
+    if (shape.type === 'path' && shape.points.length === 0) {
         return false;
     }
     const bounds = getShapeBounds(shape);

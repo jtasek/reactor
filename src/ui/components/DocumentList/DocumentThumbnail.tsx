@@ -21,6 +21,7 @@ import {
     stringifyPath
 } from 'src/app/utils';
 import { arrowHeadPoints } from 'src/app/lineGeometry';
+import { pathData } from 'src/app/pathGeometry';
 import { useImageUrl } from 'src/app/imageHooks';
 import styles from './styles.css';
 
@@ -228,13 +229,8 @@ function geometry(
                     )}
                 </>
             );
-        case 'pen':
-            return (
-                <polyline
-                    points={shape.points.map(({ x, y }) => `${x},${y}`).join(' ')}
-                    {...outline}
-                />
-            );
+        case 'path':
+            return <path d={pathData(shape)} {...outline} />;
         case 'text':
             return (
                 <text

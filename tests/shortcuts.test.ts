@@ -140,6 +140,6 @@ describe('keyboard shortcuts', () => {
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
 
         store.actions.events.pressShortcut(press('p', { code: 'KeyR' }));
-        expect(store.state.tools.activeToolsIds).toEqual(['pen']);
+        expect(store.state.tools.activeToolsIds).toEqual(['pencil']);
     });
 });

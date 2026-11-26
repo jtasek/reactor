@@ -1,6 +1,7 @@
 import { containerStatesOf } from './containerState';
 import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics';
 import { frameState } from './frameState';
+import { mapPathPoints, pathOutline } from './pathGeometry';
 import {
     Box,
     Component,
@@ -10,7 +11,7 @@ import {
     Image,
     Layer,
     Line,
-    Pen,
+    Path,
     Point,
     Rectangle,
     ResizeHandlerType,
@@ -98,7 +99,9 @@ export function getLineBoundingBox(line: Pick<Line, 'start' | 'end'>): Box {
     return { topLeft, bottomRight, height, width };
 }
 
-export function getPathBoundingBox({ points }: Pick<Pen, 'points'>) {
+export function getPathBoundingBox(path: Pick<Path, 'points' | 'closed'>) {
+    const points = pathOutline(path);
+
     if (points.length === 0) {
         return {
             topLeft: { x: 0, y: 0 },
@@ -169,7 +172,7 @@ export function getBoundingBox(shape: ShapeInput): Box {
             return getLineBoundingBox(shape);
         case 'ellipse':
             return getEllipseBoundingBox(shape);
-        case 'pen':
+        case 'path':
             return getPathBoundingBox(shape);
         case 'text':
             return getTextBoundingBox(shape);
@@ -243,8 +246,12 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 end: { ...shape.end },
                 ...(shape.arrow && { arrow: shape.arrow })
             };
-        case 'pen':
-            return { type: shape.type, points: shape.points.map((point) => ({ ...point })) };
+        case 'path':
+            return {
+                type: shape.type,
+                points: mapPathPoints(shape.points, (point) => ({ ...point })),
+                ...(shape.closed && { closed: shape.closed })
+            };
         case 'text':
             return {
                 type: shape.type,
@@ -304,7 +311,7 @@ export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
         case 'rectangle':
         case 'ellipse':
         case 'line':
-        case 'pen':
+        case 'path':
             return true;
         case 'image':
         case 'text':
@@ -323,7 +330,7 @@ export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
             return true;
         case 'image':
         case 'line':
-        case 'pen':
+        case 'path':
         case 'text':
         case 'instance':
             return false;

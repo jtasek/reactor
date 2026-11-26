@@ -20,6 +20,7 @@ import type {
     Camera,
     Document,
     Shape,
+    PathPoint,
     Point,
     Size,
     Group,
@@ -241,6 +242,16 @@ function point(value: unknown): Point {
     return { x: number(p.x), y: number(p.y) };
 }
 
+function pathPoint(value: unknown): PathPoint {
+    const p = record(value);
+
+    return {
+        ...point(p),
+        ...(p.in !== undefined && { in: point(p.in) }),
+        ...(p.out !== undefined && { out: point(p.out) })
+    };
+}
+
 function size(value: unknown): Size {
     const s = record(value);
 
@@ -452,8 +463,12 @@ export function readShapeGeometry(value: unknown) {
                 end: point(s.end),
                 ...(s.arrow === true && { arrow: true as const })
             };
-        case 'pen':
-            return { type: s.type, points: list(s.points, point) };
+        case 'path':
+            return {
+                type: s.type,
+                points: list(s.points, pathPoint),
+                ...(s.closed === true && { closed: true as const })
+            };
         case 'text':
             return {
                 type: s.type,

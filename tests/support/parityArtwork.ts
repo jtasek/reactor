@@ -98,8 +98,8 @@ export function parityArtworkDocument() {
         end: { x: 300, y: 90 },
         arrow: true
     });
-    add('pen', {
-        type: 'pen',
+    add('path', {
+        type: 'path',
         parentFrameId: 'art',
         points: [
             { x: 20, y: 160 },
@@ -109,6 +109,18 @@ export function parityArtworkDocument() {
         ],
         stroke: '#5500aa',
         opacity: 0.7
+    });
+    add('curve', {
+        type: 'path',
+        parentFrameId: 'art',
+        points: [
+            { x: 200, y: 160, out: { x: 220, y: 130 } },
+            { x: 260, y: 200, in: { x: 240, y: 220 } },
+            { x: 300, y: 160 }
+        ],
+        closed: true,
+        fill: '#ffcc00',
+        rotation: 15
     });
     add('wrapped', {
         type: 'text',

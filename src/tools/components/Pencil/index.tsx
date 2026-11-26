@@ -3,28 +3,24 @@ import { Pencil as PencilIcon } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
-import type { Command, Point } from 'src/app/types';
+import type { Command, PathPoint } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { stringifyPath } from 'src/app/utils';
+import { pathData } from 'src/app/pathGeometry';
 import { usePointer } from 'src/app/hooks';
 import { Context } from 'src/app';
 
-/**
- * Draws a line based on path
-
- <polyline points="the points on the polyline. Required." />
-
-**/
+/** Draws a path: straight between points, curved where a handle bends it. */
 
 interface Props {
+    closed?: true;
     name?: string;
-    points: Point[];
+    points: PathPoint[];
     selected: boolean;
-    type: 'pen';
+    type: 'path';
 }
 
-export const createPenProps = ({ path }: Pointer, designMode = false): Props => {
+export const createPencilProps = ({ path }: Pointer, designMode = false): Props => {
     const name = designMode ? 'Pencil x' : undefined;
     const points = path.map(({ x, y }) => ({ x, y }));
 
@@ -32,34 +28,34 @@ export const createPenProps = ({ path }: Pointer, designMode = false): Props => 
         name,
         points,
         selected: true,
-        type: 'pen'
+        type: 'path'
     };
 };
 
-export const Pen: FC<Props> = ({ name, points, selected }) => {
+export const Path: FC<Props> = ({ closed, name, points, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
 
-    return <polyline className={className} data-cy={name} points={stringifyPath(points)} />;
+    return <path className={className} data-cy={name} d={pathData({ points, closed })} />;
 };
 
-export const DesignPen: FC = () => {
+export const DesignPencil: FC = () => {
     const pointer = usePointer();
     if (!pointer.dragging) {
         return null;
     }
 
-    const props = createPenProps(pointer, true);
+    const props = createPencilProps(pointer, true);
 
     return (
         <>
-            <Pen {...props} />
+            <Path {...props} />
             <Label shape={props} />
         </>
     );
 };
 
-export const PenCommand: Command = {
-    id: 'pen',
+export const PencilCommand: Command = {
+    id: 'pencil',
     name: 'Pencil',
     category: 'shapes',
     description: 'Draws a freehand line',
@@ -73,7 +69,7 @@ export const PenCommand: Command = {
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
     execute: ({ actions, state }) => {
-        const shape = createPenProps(state.events.pointer);
+        const shape = createPencilProps(state.events.pointer);
 
         actions.drawShape(shape);
     },
@@ -82,8 +78,9 @@ export const PenCommand: Command = {
     }
 };
 
-export const PenTool: Tool = {
-    ...PenCommand,
-    component: Pen,
-    designComponent: DesignPen
+export const PencilTool: Tool = {
+    ...PencilCommand,
+    component: Path,
+    draws: 'path',
+    designComponent: DesignPencil
 };

@@ -6,7 +6,7 @@ export function getToolById(toolId: string): Tool | undefined {
 }
 
 export function getComponentByType(type: string) {
-    const result = getToolById(type);
+    const result = getTools().find((tool) => tool.component && (tool.draws ?? tool.id) === type);
 
     if (!result?.component) {
         throw new Error(`${type} type doesn't have component defined`);

@@ -272,7 +272,22 @@ const SHAPE = {
             ['start', 'end'],
             'arrow draws an arrowhead at end.'
         ),
-        shapeKind('pen', { points: { type: 'array', items: point, minItems: 1 } }, ['points']),
+        shapeKind(
+            'path',
+            {
+                points: {
+                    type: 'array',
+                    items: {
+                        ...point,
+                        properties: { ...point.properties, in: point, out: point }
+                    },
+                    minItems: 1
+                },
+                closed: { type: 'boolean', enum: [true] }
+            },
+            ['points'],
+            "Straight between points; a point's in/out handles curve the segments into and out of it. closed joins the last point to the first."
+        ),
         shapeKind(
             'text',
             {
@@ -353,7 +368,7 @@ SHAPE.anyOf.forEach(({ properties }) =>
 const ADD_SHAPE = {
     type: 'object',
     description:
-        'Rectangle: top-left position and size. Ellipse (also a circle): center position and radius. Line: start/end. Pen: points. Text: position/value. Instance: componentId/position.',
+        'Rectangle: top-left position and size. Ellipse (also a circle): center position and radius. Line: start/end. Path: points. Text: position/value. Instance: componentId/position.',
     properties: {
         ...SHAPE_CHANGES,
         type: {

@@ -141,8 +141,8 @@ export interface Property extends Term<PropertyId> {
 }
 
 const sized = new Set(['rectangle', 'image', 'instance']);
-const filled = new Set(['rectangle', 'ellipse', 'pen']);
-const stroked = new Set(['rectangle', 'ellipse', 'pen', 'line']);
+const filled = new Set(['rectangle', 'ellipse', 'path']);
+const stroked = new Set(['rectangle', 'ellipse', 'path', 'line']);
 const positive = (value: string | number) => (typeof value === 'number' && value > 0 ? value : 0);
 
 const color = (

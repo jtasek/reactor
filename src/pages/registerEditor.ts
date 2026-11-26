@@ -78,7 +78,7 @@ import {
     LineTool,
     ArrowTool,
     MoveTool,
-    PenTool,
+    PencilTool,
     RectTool,
     SelectTool,
     TextTool
@@ -150,7 +150,7 @@ function registerTools() {
     registerTool(InstanceTool);
     registerTool(LineTool);
     registerTool(ArrowTool);
-    registerTool(PenTool);
+    registerTool(PencilTool);
 }
 
 /**

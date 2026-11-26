@@ -70,7 +70,7 @@ describe('pressing shapes where they are drawn', () => {
         expect(line.pressAt(90, 10)).toBe(true);
 
         const pen = setup({
-            type: 'pen',
+            type: 'path',
             points: [
                 { x: 0, y: 0 },
                 { x: 100, y: 0 },

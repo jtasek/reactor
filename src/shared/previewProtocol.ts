@@ -16,7 +16,7 @@ export type PreviewStateChange =
 /** The complete sandbox contract. Contains no document records, user data or executable code. */
 export interface PreviewNode {
     key: string;
-    tag: 'g' | 'rect' | 'ellipse' | 'line' | 'polyline' | 'text' | 'image';
+    tag: 'g' | 'rect' | 'ellipse' | 'line' | 'polyline' | 'path' | 'text' | 'image';
     attrs: Record<string, string | number>;
     text?: string;
     /** SHA-256 key into the application's verified raster image table. */
@@ -91,7 +91,7 @@ const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/
 export const PREVIEW_PROTOCOL_VERSION = 3;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
-const TAGS = new Set(['g', 'rect', 'ellipse', 'line', 'polyline', 'text', 'image']);
+const TAGS = new Set(['g', 'rect', 'ellipse', 'line', 'polyline', 'path', 'text', 'image']);
 const NUMBERS = new Set([
     'x',
     'y',
@@ -138,6 +138,8 @@ function attribute(key: string, value: unknown) {
             return /^(?:(?:translate|rotate)\([-+\d.eE ,]+\)\s*)+$/.test(value);
         case 'points':
             return /^[-+\d.eE ,]*$/.test(value);
+        case 'd':
+            return /^[MLCZ\d.eE +-]*$/.test(value);
         case 'stroke-dasharray':
             return /^[\d.]+(?: [\d.]+)*$/.test(value);
         case 'preserveAspectRatio':

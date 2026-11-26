@@ -15,7 +15,7 @@ const shapes: ShapeInput[] = [
     { type: 'ellipse', position: { x: 50, y: 50 }, radius: { x: 20, y: 10 } },
     { type: 'line', start: { x: 0, y: 0 }, end: { x: 40, y: 30 } },
     {
-        type: 'pen',
+        type: 'path',
         points: [
             { x: 0, y: 0 },
             { x: 10, y: 20 },

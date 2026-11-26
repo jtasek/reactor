@@ -20,11 +20,11 @@ for (const template of [false, true]) {
         await pointer(page, 'pointermove', { x: 950, y: 550 });
         await pointer(page, 'pointermove', { x: 1000, y: 600 });
         await pointer(page, 'pointerup', { x: 1050, y: 550 });
-        const stroke = shapes(page).locator('polyline[data-cy]').last();
+        const stroke = shapes(page).locator('path[data-cy]').last();
         await expect(stroke).toBeVisible();
-        const before = await stroke.getAttribute('points');
+        const before = await stroke.getAttribute('d');
         const at = await stroke.evaluate((element) => {
-            const stroke = element as SVGPolylineElement;
+            const stroke = element as SVGPathElement;
             const box = stroke.getBBox();
             // Inside the selected box, well away from either segment of the V.
             const point = new DOMPoint(
@@ -37,7 +37,7 @@ for (const template of [false, true]) {
         await page.mouse.down();
         await page.mouse.move(at.x + 40, at.y + 30, { steps: 4 });
         await page.mouse.up();
-        await expect(stroke).not.toHaveAttribute('points', before!);
+        await expect(stroke).not.toHaveAttribute('d', before!);
         expect(errors).toEqual([]);
     });
 }

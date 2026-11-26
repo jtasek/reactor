@@ -49,7 +49,7 @@ describe('fill', () => {
     it('is dropped from a shape it does not fill when read', () => {
         const pen = named(
             {
-                type: 'pen',
+                type: 'path',
                 points: [
                     { x: 0, y: 0 },
                     { x: 10, y: 0 }

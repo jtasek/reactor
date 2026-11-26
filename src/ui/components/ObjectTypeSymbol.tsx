@@ -7,7 +7,7 @@ const GLYPHS: Record<ObjectType, ReactNode> = {
     rectangle: <rect x="3" y="5" width="18" height="14" rx="1" />,
     ellipse: <ellipse cx="12" cy="12" rx="9" ry="6" />,
     line: <path d="M4 19 20 5" />,
-    pen: <path d="M3 18c5-14 9 8 18-12" />,
+    path: <path d="M3 18c5-14 9 8 18-12" />,
     text: <path d="M4 5h16M12 5v14M8 19h8" />,
     image: (
         <>
