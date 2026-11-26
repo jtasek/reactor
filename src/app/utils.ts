@@ -237,7 +237,12 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 radius: { ...shape.radius }
             };
         case 'line':
-            return { type: shape.type, start: { ...shape.start }, end: { ...shape.end } };
+            return {
+                type: shape.type,
+                start: { ...shape.start },
+                end: { ...shape.end },
+                ...(shape.arrow && { arrow: shape.arrow })
+            };
         case 'pen':
             return { type: shape.type, points: shape.points.map((point) => ({ ...point })) };
         case 'text':

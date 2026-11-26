@@ -15,7 +15,7 @@ describe('the tool bar layout', () => {
             ['text'],
             ['image'],
             ['instance'],
-            ['line'],
+            ['line', 'arrow'],
             ['pen']
         ]);
     });

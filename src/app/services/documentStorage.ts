@@ -446,7 +446,12 @@ export function readShapeGeometry(value: unknown) {
         }
 
         case 'line':
-            return { type: s.type, start: point(s.start), end: point(s.end) };
+            return {
+                type: s.type,
+                start: point(s.start),
+                end: point(s.end),
+                ...(s.arrow === true && { arrow: true as const })
+            };
         case 'pen':
             return { type: s.type, points: list(s.points, point) };
         case 'text':

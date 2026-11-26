@@ -91,6 +91,13 @@ export function parityArtworkDocument() {
         end: { x: 380, y: 140 },
         rotation: 10
     });
+    add('arrow', {
+        type: 'line',
+        parentFrameId: 'art',
+        start: { x: 220, y: 40 },
+        end: { x: 300, y: 90 },
+        arrow: true
+    });
     add('pen', {
         type: 'pen',
         parentFrameId: 'art',

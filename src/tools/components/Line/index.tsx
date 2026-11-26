@@ -1,19 +1,22 @@
 import { Label } from 'src/ui/components/Label';
-import { Slash } from 'lucide-react';
+import { MoveUpRight, Slash } from 'lucide-react';
 import React, { FC } from 'react';
 
 import styles from '../../styles.css';
 import type { Command, Point } from 'src/app/types';
 import type { Pointer } from 'src/events/types';
 import type { Tool } from 'src/tools/types';
-import { usePointer } from 'src/app/hooks';
-import { Context } from 'src/app';
+import { useAppState, usePointer } from 'src/app/hooks';
+import { arrowHeadPoints, snapToEighth } from 'src/app/lineGeometry';
+import { stringifyPath } from 'src/app/utils';
 
 /**
- * Draws a line from the start point to the end point
+ * Draws a line from the start point to the end point, with an arrowhead at the end
+ * when `arrow` is set.
  **/
 
 interface Props {
+    arrow?: true;
     end: Point;
     name?: string;
     selected: boolean;
@@ -21,22 +24,28 @@ interface Props {
     type: 'line';
 }
 
-export const createLineProps = ({ start, current }: Pointer, designMode = false): Props => {
-    const name = designMode ? 'Line x' : undefined;
+interface LineOptions {
+    /** Snaps the line to the nearest 45°, as Shift does while drawing. */
+    snap?: boolean;
+    arrow?: boolean;
+    designMode?: boolean;
+}
 
-    return {
-        end: current,
-        name,
-        selected: true,
-        start: start,
-        type: 'line'
-    };
-};
+export const createLineProps = (
+    { start, current }: Pointer,
+    { snap, arrow, designMode }: LineOptions = {}
+): Props => ({
+    ...(arrow && { arrow: true as const }),
+    end: snap ? snapToEighth(start, current) : current,
+    name: designMode ? (arrow ? 'Arrow x' : 'Line x') : undefined,
+    selected: true,
+    start,
+    type: 'line'
+});
 
-export const Line: FC<Props> = ({ name, start, end, selected }) => {
+export const Line: FC<Props> = ({ arrow, name, start, end, selected }) => {
     const className = selected ? `${styles.shape} ${styles.selected}` : styles.shape;
-
-    return (
+    const line = (
         <line
             className={className}
             data-cy={name}
@@ -46,23 +55,52 @@ export const Line: FC<Props> = ({ name, start, end, selected }) => {
             y2={end.y}
         />
     );
-};
 
-export const DesignLine: FC = () => {
-    const pointer = usePointer();
-    if (!pointer.dragging) {
-        return null;
+    if (!arrow) {
+        return line;
     }
-
-    const props = createLineProps(pointer, true);
 
     return (
         <>
-            <Line {...props} />
-            <Label shape={props} />
+            {line}
+            <polyline
+                className={className}
+                style={{ fill: 'none' }}
+                points={stringifyPath(arrowHeadPoints(start, end))}
+            />
         </>
     );
 };
+
+const designLine = (arrow: boolean): FC =>
+    function DesignLine() {
+        const pointer = usePointer();
+        const snap = useAppState((state) => state.events.keyboard.shiftKey);
+
+        if (!pointer.dragging) {
+            return null;
+        }
+
+        const props = createLineProps(pointer, { snap, arrow, designMode: true });
+
+        return (
+            <>
+                <Line {...props} />
+                <Label shape={props} />
+            </>
+        );
+    };
+
+const drawLine =
+    (arrow: boolean): Command['execute'] =>
+    ({ actions, state }) => {
+        actions.drawShape(
+            createLineProps(state.events.pointer, {
+                snap: state.events.keyboard.shiftKey,
+                arrow
+            })
+        );
+    };
 
 export const LineCommand: Command = {
     id: 'line',
@@ -78,18 +116,24 @@ export const LineCommand: Command = {
     shortcut: 'l',
     canExecute: ({ state }) =>
         state.events.pointer.size.width > 0 || state.events.pointer.size.height > 0,
-    execute: ({ actions, state }) => {
-        const shape = createLineProps(state.events.pointer);
-
-        actions.drawShape(shape);
-    },
-    shouldDeactivate: function (context: Context): boolean {
-        return !context.state.events.pointer.dragging;
-    }
+    execute: drawLine(false),
+    shouldDeactivate: ({ state }) => !state.events.pointer.dragging
 };
 
 export const LineTool: Tool = {
     ...LineCommand,
     component: Line,
-    designComponent: DesignLine
+    designComponent: designLine(false)
+};
+
+export const ArrowTool: Tool = {
+    ...LineCommand,
+    id: 'arrow',
+    name: 'Arrow',
+    description: 'Draw an arrow',
+    icon: { ...LineCommand.icon!, component: MoveUpRight },
+    regex: /arrow/,
+    shortcut: 'shift+l',
+    execute: drawLine(true),
+    designComponent: designLine(true)
 };

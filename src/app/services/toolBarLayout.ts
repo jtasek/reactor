@@ -12,7 +12,7 @@ export const TOOL_BAR_LAYOUT: readonly (readonly string[])[] = [
     ['text'],
     ['image'],
     ['instance'],
-    ['line'],
+    ['line', 'arrow'],
     ['pen']
 ];
 

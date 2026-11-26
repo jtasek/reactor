@@ -17,8 +17,10 @@ import {
     boxCenter,
     DEFAULT_TEXT_FONT_SIZE,
     getShapeBounds,
-    rectToBox
+    rectToBox,
+    stringifyPath
 } from 'src/app/utils';
+import { arrowHeadPoints } from 'src/app/lineGeometry';
 import { useImageUrl } from 'src/app/imageHooks';
 import styles from './styles.css';
 
@@ -209,13 +211,22 @@ function geometry(
             );
         case 'line':
             return (
-                <line
-                    x1={shape.start.x}
-                    y1={shape.start.y}
-                    x2={shape.end.x}
-                    y2={shape.end.y}
-                    {...outline}
-                />
+                <>
+                    <line
+                        x1={shape.start.x}
+                        y1={shape.start.y}
+                        x2={shape.end.x}
+                        y2={shape.end.y}
+                        {...outline}
+                    />
+                    {shape.arrow && (
+                        <polyline
+                            points={stringifyPath(arrowHeadPoints(shape.start, shape.end))}
+                            {...outline}
+                            fill="none"
+                        />
+                    )}
+                </>
             );
         case 'pen':
             return (

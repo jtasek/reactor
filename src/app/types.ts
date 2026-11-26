@@ -213,6 +213,8 @@ export interface Line extends ShapeBase {
     type: 'line';
     start: Point;
     end: Point;
+    /** An arrowhead at `end`. */
+    arrow?: true;
 }
 
 export interface Pen extends ShapeBase {

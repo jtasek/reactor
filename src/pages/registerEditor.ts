@@ -76,6 +76,7 @@ import {
     ImageTool,
     InstanceTool,
     LineTool,
+    ArrowTool,
     MoveTool,
     PenTool,
     RectTool,
@@ -148,6 +149,7 @@ function registerTools() {
     registerTool(ImageTool);
     registerTool(InstanceTool);
     registerTool(LineTool);
+    registerTool(ArrowTool);
     registerTool(PenTool);
 }
 

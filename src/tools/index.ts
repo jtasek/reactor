@@ -3,7 +3,7 @@ export { state, actions } from './store';
 export { EllipseTool } from './components/Ellipse';
 export { ImageTool } from './components/Image';
 export { InstanceTool } from './components/Instance';
-export { LineTool } from './components/Line';
+export { ArrowTool, LineTool } from './components/Line';
 export { MoveTool } from './components/Move';
 export { PenTool } from './components/Pen';
 export { FrameTool } from './components/Frame';

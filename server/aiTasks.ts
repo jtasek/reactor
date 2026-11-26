@@ -266,7 +266,12 @@ const SHAPE = {
             ['position', 'radius'],
             'position is the center; radius holds the horizontal and vertical radii, equal for a circle.'
         ),
-        shapeKind('line', { start: point, end: point }, ['start', 'end']),
+        shapeKind(
+            'line',
+            { start: point, end: point, arrow: { type: 'boolean', enum: [true] } },
+            ['start', 'end'],
+            'arrow draws an arrowhead at end.'
+        ),
         shapeKind('pen', { points: { type: 'array', items: point, minItems: 1 } }, ['points']),
         shapeKind(
             'text',
