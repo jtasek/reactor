@@ -527,14 +527,6 @@ export function createArtworkProjector(
                     ...paint
                 });
                 break;
-            case 'circle':
-                primitive('circle', {
-                    cx: shape.position.x,
-                    cy: shape.position.y,
-                    r: shape.radius,
-                    ...paint
-                });
-                break;
             case 'ellipse':
                 primitive('ellipse', {
                     cx: shape.position.x,

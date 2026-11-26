@@ -104,11 +104,14 @@ export function creationOperation(
         };
     }
 
+    // A circle is an ellipse with equal radii.
     if (type === 'circle') {
+        const radius = number('radius', 24, true);
+
         return {
             op: 'addShape',
             key: 'created',
-            shape: { ...common, type, position, radius: number('radius', 24, true) }
+            shape: { ...common, type: 'ellipse', position, radius: { x: radius, y: radius } }
         };
     }
 

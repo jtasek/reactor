@@ -258,9 +258,13 @@ it('cancel restores bindings rebased on another copy’s edits', async () => {
     copies.forEach((copy) => copy.collaboration.dispose());
 });
 
-it('a circle radius operation detaches its indirectly changed coordinates even for the same radius', () => {
+it('an ellipse radius operation detaches its indirectly changed coordinates even for the same radius', () => {
     const { store } = createTestStore();
-    store.actions.addShape({ type: 'circle', position: { x: 10, y: 10 }, radius: 10 });
+    store.actions.addShape({
+        type: 'ellipse',
+        position: { x: 10, y: 10 },
+        radius: { x: 10, y: 10 }
+    });
     const document = store.state.currentDocument;
     const id = document.shapesIds[0];
     const zero = store.actions.createVariable({ name: 'Zero', type: 'number', value: 0 })!;
@@ -269,7 +273,7 @@ it('a circle radius operation detaches its indirectly changed coordinates even f
     const result = store.actions.applyOperations({
         documentId: document.id,
         by: { kind: 'person' },
-        operations: [{ op: 'updateShape', shape: id, changes: { radius: 10 } }]
+        operations: [{ op: 'updateShape', shape: id, changes: { radius: { x: 10, y: 10 } } }]
     });
     expect(result.applied).toBe(true);
     expect(document.shapes[id].bindings).toBeUndefined();

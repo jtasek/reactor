@@ -76,13 +76,6 @@ export function parityArtworkDocument() {
         opacity: 0.5,
         fill: '#336699'
     });
-    add('circle', {
-        type: 'circle',
-        parentFrameId: 'art',
-        position: { x: 220, y: 60 },
-        radius: 30,
-        stroke: '#aa0000'
-    });
     add('ellipse', {
         type: 'ellipse',
         parentFrameId: 'art',

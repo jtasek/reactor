@@ -55,21 +55,27 @@ it('rejects empty and locked selections', () => {
     expect(() => run('w=100')).toThrow(/Select shapes/);
 });
 
-it('edits a circle radius but rejects rectangle-only sizing', () => {
+it('rejects rectangle-only edits on an ellipse', () => {
     const { store, run } = setup();
-    store.actions.addShape({ type: 'circle', position: { x: 40, y: 40 }, radius: 10 });
+    store.actions.addShape({
+        type: 'ellipse',
+        position: { x: 40, y: 40 },
+        radius: { x: 10, y: 10 }
+    });
     const id = store.state.currentDocument.shapesIds.at(-1)!;
     store.actions.unselectShapes();
     store.actions.selectShape(id);
-    expect(run('radius=24').applied).toBe(true);
-    expect(store.state.currentDocument.shapes[id]).toMatchObject({ radius: 24 });
+    expect(() => run('radius=24')).toThrow(/cannot be edited/);
     expect(() => run('w=100')).toThrow(/cannot be edited/);
-    expect(() => run('r=0')).toThrow(/positive/);
 });
 
 it('validates every selected shape before applying any edit', () => {
     const { store, run, id, shape } = setup();
-    store.actions.addShape({ type: 'circle', position: { x: 40, y: 40 }, radius: 10 });
+    store.actions.addShape({
+        type: 'ellipse',
+        position: { x: 40, y: 40 },
+        radius: { x: 10, y: 10 }
+    });
     store.actions.selectShape(store.state.currentDocument.shapesIds.at(-1)!);
     store.actions.selectShape(id);
     expect(store.state.currentDocument.selectedShapesIds).toHaveLength(2);

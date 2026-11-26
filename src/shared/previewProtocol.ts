@@ -16,7 +16,7 @@ export type PreviewStateChange =
 /** The complete sandbox contract. Contains no document records, user data or executable code. */
 export interface PreviewNode {
     key: string;
-    tag: 'g' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polyline' | 'text' | 'image';
+    tag: 'g' | 'rect' | 'ellipse' | 'line' | 'polyline' | 'text' | 'image';
     attrs: Record<string, string | number>;
     text?: string;
     /** SHA-256 key into the application's verified raster image table. */
@@ -91,7 +91,7 @@ const IMAGE_URL = /^data:image\/(png|jpeg|gif|webp);base64,([a-z0-9+/]*={0,2})$/
 export const PREVIEW_PROTOCOL_VERSION = 3;
 export const MAX_PREVIEW_NODES = 5000;
 const MAX_DEPTH = 32;
-const TAGS = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
+const TAGS = new Set(['g', 'rect', 'ellipse', 'line', 'polyline', 'text', 'image']);
 const NUMBERS = new Set([
     'x',
     'y',

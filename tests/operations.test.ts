@@ -133,7 +133,12 @@ describe('applying operations', () => {
                 {
                     op: 'addShape',
                     key: 'red',
-                    shape: { type: 'circle', position: { x: 0, y: 0 }, radius: 5, fill: 'red' }
+                    shape: {
+                        type: 'ellipse',
+                        position: { x: 0, y: 0 },
+                        radius: { x: 5, y: 5 },
+                        fill: 'red'
+                    }
                 }
             ]
         ],
@@ -145,9 +150,9 @@ describe('applying operations', () => {
                     op: 'addShape',
                     key: 'box',
                     shape: {
-                        type: 'circle',
+                        type: 'ellipse',
                         position: { x: 0, y: 0 },
-                        radius: 5,
+                        radius: { x: 5, y: 5 },
                         bindings: { fill: 'size' }
                     }
                 }

@@ -97,7 +97,7 @@ const FIELD_PROPERTIES: Record<string, string[]> = {
     fontSize: ['fontSize']
 };
 
-/** Lists only what the edit writes, so a circle's radius is not also shown as bounds. */
+/** Lists only what the edit writes. */
 function shapeChanges(before: Shape, after: Shape, document: Document, fields: string[]) {
     const keys = new Set(fields.flatMap((field) => FIELD_PROPERTIES[field] ?? []));
     const changes = SHAPE_PROPERTIES.filter(
@@ -112,9 +112,6 @@ function shapeChanges(before: Shape, after: Shape, document: Document, fields: s
             ...difference('X', before.position.x, after.position.x),
             ...difference('Y', before.position.y, after.position.y)
         );
-    }
-    if (before.type === 'circle' && after.type === 'circle') {
-        changes.push(...difference('Radius', before.radius, after.radius));
     }
 
     return [...changes, ...bindingChanges(before, after, document)];

@@ -176,7 +176,6 @@ function applyPlacement(original: Shape, shape: Shape) {
             });
             break;
         case 'image':
-        case 'circle':
         case 'ellipse':
         case 'text':
         case 'instance':

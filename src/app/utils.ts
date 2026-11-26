@@ -3,7 +3,6 @@ import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics'
 import { frameState } from './frameState';
 import {
     Box,
-    Circle,
     Component,
     Document,
     Ellipse,
@@ -61,25 +60,6 @@ export function getRectBoundingBox(rectangle: Pick<Rectangle | Image, 'position'
         bottomRight,
         width: rectangle.size.width,
         height: rectangle.size.height
-    };
-}
-
-export function getCircleBoundingBox(circle: Pick<Circle, 'position' | 'radius'>): Box {
-    const topLeft = {
-        x: circle.position.x - circle.radius,
-        y: circle.position.y - circle.radius
-    };
-    const bottomRight = {
-        x: circle.position.x + circle.radius,
-        y: circle.position.y + circle.radius
-    };
-    const diameter = circle.radius * 2;
-
-    return {
-        topLeft,
-        bottomRight,
-        width: diameter,
-        height: diameter
     };
 }
 
@@ -187,8 +167,6 @@ export function getBoundingBox(shape: ShapeInput): Box {
     switch (shape.type) {
         case 'line':
             return getLineBoundingBox(shape);
-        case 'circle':
-            return getCircleBoundingBox(shape);
         case 'ellipse':
             return getEllipseBoundingBox(shape);
         case 'pen':
@@ -252,8 +230,6 @@ export function shapeGeometry(shape: Shape): ShapeInput {
                 size: { ...shape.size },
                 source: shape.source
             };
-        case 'circle':
-            return { type: shape.type, position: { ...shape.position }, radius: shape.radius };
         case 'ellipse':
             return {
                 type: shape.type,
@@ -321,7 +297,6 @@ export const isHexColor = (value: string) => /^#[0-9a-f]{6}$/i.test(value);
 export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
     switch (shape.type) {
         case 'rectangle':
-        case 'circle':
         case 'ellipse':
         case 'line':
         case 'pen':
@@ -339,7 +314,6 @@ export function isStrokedShape(shape: Pick<Shape, 'type'>): boolean {
 export function isClosedShape(shape: Pick<Shape, 'type'>): boolean {
     switch (shape.type) {
         case 'rectangle':
-        case 'circle':
         case 'ellipse':
             return true;
         case 'image':

@@ -279,13 +279,7 @@ const ActiveCommandLine: FC = () => {
             literalProperties={
                 frame
                     ? ['width', 'height', ...(layout?.stack ? ['gap', 'padding'] : [])]
-                    : [
-                          ...bindingProperties.map(({ key }) => key),
-                          ...(selectedShapes.length > 0 &&
-                          selectedShapes.every((shape) => shape.type === 'circle')
-                              ? ['radius']
-                              : [])
-                      ]
+                    : bindingProperties.map(({ key }) => key)
             }
             bindingProperties={boundProperties}
             variables={variableValues(state, variables)}

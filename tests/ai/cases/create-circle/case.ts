@@ -9,9 +9,9 @@ export default defineCase({
                 key: 'card',
                 shape: {
                     name: 'Card',
-                    type: 'circle',
+                    type: 'ellipse',
                     position: { x: 80, y: 60 },
-                    radius: 25,
+                    radius: { x: 25, y: 25 },
                     fill: '#ff6600'
                 }
             }
@@ -20,7 +20,12 @@ export default defineCase({
     expected: {
         counts: { shapes: 1, variables: 0, groups: 0 },
         shapes: {
-            Card: { type: 'circle', position: { x: 80, y: 60 }, radius: 25, fill: '#ff6600' }
+            Card: {
+                type: 'ellipse',
+                position: { x: 80, y: 60 },
+                radius: { x: 25, y: 25 },
+                fill: '#ff6600'
+            }
         }
     }
 });

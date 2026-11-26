@@ -73,9 +73,9 @@ describe('corner radius', () => {
     it('is edited in the inspector for rectangles only, as drawn', () => {
         const shape = rectangle({ cornerRadius: 30 });
         const circle = createShape({
-            type: 'circle',
+            type: 'ellipse',
             position: { x: 0, y: 0 },
-            radius: 5,
+            radius: { x: 5, y: 5 },
             order: 'a0',
             name: 'shape'
         });

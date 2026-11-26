@@ -38,15 +38,6 @@ const cases = [
         resized: { position: { x: 10, y: 20 }, size: { width: 80, height: 40 } }
     },
     {
-        name: 'circle',
-        shape: { type: 'circle' as const, position: { x: 50, y: 50 }, radius: 10 },
-        bounds: { topLeft: { x: 40, y: 40 }, bottomRight: { x: 60, y: 60 } },
-        moved: { position: { x: 55, y: 45 } },
-        // Circles stay round: the dominant axis sets the diameter.
-        resizeTo: { x: 80, y: 70 },
-        resized: { position: { x: 60, y: 60 }, radius: 20 }
-    },
-    {
         name: 'ellipse',
         shape: {
             type: 'ellipse' as const,

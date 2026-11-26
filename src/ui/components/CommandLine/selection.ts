@@ -6,12 +6,7 @@ import { isHexColor, isShapeVisible } from 'src/app/utils';
 import { translateShape } from 'src/app/geometry';
 import { componentSourceNudge } from 'src/app/componentViewTransform';
 import { editableScreenView } from 'src/app/screenViewEditing';
-import {
-    unbindEditedProperties,
-    unbind,
-    unbindMovedProperties,
-    writeText
-} from 'src/app/variables';
+import { unbindEditedProperties, unbindMovedProperties, writeText } from 'src/app/variables';
 import { frameSelectionOperations } from './frameSelection';
 import { readParameters } from './creation';
 import { bindingEdit, shapeBindingChanges } from './bindings';
@@ -177,17 +172,6 @@ function editProperty(
     key: string,
     value: number | string
 ) {
-    if (key === 'radius' && copy.type === 'circle' && value === 0) {
-        throw new Error('Circle radius must be positive.');
-    }
-    if (key === 'radius' && copy.type === 'circle') {
-        copy.radius = Number(value);
-        unbind(copy, 'x');
-        unbind(copy, 'y');
-
-        return;
-    }
-
     const property = SHAPE_PROPERTIES.find(
         (item) => item.key === (key === 'radius' ? 'cornerRadius' : key === 'value' ? 'text' : key)
     )!;

@@ -197,10 +197,6 @@ function geometry(
                     {...outline}
                 />
             );
-        case 'circle':
-            return (
-                <circle cx={shape.position.x} cy={shape.position.y} r={shape.radius} {...outline} />
-            );
         case 'ellipse':
             return (
                 <ellipse

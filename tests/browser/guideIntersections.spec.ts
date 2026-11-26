@@ -14,11 +14,11 @@ async function openShapes(page: Page, screen = false) {
         selected: true
     });
     const circle = createShape({
-        type: 'circle',
+        type: 'ellipse',
         name: 'circle',
         order: 'a1',
         position: { x: 400, y: 500 },
-        radius: 50,
+        radius: { x: 50, y: 50 },
         locked: true
     });
     const hidden = createShape({

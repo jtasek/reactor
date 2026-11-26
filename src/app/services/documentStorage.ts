@@ -437,12 +437,6 @@ export function readShapeGeometry(value: unknown) {
                 size: size(s.size),
                 source: text(s.source)
             };
-        case 'circle':
-            return {
-                type: s.type,
-                position: point(s.position),
-                radius: number(s.radius, 0)
-            };
         case 'ellipse': {
             const radius = point(s.radius);
             number(radius.x, 0);

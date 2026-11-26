@@ -38,7 +38,6 @@ export function translateShape(shape: ShapeInput, delta: Point): void {
             break;
         case 'rectangle':
         case 'image':
-        case 'circle':
         case 'ellipse':
         case 'text':
         case 'instance':
@@ -97,12 +96,6 @@ export function placeShapeFrom(
                 original.cornerRadius !== undefined
             ) {
                 shape.cornerRadius = original.cornerRadius * factor;
-            }
-            break;
-        case 'circle':
-            if (original.type === 'circle') {
-                shape.position = scaleAndTranslatePoint(original.position);
-                shape.radius = original.radius * factor;
             }
             break;
         case 'ellipse':
@@ -266,9 +259,8 @@ function keepFlatSides(box: Box, oldBox: Box): Box {
     };
 }
 
-/** Images never letterbox, text scales with its font size, and circles stay round. */
-export const keepsAspectRatio = (shape: Shape) =>
-    shape.type === 'image' || shape.type === 'text' || shape.type === 'circle';
+/** Images never letterbox, and text scales with its font size. */
+export const keepsAspectRatio = (shape: Shape) => shape.type === 'image' || shape.type === 'text';
 
 /** A flat box counts as square. */
 export const aspectRatio = (box: Box) => (box.height > 0 ? box.width / box.height : 1);
@@ -305,11 +297,6 @@ export function resizeShapeFromHandle(
         case 'rectangle':
             shape.position = { x: box.topLeft.x, y: box.topLeft.y };
             shape.size = { width: box.width, height: box.height };
-            break;
-
-        case 'circle':
-            shape.position = boxCenter(box);
-            shape.radius = box.width / 2;
             break;
 
         case 'ellipse':
@@ -417,7 +404,7 @@ export const isCorner = (value: string): value is Corner => Object.hasOwn(CORNER
 
 /**
  * Whether `point` hits `shape` where it is drawn: within `tolerance` of its
- * outline, or anywhere inside a closed shape (rectangle, image, text, circle,
+ * outline, or anywhere inside a closed shape (rectangle, image, text,
  * ellipse). Lines and pens are open, so only their stroke hits (see
  * `hitsSelectedBox` for dragging a selected one from inside its box). Shapes are drawn
  * rotated about their box center, so the point is tested in the unrotated frame.
@@ -432,8 +419,6 @@ export function hitTestShape(shape: Shape, point: Point, tolerance: number): boo
         case 'text':
         case 'instance':
             return distanceToBox(local, bounds) <= tolerance;
-        case 'circle':
-            return getDistance(local, shape.position) <= shape.radius + tolerance;
         case 'ellipse': {
             // Inflating the radii approximates the band around the outline.
             const dx = (local.x - shape.position.x) / (shape.radius.x + tolerance);

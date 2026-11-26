@@ -261,16 +261,10 @@ const SHAPE = {
             'position is the top left corner.'
         ),
         shapeKind(
-            'circle',
-            { position: point, radius: { type: 'number', minimum: 0 } },
-            ['position', 'radius'],
-            'position is the center.'
-        ),
-        shapeKind(
             'ellipse',
             { position: point, radius: point },
             ['position', 'radius'],
-            'position is the center; radius holds the horizontal and vertical radii.'
+            'position is the center; radius holds the horizontal and vertical radii, equal for a circle.'
         ),
         shapeKind('line', { start: point, end: point }, ['start', 'end']),
         shapeKind('pen', { points: { type: 'array', items: point, minItems: 1 } }, ['points']),
@@ -354,7 +348,7 @@ SHAPE.anyOf.forEach(({ properties }) =>
 const ADD_SHAPE = {
     type: 'object',
     description:
-        'Rectangle: top-left position and size. Circle/ellipse: center position and radius. Line: start/end. Pen: points. Text: position/value. Instance: componentId/position.',
+        'Rectangle: top-left position and size. Ellipse (also a circle): center position and radius. Line: start/end. Pen: points. Text: position/value. Instance: componentId/position.',
     properties: {
         ...SHAPE_CHANGES,
         type: {
@@ -364,8 +358,7 @@ const ADD_SHAPE = {
         componentId: { type: 'string' },
         position: {
             ...point,
-            description:
-                'Required for text, instance, rectangle, circle and ellipse. Supply both x and y.'
+            description: 'Required for text, instance, rectangle and ellipse. Supply both x and y.'
         }
     },
     required: ['type']

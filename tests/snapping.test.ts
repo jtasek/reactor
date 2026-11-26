@@ -406,25 +406,30 @@ describe('resizing shapes', () => {
     it('snaps a resize kept in proportion by the edge that drives it', () => {
         const { store } = createTestStore();
 
-        store.actions.addShape({ type: 'circle', position: { x: 20, y: 20 }, radius: 20 });
+        store.actions.addShape({
+            type: 'image',
+            position: { x: 0, y: 0 },
+            size: { width: 40, height: 40 },
+            source: 'asset:test'
+        });
         store.actions.addShape(square(100, 0));
 
-        const [circleId] = store.state.currentDocument.shapesIds;
+        const [imageId] = store.state.currentDocument.shapesIds;
         const { events } = store.actions;
 
         events.beginGesture({
             pointerId: 1,
             position: { x: 40, y: 40 },
-            handle: { shapeId: circleId, type: 'bottomRight' }
+            handle: { shapeId: imageId, type: 'bottomRight' }
         });
         // Pulled further down than across, the height sizes it, putting its right edge at
         // 97, three short of the square's left edge at 100.
         events.movePointer({ pointerId: 1, position: { x: 60, y: 97 } });
 
-        const circle = store.state.currentDocument.shapes[circleId];
+        const image = store.state.currentDocument.shapes[imageId];
         const { gesture } = store.state.events.pointer;
 
-        expect(circle.type === 'circle' && circle.radius).toBeCloseTo(50);
+        expect(image.type === 'image' && image.size.width).toBeCloseTo(100);
         expect(gesture.kind === 'resizing' && gesture.snapLines.x).toBe(100);
     });
 

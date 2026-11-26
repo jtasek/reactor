@@ -244,14 +244,14 @@ it('copies a multi-shape source once alongside other selected shapes', () => {
     store.actions.selectComponentSource(store.state.currentDocument.componentsIds[0]);
     const componentId = store.state.currentDocument.componentsIds[0];
     store.actions.addShape({
-        type: 'circle',
+        type: 'ellipse',
         position: { x: 200, y: 200 },
-        radius: 15
+        radius: { x: 15, y: 15 }
     });
 
     expect(readClipboard(store.actions.copySelection() ?? '').shapes).toMatchObject([
         { type: 'instance', componentId },
-        { type: 'circle' }
+        { type: 'ellipse' }
     ]);
 });
 

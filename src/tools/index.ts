@@ -1,6 +1,5 @@
 export { state, actions } from './store';
 
-export { CircleTool } from './components/Circle';
 export { EllipseTool } from './components/Ellipse';
 export { ImageTool } from './components/Image';
 export { InstanceTool } from './components/Instance';

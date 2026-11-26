@@ -3,7 +3,7 @@ import type { AiCase } from '../../harness';
 export default {
     fixture: {
         shapes: {
-            avatar: { type: 'circle', position: { x: 60, y: 60 }, radius: 20 },
+            avatar: { type: 'ellipse', position: { x: 60, y: 60 }, radius: { x: 20, y: 20 } },
             fullName: { type: 'text', position: { x: 90, y: 50 }, value: 'Ada Lovelace' }
         },
         groups: { profile: { name: 'Profile', shapes: ['avatar', 'fullName'] } }
@@ -14,7 +14,9 @@ export default {
 
         return [
             ...(Object.keys(document.groups).length === 0 ? [] : ['The profile is grouped.']),
-            ...(avatar?.type === 'circle' && avatar.position.y === 60 ? [] : ['The avatar moved.']),
+            ...(avatar?.type === 'ellipse' && avatar.position.y === 60
+                ? []
+                : ['The avatar moved.']),
             ...(fullName?.type === 'text' &&
             fullName.position.x === 90 &&
             fullName.position.y === 70

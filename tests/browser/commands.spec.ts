@@ -364,7 +364,7 @@ test('command line accepts property aliases and rejects conflicting spellings', 
     await expect(shapes(page).locator('rect')).toHaveAttribute('height', '32');
     await input.fill('circle r=18');
     await input.press('Enter');
-    await expect(shapes(page).locator('circle')).toHaveAttribute('r', '18');
+    await expect(shapes(page).locator('ellipse')).toHaveAttribute('rx', '18');
     await input.fill('text text="Welcome home" fs=20');
     await input.press('Enter');
     await expect(shapes(page).locator('text')).toContainText('Welcome home');
@@ -531,7 +531,7 @@ test('palette arrow navigation follows the highlighted result and focuses guided
     await expect(page.getByRole('textbox', { name: 'Radius', exact: true })).toBeFocused();
     await page.keyboard.type('36');
     await page.keyboard.press('Enter');
-    await expect(shapes(page).locator('circle[data-cy]')).toHaveAttribute('r', '36');
+    await expect(shapes(page).locator('ellipse[data-cy]')).toHaveAttribute('rx', '36');
     await expect(input).toBeFocused();
     await input.fill('create rectangle');
     await page.keyboard.press('Enter');

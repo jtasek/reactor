@@ -1,8 +1,7 @@
 /**
  * The tool bar's buttons, most used first. A slot with several tools shows one
  * button that keeps the last tool picked from it and opens a menu of the others.
- * Registered tools left out here, such as Circle, which only draws documents' old
- * circles, are not offered.
+ * Registered tools left out here are not offered.
  */
 export const TOOL_BAR_LAYOUT: readonly (readonly string[])[] = [
     ['select', 'move'],

@@ -145,8 +145,7 @@ export function editedBindings(shape: Shape, fields: string[]): string[] {
                 (key === 'text' && (field === 'value' || field === 'template')) ||
                 ((key === 'x' || key === 'y') &&
                     (['position', 'start', 'end', 'points'].includes(field) ||
-                        (field === 'radius' &&
-                            (shape.type === 'circle' || shape.type === 'ellipse')) ||
+                        (field === 'radius' && shape.type === 'ellipse') ||
                         (field === 'fontSize' && shape.type === 'text' && key === 'y')))
         )
     );

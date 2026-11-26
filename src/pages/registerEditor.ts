@@ -72,7 +72,6 @@ import {
 import {
     FrameTool,
     HandTool,
-    CircleTool,
     EllipseTool,
     ImageTool,
     InstanceTool,
@@ -145,7 +144,6 @@ function registerTools() {
     registerTool(FrameTool);
     registerTool(RectTool);
     registerTool(EllipseTool);
-    registerTool(CircleTool);
     registerTool(TextTool);
     registerTool(ImageTool);
     registerTool(InstanceTool);

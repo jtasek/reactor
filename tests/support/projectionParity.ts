@@ -109,7 +109,7 @@ interface Paint {
     stroke?: string;
 }
 
-const ART = new Set(['rect', 'circle', 'ellipse', 'line', 'polyline', 'text', 'image']);
+const ART = new Set(['rect', 'ellipse', 'line', 'polyline', 'text', 'image']);
 /** Attributes a mark already accounts for, or that change nothing drawn. */
 const READ = new Set(
     [
@@ -158,10 +158,6 @@ function mark(
             }
             break;
         }
-        case 'circle':
-            result.points = [point(matrix, number('cx'), number('cy'))];
-            result.size = `${round(number('r') * scaleOf(matrix))}`;
-            break;
         case 'ellipse':
             result.points = [point(matrix, number('cx'), number('cy'))];
             result.size = `${round(number('rx') * scaleOf(matrix))},${round(number('ry') * scaleOf(matrix))}`;

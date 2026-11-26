@@ -583,7 +583,6 @@ const shapePlacement = (shape: Shape) => {
             return { points: shape.points, bounds: shape.bounds };
         case 'rectangle':
         case 'image':
-        case 'circle':
         case 'ellipse':
         case 'text':
         case 'instance':

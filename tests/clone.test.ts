@@ -11,7 +11,7 @@ const shapes: ShapeInput[] = [
         size: { width: 40, height: 20 },
         source: 'image.png'
     },
-    { type: 'circle', position: { x: 50, y: 50 }, radius: 10 },
+    { type: 'ellipse', position: { x: 50, y: 50 }, radius: { x: 10, y: 10 } },
     { type: 'ellipse', position: { x: 50, y: 50 }, radius: { x: 20, y: 10 } },
     { type: 'line', start: { x: 0, y: 0 }, end: { x: 40, y: 30 } },
     {

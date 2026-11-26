@@ -203,13 +203,6 @@ export interface Image extends ShapeBase {
 }
 
 /** `position` is the center. */
-export interface Circle extends ShapeBase {
-    type: 'circle';
-    position: Point;
-    radius: number;
-}
-
-/** `position` is the center. */
 export interface Ellipse extends ShapeBase {
     type: 'ellipse';
     position: Point;
@@ -351,7 +344,7 @@ export interface RoleSettings {
     controlId?: string;
 }
 
-export type Shape = Rectangle | Image | Circle | Ellipse | Line | Pen | Text | InstanceShape;
+export type Shape = Rectangle | Image | Ellipse | Line | Pen | Text | InstanceShape;
 
 type ShapeMetadata = Exclude<
     keyof ShapeBase,
