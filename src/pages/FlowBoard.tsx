@@ -808,6 +808,7 @@ export function FlowBoard({
                             className={styles.screen}
                             data-flow-screen={state.id}
                             data-selected={selectedScreen === state.id}
+                            data-start={isStart}
                             data-dim={!state.available || !state.reachable}
                             data-dragging={dragging === state.id}
                             data-drop={

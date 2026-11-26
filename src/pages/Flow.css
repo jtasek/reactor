@@ -383,6 +383,10 @@
     box-shadow: var(--flow-card);
     color: var(--text-secondary-color);
 }
+/* The start screen wears the Start badge's green; selection still shows in blue. */
+.screen[data-start='true'] .thumb {
+    outline: 2px solid var(--success-color);
+}
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
     box-shadow: var(--flow-card-selected);
