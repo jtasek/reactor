@@ -77,7 +77,7 @@ export const EllipseCommand: Command = {
     id: 'ellipse',
     name: 'Ellipse',
     category: 'shapes',
-    description: 'Draws an elliptic shape',
+    description: 'Draws an ellipse or circle',
     icon: {
         component: EllipseIcon,
         color: 'rgb(144, 254, 214)',
