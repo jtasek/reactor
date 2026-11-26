@@ -53,8 +53,8 @@
     gap: 4px;
     min-width: 0;
 }
-.toolbar select,
-.toolbar button {
+.toolbar > label > select,
+.toolbar > button {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -83,30 +83,31 @@
     margin: 0 0 0 auto;
 }
 
-.toolbar label {
+.toolbar > label {
     display: grid;
     gap: 2px;
     min-width: 0;
     flex: 1 1 100px;
     max-width: 180px;
 }
-.toolbar label > span {
+.toolbar > label > span {
     color: var(--text-secondary-color);
     font-size: var(--font-size-caption);
     padding-left: 12px;
 }
-.toolbar select {
+.toolbar > label > select {
     max-width: 200px;
     width: 100%;
 }
 
-.toolbar :is(select, button) {
+.toolbar > label > select,
+.toolbar > button {
     border: 1px solid var(--hairline-color);
     border-radius: calc(var(--radius-md) * 3);
     background: var(--control-background);
     min-height: 36px;
 }
-.toolbar button {
+.toolbar > button {
     align-self: end;
     padding-inline: 12px;
 }
@@ -115,24 +116,24 @@
         justify-content: flex-start;
         gap: 6px;
     }
-    .toolbar label {
+    .toolbar > label {
         max-width: none;
         flex-basis: calc(33% - 6px);
     }
-    .toolbar button {
+    .toolbar > button {
         flex: 1;
         justify-content: center;
     }
 }
 
 @media (max-width: 440px) {
-    .toolbar label {
+    .toolbar > label {
         flex-basis: calc(50% - 6px);
     }
-    .toolbar label:first-child {
+    .toolbar > label:first-child {
         flex-basis: 100%;
     }
-    .toolbar select {
+    .toolbar > label > select {
         max-width: none;
     }
 }
