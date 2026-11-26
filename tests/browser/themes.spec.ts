@@ -17,6 +17,7 @@ test('checks pages in each mode and size, accepts AI fixes and reports in the do
     );
     await page.goto('/prototype?ai=local');
 
+    await page.getByRole('button', { name: 'More', exact: true }).click();
     await page.getByRole('button', { name: 'Prototype settings' }).click();
     const settings = page.getByRole('dialog', { name: 'Prototype settings' });
     await expect(settings.getByRole('group', { name: 'Theme' }).getByLabel('Dark')).toBeChecked();
@@ -49,6 +50,7 @@ test('checks pages in each mode and size, accepts AI fixes and reports in the do
     await check.getByRole('button', { name: 'Close', exact: true }).click();
 
     const downloading = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'More', exact: true }).click();
     await page.getByRole('button', { name: 'Download prototype' }).click();
     const file = info.outputPath('package.html');
     await (await downloading).saveAs(file);

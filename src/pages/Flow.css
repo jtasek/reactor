@@ -442,8 +442,8 @@
     border-radius: 100rem;
     font-size: var(--font-size-caption);
     font-weight: var(--font-weight-semibold);
-    color: var(--success-color);
-    background: color-mix(in srgb, var(--success-color) 12%, var(--surface));
+    color: var(--on-selection-color);
+    background: var(--success-color);
     outline: 2px solid var(--surface);
     pointer-events: none;
 }
@@ -597,10 +597,24 @@
 .screen li:has(> button[aria-pressed='true']) .dot {
     border-color: var(--selection-color);
 }
-.screen li > .add {
+/* Beside the page name, in the link colour. */
+.flow .add {
     flex: none;
-    color: var(--text-secondary-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 100rem;
+    background: transparent;
+    color: var(--selection-color);
     font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-regular);
+    cursor: pointer;
+}
+.flow .add:hover {
+    background: color-mix(in srgb, var(--selection-color) 10%, var(--surface));
 }
 
 .flow .fit {

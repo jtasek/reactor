@@ -1,5 +1,6 @@
 import {
     ArrowLeft,
+    Ellipsis,
     Info,
     Monitor,
     Moon,
@@ -13,7 +14,8 @@ import {
 import { Icon } from 'src/ui/components/Icon';
 import { Button, Field, Select } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
-import { DevicePicker } from './DevicePicker';
+import { DeviceMenu } from './DeviceMenu';
+import { Popover } from './Popover';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
@@ -24,7 +26,6 @@ import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenFrames } from 'src/app/screens';
 import { prototypeModes, prototypeSession } from 'src/app/modeEdits';
 import { isSizesDimension, ordered } from 'src/app/variableModes';
-import { presetOfSize } from 'src/app/services/viewportPresets';
 import {
     checkContexts,
     choiceDimensions,
@@ -117,8 +118,6 @@ function PrototypeWorkspace() {
         on ? [...new Set([...list, id])] : list.filter((item) => item !== id);
     const [settings, setSettings] = useState(false);
     const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
-    // Custom stays chosen while its size still matches a preset.
-    const [customPreset, setCustomPreset] = useState(false);
     const [restart, setRestart] = useState(0);
     const reset = () => setRestart((value) => value + 1);
     // Restart remounts the preview and its header controls, so focus moves to the new button.
@@ -157,32 +156,58 @@ function PrototypeWorkspace() {
 
     return (
         <main className={styles.prototype}>
-            <header className={styles.header}>
-                <a href="/">
+            <header className={styles.bar}>
+                <a href="/" className={styles.back} aria-label="Canvas">
                     <Icon icon={{ component: ArrowLeft, size: 18 }} />
-                    Canvas
+                    <span>Canvas</span>
                 </a>
                 <div className={styles.identity}>
-                    <h1>Prototype</h1>
                     <span className={styles.documentName} title={document.name}>
                         {document.name}
                     </span>
+                    <span className={styles.summary}>
+                        <h1>Prototype</h1>
+                        {screens.length > 0 &&
+                            ` · ${screens.length} ${screens.length === 1 ? 'page' : 'pages'}`}
+                    </span>
                 </div>
-                <div ref={setToolbarTarget} className={styles.toolbarSlot} />
-                <div className={styles.headerActions}>
-                    <a href="/flow">
-                        <Icon icon={{ component: Workflow, size: 18 }} />
-                        Flow
-                    </a>
+                <div className={styles.barActions}>
+                    <Popover
+                        label="More"
+                        title="More"
+                        className={styles.roundButton}
+                        align="end"
+                        button={<Icon icon={{ component: Ellipsis, size: 18 }} />}
+                    >
+                        {(close) => (
+                            <div className={styles.moreMenu}>
+                                <button
+                                    type="button"
+                                    aria-label="Prototype settings"
+                                    onClick={() => {
+                                        close();
+                                        setSettings(true);
+                                    }}
+                                >
+                                    <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
+                                    Settings
+                                </button>
+                                <a href="/flow">
+                                    <Icon icon={{ component: Workflow, size: 18 }} />
+                                    Flow
+                                </a>
+                                <DownloadPrototype
+                                    session={session}
+                                    inspection={inspection}
+                                    contexts={'contexts' in contexts ? contexts.contexts : []}
+                                />
+                            </div>
+                        )}
+                    </Popover>
                     <AccessibilityCheck
                         session={session}
                         contexts={contexts}
                         onShow={(id) => locate({ kind: 'shape', id, message: '' })}
-                    />
-                    <DownloadPrototype
-                        session={session}
-                        inspection={inspection}
-                        contexts={'contexts' in contexts ? contexts.contexts : []}
                     />
                     <SharePrototype session={session} inspection={inspection} />
                 </div>
@@ -220,22 +245,6 @@ function PrototypeWorkspace() {
                             </option>
                         ))}
                     </Select>
-                    <DevicePicker
-                        size={session.viewport!}
-                        onSize={(viewport) => setSession((previous) => ({ ...previous, viewport }))}
-                    >
-                        <ViewportField
-                            label="Width"
-                            value={session.viewport!.width}
-                            change={(value) => resize('width', value)}
-                        />
-                        <span aria-hidden="true">×</span>
-                        <ViewportField
-                            label="Height"
-                            value={session.viewport!.height}
-                            change={(value) => resize('height', value)}
-                        />
-                    </DevicePicker>
                     {ordered(document.dimensions).map((dimension) => (
                         <Select
                             key={dimension.id}
@@ -359,46 +368,31 @@ function PrototypeWorkspace() {
                 <p>Create a page on the canvas to start a prototype.</p>
             ) : (
                 <div className={styles.player}>
+                    <div ref={setToolbarTarget} className={styles.controlsRow} />
                     <InteractivePreview
                         key={`${session.screenId}:${restart}`}
                         session={session}
                         toolbarTarget={toolbarTarget}
                         toolbar={
                             <>
-                                <label>
-                                    <span>Viewport</span>
-                                    <select
-                                        aria-label="Viewport preset"
-                                        value={
-                                            customPreset
-                                                ? 'custom'
-                                                : (presetOfSize(presets, session.viewport)?.id ??
-                                                  'custom')
-                                        }
-                                        onChange={(event) => {
-                                            const preset = presets.find(
-                                                ({ id }) => id === event.target.value
-                                            );
-                                            setCustomPreset(!preset);
-                                            if (!preset) {
-                                                setSettings(true);
-
-                                                return;
-                                            }
-                                            setSession((previous) => ({
-                                                ...previous,
-                                                viewport: { ...preset.size }
-                                            }));
-                                        }}
-                                    >
-                                        {presets.map((preset) => (
-                                            <option key={preset.id} value={preset.id}>
-                                                {preset.name}
-                                            </option>
-                                        ))}
-                                        <option value="custom">Custom</option>
-                                    </select>
-                                </label>
+                                <DeviceMenu
+                                    size={session.viewport!}
+                                    onSize={(viewport) =>
+                                        setSession((previous) => ({ ...previous, viewport }))
+                                    }
+                                >
+                                    <ViewportField
+                                        label="Width"
+                                        value={session.viewport!.width}
+                                        change={(value) => resize('width', value)}
+                                    />
+                                    <span aria-hidden="true">×</span>
+                                    <ViewportField
+                                        label="Height"
+                                        value={session.viewport!.height}
+                                        change={(value) => resize('height', value)}
+                                    />
+                                </DeviceMenu>
                                 <button
                                     ref={(button) => {
                                         if (button && refocusRestart.current) {
@@ -406,6 +400,7 @@ function PrototypeWorkspace() {
                                             button.focus();
                                         }
                                     }}
+                                    className={styles.roundButton}
                                     aria-label="Restart prototype"
                                     title="Restart prototype"
                                     onClick={() => {
@@ -414,14 +409,6 @@ function PrototypeWorkspace() {
                                     }}
                                 >
                                     <Icon icon={{ component: RotateCcw, size: 18 }} />
-                                    Restart
-                                </button>
-                                <button
-                                    onClick={() => setSettings(true)}
-                                    aria-label="Prototype settings"
-                                >
-                                    <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
-                                    Settings
                                 </button>
                             </>
                         }
@@ -430,9 +417,6 @@ function PrototypeWorkspace() {
                         onInspection={setInspection}
                         onLocate={locate}
                     />
-                    <p className={styles.viewportSummary}>
-                        {session.viewport?.width} × {session.viewport?.height} · Fit
-                    </p>
                 </div>
             )}
             <Guide page="prototype" />

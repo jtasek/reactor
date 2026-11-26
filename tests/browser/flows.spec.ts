@@ -365,7 +365,7 @@ test('describes controls whose imported IDs contain spaces, and opens their menu
     await expect(control).toBeFocused();
     // ↑ and ↓ walk the card's rows, down to Add link.
     const rows = screen(page, 'home').locator('li > button');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(2);
     await rows.nth(0).focus();
     await page.keyboard.press('ArrowDown');
     await expect(rows.nth(1)).toBeFocused();

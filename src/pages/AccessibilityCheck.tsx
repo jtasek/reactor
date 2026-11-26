@@ -180,9 +180,9 @@ export function AccessibilityCheck({
 
     return (
         <>
-            <button onClick={open} aria-haspopup="dialog">
+            <button onClick={open} aria-haspopup="dialog" aria-label="Accessibility">
                 <Icon icon={{ component: Accessibility, size: 18 }} />
-                Accessibility
+                <span>Accessibility</span>
             </button>
             <Dialog title="Accessibility" visible={opened} wide onClose={close}>
                 {'problem' in contexts ? (

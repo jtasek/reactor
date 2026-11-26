@@ -38,9 +38,13 @@ export const DEVICE_SIZES: DeviceSize[] = [
 
 /** The device of a size, upright or turned. */
 export function deviceOfSize(devices: readonly DeviceSize[], size: Size | undefined) {
-    return devices.find(
-        ({ size: device }) =>
-            (device.width === size?.width && device.height === size.height) ||
-            (device.width === size?.height && device.height === size.width)
+    // An exact match wins over a turned one: 1280 × 800 is the Laptop, not a turned tablet.
+    return (
+        devices.find(
+            ({ size: device }) => device.width === size?.width && device.height === size.height
+        ) ??
+        devices.find(
+            ({ size: device }) => device.width === size?.height && device.height === size.width
+        )
     );
 }

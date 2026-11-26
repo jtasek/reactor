@@ -1,4 +1,8 @@
-import { expectPrototypeSetting, setPrototypeSetting } from './support/prototypeControls';
+import {
+    expectPrototypeSetting,
+    openDeviceMenu,
+    setPrototypeSetting
+} from './support/prototypeControls';
 import { expect, test, type Page } from '@playwright/test';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 import { prototypeDocument } from '../support/prototype';
@@ -78,13 +82,10 @@ test('launches from a view, carries viewport and modes across navigation and pre
     await expect(input).toHaveValue('Ada');
     await page.screenshot({ path: 'test-results/prototype-wide.png' });
     await page.setViewportSize({ width: 600, height: 850 });
-    await page.getByRole('button', { name: 'Prototype settings', exact: true }).click();
-    await expect(page.getByLabel('Prototype width', { exact: true })).toBeVisible();
+    const devices = await openDeviceMenu(page);
+    await expect(devices.getByLabel('Prototype width', { exact: true })).toBeVisible();
     await page.screenshot({ path: 'test-results/prototype-narrow.png' });
-    await page
-        .getByRole('dialog', { name: 'Prototype settings' })
-        .getByRole('button', { name: 'Close', exact: true })
-        .click();
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Restart prototype', exact: true }).click();
     await expect(page.getByLabel('Preview page')).toHaveValue('home');
     await expect(input).toHaveValue('Your name');
@@ -196,72 +197,65 @@ test('opens the screen chosen in Flow only after an explicit player launch', asy
     await expect(page.getByLabel('Preview page')).toHaveValue('details');
 });
 
-test('keeps setup out of the player, restores settings focus and preserves input when changing presets', async ({
+test('keeps setup out of the player, restores focus and preserves input when changing devices', async ({
     page
 }) => {
     await seed(page);
     await page.goto('/prototype');
     const runtime = player(page);
-    const settings = page.getByRole('button', { name: 'Prototype settings', exact: true });
     await expect(page.getByRole('dialog', { name: 'Prototype settings' })).not.toBeVisible();
     await expect(runtime.getByRole('navigation', { name: 'Preview controls' })).toHaveCount(0);
     await expect(page.getByLabel('Preview page')).toHaveValue('home');
-    const header = page.locator('main > header');
-    await expect(header.getByLabel('Preview page')).toBeVisible();
-    await expect(header.getByLabel('Preview layout')).toBeVisible();
-    await expect(header.getByLabel('Viewport preset')).toBeVisible();
-    await expect(header.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
-    await expect(
-        header.getByRole('button', { name: 'Prototype settings', exact: true })
-    ).toBeVisible();
-    // Header buttons share a bottom edge with the labelled selects.
-    const bottom = async (name: string) => {
-        const box = await header.getByRole('button', { name, exact: true }).boundingBox();
-
-        return Math.round(box!.y + box!.height);
-    };
-    expect(await bottom('Share prototype')).toBe(await bottom('Restart prototype'));
-    const restart = header.getByRole('button', { name: 'Restart prototype' });
+    const bar = page.locator('main > header');
+    const controls = page.getByRole('group', { name: 'Prototype controls' });
+    await expect(controls.getByLabel('Preview page')).toBeVisible();
+    await expect(controls.getByLabel('Preview layout')).toBeVisible();
+    await expect(controls.getByRole('button', { name: 'Device', exact: true })).toBeVisible();
+    await expect(controls.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
+    // The bar holds the page's own actions; Settings, Flow and Download wait under More.
+    await expect(bar.getByRole('button', { name: 'Share prototype', exact: true })).toBeVisible();
+    await expect(bar.getByRole('button', { name: 'Prototype settings' })).toHaveCount(0);
+    const more = bar.getByRole('button', { name: 'More', exact: true });
+    await more.click();
+    await expect(bar.getByRole('link', { name: 'Flow', exact: true })).toBeVisible();
+    await expect(bar.getByRole('button', { name: 'Download prototype' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(more).toBeFocused();
+    const restart = controls.getByRole('button', { name: 'Restart prototype' });
     await restart.focus();
     await page.keyboard.press('Enter');
     await expect(restart).toBeFocused();
     const input = runtime.getByRole('textbox', { name: 'Your name', exact: true });
     await input.fill('Ada');
     await page.screenshot({ path: 'test-results/prototype-header-wide.png' });
-    await settings.click();
-    await page.getByLabel('Prototype width', { exact: true }).focus();
+    const device = controls.getByRole('button', { name: 'Device', exact: true });
+    let devices = await openDeviceMenu(page);
+    await expect(devices.getByLabel('Search devices')).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(settings).toBeFocused();
-    await page.getByLabel('Viewport preset').selectOption('desktop');
+    await expect(device).toBeFocused();
+    devices = await openDeviceMenu(page);
+    await devices.getByRole('button', { name: 'Laptop 1280 × 800' }).click();
+    await expect(devices).toBeHidden();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '1280');
     await expect(input).toHaveValue('Ada');
-    await page.getByLabel('Viewport preset').selectOption('mobile');
+    await expect(device).toContainText('Laptop');
+    devices = await openDeviceMenu(page);
+    await devices.getByRole('button', { name: 'iPhone 15 393 × 852' }).click();
     await expect(input).toHaveValue('Ada');
-    // Custom stays chosen, so the menu matches what the person picked.
-    await page.getByLabel('Viewport preset').selectOption('custom');
-    await page
-        .getByRole('dialog', { name: 'Prototype settings' })
-        .getByRole('button', { name: 'Close', exact: true })
-        .click();
-    await expect(page.getByLabel('Viewport preset')).toHaveValue('custom');
-    await page.getByLabel('Viewport preset').selectOption('mobile');
-    await expect(page.getByLabel('Viewport preset')).toHaveValue('mobile');
+    await expect(device).toContainText('iPhone 15');
     await expect(page.getByRole('region', { name: 'Prototype settings' })).toHaveCount(0);
     await page.setViewportSize({ width: 320, height: 740 });
-    await expect(page.getByRole('button', { name: 'Restart prototype', exact: true })).toHaveText(
-        'Restart'
-    );
     await expect(page.getByLabel('Preview page')).toBeInViewport({ ratio: 1 });
-    await expect(page.getByLabel('Viewport preset')).toBeInViewport({ ratio: 1 });
-    await expect(settings).toBeInViewport({ ratio: 1 });
-    await expect(header.getByLabel('Preview layout')).toBeInViewport({ ratio: 1 });
-    expect(await header.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
-        true
-    );
-    // The wrapped phone header scrolls away instead of covering the player.
-    await expect(header).toHaveCSS('position', 'relative');
+    await expect(device).toBeInViewport({ ratio: 1 });
+    await expect(restart).toBeInViewport({ ratio: 1 });
+    await expect(more).toBeInViewport({ ratio: 1 });
+    await expect(controls.getByLabel('Preview layout')).toBeInViewport({ ratio: 1 });
+    for (const element of [bar, controls]) {
+        expect(await element.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    }
     await page.screenshot({ path: 'test-results/prototype-phone.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await more.click();
     await page.getByRole('link', { name: 'Flow', exact: true }).click();
     // Flow has no side editor: one menu, opened from the row, holds every choice.
     await expect(page.getByRole('complementary')).toHaveCount(0);
@@ -309,9 +303,7 @@ test('keeps navigation in an older runtime without sending unsupported player co
     await expect(player(page).getByLabel('Preview page')).toBeVisible();
     await expect(page.getByLabel('Preview page')).toHaveCount(0);
     await expect(player(page).getByText('Unsupported command')).toHaveCount(0);
-    await expect(
-        page.getByRole('button', { name: 'Prototype settings', exact: true })
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'More', exact: true })).toBeVisible();
 });
 
 test('picks the prototype size from phones, tablets and desktops, upright or turned', async ({
@@ -320,29 +312,47 @@ test('picks the prototype size from phones, tablets and desktops, upright or tur
     await seed(page);
     await page.goto('/prototype');
     const runtime = player(page);
-    await page.getByRole('button', { name: 'Prototype settings', exact: true }).click();
-    const settings = page.getByRole('dialog', { name: 'Prototype settings' });
-    const devices = settings.getByRole('group', { name: 'Device' });
+    const device = page.getByRole('button', { name: 'Device', exact: true });
+    const landscape = page.getByRole('button', { name: 'Landscape', exact: true });
 
-    await devices.getByRole('button', { name: 'Tablets' }).click();
-    await devices.getByRole('radio', { name: 'iPad Air 820 × 1180' }).check();
-    await expect(settings.getByLabel('Prototype width', { exact: true })).toHaveValue('820');
-    await expect(settings.getByLabel('Prototype height', { exact: true })).toHaveValue('1180');
+    let menu = await openDeviceMenu(page);
+    await menu
+        .getByRole('group', { name: 'Tablets' })
+        .getByRole('button', { name: 'iPad Air 820 × 1180' })
+        .click();
+    await expect(device).toContainText('iPad Air');
+    await expect(device).toContainText('820 × 1180');
 
-    await devices.getByRole('button', { name: 'Landscape' }).click();
-    await expect(devices.getByRole('radio', { name: 'iPad Air 1180 × 820' })).toBeChecked();
-    await expect(settings.getByLabel('Prototype width', { exact: true })).toHaveValue('1180');
+    await landscape.click();
+    await expect(landscape).toHaveAttribute('aria-pressed', 'true');
+    await expect(device).toContainText('1180 × 820');
+    menu = await openDeviceMenu(page);
+    await expect(menu.getByRole('button', { name: 'iPad Air 1180 × 820' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+    );
+    await expect(menu.getByLabel('Prototype width', { exact: true })).toHaveValue('1180');
 
-    await devices.getByRole('button', { name: 'Phones' }).click();
-    await devices.getByRole('radio', { name: 'iPhone 15 852 × 393' }).check();
-    await devices.getByRole('button', { name: 'Landscape' }).click();
-    await expect(devices.getByRole('radio', { name: 'iPhone 15 393 × 852' })).toBeChecked();
+    await menu.getByLabel('Search devices').fill('iphone 15');
+    await expect(menu.getByRole('group', { name: 'Tablets' })).toHaveCount(0);
+    await menu.getByRole('button', { name: 'iPhone 15 852 × 393' }).click();
+    await landscape.click();
+    await expect(landscape).toHaveAttribute('aria-pressed', 'false');
+    await expect(device).toContainText('393 × 852');
 
-    await settings.getByLabel('Prototype width', { exact: true }).fill('500');
-    await settings.getByLabel('Prototype width', { exact: true }).press('Tab');
-    await expect(devices.getByRole('radio', { checked: true })).toHaveCount(0);
+    menu = await openDeviceMenu(page);
+    await menu.getByLabel('Search devices').fill('watch');
+    await expect(menu.getByText('No device matches “watch”.')).toBeVisible();
+    await menu.getByLabel('Prototype width', { exact: true }).fill('500');
+    await menu.getByLabel('Prototype width', { exact: true }).press('Tab');
+    await expect(menu.getByLabel('Prototype height', { exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(device).toContainText('Custom size');
+    await expect(device).toContainText('500 × 852');
+    await expect(runtime.locator('svg')).toHaveAttribute('width', '500');
 
-    await devices.getByRole('radio', { name: 'iPhone 15 393 × 852' }).check();
-    await settings.getByRole('button', { name: 'Close', exact: true }).click();
-    await expect(runtime.locator('svg')).toHaveAttribute('width', '393');
+    menu = await openDeviceMenu(page);
+    await menu.getByRole('button', { name: 'Desktop 1440 × 900' }).click();
+    await expect(landscape).toBeDisabled();
+    await expect(runtime.locator('svg')).toHaveAttribute('width', '1440');
 });

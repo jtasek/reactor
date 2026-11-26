@@ -32,7 +32,7 @@ export interface FlowLayout {
 }
 
 export const cardHeight = (rows: number) =>
-    FLOW.thumbHeight + FLOW.nameHeight + (rows + 1) * FLOW.rowHeight;
+    FLOW.thumbHeight + FLOW.nameHeight + rows * FLOW.rowHeight;
 
 /** Where a transition row's link leaves its card: the middle of the row's trailing edge. */
 export const rowAnchor = (card: FlowCard, row: number): Point => ({

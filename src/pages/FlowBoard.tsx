@@ -68,10 +68,15 @@ export function walkScreen(event: React.KeyboardEvent<HTMLElement>, scroll = fal
     if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || event.altKey) {
         return;
     }
-    const stops = [
+    const all = [
         ...(event.currentTarget
             .closest('[data-flow-screen]')
             ?.querySelectorAll<HTMLElement>('[data-flow-stop]') ?? [])
+    ];
+    // Add link sits beside the name but comes last, after the rows it adds to.
+    const stops = [
+        ...all.filter((stop) => !stop.hasAttribute('data-flow-add')),
+        ...all.filter((stop) => stop.hasAttribute('data-flow-add'))
     ];
     const next = stops[stops.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)];
     if (next) {
@@ -134,7 +139,6 @@ const Rows = memo(function Rows({
     selectedLink,
     canConnect,
     onLinkMenu,
-    onAddMenu,
     onRemove,
     onLinkStart
 }: {
@@ -142,7 +146,6 @@ const Rows = memo(function Rows({
     /** The selected link, when it is one of this card's. */
     selectedLink?: string;
     onLinkMenu: (key: string, at: Point) => void;
-    onAddMenu: (screenId: string, at: Point) => void;
     onRemove: (key: string) => void;
     canConnect: boolean;
     /** A press on a row's dot, to drag its link to another Screen. */
@@ -220,21 +223,6 @@ const Rows = memo(function Rows({
                     </li>
                 );
             })}
-            <li>
-                <button
-                    className={styles.add}
-                    aria-haspopup="menu"
-                    aria-label={`Add link on ${state.name}`}
-                    data-flow-add={state.id}
-                    tabIndex={-1}
-                    data-flow-stop=""
-                    onKeyDown={walkScreen}
-                    onClick={(event) => onAddMenu(state.id, below(event.currentTarget))}
-                >
-                    <Icon icon={{ component: Plus, size: 14 }} />
-                    Add link
-                </button>
-            </li>
         </ul>
     );
 });
@@ -912,6 +900,21 @@ export function FlowBoard({
                                     <span className={styles.screenName}>{state.name}</span>
                                 </button>
                                 <button
+                                    className={styles.add}
+                                    aria-haspopup="menu"
+                                    aria-label={`Add link on ${state.name}`}
+                                    data-flow-add={state.id}
+                                    tabIndex={-1}
+                                    data-flow-stop=""
+                                    onKeyDown={walkScreen}
+                                    onClick={(event) =>
+                                        openAddMenu(state.id, below(event.currentTarget))
+                                    }
+                                >
+                                    <Icon icon={{ component: Plus, size: 14 }} />
+                                    Add link
+                                </button>
+                                <button
                                     className={styles.more}
                                     aria-label={`More for ${state.name}`}
                                     aria-haspopup="menu"
@@ -943,7 +946,6 @@ export function FlowBoard({
                                         : undefined
                                 }
                                 onLinkMenu={openLinkMenu}
-                                onAddMenu={openAddMenu}
                                 onRemove={removeLink}
                                 canConnect={canConnect}
                                 onLinkStart={startLink}
