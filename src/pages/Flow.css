@@ -432,13 +432,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* Sits over the picture's top left corner. */
 .badge {
-    flex: none;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
+    position: absolute;
+    left: -8px;
+    top: -9px;
+    z-index: 1;
+    padding: 1px 8px;
+    border-radius: 100rem;
     font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
     color: var(--success-color);
-    background: var(--success-background);
+    background: color-mix(in srgb, var(--success-color) 12%, var(--surface));
+    outline: 2px solid var(--surface);
+    pointer-events: none;
 }
 .flow .more {
     flex: none;
@@ -511,15 +518,32 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* The action, as a quiet pill at the end of the row: a link's pill is blue. */
 .effect {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 100rem;
+    color: var(--text-secondary-color);
+    background: var(--field-background);
+    font-size: var(--font-size-caption);
+}
+.effect > span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: right;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
+}
+.effect[data-effect='go'] {
+    color: var(--selection-color);
+    background: color-mix(in srgb, var(--selection-color) 10%, var(--surface));
+}
+.effect[data-effect='go'] svg {
+    color: var(--selection-color);
 }
 .screen li > button[data-inactive='true']:not([aria-pressed='true']) .control {
     color: var(--text-secondary-color);
@@ -531,6 +555,9 @@
 .screen li > button[aria-pressed='true'] .effect,
 .screen li > button[aria-pressed='true'] svg {
     color: color-mix(in srgb, var(--on-selection-color) 88%, transparent);
+}
+.screen li > button[aria-pressed='true'] .effect {
+    background: color-mix(in srgb, var(--on-selection-color) 18%, transparent);
 }
 .problem {
     flex: none;

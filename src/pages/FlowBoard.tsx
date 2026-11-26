@@ -7,7 +7,16 @@ import React, {
     useRef,
     useState
 } from 'react';
-import { Eye, MoreHorizontal, Plus, Replace, ToggleRight } from 'lucide-react';
+import {
+    ArrowRight,
+    CornerDownLeft,
+    Eye,
+    MoreHorizontal,
+    MousePointerClick,
+    Plus,
+    Replace,
+    ToggleRight
+} from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import {
     ScreenThumbnail,
@@ -36,12 +45,19 @@ const TOOLBAR_BAND = 68;
 /** A press that moves less than this selects the screen; more drags its card. */
 const DRAG_SLIP = 3;
 
-const EFFECT_ICONS: Partial<Record<Effect['kind'], typeof Eye>> = {
+const EFFECT_ICONS: Record<Effect['kind'], typeof Eye> = {
+    go: ArrowRight,
     variant: Replace,
     toggleVisibility: Eye,
     setState: ToggleRight,
     resetState: ToggleRight,
     toggleState: ToggleRight
+};
+
+/** What sets a link off: a press, or Enter in a field. */
+const EVENT_ICONS: Record<Transition['event'], typeof Eye> = {
+    tap: MousePointerClick,
+    enter: CornerDownLeft
 };
 
 /**
@@ -135,7 +151,6 @@ const Rows = memo(function Rows({
     return (
         <ul>
             {state.transitions.map((transition) => {
-                const EffectIcon = EFFECT_ICONS[transition.effect.kind];
                 const guard = guardText(transition.guard);
                 const id = `flow-row-${state.id}-${transition.key}`.replace(/[^\w-]/g, '_');
                 const editable = canConnect && transition.editable && !transition.shared;
@@ -166,11 +181,21 @@ const Rows = memo(function Rows({
                                 });
                             }}
                         >
-                            {EffectIcon && <Icon icon={{ component: EffectIcon, size: 16 }} />}
+                            <Icon icon={{ component: EVENT_ICONS[transition.event], size: 14 }} />
                             <span className={styles.control}>{transition.control}</span>
-                            <span className={styles.effect}>
-                                {effectText(transition.effect)}
-                                {guard && ` · ${guard}`}
+                            <span className={styles.effect} data-effect={transition.effect.kind}>
+                                <Icon
+                                    icon={{
+                                        component: EFFECT_ICONS[transition.effect.kind],
+                                        size: 12
+                                    }}
+                                />
+                                <span>
+                                    {transition.effect.kind === 'go'
+                                        ? transition.effect.name || 'Missing page'
+                                        : effectText(transition.effect)}
+                                    {guard && ` · ${guard}`}
+                                </span>
                             </span>
                             {transition.broken && (
                                 <span className={styles.problem} title={transition.broken} />
@@ -813,6 +838,11 @@ export function FlowBoard({
                             role="group"
                             aria-label={`Page ${state.name}`}
                         >
+                            {isStart && (
+                                <span className={styles.badge} data-flow-start={state.id}>
+                                    Start
+                                </span>
+                            )}
                             {/* A pointer shortcut; the name below is the keyboard's way in. */}
                             <button
                                 className={styles.thumb}
@@ -879,11 +909,6 @@ export function FlowBoard({
                                     onPointerUp={gripUp}
                                     onPointerCancel={gripCancel}
                                 >
-                                    {isStart && (
-                                        <span className={styles.badge} data-flow-start={state.id}>
-                                            Start
-                                        </span>
-                                    )}
                                     <span className={styles.screenName}>{state.name}</span>
                                 </button>
                                 <button
