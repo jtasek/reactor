@@ -24,21 +24,25 @@ export const placedPoint = (start: Point, current: Point, scale: number): PathPo
           }
         : { x: start.x, y: start.y };
 
+/** The points the Pen has placed in the open document; a path begun in another is dropped. */
+const draftPoints = ({ tools, currentDocumentId }: Context['state']): PathPoint[] =>
+    tools.penDraft?.documentId === currentDocumentId ? tools.penDraft.points : [];
+
 const near = (a: Point, b: Point, scale: number) =>
     Math.hypot(a.x - b.x, a.y - b.y) * scale <= PEN_CLOSE_DISTANCE;
 
 /** Adds the path drawn so far to the document, when it has a segment, and starts afresh. */
 export const finishPath = ({ state, actions }: Context, closed = false) => {
-    const points = mapPathPoints(state.tools.penDraft, ({ x, y }) => ({ x, y }));
+    const points = mapPathPoints(draftPoints(state), ({ x, y }) => ({ x, y }));
 
-    state.tools.penDraft = [];
+    state.tools.penDraft = null;
     if (points.length > 1) {
         actions.drawShape({ type: 'path', points, selected: true, ...(closed && { closed }) });
     }
 };
 
 export const DesignPen: FC = () => {
-    const draft = useAppState((state) => state.tools.penDraft);
+    const draft = useAppState(draftPoints);
     const scale = useAppState((state) => state.currentDocument.camera.scale);
     const { current, dragging, start } = usePointer();
     const at = dragging ? start : current;
@@ -102,18 +106,23 @@ export const PenCommand: Command = {
     execute: (context) => {
         const { state } = context;
         const { current, start } = state.events.pointer;
-        const draft = state.tools.penDraft;
+        const draft = draftPoints(state);
         const scale = state.currentDocument.camera.scale;
 
         if (draft.length > 2 && near(draft[0], start, scale)) {
             finishPath(context, true);
         } else if (draft.length > 1 && near(draft[draft.length - 1], start, scale)) {
             finishPath(context);
+        } else if (state.tools.penDraft && draft.length > 0) {
+            state.tools.penDraft.points.push(placedPoint(start, current, scale));
         } else {
-            draft.push(placedPoint(start, current, scale));
+            state.tools.penDraft = {
+                documentId: state.currentDocumentId,
+                points: [placedPoint(start, current, scale)]
+            };
         }
     },
-    shouldDeactivate: ({ state }) => state.tools.penDraft.length === 0
+    shouldDeactivate: ({ state }) => draftPoints(state).length === 0
 };
 
 export const PenTool: Tool = {
@@ -132,7 +141,7 @@ export const FinishPathCommand: Command = {
     shortcut: 'enter,escape',
     places: [],
     keysOnly: true,
-    canExecute: ({ state }) => state.tools.penDraft.length > 0,
+    canExecute: ({ state }) => draftPoints(state).length > 0,
     execute: (context) => {
         finishPath(context);
         context.actions.tools.resetTools();
@@ -147,8 +156,8 @@ export const RemovePathPointCommand: Command = {
     shortcut: 'delete,backspace',
     places: [],
     keysOnly: true,
-    canExecute: ({ state }) => state.tools.penDraft.length > 0,
+    canExecute: ({ state }) => draftPoints(state).length > 0,
     execute: ({ state }) => {
-        state.tools.penDraft.pop();
+        state.tools.penDraft?.points.pop();
     }
 };

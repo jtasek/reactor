@@ -63,7 +63,7 @@ describe('the Pen', () => {
                 { x: 50, y: 0 }
             ]
         });
-        expect(store.state.tools.penDraft).toEqual([]);
+        expect(store.state.tools.penDraft?.points ?? []).toEqual([]);
         expect(store.state.tools.activeToolsIds).toEqual(['select']);
         expect(leaveSomething).not.toHaveBeenCalled();
 
@@ -78,9 +78,9 @@ describe('the Pen', () => {
         click(store, 50, 0);
 
         expect(store.actions.events.pressShortcut({ ...escape, key: 'Backspace' })).toBe(true);
-        expect(store.state.tools.penDraft).toEqual([{ x: 0, y: 0 }]);
+        expect(store.state.tools.penDraft?.points).toEqual([{ x: 0, y: 0 }]);
         store.actions.events.pressShortcut({ ...escape, key: 'Backspace' });
-        expect(store.state.tools.penDraft).toEqual([]);
+        expect(store.state.tools.penDraft?.points ?? []).toEqual([]);
         expect(store.actions.events.pressShortcut({ ...escape, key: 'Backspace' })).toBe(false);
     });
 
@@ -91,7 +91,7 @@ describe('the Pen', () => {
         store.actions.tools.activateTool('select');
 
         expect(store.state.currentDocument.shapesIds).toHaveLength(0);
-        expect(store.state.tools.penDraft).toEqual([]);
+        expect(store.state.tools.penDraft?.points ?? []).toEqual([]);
     });
 });
 
@@ -100,5 +100,21 @@ describe('Enter and Escape without a path being drawn', () => {
         const { store } = createTestStore();
 
         expect(store.actions.events.pressShortcut({ ...escape, key: 'Enter' })).toBe(false);
+    });
+
+    it('drops a path begun in another document', () => {
+        const { store } = createTestStore();
+        const first = store.state.currentDocumentId;
+        store.actions.tools.activateTool('pen');
+        click(store, 0, 0);
+        click(store, 50, 0);
+        store.actions.newDocument();
+        expect(store.state.currentDocumentId).not.toBe(first);
+
+        click(store, 10, 10);
+        expect(store.state.tools.penDraft?.points).toEqual([{ x: 10, y: 10 }]);
+        store.actions.openDocument(first);
+        store.actions.events.pressShortcut(escape);
+        expect(store.state.documents[first].shapesIds).toHaveLength(0);
     });
 });

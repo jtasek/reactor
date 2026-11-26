@@ -22,6 +22,6 @@ export interface Tools {
     imageToPlace?: ImageToPlace;
     /** How much the Pencil smooths a stroke when it is drawn. */
     pencilSmoothing: Smoothing;
-    /** The points the Pen has placed for the path it is drawing. */
-    penDraft: PathPoint[];
+    /** The path the Pen is drawing: the points placed so far, in the document they belong to. */
+    penDraft: { documentId: string; points: PathPoint[] } | null;
 }
