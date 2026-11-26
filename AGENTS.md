@@ -231,6 +231,10 @@ re-renders.** Components never mutate state directly.
   answers the same (so a Shape reads `pointer.keepsShapeBounds`, not the gesture).
   Write store keys that derived values read with `setIfChanged` (`src/app/untracked.ts`)
   on hot paths: every write marks those derived values changed, even of the same value.
+  A component that reads a placed Screen view (`pointerDocument`) reads it through
+  `useStoreAnswer` (`src/app/storeAnswer.ts`), not `useAppState`: the view is read
+  through every shape of it, and `useAppState` subscribes to each of those paths per render.
+  `pointerViewGeometry` keeps the placed view while only the selection changes.
   Read the shape list, or every shape, to depend
   on which shapes exist; `Object.keys`, `in` and `Object.hasOwn` on the table are not
   tracked, so a Shape must not decide what to draw by them.

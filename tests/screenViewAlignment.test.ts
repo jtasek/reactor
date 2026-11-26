@@ -98,6 +98,20 @@ it('keeps the placed boxes through a press that changes nothing they read', () =
     expect(store.state.alignmentItems).toBe(items);
 });
 
+it('keeps the placed view through a selection change and draws the new selection', () => {
+    const { store, ids } = setup();
+    const geometry = store.state.pointerViewGeometry;
+
+    expect(geometry).not.toBeNull();
+    expect(pointerDocument(store.state).shapes[ids[0]].selected).toBe(true);
+    store.actions.unselectShape(ids[0]);
+
+    expect(store.state.pointerViewGeometry).toBe(geometry);
+    expect(pointerDocument(store.state).shapes[ids[0]].selected).toBe(false);
+    expect(pointerDocument(store.state).shapes[ids[1]].selected).toBe(true);
+    expect(pointerDocument(store.state).shapeSelection).toEqual(ids.slice(1));
+});
+
 it.each([
     [SpaceBetweenHorizontallyCommand, { x: 250, y: 170 }],
     [SpaceEquallyHorizontallyCommand, { x: 255, y: 170 }],

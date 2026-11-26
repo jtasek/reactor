@@ -175,12 +175,12 @@ export const alignmentItems = derived((state: Context['state']) => {
     return editorLoaded() ? editorHelpers().alignment.placedItems(state, items) : [];
 });
 
-/** The edited Screen view's placed document, worked out once per change: see `pointerDocument`. */
-export const pointerViewDocument = derived((state: Context['state']) => {
+/** The edited Screen view's placed geometry, kept while only the selection changes. */
+export const pointerViewGeometry = derived((state: Context['state']) => {
     const address = state.events.pointer.screenView;
 
     return address && address.documentId === state.currentDocument.id && editorLoaded()
-        ? editorHelpers().pointer.placedPointerDocument(state, address)
+        ? editorHelpers().pointer.placedPointerDocument(state, address, false)
         : null;
 });
 

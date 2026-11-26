@@ -124,7 +124,11 @@ export const setScreenView = ({ state }: Context, viewId: string | null) => {
     }
 
     const address = viewId ? { documentId: state.currentDocumentId, viewId } : null;
-    pointer.screenView = address && screenViewGestureTarget(state, address) ? address : null;
+    setIfChanged(
+        pointer,
+        'screenView',
+        address && screenViewGestureTarget(state, address) ? address : null
+    );
 };
 
 export const setStartPosition: ActionWithParam<Point> = ({ state }, position) => {

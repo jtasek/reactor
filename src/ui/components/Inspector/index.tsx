@@ -4,7 +4,8 @@ import { GuideInspector } from './GuideInspector';
 import { FrameInspector } from './FrameInspector';
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { Inspector } from './Inspector';
-import { useActions, useAppState, useSelectedShapesProperties } from 'src/app/hooks';
+import { useActions, useAppState } from 'src/app/hooks';
+import { useSelectedShapesProperties } from 'src/app/selectionHooks';
 import { useSelectedVariables, useTextTemplateProblems, useVariables } from 'src/app/variableHooks';
 import { selectionIdentity, type SelectionIdentity } from '../selectionIdentity';
 

@@ -9,12 +9,11 @@ import {
 } from 'overmind-react';
 import { commandsFor, commandsIn, getCommands } from './actions';
 import { Context } from '.';
-import { useCallback, useLayoutEffect, useReducer, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
 import { isShapeLocked } from './utils';
 import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
-import { editorHelpers, editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
-import { PropertyRow, sharedProperties } from './properties';
+import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { componentSource } from './componentSource';
 import { localComponents } from './componentSelection';
 import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
@@ -145,35 +144,6 @@ export const useDocumentFilter = () => {
 
 export const useSelectedShapesIds = () => {
     return useAppState((state) => state.currentDocument.selectedShapesIds);
-};
-
-/**
- * The properties the selected shapes share, as the inspector lists them. During a
- * gesture the shapes are read untracked, and during a marquee the selection too,
- * so its moves do not render the inspector again; it shows the new values as the
- * gesture ends.
- */
-export const useSelectedShapesProperties = () => {
-    const held = useRef<PropertyRow[]>([]);
-
-    return useAppState((state) => {
-        const document = state.currentDocument;
-        const { kind } = state.events.pointer.gesture;
-
-        if (kind !== 'idle') {
-            return held.current;
-        }
-
-        const rows = sharedProperties(document.selectedShapes, document);
-        if (state.events.pointer.screenView && editorLoaded()) {
-            held.current = editorHelpers().pointer.selectedViewProperties(state, rows);
-
-            return held.current;
-        }
-        held.current = rows;
-
-        return held.current;
-    });
 };
 
 export const useLayersIds = () => {
