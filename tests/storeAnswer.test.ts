@@ -73,3 +73,20 @@ it('hears of a shape added to a table it went through', () => {
         )
     ).toBe(1);
 });
+
+it('hears at once of a flush between its answer and its subscription', () => {
+    const store = setup();
+    const [first] = store.state.currentDocument.shapesIds;
+    const answer = storeAnswer(
+        storeOf(store.reaction) as IProxyStateTree<object, unknown>,
+        (state) => state.currentDocument.selectedShapesIds
+    );
+    let heard = 0;
+
+    answer.read();
+    store.actions.selectShape(first);
+    const stop = answer.subscribe(() => heard++);
+    stop();
+
+    expect(heard).toBe(1);
+});

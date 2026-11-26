@@ -611,6 +611,8 @@ export function placedPointerDocument(
 /** The document fields that change with the selection. */
 const SELECTION_FIELDS = [
     'shapeSelection',
+    'selectedFrameId',
+    'surfaceSelected',
     'selectedShapesIds',
     'selectedShapes',
     'selectedGroupsIds',

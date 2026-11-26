@@ -10,12 +10,8 @@ import { projectScreenViews } from 'src/app/screenProjection';
 import { themeColors } from 'src/app/themeColors';
 import { artworkModes } from 'src/app/modeHooks';
 import { boxCenter, getShapeBounds } from 'src/app/utils';
-import {
-    useAppState,
-    useGesture,
-    useShapesInSelectedGroupsIds,
-    useCameraScale
-} from 'src/app/hooks';
+import { useAppState, useGesture, useCameraScale } from 'src/app/hooks';
+import { useShapesInSelectedGroupsIds } from 'src/app/selectionHooks';
 import {
     canEditThroughView,
     componentScreenViews,
