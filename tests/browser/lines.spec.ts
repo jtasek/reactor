@@ -26,3 +26,18 @@ test('Shift snaps a line to 45°, and Shift+L draws an arrow', async ({ page }) 
     await expect(shapes(page)).toHaveCount(2);
     await expect(shapes(page).last().locator('polyline')).toHaveCount(1);
 });
+
+test('the Inspector adds or removes a line’s arrowhead', async ({ page }) => {
+    await openEditor(page, ['Inspector']);
+    await page.keyboard.press('l');
+    await pointer(page, 'pointerdown', { x: 300, y: 300 });
+    await pointer(page, 'pointermove', { x: 400, y: 350 });
+    await pointer(page, 'pointerup', { x: 400, y: 350 });
+
+    const head = shapes(page).first().locator('polyline');
+    await expect(head).toHaveCount(0);
+    await page.getByRole('button', { name: 'Arrowhead', exact: true }).click();
+    await expect(head).toHaveCount(1);
+    await page.getByRole('button', { name: 'No arrowhead', exact: true }).click();
+    await expect(head).toHaveCount(0);
+});
