@@ -32,7 +32,12 @@ export type ScreenViewContainer = Exclude<HandleOwner, { shapeId: string }>;
  * Keep the focused instance's footprint stable while its master bounds change.
  * An editing action may request one view; focus still resolves the full node budget.
  */
-export function componentScreenViews(state: Context['state'], position?: Point, viewId?: string) {
+export function componentScreenViews(
+    state: Context['state'],
+    position?: Point,
+    viewId?: string,
+    flags = true
+) {
     const document = state.currentDocument;
     const focus = state.componentEditingReturn?.componentOrigin;
     const instance = focus ? document.shapes[focus.instanceId] : undefined;
@@ -43,7 +48,7 @@ export function componentScreenViews(state: Context['state'], position?: Point, 
         instance?.type !== 'instance' ||
         instance.componentId !== focus.componentId
     ) {
-        return placedScreenViews(document, position, viewId);
+        return placedScreenViews(document, position, viewId, flags);
     }
 
     const views = projectScreenViews(
@@ -65,8 +70,12 @@ export function componentScreenViews(state: Context['state'], position?: Point, 
     return viewId === undefined ? views : views.filter((item) => item.view.id === viewId);
 }
 
-/** Reuse local geometry for drawing and hit testing; selection is read separately. */
-function placedScreenViews(document: Document, position?: Point, viewId?: string) {
+/**
+ * Reuse local geometry for drawing and hit testing; selection is read separately.
+ * Without `flags`, shapes are placed unselected and inactive, so the result does
+ * not depend on which shapes are selected: see `pointerViewGeometry`.
+ */
+function placedScreenViews(document: Document, position?: Point, viewId?: string, flags = true) {
     // Geometry has already enforced the shared node budget. Place only the view an
     // editing action needs, avoiding copies and selection reads for every sibling.
     const geometry = document.screenViewGeometry;
@@ -98,8 +107,8 @@ function placedScreenViews(document: Document, position?: Point, viewId?: string
                 shapes: projection.shapes.map((source) => {
                     const shape = json(source);
                     translateShape(shape, offset);
-                    shape.selected = document.shapes[shape.id]?.selected ?? false;
-                    shape.active = document.shapes[shape.id]?.active ?? false;
+                    shape.selected = flags && (document.shapes[shape.id]?.selected ?? false);
+                    shape.active = flags && (document.shapes[shape.id]?.active ?? false);
 
                     return shape;
                 })
@@ -238,7 +247,8 @@ export function screenViewGestureTarget(
 function resolveScreenView(
     state: Context['state'],
     address: ScreenViewAddress | null,
-    localGeometry: boolean
+    localGeometry: boolean,
+    flags = true
 ) {
     const source = screenViewSource(state, address);
 
@@ -248,7 +258,7 @@ function resolveScreenView(
 
     const position =
         localGeometry && !state.currentDocument.editingComponentId ? { x: 0, y: 0 } : undefined;
-    const projection = componentScreenViews(state, position, source.view.id)[0]?.projection;
+    const projection = componentScreenViews(state, position, source.view.id, flags)[0]?.projection;
 
     if (!projection) {
         return null;
@@ -550,7 +560,10 @@ export function pointerDocument(state: Context['state']): Document {
         return cached;
     }
 
-    const placedDocument = state.pointerViewDocument ?? placedPointerDocument(state, address);
+    const geometry = state.pointerViewGeometry;
+    const placedDocument = geometry
+        ? withShapeFlags(geometry, document)
+        : placedPointerDocument(state, address);
 
     if (key) {
         marqueeDocuments.set(key, placedDocument);
@@ -561,17 +574,22 @@ export function pointerDocument(state: Context['state']): Document {
 
 export function placedPointerDocument(
     state: Context['state'],
-    address: ScreenViewAddress
+    address: ScreenViewAddress,
+    flags = true
 ): Document {
     const document = state.currentDocument;
 
-    const projected = editableScreenView(state, address)?.projection;
+    const projected = resolveScreenView(state, address, false, flags)?.projection;
     const members = document.components[document.editingComponentId ?? '']?.shapesIds;
     const shapes = (projected?.shapes ?? []).filter(
         (shape) => !members || members.includes(shape.id)
     );
 
-    const placed = placedScreenDocument(document, shapes, projected?.componentRotation);
+    const placed = placedScreenDocument(
+        flags ? document : unselectedFields(document),
+        shapes,
+        projected?.componentRotation
+    );
 
     return {
         ...placed,
@@ -587,6 +605,64 @@ export function placedPointerDocument(
                 groupFrame(placed, placed.components[component.id]) ?? undefined
             ])
         )
+    };
+}
+
+/** The document fields that change with the selection. */
+const SELECTION_FIELDS = [
+    'shapeSelection',
+    'selectedShapesIds',
+    'selectedShapes',
+    'selectedGroupsIds',
+    'selectedLayersIds',
+    'selectedComponentsIds',
+    'selectionExtent',
+    'movableSelectedItems',
+    'editableSelectedShapesIds'
+] as const satisfies readonly (keyof Document)[];
+
+/**
+ * The document without its `SELECTION_FIELDS`, read field by field: spreading
+ * the document would read the selection too.
+ */
+function unselectedFields(document: Document): Document {
+    const skipped = new Set<string>(SELECTION_FIELDS);
+
+    return Object.fromEntries(
+        Object.keys(untracked(document))
+            .filter((key) => !skipped.has(key))
+            .map((key) => [key, document[key as keyof Document]])
+    ) as unknown as Document;
+}
+
+/**
+ * `placed` with the document's `SELECTION_FIELDS`, and its shapes drawn selected
+ * or active as the document's are. Reads the selection list, not every shape's
+ * `selected` flag, and copies only the shapes it marks.
+ */
+function withShapeFlags(placed: Document, document: Document): Document {
+    const shapes = { ...placed.shapes };
+
+    for (const id of document.shapeSelection) {
+        if (shapes[id] && document.shapes[id]?.selected) {
+            shapes[id] = { ...shapes[id], selected: true };
+        }
+    }
+    // Untracked: a shape turns active as the pointer enters it, and what reads
+    // hover follows the pointer already. Reading each shape costs a click inside
+    // a large view tens of milliseconds.
+    const plain = untracked(document.shapes);
+
+    for (const id of placed.shapesIds) {
+        if (plain[id]?.active) {
+            shapes[id] = { ...shapes[id], active: true };
+        }
+    }
+
+    return {
+        ...placed,
+        ...Object.fromEntries(SELECTION_FIELDS.map((key) => [key, document[key]])),
+        shapes
     };
 }
 
