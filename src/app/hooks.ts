@@ -233,11 +233,6 @@ export const useShape = (id: string) => {
     return useAppState((state) => renderedShape(state.currentDocument, id));
 };
 
-/** Whether the shape can be edited: see `isShapeLocked`. */
-export const useShapeLocked = (id: string) => {
-    return useAppState((state) => isShapeLocked(state.currentDocument, id));
-};
-
 export const useShapes = () => {
     return useCurrentDocument()?.shapes ?? [];
 };
