@@ -151,6 +151,9 @@
     background: var(--selection-color);
     font-weight: var(--font-weight-semibold);
 }
+.prototype .barActions > .flowLink:hover {
+    background: color-mix(in srgb, var(--selection-color) 88%, black);
+}
 .popoverRoot {
     position: relative;
     display: inline-flex;

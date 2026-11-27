@@ -70,6 +70,14 @@ test('the AI bar on Prototype outlines a proposed link in the player until it is
 
     await bar(page).getByRole('button', { name: 'Close AI bar' }).click();
     await expect(bar(page)).toHaveCount(0);
+    const open = page.getByRole('button', { name: 'AI bar' });
+    await expect(open).toBeFocused();
+    // With no reply open, Escape closes the bar and focus returns to its button.
+    await open.click();
+    await expect(prompt(page)).toBeFocused();
+    await prompt(page).press('Escape');
+    await expect(bar(page)).toHaveCount(0);
+    await expect(open).toBeFocused();
 });
 
 test('the AI bar is not offered on Prototype without AI', async ({ page }) => {
