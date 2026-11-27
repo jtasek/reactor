@@ -82,3 +82,31 @@ test('the AI bar is not offered on Flow without AI', async ({ page }) => {
     await expect(page.getByText('Flow · 2 screens · 0 links')).toBeVisible();
     await expect(bar(page)).toHaveCount(0);
 });
+
+test('narrow Flow marks draft actions and start pages until accepted or discarded', async ({
+    page
+}) => {
+    await seed(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/flow?ai=local');
+    const list = page.locator('[data-flow-list]');
+    const reply = bar(page).getByRole('log', { name: 'AI conversation' });
+    await ask(page, 'open Details when I click Continue button on Home');
+    const row = list.locator('[data-flow-control="next"]');
+    await expect(row).toHaveAttribute('data-proposed', 'true');
+    await expect(row).toHaveAccessibleDescription(/Draft. Not applied yet/);
+    await expect(row).toHaveCSS('outline-style', 'dashed');
+    await reply.getByRole('button', { name: 'Accept', exact: true }).click();
+    await expect(row).not.toHaveAttribute('data-proposed');
+    await expect(row).not.toHaveAccessibleDescription(/Draft/);
+    await ask(page, 'start on Details');
+    const details = list.locator('[data-flow-screen="details"]');
+    await expect(details).toHaveAttribute('data-proposed', 'true');
+    await expect(details.getByText('Start · Draft', { exact: true })).toHaveCSS(
+        'outline-style',
+        'dashed'
+    );
+    await reply.getByRole('button', { name: 'Discard', exact: true }).click();
+    await expect(details).not.toHaveAttribute('data-proposed');
+    await expect(list.getByText('Start · Draft', { exact: true })).toHaveCount(0);
+});

@@ -517,6 +517,7 @@ function FlowWorkspace() {
                 </p>
             ) : narrow ? (
                 <FlowList
+                    proposed={preview?.changed}
                     machine={machine}
                     order={order}
                     selection={selection}
