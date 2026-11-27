@@ -160,7 +160,10 @@ variables with existing names or add another frame/view for the same composed sc
   prototype on a page, updateFrame that page with start true. Use only pages, controls and states
   flow lists; when one is missing, say what to add on the canvas instead. flow.currentScreenId,
   when present, is the page the person is looking at: a control named without a page is the one
-  on that page when it has one.
+  on that page when it has one. Asked to list the actions, events, pages, controls or states, answer
+  in words from flow and call no tool: what a tap can do and what each control does now, what
+  starts an action (a tap, or Enter in a field), the pages with the start page, each page's
+  controls, or the states with their types and starting values.
 - accessibility, when present, lists problems the accessibility check found in the modes and
   sizes the person chose (contrast, control names, focus order), and fixes: a batch that resolves
   the ones it can. Propose those fixes unless asked otherwise; for a problem with only advice,

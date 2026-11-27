@@ -10,6 +10,7 @@ export interface FlowContext {
         string,
         { name: string; controls: Record<string, { name: string; label?: string; does?: string }> }
     >;
+    states?: Record<string, { name: string; type: string; initial: unknown }>;
 }
 
 interface Control {
@@ -255,4 +256,101 @@ export function linkExample(flow: FlowContext | undefined): string | undefined {
     return control && to
         ? `open ${to.name} when I click ${control.label ?? control.name}`
         : undefined;
+}
+
+/** "list actions", "show events on Home", "what states are there" */
+const LIST =
+    /^(?:list|show(?: me)?|what(?: are)?)\s+(?:all\s+)?(?:the\s+)?(actions?|events?|pages?|screens?|controls?|links?|states?)(?:\s+(?:are\s+there|(?:are\s+)?(?:on|for|of)\s+(?:the\s+)?(.+?)))?$/i;
+
+/**
+ * An answer in words to a request to list what the flow has: the actions a tap can take, the
+ * events that start one, the pages, the controls or the states; undefined for other requests.
+ */
+export function readList(prompt: string, flow: FlowContext | undefined): Reading | undefined {
+    const match = prompt
+        .trim()
+        .replace(/[.!?]+$/, '')
+        .replace(/\s+/g, ' ')
+        .match(LIST);
+    if (!flow || !match) {
+        return undefined;
+    }
+    const says = (lines: string[]): Reading => ({ operations: [], text: lines.join('\n') });
+    const what = match[1].toLowerCase().replace(/s$/, '');
+    const all = Object.entries(flow.screens).map(([id, screen]) => ({ id, ...screen }));
+    // The canvas shares no pages while something is selected.
+    if (all.length === 0) {
+        return says(['No pages are shared. Clear the selection, or ask on Flow or Prototype.']);
+    }
+    const named = match[2] ? best(match[2], all, (screen) => [screen.name]) : [];
+    if (match[2] && named.length !== 1) {
+        return says([
+            `${named.length ? 'Several pages are named like' : 'No page is named like'} ${code(match[2])}. Pages: ${all.map((screen) => code(screen.name)).join(' · ')}`
+        ]);
+    }
+    // A page asked for, else the page the player shows, else every page.
+    const screens = match[2]
+        ? named
+        : all.filter((screen) => screen.id === flow.currentScreenId).length
+          ? all.filter((screen) => screen.id === flow.currentScreenId)
+          : all;
+    const controls = (now: (does: string | undefined) => string | undefined) =>
+        screens.flatMap((screen) => {
+            const rows = Object.values(screen.controls).flatMap((control) => {
+                const shown = now(control.does);
+
+                return shown === undefined ? [] : [`- ${control.name}: ${shown}`];
+            });
+
+            return [`**On ${screen.name}**`, ...(rows.length ? rows : ['- none'])];
+        });
+    const link = linkExample(flow);
+
+    if (what === 'action') {
+        return says([
+            '**What a tap can do**',
+            `- open a page${link ? `: \`${link}\`` : ''}`,
+            '- show or hide another item on the same page',
+            '- show one of an item’s variants',
+            '- set, toggle or reset a state',
+            '- nothing, to take an action away',
+            ...controls((does) => does ?? 'does nothing yet')
+        ]);
+    }
+    if (what === 'event') {
+        return says([
+            '**What starts an action**',
+            '- a tap or click on a control, or Space and Enter while it has focus',
+            '- Enter in a text field that has an action',
+            ...controls((does) =>
+                does === undefined ? 'no action' : does.startsWith('on Enter') ? 'Enter' : 'tap'
+            )
+        ]);
+    }
+    if (what === 'page' || what === 'screen') {
+        return says([
+            '**Pages**',
+            ...all.map(
+                (screen) =>
+                    `- ${screen.name}${screen.id === flow.startScreenId ? ' (start)' : ''}${screen.id === flow.currentScreenId ? ' (shown now)' : ''}`
+            )
+        ]);
+    }
+    if (what === 'state') {
+        const states = Object.values(flow.states ?? {});
+
+        return says(
+            states.length
+                ? [
+                      '**States**',
+                      ...states.map(
+                          (state) =>
+                              `- ${state.name}: ${state.type === 'boolean' ? 'yes or no' : state.type}, starts ${JSON.stringify(state.initial ?? null)}`
+                      )
+                  ]
+                : ['There are no states yet.']
+        );
+    }
+
+    return says(controls((does) => does ?? 'does nothing yet'));
 }

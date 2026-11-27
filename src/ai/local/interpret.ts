@@ -1,6 +1,6 @@
 import * as appCommands from 'src/commands';
 import { mentions, suggestions, type Match, type Term } from './fuzzy';
-import { linkExample, readLink, type FlowContext } from './links';
+import { linkExample, readLink, readList, type FlowContext } from './links';
 import {
     PROPERTIES,
     STEPS,
@@ -299,7 +299,7 @@ export function help(context: Context = {}): string {
         ),
         `**Arrange** ${selected.length === 0 ? HELP_LINES.selectFirst : ''}`.trim(),
         ...items(selected.length > 1 ? HELP_LINES.several : HELP_LINES.one),
-        ...(link ? ['**Link**', ...items([`\`${link}\``])] : []),
+        ...(link ? ['**Link**', ...items([`\`${link}\``, '`list actions`'])] : []),
         '',
         HELP_LINES.more
     ].join('\n');
@@ -345,6 +345,7 @@ export function capabilities(): string {
         'the selection, a shape’s name, or `all circles`',
         '**Ask**',
         '- `props` what the selection has',
+        '- `list actions` on Flow and Prototype; also events, pages, controls, states',
         '- `help` a few examples',
         '**Test** the chat',
         ...HELP_LINES.test
@@ -1070,6 +1071,10 @@ export function interpret(prompt: string, context: Context): Reading {
     }
     if (intents.find(({ id }) => id === 'help')?.at === 0) {
         return says(request.find(EVERYTHING).length > 0 ? capabilities() : help(context));
+    }
+    const listed = readList(prompt, context.flow);
+    if (listed) {
+        return listed;
     }
     const linked = readLink(prompt, context.flow);
     if (linked) {

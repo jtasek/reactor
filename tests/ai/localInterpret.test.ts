@@ -311,7 +311,7 @@ describe('the help', () => {
         expect(
             examples(capabilities()).filter(
                 (line) =>
-                    !/^(\/|props|help)/.test(line) &&
+                    !/^(\/|props|help|list)/.test(line) &&
                     interpret(line, {
                         selection,
                         shapes,
