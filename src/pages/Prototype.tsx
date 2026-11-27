@@ -1,6 +1,5 @@
 import {
     ArrowLeft,
-    Ellipsis,
     Info,
     Monitor,
     Moon,
@@ -17,7 +16,6 @@ import { Button, Field, Select } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
 import { DeviceMenu, framed } from './DeviceMenu';
 import { DEVICE_SIZES, deviceOfSize } from 'src/app/services/deviceSizes';
-import { Popover } from './Popover';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
@@ -209,43 +207,29 @@ function PrototypeWorkspace() {
                             <Icon icon={{ component: Sparkles, size: 18 }} />
                         </button>
                     )}
-                    <Popover
-                        label="More"
-                        title="More"
+                    <button
+                        type="button"
                         className={styles.roundButton}
-                        align="end"
-                        button={<Icon icon={{ component: Ellipsis, size: 18 }} />}
+                        aria-label="Prototype settings"
+                        title="Settings"
+                        onClick={() => setSettings(true)}
                     >
-                        {(close) => (
-                            <div className={styles.moreMenu}>
-                                <button
-                                    type="button"
-                                    aria-label="Prototype settings"
-                                    onClick={() => {
-                                        close();
-                                        setSettings(true);
-                                    }}
-                                >
-                                    <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
-                                    Settings
-                                </button>
-                                <DownloadPrototype
-                                    session={session}
-                                    inspection={inspection}
-                                    contexts={'contexts' in contexts ? contexts.contexts : []}
-                                />
-                            </div>
-                        )}
-                    </Popover>
+                        <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
+                    </button>
+                    <DownloadPrototype
+                        session={session}
+                        inspection={inspection}
+                        contexts={'contexts' in contexts ? contexts.contexts : []}
+                    />
                     <AccessibilityCheck
                         session={session}
                         contexts={contexts}
                         onShow={(id) => locate({ kind: 'shape', id, message: '' })}
                     />
                     <SharePrototype session={session} inspection={inspection} />
-                    <a href="/flow" className={styles.flowLink}>
+                    <a href="/flow" className={styles.flowLink} aria-label="Flow" title="Flow">
                         <Icon icon={{ component: Workflow, size: 18 }} />
-                        Flow
+                        <span>Flow</span>
                     </a>
                 </div>
             </header>

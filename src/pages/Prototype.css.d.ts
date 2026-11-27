@@ -25,7 +25,6 @@ declare namespace PrototypeCssNamespace {
     linkPill: string;
     linkRow: string;
     links: string;
-    moreMenu: string;
     outline: string;
     outlineBox: string;
     player: string;
