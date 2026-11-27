@@ -23,8 +23,18 @@ const PRESS = '(?:click|clicks|tap|taps|press|presses|hit|hits|select|selects)';
 const WHO = '(?:(?:i|you|we|they|someone|the user|a user|people)\\s+)?';
 const ON = '(?:\\s+on\\s+(?:the\\s+)?(.+?))?';
 
-/** Each way of asking, with the place of the control, its page and the page it opens. */
-const SENTENCES: Array<{ pattern: RegExp; control: number; on?: number; page?: number }> = [
+/**
+ * Each way of asking, with the place of the control, its page and the page it opens. A `loose`
+ * sentence reads like other requests too ("make Title wider to fit"), so it is a link only when
+ * both the control and the page fit.
+ */
+const SENTENCES: Array<{
+    pattern: RegExp;
+    control: number;
+    on?: number;
+    page?: number;
+    loose?: boolean;
+}> = [
     {
         // "open Details when I click Continue (on Home)"
         pattern: new RegExp(
@@ -46,14 +56,25 @@ const SENTENCES: Array<{ pattern: RegExp; control: number; on?: number; page?: n
         page: 3
     },
     {
-        // "link Continue to Details", "make Continue open Details"
+        // "link Continue to Details"
         pattern: new RegExp(
-            `^(?:link|connect|make|let)\\s+(?:the\\s+)?(.+?)${ON}\\s+(?:to|${OPEN})\\s+(?:the\\s+)?(.+)$`,
+            `^(?:link|connect)\\s+(?:the\\s+)?(.+?)${ON}\\s+(?:to|${OPEN})\\s+(?:the\\s+)?(.+)$`,
             'i'
         ),
         control: 1,
         on: 2,
         page: 3
+    },
+    {
+        // "make Continue open Details"
+        pattern: new RegExp(
+            `^(?:make|let)\\s+(?:the\\s+)?(.+?)${ON}\\s+${OPEN}\\s+(?:the\\s+)?(.+)$`,
+            'i'
+        ),
+        control: 1,
+        on: 2,
+        page: 3,
+        loose: true
     },
     {
         // "Continue opens Details"
@@ -63,7 +84,8 @@ const SENTENCES: Array<{ pattern: RegExp; control: number; on?: number; page?: n
         ),
         control: 1,
         on: 2,
-        page: 3
+        page: 3,
+        loose: true
     },
     {
         // "unlink Continue", "remove the link from Continue"
@@ -159,7 +181,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
                   };
         }
     }
-    for (const { pattern, control: at, on, page: to } of SENTENCES) {
+    for (const { pattern, control: at, on, page: to, loose } of SENTENCES) {
         const match = asked.match(pattern);
         if (!match) {
             continue;
@@ -168,7 +190,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
         const where = on === undefined ? undefined : match[on];
         const within = where ? pageNamed(where) : undefined;
         if (within && 'text' in within) {
-            return within;
+            return loose ? undefined : within;
         }
         const controls: Control[] = screens
             .filter((screen) => !within || screen.id === within.id)
@@ -184,8 +206,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
             control.label ? [control.name, control.label] : [control.name]
         );
         if (found.length === 0) {
-            // "Continue opens Details" may be about something else when no control fits.
-            if (to !== undefined && at === 1 && pattern === SENTENCES[3].pattern) {
+            if (loose) {
                 return undefined;
             }
 
@@ -195,7 +216,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
         }
         const target = to === undefined ? undefined : pageNamed(match[to]);
         if (target && 'text' in target) {
-            return target;
+            return loose ? undefined : target;
         }
         if (found.length > 1) {
             return says(
