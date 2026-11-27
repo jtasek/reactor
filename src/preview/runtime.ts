@@ -689,7 +689,8 @@ window.addEventListener('message', (event) => {
         type: 'ready',
         version: PREVIEW_PROTOCOL_VERSION,
         playerControls: true,
-        outline: true
+        outline: true,
+        deviceFrame: true
     });
 });
 window.addEventListener('pagehide', () => port?.close());

@@ -69,6 +69,7 @@ export default function InteractivePreview({
     const [currentScreen, setCurrentScreen] = useState<string>();
     useEffect(() => onScreen?.(currentScreen), [currentScreen, onScreen]);
     const [outlines, setOutlines] = useState(false);
+    const [deviceFrames, setDeviceFrames] = useState(false);
     const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
@@ -201,10 +202,10 @@ export default function InteractivePreview({
     }, [outlineKey, outlines]);
 
     useEffect(() => {
-        if (outlines) {
+        if (deviceFrames) {
             connection.current?.postMessage({ type: 'device-frame', kind: deviceFrame ?? null });
         }
-    }, [deviceFrame, outlines]);
+    }, [deviceFrame, deviceFrames]);
 
     useEffect(() => () => channelPort.current?.close(), []);
     useEffect(() => {
@@ -241,6 +242,7 @@ export default function InteractivePreview({
         connection.current = null;
         setHostControls(false);
         setOutlines(false);
+        setDeviceFrames(false);
         setCurrentScreen(undefined);
         setActiveRecord(undefined);
         setEditing(false);
@@ -322,6 +324,7 @@ export default function InteractivePreview({
             const supportsHostControls = event.data.playerControls === true;
             setHostControls(supportsHostControls);
             setOutlines(supportsHostControls && event.data.outline === true);
+            setDeviceFrames(supportsHostControls && event.data.deviceFrame === true);
             if (session && supportsHostControls) {
                 // Older runtimes own their navigation and must receive only drawing payloads.
                 channel.port1.postMessage({ type: 'player-controls' });

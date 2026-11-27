@@ -369,3 +369,41 @@ test('picks the prototype size from phones, tablets and desktops, upright or tur
     await expect(landscape).toBeDisabled();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '1440');
 });
+
+test('does not send device-frame commands to an outline-only runtime', async ({ page }) => {
+    await seed(page);
+    await page.route('http://127.0.0.1:4194/?player=prototype', (route) =>
+        route.fulfill({
+            contentType: 'text/html',
+            body: `<html><body data-unsupported="none" data-draws="0"><p></p><script>
+                window.addEventListener('message', (event) => {
+                    const port = event.ports[0];
+                    port.onmessage = (message) => {
+                        const type = message.data.type;
+                        if (type && !['player-controls', 'outline', 'select-screen'].includes(type)) {
+                            document.body.dataset.unsupported = type;
+                            return;
+                        }
+                        if (!type) {
+                            document.querySelector('p').textContent = 'Drawing received';
+                            document.body.dataset.draws = String(Number(document.body.dataset.draws) + 1);
+                        }
+                    };
+                    port.postMessage({type: 'ready', version: 3, playerControls: true, outline: true});
+                });
+            </script></body></html>`
+        })
+    );
+    await page.goto('/prototype');
+    const runtime = player(page);
+    await expect(runtime.getByText('Drawing received')).toBeVisible();
+    await expect(runtime.locator('body')).toHaveAttribute('data-unsupported', 'none');
+    const devices = await openDeviceMenu(page);
+    await devices.getByRole('button', { name: 'iPhone 15 393 × 852' }).click();
+    await expect(page.getByRole('button', { name: 'Device', exact: true })).toContainText(
+        'iPhone 15'
+    );
+    // The updated drawing has arrived, including commands sent on device changes.
+    await expect(runtime.locator('body')).toHaveAttribute('data-unsupported', 'none');
+    await expect(page.getByText('Preview needs attention')).toHaveCount(0);
+});
