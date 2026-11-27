@@ -7,6 +7,7 @@ import { untracked } from 'src/app/untracked';
 import { CanvasBar, type BarPage } from './CanvasBar';
 import type { ProposalView } from './Reply';
 import styles from './styles.css';
+import { useProposalRevision } from './useProposalRevision';
 
 /** A proposal as Flow draws it: the document as it would be, and the controls it changes. */
 export interface FlowPreview {
@@ -27,9 +28,11 @@ const SCOPE = {
 function flowProposal(onPreview: (preview?: FlowPreview) => void): ProposalView {
     return function FlowProposal({ operations, onDiscard, onAccept, children }) {
         const document = useCurrentDocument();
+        const revision = useProposalRevision(document.id);
         const preview = useMemo(
             () => previewProposal(untracked(document), operations),
-            [document, operations]
+            // eslint-disable-next-line react-hooks/exhaustive-deps -- revision tracks the untracked document contents.
+            [document, operations, revision]
         );
 
         useEffect(() => {

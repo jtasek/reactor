@@ -57,10 +57,15 @@ test('the AI bar on Flow proposes a link, drawn dashed until Accept', async ({ p
     await expect(row).not.toHaveAttribute('data-proposed');
     await expect(page.getByText('Flow · 2 screens · 1 link')).toBeVisible();
 
+    await ask(page, 'start on Details');
+    await expect(page.locator('[data-flow-screen="details"]')).toHaveAttribute(
+        'data-proposed',
+        'true'
+    );
+    // Undo a committed link while the proposed start page is still drawn.
     await page.getByRole('button', { name: 'Undo' }).click();
     await expect(page.getByText('Flow · 2 screens · 0 links')).toBeVisible();
-
-    await ask(page, 'start on Details');
+    await expect(page.locator('[data-flow-link="next"]')).toHaveCount(0);
     await expect(page.locator('[data-flow-screen="details"]')).toHaveAttribute(
         'data-proposed',
         'true'
