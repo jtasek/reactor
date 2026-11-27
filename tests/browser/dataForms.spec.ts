@@ -255,6 +255,7 @@ test('the downloaded package plays list and details offline, as the preview does
     const player = page.frameLocator('iframe[title="Application preview"]');
     await expect(player.getByRole('button', { name: 'Ada', exact: true })).toBeVisible();
     const downloading = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'More', exact: true }).click();
     await page.getByRole('button', { name: 'Download prototype' }).click();
     const download = await downloading;
     expect(download.suggestedFilename()).toBe('Customers --script- app.html');

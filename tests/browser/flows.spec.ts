@@ -74,7 +74,7 @@ test('re-aims and removes links in Flow, reflects them in the Inspector, and arr
     const next = row(page, 'next');
     await expect(next).toHaveAccessibleName('Continue button');
     await expect(next).toHaveAccessibleDescription('Continue button goes to Details');
-    await expect(next).toContainText('→ Details');
+    await expect(next).toContainText('Details');
     // One click in the menu re-aims the link, as one undo step.
     await next.click();
     await expect(next).toHaveAttribute('aria-pressed', 'true');
@@ -155,7 +155,7 @@ test('marks a link to a missing screen and prevents edits to locked controls on 
     await seed(page, document);
     await page.goto('/flow');
     const next = row(page, 'next');
-    await expect(next).toContainText('→ Missing page');
+    await expect(next).toContainText('Missing page');
     await expect(next).toHaveAccessibleDescription(
         'Continue button goes to a missing page. The page it goes to was deleted'
     );
@@ -365,7 +365,7 @@ test('describes controls whose imported IDs contain spaces, and opens their menu
     await expect(control).toBeFocused();
     // ↑ and ↓ walk the card's rows, down to Add link.
     const rows = screen(page, 'home').locator('li > button');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(2);
     await rows.nth(0).focus();
     await page.keyboard.press('ArrowDown');
     await expect(rows.nth(1)).toBeFocused();
@@ -509,7 +509,7 @@ for (const name of ['List / detail', 'Forms', 'Sign-in', 'Settings', 'Inspector 
             await cards.count()
         );
         await expect(page.locator('[data-flow-start]')).toHaveCount(1);
-        const goes = await page.locator('[data-flow-control]').filter({ hasText: '→' }).count();
+        const goes = await page.locator('[data-flow-control] [data-effect="go"]').count();
         await expect(page.locator('[data-flow-link]')).toHaveCount(
             name === 'Inspector typography' ? 0 : goes
         );
