@@ -69,7 +69,9 @@
     position: sticky;
     top: 12px;
     z-index: 2;
-    display: flex;
+    /* The title stays centred on the bar whatever the two sides hold. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     min-height: 48px;
@@ -84,7 +86,6 @@
 }
 .prototype .back,
 .prototype .barActions > :is(button, .flowLink),
-.prototype .moreMenu :is(a, button),
 .prototype .roundButton {
     display: inline-flex;
     gap: 6px;
@@ -108,7 +109,6 @@
     color: var(--selection-color);
 }
 .identity {
-    flex: 1;
     min-width: 0;
     display: flex;
     gap: 4px;
@@ -131,10 +131,18 @@
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
 }
+.prototype .back {
+    justify-self: start;
+}
 .barActions {
     display: flex;
+    justify-self: end;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+}
+/* Sharing and Flow stand apart from the tools. */
+.prototype .barActions > button[aria-label='Share prototype'] {
+    margin-left: 8px;
 }
 /* Flow is the one main action, as Play is on Flow. */
 .prototype .barActions > .flowLink {
@@ -163,15 +171,7 @@
     left: auto;
     right: 0;
 }
-.moreMenu {
-    display: grid;
-    min-width: 11rem;
-}
-.prototype .moreMenu :is(a, button) {
-    justify-content: flex-start;
-    border-radius: var(--radius-md);
-}
-.prototype :is(.moreMenu :is(a, button), .deviceRow):hover:not(:disabled) {
+.prototype .deviceRow:hover:not(:disabled) {
     background: var(--menu-hover);
 }
 .controlsRow {
@@ -331,19 +331,28 @@
 }
 @media (max-width: 600px) {
     .bar {
+        display: flex;
         margin: 8px 8px 0;
+    }
+    .identity {
+        flex: 1;
     }
     .back > span,
     .summary,
-    .barActions > button[aria-label='Accessibility'] > span {
+    .flowLink > span {
         display: none;
     }
-    .prototype .barActions > button[aria-label='Accessibility'] {
+    .prototype .barActions > .flowLink {
         width: 32px;
         padding: 0;
     }
     .player {
         padding: 8px;
+    }
+}
+@media (max-width: 380px) {
+    .identity {
+        visibility: hidden;
     }
 }
 @media (prefers-reduced-transparency: reduce) {

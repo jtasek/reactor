@@ -2,7 +2,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 /** Opens Settings from the bar's More menu. */
 export async function openPrototypeSettings(page: Page) {
-    await page.getByRole('button', { name: 'More', exact: true }).click();
     await page.getByRole('button', { name: 'Prototype settings', exact: true }).click();
 
     return page.getByRole('dialog', { name: 'Prototype settings' });
