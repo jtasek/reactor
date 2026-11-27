@@ -208,6 +208,13 @@ describe('local test model link sentences', () => {
         expect(await read(prompt)).toEqual({ operations: [link], text: '' });
     });
 
+    it.each(['make Continue bigger to fit', 'the Continue button goes to the top'])(
+        'leaves “%s” to the other requests',
+        async (prompt) => {
+            expect((await read(prompt)).text).not.toContain('No page is named like');
+        }
+    );
+
     it('takes a link away', async () => {
         expect((await read('unlink Continue')).operations).toEqual([
             { op: 'setAction', control: 'next', action: null }
