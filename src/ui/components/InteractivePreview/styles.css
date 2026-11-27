@@ -53,7 +53,7 @@
     gap: 4px;
     min-width: 0;
 }
-.toolbar > label > select,
+.toolbar > label select,
 .toolbar > button {
     display: inline-flex;
     align-items: center;
@@ -90,17 +90,37 @@
     flex: 1 1 100px;
     max-width: 180px;
 }
-.toolbar > label > span {
+.toolbar > label > span:first-child {
     color: var(--text-secondary-color);
     font-size: var(--font-size-caption);
     padding-left: 12px;
 }
-.toolbar > label > select {
+.toolbar > label select {
     max-width: 200px;
     width: 100%;
 }
+/* The arrow sits inside the field, clear of its rounded end, as in the app's other selects. */
+.select {
+    display: grid;
+    min-width: 0;
+}
+.select > * {
+    grid-area: 1 / 1;
+}
+.toolbar > label .select select {
+    appearance: none;
+    padding-right: 32px;
+    cursor: pointer;
+}
+.select svg {
+    align-self: center;
+    justify-self: end;
+    margin-right: 12px;
+    color: var(--text-secondary-color);
+    pointer-events: none;
+}
 
-.toolbar > label > select,
+.toolbar > label select,
 .toolbar > button {
     border: 1px solid var(--hairline-color);
     border-radius: calc(var(--radius-md) * 3);
@@ -133,7 +153,7 @@
     .toolbar > label:first-child {
         flex-basis: 100%;
     }
-    .toolbar > label > select {
+    .toolbar > label select {
         max-width: none;
     }
 }

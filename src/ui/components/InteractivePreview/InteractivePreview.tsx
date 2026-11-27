@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronDown } from 'lucide-react';
 import { useEffects, useCurrentDocument, useAppState } from 'src/app/hooks';
 import { dataFields } from 'src/app/data';
 import { projectPreview } from 'src/preview/project';
@@ -363,31 +364,34 @@ export default function InteractivePreview({
     const layout = shown?.layouts && (
         <label>
             <span>Layout</span>
-            <select
-                aria-label="Preview layout"
-                title="Automatic layout follows viewport width"
-                value={JSON.stringify(shown.layoutChoice ?? null)}
-                onChange={(event) => {
-                    const layoutId = JSON.parse(event.target.value) as string | null;
-                    setInspection((previous) => ({
-                        ...previous,
-                        layouts: { ...previous.layouts, [shown.id]: layoutId }
-                    }));
-                }}
-            >
-                <option value="null">Auto</option>
-                {shown.layoutChoice &&
-                    !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
-                        <option value={JSON.stringify(shown.layoutChoice)}>
-                            Missing layout — showing default
+            <span className={styles.select}>
+                <select
+                    aria-label="Preview layout"
+                    title="Automatic layout follows viewport width"
+                    value={JSON.stringify(shown.layoutChoice ?? null)}
+                    onChange={(event) => {
+                        const layoutId = JSON.parse(event.target.value) as string | null;
+                        setInspection((previous) => ({
+                            ...previous,
+                            layouts: { ...previous.layouts, [shown.id]: layoutId }
+                        }));
+                    }}
+                >
+                    <option value="null">Auto</option>
+                    {shown.layoutChoice &&
+                        !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
+                            <option value={JSON.stringify(shown.layoutChoice)}>
+                                Missing layout — showing default
+                            </option>
+                        )}
+                    {shown.layouts.map((item) => (
+                        <option key={item.id} value={JSON.stringify(item.id)}>
+                            {item.name}
                         </option>
-                    )}
-                {shown.layouts.map((item) => (
-                    <option key={item.id} value={JSON.stringify(item.id)}>
-                        {item.name}
-                    </option>
-                ))}
-            </select>
+                    ))}
+                </select>
+                <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
+            </span>
         </label>
     );
 
@@ -405,23 +409,26 @@ export default function InteractivePreview({
                         {(hostControls || !ready) && (
                             <label>
                                 <span>Page</span>
-                                <select
-                                    aria-label="Preview page"
-                                    disabled={!ready || !currentScreen}
-                                    value={shown?.id ?? ''}
-                                    onChange={(event) => {
-                                        connection.current?.postMessage({
-                                            type: 'select-screen',
-                                            screenId: event.target.value
-                                        });
-                                    }}
-                                >
-                                    {latest.current?.screens.map((screen) => (
-                                        <option key={screen.id} value={screen.id}>
-                                            {screen.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <span className={styles.select}>
+                                    <select
+                                        aria-label="Preview page"
+                                        disabled={!ready || !currentScreen}
+                                        value={shown?.id ?? ''}
+                                        onChange={(event) => {
+                                            connection.current?.postMessage({
+                                                type: 'select-screen',
+                                                screenId: event.target.value
+                                            });
+                                        }}
+                                    >
+                                        {latest.current?.screens.map((screen) => (
+                                            <option key={screen.id} value={screen.id}>
+                                                {screen.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
+                                </span>
                             </label>
                         )}
                         {hostControls && currentScreen && layout}

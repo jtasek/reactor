@@ -185,14 +185,14 @@ function PrototypeWorkspace() {
                     <span>Canvas</span>
                 </a>
                 <div className={styles.identity}>
-                    <span className={styles.documentName} title={document.name}>
+                    <h1 className={styles.documentName} title={document.name}>
                         {document.name}
-                    </span>
-                    <span className={styles.summary}>
-                        <h1>Prototype</h1>
-                        {screens.length > 0 &&
-                            ` · ${screens.length} ${screens.length === 1 ? 'page' : 'pages'}`}
-                    </span>
+                    </h1>
+                    {screens.length > 0 && (
+                        <span className={styles.summary}>
+                            · {screens.length} {screens.length === 1 ? 'page' : 'pages'}
+                        </span>
+                    )}
                 </div>
                 <div className={styles.barActions}>
                     {aiAvailable && editable && screens.length > 0 && (
@@ -227,10 +227,6 @@ function PrototypeWorkspace() {
                                     <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
                                     Settings
                                 </button>
-                                <a href="/flow">
-                                    <Icon icon={{ component: Workflow, size: 18 }} />
-                                    Flow
-                                </a>
                                 <DownloadPrototype
                                     session={session}
                                     inspection={inspection}
@@ -245,6 +241,10 @@ function PrototypeWorkspace() {
                         onShow={(id) => locate({ kind: 'shape', id, message: '' })}
                     />
                     <SharePrototype session={session} inspection={inspection} />
+                    <a href="/flow" className={styles.flowLink}>
+                        <Icon icon={{ component: Workflow, size: 18 }} />
+                        Flow
+                    </a>
                 </div>
             </header>
             <Dialog

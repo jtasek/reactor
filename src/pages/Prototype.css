@@ -83,7 +83,7 @@
     box-shadow: var(--box-shadow);
 }
 .prototype .back,
-.prototype .barActions > button,
+.prototype .barActions > :is(button, .flowLink),
 .prototype .moreMenu :is(a, button),
 .prototype .roundButton {
     display: inline-flex;
@@ -111,36 +111,33 @@
     flex: 1;
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    align-items: baseline;
     line-height: var(--line-height-callout);
 }
 .documentName {
-    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    font-size: inherit;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: var(--font-weight-semibold);
 }
 .summary {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: none;
     white-space: nowrap;
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
-}
-.summary h1 {
-    display: inline;
-    font: inherit;
 }
 .barActions {
     display: flex;
     align-items: center;
     gap: 6px;
 }
-/* Share is the one main action, as Play is on Flow. */
-.prototype .barActions > button[aria-label='Share prototype'] {
+/* Flow is the one main action, as Play is on Flow. */
+.prototype .barActions > .flowLink {
     padding: 0 14px;
     color: var(--on-selection-color);
     background: var(--selection-color);
@@ -182,7 +179,7 @@
     justify-content: center;
     margin-bottom: 12px;
 }
-.controlsRow > div > label > span {
+.controlsRow > div > label > span:first-child {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -337,7 +334,7 @@
         margin: 8px 8px 0;
     }
     .back > span,
-    .documentName,
+    .summary,
     .barActions > button[aria-label='Accessibility'] > span {
         display: none;
     }

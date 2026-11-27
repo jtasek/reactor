@@ -19,6 +19,7 @@ declare namespace PrototypeCssNamespace {
     deviceRow: string;
     deviceSearch: string;
     documentName: string;
+    flowLink: string;
     identity: string;
     linkPill: string;
     linkRow: string;
