@@ -74,8 +74,7 @@ function prototypeProposal(
                         data-variant="primary"
                         disabled={!proposal}
                         onClick={() => {
-                            onAccept();
-                            if (proposal) {
+                            if (onAccept() && proposal) {
                                 onApplied(proposal);
                             }
                         }}

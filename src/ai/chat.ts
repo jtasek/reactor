@@ -171,11 +171,12 @@ export class Chat {
         }
     };
 
+    /** Applies the latest proposal; whether it applied. */
     accept = (apply: (proposal: Proposal) => BatchResult) => {
         const last = this.state.turns.at(-1);
 
         if (last?.status !== 'proposed' || !last.proposal) {
-            return;
+            return false;
         }
         const result = apply(last.proposal);
 
@@ -187,6 +188,8 @@ export class Chat {
         if (!result.applied) {
             this.setDraft(last.prompt);
         }
+
+        return result.applied;
     };
 
     clear = () => {

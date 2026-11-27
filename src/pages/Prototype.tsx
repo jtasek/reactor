@@ -138,7 +138,12 @@ function PrototypeWorkspace() {
     const [proposal, setProposal] = useState<PrototypeProposal>();
     const [shownScreen, setShownScreen] = useState<string>();
     const shown = screens.find((screen) => screen.id === shownScreen);
-    const closeAiBar = useCallback(() => setAiBar(false), []);
+    const aiButton = useRef<HTMLButtonElement>(null);
+    // Focus goes back to the button the bar opened from.
+    const closeAiBar = useCallback(() => {
+        setAiBar(false);
+        aiButton.current?.focus();
+    }, []);
     // A new start page is tried from the start; a changed control is tried where it is shown.
     const applied = useCallback(({ start }: PrototypeProposal) => {
         if (start) {
@@ -198,6 +203,7 @@ function PrototypeWorkspace() {
                 <div className={styles.barActions}>
                     {aiAvailable && editable && screens.length > 0 && (
                         <button
+                            ref={aiButton}
                             type="button"
                             className={styles.roundButton}
                             aria-label="AI bar"
