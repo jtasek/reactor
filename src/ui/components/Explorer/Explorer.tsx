@@ -275,7 +275,7 @@ const LazyShapeItem = memo<{
     return near ? (
         <ShapeItem {...props} rowRef={rowRef} />
     ) : (
-        <li ref={rowRef} aria-hidden="true">
+        <li ref={rowRef} aria-hidden="true" data-shape-row={props.shapeId}>
             <div className={styles.row} />
         </li>
     );
@@ -517,6 +517,7 @@ const RevealSelection: FC<{
             ...currentDocument.selectedShapesIds
         ].join(' ')
     );
+    const shapeId = useAppState(({ currentDocument }) => currentDocument.selectedShapesIds[0]);
 
     useEffect(() => {
         // The whole outline opens nothing for selections made while a component is edited.
@@ -528,14 +529,19 @@ const RevealSelection: FC<{
     }, [revealKeys, selection, focused]);
 
     useEffect(() => {
-        const frame = requestAnimationFrame(() =>
-            outline.current
-                ?.querySelector('[aria-selected="true"]')
-                ?.scrollIntoView?.({ block: 'nearest' })
-        );
+        const frame = requestAnimationFrame(() => {
+            // A selected row not drawn yet is scrolled to by its place, which draws it.
+            const target =
+                outline.current?.querySelector('[aria-selected="true"]') ??
+                (shapeId
+                    ? outline.current?.querySelector(`[data-shape-row="${CSS.escape(shapeId)}"]`)
+                    : null);
+
+            target?.scrollIntoView?.({ block: 'nearest' });
+        });
 
         return () => cancelAnimationFrame(frame);
-    }, [outline, revealKeys, selection]);
+    }, [outline, revealKeys, selection, shapeId]);
 
     // The selected row may have changed without the outline rendering again.
     useLayoutEffect(() => placeTabStop(outline.current), [outline, selection]);

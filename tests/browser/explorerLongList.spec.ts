@@ -110,3 +110,22 @@ test('the shapes of groups in a long list are drawn as they come near the view',
     await expect(lastRows.first()).toHaveAttribute('aria-posinset', '1');
     await expect(lastRows.first()).toHaveAttribute('aria-setsize', String(GROUP_SIZE));
 });
+
+test('a shape selected on the canvas has its row in a long list drawn and scrolled to', async ({
+    page
+}) => {
+    await openList(page);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const rows = explorer
+        .getByRole('button', { name: /^Box \d+$/ })
+        .first()
+        .locator('xpath=ancestor::ul[1]')
+        .locator(':scope > li');
+
+    // The shape drawn first is listed last, far below the rows drawn so far.
+    await expect(rows.last()).toHaveAttribute('aria-hidden', 'true');
+    await page.locator('svg#surface #shapes > g').first().click();
+
+    await expect(rows.last()).toHaveAttribute('aria-selected', 'true');
+    await expect(rows.last()).toBeInViewport();
+});
