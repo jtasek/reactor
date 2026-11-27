@@ -315,6 +315,50 @@ describe('local test model link sentences', () => {
         ).toContain('Which “Continue”?');
     });
 
+    it('lists what a tap can do and what each control does now', async () => {
+        const document = fixture();
+        Object.assign(document.shapes.next, {
+            interactions: { activate: { type: 'navigate', screenId: 'details' } }
+        });
+        const { operations, text } = await read('list actions', document);
+
+        expect(operations).toEqual([]);
+        expect(text).toContain('**What a tap can do**');
+        expect(text).toContain('- set, toggle or reset a state');
+        expect(text).toContain(
+            '**On Home**\n- Continue button: opens Details\n- Name field: does nothing yet'
+        );
+        expect(text).toContain('**On Details**\n- none');
+    });
+
+    it('lists the events, pages, controls and states, on one page when named', async () => {
+        const document = fixture();
+        document.prototypeBooleans.open = { id: 'open', name: 'menuOpen', initial: false };
+
+        expect((await read('list events on Home', document)).text).toBe(
+            [
+                '**What starts an action**',
+                '- a tap or click on a control, or Space and Enter while it has focus',
+                '- Enter in a text field that has an action',
+                '**On Home**',
+                '- Continue button: no action',
+                '- Name field: no action'
+            ].join('\n')
+        );
+        expect((await read('what pages are there?', document)).text).toBe(
+            '**Pages**\n- Home (start)\n- Details'
+        );
+        expect((await read('show controls', document)).text).toContain(
+            '- Continue button: does nothing yet'
+        );
+        expect((await read('list states', document)).text).toBe(
+            '**States**\n- menuOpen: yes or no, starts false'
+        );
+        expect((await read('list actions on Settings', document)).text).toContain(
+            'No one page is named like `Settings`.'
+        );
+    });
+
     it('names the pages when the one asked for is missing', async () => {
         expect((await read('open Settings when I click Continue')).text).toBe(
             'No page is named like `Settings`. Pages: `Home` · `Details`'
