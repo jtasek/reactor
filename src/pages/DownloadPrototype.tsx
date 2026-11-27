@@ -10,6 +10,7 @@ import {
     writeStandalonePackage
 } from 'src/preview/standalonePackage';
 import type { CheckContext } from 'src/app/accessibilityCheck';
+import styles from './Prototype.css';
 
 /** Saves the prototype as one web page that plays offline, as a shared link would. */
 export function DownloadPrototype({
@@ -78,13 +79,14 @@ export function DownloadPrototype({
 
     return (
         <button
+            className={styles.roundButton}
             aria-label="Download prototype"
-            title="Download as a web page that plays offline"
+            title={pending ? 'Preparing…' : 'Download as a web page that plays offline'}
+            aria-busy={pending}
             disabled={pending || busy || !session.screenId}
             onClick={() => void download()}
         >
             <Icon icon={{ component: Download, size: 18 }} />
-            {pending ? 'Preparing…' : 'Download'}
         </button>
     );
 }

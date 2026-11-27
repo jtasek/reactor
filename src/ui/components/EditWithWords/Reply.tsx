@@ -17,7 +17,8 @@ const count = (operations: readonly unknown[]) =>
 export type ProposalView = FC<{
     operations: ProposedOperation[];
     onDiscard: () => void;
-    onAccept: () => void;
+    /** Applies the proposal; whether it applied. */
+    onAccept: () => boolean;
     children?: ReactNode;
 }>;
 
@@ -94,7 +95,7 @@ const Outcome: FC<{ turn: ChatTurn }> = ({ turn }) => {
 export const Reply: FC<{
     turn: ChatTurn;
     onDiscard: () => void;
-    onAccept: () => void;
+    onAccept: () => boolean;
     /** Puts an example from the answer in the prompt; without it, examples are only shown. */
     onExample?: (example: string) => void;
     /** Where the page draws the proposal itself, as Flow does on its board. */

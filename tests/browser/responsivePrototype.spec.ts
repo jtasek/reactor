@@ -212,15 +212,18 @@ test('keeps setup out of the player, restores focus and preserves input when cha
     await expect(controls.getByLabel('Preview layout')).toBeVisible();
     await expect(controls.getByRole('button', { name: 'Device', exact: true })).toBeVisible();
     await expect(controls.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
-    // The bar holds the page's own actions; Settings, Flow and Download wait under More.
+    // The bar holds the page's own actions as buttons, with Flow as the main one.
     await expect(bar.getByRole('button', { name: 'Share prototype', exact: true })).toBeVisible();
-    await expect(bar.getByRole('button', { name: 'Prototype settings' })).toHaveCount(0);
-    const more = bar.getByRole('button', { name: 'More', exact: true });
-    await more.click();
-    await expect(bar.getByRole('link', { name: 'Flow', exact: true })).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Download prototype' })).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(more).toBeFocused();
+    await expect(bar.getByRole('link', { name: 'Flow', exact: true })).toBeVisible();
+    await expect(bar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+    const settings = bar.getByRole('button', { name: 'Prototype settings' });
+    await settings.click();
+    await page
+        .getByRole('dialog', { name: 'Prototype settings' })
+        .getByRole('button', { name: 'Done' })
+        .click();
+    await expect(settings).toBeFocused();
     const restart = controls.getByRole('button', { name: 'Restart prototype' });
     await restart.focus();
     await page.keyboard.press('Enter');
@@ -248,14 +251,14 @@ test('keeps setup out of the player, restores focus and preserves input when cha
     await expect(page.getByLabel('Preview page')).toBeInViewport({ ratio: 1 });
     await expect(device).toBeInViewport({ ratio: 1 });
     await expect(restart).toBeInViewport({ ratio: 1 });
-    await expect(more).toBeInViewport({ ratio: 1 });
+    await expect(settings).toBeInViewport({ ratio: 1 });
+    await expect(bar.getByRole('link', { name: 'Flow', exact: true })).toBeInViewport({ ratio: 1 });
     await expect(controls.getByLabel('Preview layout')).toBeInViewport({ ratio: 1 });
     for (const element of [bar, controls]) {
         expect(await element.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     }
     await page.screenshot({ path: 'test-results/prototype-phone.png' });
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await more.click();
     await page.getByRole('link', { name: 'Flow', exact: true }).click();
     // Flow has no side editor: one menu, opened from the row, holds every choice.
     await expect(page.getByRole('complementary')).toHaveCount(0);
@@ -303,7 +306,7 @@ test('keeps navigation in an older runtime without sending unsupported player co
     await expect(player(page).getByLabel('Preview page')).toBeVisible();
     await expect(page.getByLabel('Preview page')).toHaveCount(0);
     await expect(player(page).getByText('Unsupported command')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'More', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Prototype settings' })).toBeVisible();
 });
 
 test('picks the prototype size from phones, tablets and desktops, upright or turned', async ({

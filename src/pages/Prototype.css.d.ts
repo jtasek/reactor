@@ -1,5 +1,6 @@
 declare namespace PrototypeCssNamespace {
   export interface IPrototypeCss {
+    aiBar: string;
     back: string;
     bar: string;
     barActions: string;
@@ -18,11 +19,11 @@ declare namespace PrototypeCssNamespace {
     deviceRow: string;
     deviceSearch: string;
     documentName: string;
+    flowLink: string;
     identity: string;
     linkPill: string;
     linkRow: string;
     links: string;
-    moreMenu: string;
     outline: string;
     outlineBox: string;
     player: string;

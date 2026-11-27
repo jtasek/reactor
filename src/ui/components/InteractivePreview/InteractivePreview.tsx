@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronDown } from 'lucide-react';
 import { useEffects, useCurrentDocument, useAppState } from 'src/app/hooks';
 import { dataFields } from 'src/app/data';
 import { projectPreview } from 'src/preview/project';
@@ -15,7 +16,8 @@ import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks'
 import {
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
-    type PreviewDrawing
+    type PreviewDrawing,
+    type PreviewNode
 } from 'src/shared/previewProtocol';
 import { createPreviewResources } from 'src/preview/resources';
 import type { PreviewInspection, PreviewSession, PreviewDiagnostic } from 'src/preview/project';
@@ -28,7 +30,9 @@ export default function InteractivePreview({
     onInspection,
     onLocate,
     toolbar,
-    toolbarTarget
+    toolbarTarget,
+    outline,
+    onScreen
 }: {
     session?: PreviewSession;
     toolbar?: ReactNode;
@@ -37,6 +41,9 @@ export default function InteractivePreview({
     onReset?: () => void;
     onInspection?: (inspection: PreviewInspection) => void;
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
+    /** Controls drawn dashed, by shape ID; the player turns to the page that has them. */
+    outline?: readonly string[];
+    onScreen?: (screenId: string | undefined) => void;
 } = {}) {
     const { assets } = useEffects();
     const document = useCurrentDocument();
@@ -57,6 +64,8 @@ export default function InteractivePreview({
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [currentScreen, setCurrentScreen] = useState<string>();
+    useEffect(() => onScreen?.(currentScreen), [currentScreen, onScreen]);
+    const [outlines, setOutlines] = useState(false);
     const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
@@ -160,6 +169,34 @@ export default function InteractivePreview({
         return () => controller.abort();
     }, [projection.serialized, prepare, attempt, origin]);
 
+    const outlineKey = JSON.stringify(outline ?? []);
+    useEffect(() => {
+        if (!outlines || !connection.current) {
+            return;
+        }
+        const shapeIds: string[] = JSON.parse(outlineKey);
+        connection.current.postMessage({ type: 'outline', shapeIds });
+        const drawn = (nodes: PreviewNode[] | undefined): boolean =>
+            nodes?.some(
+                (node) =>
+                    shapeIds.some((id) => node.key.endsWith(`/${id}`)) ||
+                    drawn(node.children) ||
+                    drawn(Object.values(node.variants ?? {})) ||
+                    drawn(Object.values(node.records ?? {}))
+            ) ?? false;
+        const screens = latest.current?.screens ?? [];
+        const shownScreen = screens.find((screen) => screen.id === currentScreen);
+        if (!shapeIds.length || drawn(shownScreen?.nodes)) {
+            return;
+        }
+        const other = screens.find((screen) => drawn(screen.nodes));
+        if (other) {
+            connection.current.postMessage({ type: 'select-screen', screenId: other.id });
+        }
+        // The screen it shows is read when the outline changes, not each time it turns.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [outlineKey, outlines]);
+
     useEffect(() => () => channelPort.current?.close(), []);
     useEffect(() => {
         if (!origin || ready) {
@@ -194,6 +231,7 @@ export default function InteractivePreview({
         channelPort.current = channel.port1;
         connection.current = null;
         setHostControls(false);
+        setOutlines(false);
         setCurrentScreen(undefined);
         setActiveRecord(undefined);
         setEditing(false);
@@ -274,6 +312,7 @@ export default function InteractivePreview({
             setAvailability('');
             const supportsHostControls = event.data.playerControls === true;
             setHostControls(supportsHostControls);
+            setOutlines(supportsHostControls && event.data.outline === true);
             if (session && supportsHostControls) {
                 // Older runtimes own their navigation and must receive only drawing payloads.
                 channel.port1.postMessage({ type: 'player-controls' });
@@ -325,31 +364,34 @@ export default function InteractivePreview({
     const layout = shown?.layouts && (
         <label>
             <span>Layout</span>
-            <select
-                aria-label="Preview layout"
-                title="Automatic layout follows viewport width"
-                value={JSON.stringify(shown.layoutChoice ?? null)}
-                onChange={(event) => {
-                    const layoutId = JSON.parse(event.target.value) as string | null;
-                    setInspection((previous) => ({
-                        ...previous,
-                        layouts: { ...previous.layouts, [shown.id]: layoutId }
-                    }));
-                }}
-            >
-                <option value="null">Auto</option>
-                {shown.layoutChoice &&
-                    !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
-                        <option value={JSON.stringify(shown.layoutChoice)}>
-                            Missing layout — showing default
+            <span className={styles.select}>
+                <select
+                    aria-label="Preview layout"
+                    title="Automatic layout follows viewport width"
+                    value={JSON.stringify(shown.layoutChoice ?? null)}
+                    onChange={(event) => {
+                        const layoutId = JSON.parse(event.target.value) as string | null;
+                        setInspection((previous) => ({
+                            ...previous,
+                            layouts: { ...previous.layouts, [shown.id]: layoutId }
+                        }));
+                    }}
+                >
+                    <option value="null">Auto</option>
+                    {shown.layoutChoice &&
+                        !shown.layouts.some((item) => item.id === shown.layoutChoice) && (
+                            <option value={JSON.stringify(shown.layoutChoice)}>
+                                Missing layout — showing default
+                            </option>
+                        )}
+                    {shown.layouts.map((item) => (
+                        <option key={item.id} value={JSON.stringify(item.id)}>
+                            {item.name}
                         </option>
-                    )}
-                {shown.layouts.map((item) => (
-                    <option key={item.id} value={JSON.stringify(item.id)}>
-                        {item.name}
-                    </option>
-                ))}
-            </select>
+                    ))}
+                </select>
+                <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
+            </span>
         </label>
     );
 
@@ -367,23 +409,26 @@ export default function InteractivePreview({
                         {(hostControls || !ready) && (
                             <label>
                                 <span>Page</span>
-                                <select
-                                    aria-label="Preview page"
-                                    disabled={!ready || !currentScreen}
-                                    value={shown?.id ?? ''}
-                                    onChange={(event) => {
-                                        connection.current?.postMessage({
-                                            type: 'select-screen',
-                                            screenId: event.target.value
-                                        });
-                                    }}
-                                >
-                                    {latest.current?.screens.map((screen) => (
-                                        <option key={screen.id} value={screen.id}>
-                                            {screen.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <span className={styles.select}>
+                                    <select
+                                        aria-label="Preview page"
+                                        disabled={!ready || !currentScreen}
+                                        value={shown?.id ?? ''}
+                                        onChange={(event) => {
+                                            connection.current?.postMessage({
+                                                type: 'select-screen',
+                                                screenId: event.target.value
+                                            });
+                                        }}
+                                    >
+                                        {latest.current?.screens.map((screen) => (
+                                            <option key={screen.id} value={screen.id}>
+                                                {screen.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={14} strokeWidth={1.5} aria-hidden="true" />
+                                </span>
                             </label>
                         )}
                         {hostControls && currentScreen && layout}

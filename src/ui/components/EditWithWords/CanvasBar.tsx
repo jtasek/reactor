@@ -14,6 +14,8 @@ export interface BarPage extends ChatPage {
     placeholder: string;
     /** How the page draws a proposal before Accept. */
     proposal: ProposalView;
+    /** Where the bar opens from a button, it closes again. */
+    onClose?: () => void;
 }
 
 /**
@@ -35,13 +37,21 @@ export const CanvasBar: FC<{ documentId: string; page?: BarPage }> = ({ document
 
     useEffect(() => chat.retain(), [chat]);
     useChatKeys(root, () =>
-        !page ? closeAiEdit() : settled ? setHidden(current.id) : field.current?.blur()
+        !page
+            ? closeAiEdit()
+            : settled
+              ? setHidden(current.id)
+              : page.onClose && !pending
+                ? page.onClose()
+                : field.current?.blur()
     );
+    // The bar on the canvas, or one opened from a button, takes focus as it opens.
+    const opened = !page || Boolean(page.onClose);
     useEffect(() => {
-        if (!page) {
+        if (opened) {
             field.current?.focus();
         }
-    }, [page]);
+    }, [opened]);
     useEffect(() => {
         if (wasPending.current && !pending) {
             field.current?.focus();
@@ -106,27 +116,39 @@ export const CanvasBar: FC<{ documentId: string; page?: BarPage }> = ({ document
                     </span>
                 }
                 trailing={
-                    !page && (
-                        <>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                aria-label="Open in chat panel"
-                                title="Open in chat panel"
-                                onClick={() => requestAiEdit('panel')}
-                            >
-                                <PanelRight {...ICON} />
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                aria-label="Close AI bar"
-                                title="Close (Esc)"
-                                onClick={() => closeAiEdit()}
-                            >
-                                <X {...ICON} />
-                            </button>
-                        </>
+                    page?.onClose ? (
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            aria-label="Close AI bar"
+                            title="Close (Esc)"
+                            onClick={page.onClose}
+                        >
+                            <X {...ICON} />
+                        </button>
+                    ) : (
+                        !page && (
+                            <>
+                                <button
+                                    type="button"
+                                    className={styles.iconButton}
+                                    aria-label="Open in chat panel"
+                                    title="Open in chat panel"
+                                    onClick={() => requestAiEdit('panel')}
+                                >
+                                    <PanelRight {...ICON} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.iconButton}
+                                    aria-label="Close AI bar"
+                                    title="Close (Esc)"
+                                    onClick={() => closeAiEdit()}
+                                >
+                                    <X {...ICON} />
+                                </button>
+                            </>
+                        )
                     )
                 }
             />

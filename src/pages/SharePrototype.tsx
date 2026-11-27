@@ -234,9 +234,13 @@ export function SharePrototype({
 
     return (
         <>
-            <button aria-label="Share prototype" onClick={() => setOpened(true)}>
+            <button
+                className={styles.roundButton}
+                aria-label="Share prototype"
+                title="Share prototype"
+                onClick={() => setOpened(true)}
+            >
                 <Icon icon={{ component: Share, size: 18 }} />
-                Share
             </button>
             <Dialog title="Share prototype" visible={opened} wide onClose={close} actions={actions}>
                 <div className={styles.sharing}>

@@ -293,6 +293,28 @@ describe('local test model link sentences', () => {
         ).toEqual([{ ...link, control: 'skip' }]);
     });
 
+    it('takes the control on the page the player shows when another page has one too', () => {
+        const flow = {
+            currentScreenId: 'details',
+            screens: {
+                home: { name: 'Home', controls: { next: { name: 'Continue' } } },
+                details: { name: 'Details', controls: { done: { name: 'Continue' } } }
+            }
+        };
+
+        expect(interpret('open Home when I click Continue', { flow } as never)).toEqual({
+            operations: [
+                { ...link, control: 'done', action: { ...link.action, screenId: 'home' } }
+            ],
+            text: ''
+        });
+        expect(
+            interpret('open Home when I click Continue', {
+                flow: { ...flow, currentScreenId: undefined }
+            } as never).text
+        ).toContain('Which “Continue”?');
+    });
+
     it('names the pages when the one asked for is missing', async () => {
         expect((await read('open Settings when I click Continue')).text).toBe(
             'No page is named like `Settings`. Pages: `Home` · `Details`'

@@ -1,12 +1,12 @@
 import {
     ArrowLeft,
-    Ellipsis,
     Info,
     Monitor,
     Moon,
     RotateCcw,
     SlidersHorizontal,
     Smartphone,
+    Sparkles,
     Sun,
     Tablet,
     Workflow
@@ -15,14 +15,15 @@ import { Icon } from 'src/ui/components/Icon';
 import { Button, Field, Select } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
 import { DeviceMenu } from './DeviceMenu';
-import { Popover } from './Popover';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
 import { Guide } from 'src/ui/components/FirstRun/Guide';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useAiAvailable } from 'src/app/aiHooks';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
+import { isReadOnly } from 'src/app/documentAccess';
 import { screenFrames } from 'src/app/screens';
 import { prototypeModes, prototypeSession } from 'src/app/modeEdits';
 import { isSizesDimension, ordered } from 'src/app/variableModes';
@@ -34,9 +35,16 @@ import {
 } from 'src/app/accessibilityCheck';
 import type { PreviewDiagnostic, PreviewSession, PreviewInspection } from 'src/preview/project';
 import InteractivePreview from 'src/ui/components/InteractivePreview/InteractivePreview';
+import type { PrototypeProposal } from 'src/ui/components/EditWithWords/PrototypeBar';
 import styles from './Prototype.css';
 
 registerEditor();
+
+const PrototypeBar = lazy(() =>
+    import(/* webpackChunkName: "ai" */ 'src/ui/components/EditWithWords/PrototypeBar').then(
+        (module) => ({ default: module.PrototypeBar })
+    )
+);
 
 export function PrototypePage() {
     const id = useAppState((state) => state.currentDocumentId);
@@ -122,6 +130,25 @@ function PrototypeWorkspace() {
     const reset = () => setRestart((value) => value + 1);
     // Restart remounts the preview and its header controls, so focus moves to the new button.
     const refocusRestart = useRef(false);
+    const aiAvailable = useAiAvailable();
+    const editable = useAppState((state) => !isReadOnly(state) && !state.currentDocument.locked);
+    const [aiBar, setAiBar] = useState(false);
+    const [proposal, setProposal] = useState<PrototypeProposal>();
+    const [shownScreen, setShownScreen] = useState<string>();
+    const shown = screens.find((screen) => screen.id === shownScreen);
+    const aiButton = useRef<HTMLButtonElement>(null);
+    // Focus goes back to the button the bar opened from.
+    const closeAiBar = useCallback(() => {
+        setAiBar(false);
+        aiButton.current?.focus();
+    }, []);
+    // A new start page is tried from the start; a changed control is tried where it is shown.
+    const applied = useCallback(({ start }: PrototypeProposal) => {
+        if (start) {
+            setSession((previous) => ({ ...previous, screenId: start }));
+            setRestart((value) => value + 1);
+        }
+    }, []);
     const resize = (axis: 'width' | 'height', value: number) =>
         setSession((previous) => ({
             ...previous,
@@ -162,54 +189,53 @@ function PrototypeWorkspace() {
                     <span>Canvas</span>
                 </a>
                 <div className={styles.identity}>
-                    <span className={styles.documentName} title={document.name}>
+                    <h1 className={styles.documentName} title={document.name}>
                         {document.name}
-                    </span>
-                    <span className={styles.summary}>
-                        <h1>Prototype</h1>
-                        {screens.length > 0 &&
-                            ` · ${screens.length} ${screens.length === 1 ? 'page' : 'pages'}`}
-                    </span>
+                    </h1>
+                    {screens.length > 0 && (
+                        <span className={styles.summary}>
+                            · {screens.length} {screens.length === 1 ? 'page' : 'pages'}
+                        </span>
+                    )}
                 </div>
                 <div className={styles.barActions}>
-                    <Popover
-                        label="More"
-                        title="More"
+                    {aiAvailable && editable && screens.length > 0 && (
+                        <button
+                            ref={aiButton}
+                            type="button"
+                            className={styles.roundButton}
+                            aria-label="AI bar"
+                            title="Change what taps do in words"
+                            aria-pressed={aiBar}
+                            onClick={() => setAiBar(!aiBar)}
+                        >
+                            <Icon icon={{ component: Sparkles, size: 18 }} />
+                        </button>
+                    )}
+                    <button
+                        type="button"
                         className={styles.roundButton}
-                        align="end"
-                        button={<Icon icon={{ component: Ellipsis, size: 18 }} />}
+                        aria-label="Prototype settings"
+                        title="Settings"
+                        onClick={() => setSettings(true)}
                     >
-                        {(close) => (
-                            <div className={styles.moreMenu}>
-                                <button
-                                    type="button"
-                                    aria-label="Prototype settings"
-                                    onClick={() => {
-                                        close();
-                                        setSettings(true);
-                                    }}
-                                >
-                                    <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
-                                    Settings
-                                </button>
-                                <a href="/flow">
-                                    <Icon icon={{ component: Workflow, size: 18 }} />
-                                    Flow
-                                </a>
-                                <DownloadPrototype
-                                    session={session}
-                                    inspection={inspection}
-                                    contexts={'contexts' in contexts ? contexts.contexts : []}
-                                />
-                            </div>
-                        )}
-                    </Popover>
+                        <Icon icon={{ component: SlidersHorizontal, size: 18 }} />
+                    </button>
+                    <DownloadPrototype
+                        session={session}
+                        inspection={inspection}
+                        contexts={'contexts' in contexts ? contexts.contexts : []}
+                    />
                     <AccessibilityCheck
                         session={session}
                         contexts={contexts}
                         onShow={(id) => locate({ kind: 'shape', id, message: '' })}
                     />
                     <SharePrototype session={session} inspection={inspection} />
+                    <a href="/flow" className={styles.flowLink} aria-label="Flow" title="Flow">
+                        <Icon icon={{ component: Workflow, size: 18 }} />
+                        <span>Flow</span>
+                    </a>
                 </div>
             </header>
             <Dialog
@@ -412,12 +438,27 @@ function PrototypeWorkspace() {
                                 </button>
                             </>
                         }
+                        outline={aiBar ? proposal?.controls : undefined}
+                        onScreen={setShownScreen}
                         onWidth={(value) => resize('width', value)}
                         onReset={reset}
                         onInspection={setInspection}
                         onLocate={locate}
                     />
                 </div>
+            )}
+            {aiBar && aiAvailable && editable && screens.length > 0 && (
+                <Suspense fallback={null}>
+                    <div className={styles.aiBar}>
+                        <PrototypeBar
+                            documentId={document.id}
+                            screen={shown && { id: shown.id, name: shown.name }}
+                            onPreview={setProposal}
+                            onApplied={applied}
+                            onClose={closeAiBar}
+                        />
+                    </div>
+                </Suspense>
             )}
             <Guide page="prototype" />
         </main>

@@ -24,9 +24,8 @@
     color: var(--text-color);
     text-decoration: none;
 }
-.prototype button,
-.prototype input,
-.prototype select {
+/* The AI bar keeps the chat's own controls. */
+.prototype :is(button, input, select):where(:not(.aiBar *)) {
     font: inherit;
     padding: 8px 12px;
     min-height: 36px;
@@ -37,14 +36,14 @@
     max-width: 100%;
     box-sizing: border-box;
 }
-.prototype button:hover {
+.prototype button:where(:not(.aiBar *)):hover {
     background: var(--field-background);
 }
-.prototype :is(button, input, select, a):focus-visible {
+.prototype :is(button, input, select, a):where(:not(.aiBar *)):focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 2px;
 }
-.prototype button:disabled {
+.prototype button:where(:not(.aiBar *)):disabled {
     opacity: 0.5;
 }
 .player {
@@ -70,7 +69,9 @@
     position: sticky;
     top: 12px;
     z-index: 2;
-    display: flex;
+    /* The title stays centred on the bar whatever the two sides hold. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     min-height: 48px;
@@ -84,8 +85,7 @@
     box-shadow: var(--box-shadow);
 }
 .prototype .back,
-.prototype .barActions > button,
-.prototype .moreMenu :is(a, button),
+.prototype .barActions > :is(button, .flowLink),
 .prototype .roundButton {
     display: inline-flex;
     gap: 6px;
@@ -98,7 +98,8 @@
     background: transparent;
     cursor: pointer;
 }
-.prototype .roundButton {
+.prototype .roundButton,
+.prototype .barActions > .roundButton {
     width: 32px;
     padding: 0;
     background: var(--field-background);
@@ -108,43 +109,50 @@
     color: var(--selection-color);
 }
 .identity {
-    flex: 1;
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    align-items: baseline;
     line-height: var(--line-height-callout);
 }
 .documentName {
-    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    font-size: inherit;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: var(--font-weight-semibold);
 }
 .summary {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: none;
     white-space: nowrap;
     color: var(--text-secondary-color);
     font-size: var(--font-size-callout);
 }
-.summary h1 {
-    display: inline;
-    font: inherit;
+.prototype .back {
+    justify-self: start;
 }
 .barActions {
     display: flex;
+    justify-self: end;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
-/* Share is the one main action, as Play is on Flow. */
+/* Sharing and Flow stand apart from the tools. */
 .prototype .barActions > button[aria-label='Share prototype'] {
+    margin-left: 8px;
+}
+/* Flow is the one main action, as Play is on Flow. */
+.prototype .barActions > .flowLink {
     padding: 0 14px;
     color: var(--on-selection-color);
     background: var(--selection-color);
     font-weight: var(--font-weight-semibold);
+}
+.prototype .barActions > .flowLink:hover {
+    background: color-mix(in srgb, var(--selection-color) 88%, black);
 }
 .popoverRoot {
     position: relative;
@@ -166,15 +174,7 @@
     left: auto;
     right: 0;
 }
-.moreMenu {
-    display: grid;
-    min-width: 11rem;
-}
-.prototype .moreMenu :is(a, button) {
-    justify-content: flex-start;
-    border-radius: var(--radius-md);
-}
-.prototype :is(.moreMenu :is(a, button), .deviceRow):hover:not(:disabled) {
+.prototype .deviceRow:hover:not(:disabled) {
     background: var(--menu-hover);
 }
 .controlsRow {
@@ -182,7 +182,7 @@
     justify-content: center;
     margin-bottom: 12px;
 }
-.controlsRow > div > label > span {
+.controlsRow > div > label > span:first-child {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -334,19 +334,28 @@
 }
 @media (max-width: 600px) {
     .bar {
+        display: flex;
         margin: 8px 8px 0;
     }
+    .identity {
+        flex: 1;
+    }
     .back > span,
-    .documentName,
-    .barActions > button[aria-label='Accessibility'] > span {
+    .summary,
+    .flowLink > span {
         display: none;
     }
-    .prototype .barActions > button[aria-label='Accessibility'] {
+    .prototype .barActions > .flowLink {
         width: 32px;
         padding: 0;
     }
     .player {
         padding: 8px;
+    }
+}
+@media (max-width: 380px) {
+    .identity {
+        visibility: hidden;
     }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -630,4 +639,7 @@
     margin: 0;
     opacity: 0;
     cursor: pointer;
+}
+.aiBar {
+    display: contents;
 }

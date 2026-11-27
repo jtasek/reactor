@@ -342,17 +342,21 @@ export function documentContext(document: Document) {
 }
 
 /**
- * What the chat on Flow shares: the pages, their controls and states, and the variants a
- * control may show, without the artwork the canvas chat sends.
+ * What the chat on Flow and Prototype shares: the pages, their controls and states, and the
+ * variants a control may show, without the artwork the canvas chat sends. On Prototype it
+ * names the page the player shows.
  */
-export function flowDocumentContext(document: Document) {
+export function flowDocumentContext(document: Document, currentScreenId?: string) {
     let records = 0;
     const reserve = () => {
         if (++records > MAX_CONTEXT_RECORDS) {
             throw new ContextTooLarge();
         }
     };
-    const flow = flowContext(document, reserve);
+    const flow = {
+        ...flowContext(document, reserve),
+        ...(currentScreenId && document.frames[currentScreenId] ? { currentScreenId } : {})
+    };
     const variants = Object.values(document.components).flatMap((component) =>
         component.variantIds?.length
             ? [

@@ -31,6 +31,7 @@ import type { Operation, Provenance } from 'src/app/operations';
 import { authoringKeys } from 'src/app/screenAuthoring';
 import type { PreviewSession } from 'src/preview/project';
 import styles from './AccessibilityCheck.css';
+import pageStyles from './Prototype.css';
 
 const sendToLocalModel: Send = (path, body, signal) =>
     import('src/ai/localModel').then(({ localSend }) => localSend(path, body, signal));
@@ -180,9 +181,14 @@ export function AccessibilityCheck({
 
     return (
         <>
-            <button onClick={open} aria-haspopup="dialog" aria-label="Accessibility">
+            <button
+                className={pageStyles.roundButton}
+                onClick={open}
+                aria-haspopup="dialog"
+                aria-label="Accessibility"
+                title="Accessibility check"
+            >
                 <Icon icon={{ component: Accessibility, size: 18 }} />
-                <span>Accessibility</span>
             </button>
             <Dialog title="Accessibility" visible={opened} wide onClose={close}>
                 {'problem' in contexts ? (

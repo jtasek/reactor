@@ -89,6 +89,11 @@ foreignObject button:disabled {
     outline-offset: 2px;
 }
 
+[data-proposed='true'] {
+    outline: 2px dashed var(--selection-color);
+    outline-offset: 2px;
+}
+
 button[aria-pressed='true'] {
     outline: 2px solid var(--focus-ring-color);
     outline-offset: -2px;
