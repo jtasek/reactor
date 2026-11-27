@@ -264,6 +264,30 @@ test('hide and lock show on hover beside the name, and stay while they are on', 
     await expect(shapes(page)).toHaveCount(3);
 });
 
+test("a shape in a locked group has its row's commands turned off", async ({ page }) => {
+    await openEditor(page, ['Explorer']);
+    await drawRect(page, { x: 300, y: 100 }, { x: 340, y: 140 });
+    await drawRect(page, { x: 400, y: 100 }, { x: 440, y: 140 });
+    await pointer(page, 'pointerdown', { x: 280, y: 80 });
+    await pointer(page, 'pointermove', { x: 460, y: 160 });
+    await pointer(page, 'pointerup', { x: 460, y: 160 });
+    await page.keyboard.press('ControlOrMeta+g');
+    await click(page, 600, 400);
+
+    await row(page, 'group-1').click({ button: 'right' });
+    await page
+        .getByRole('menu', { name: 'group-1 actions' })
+        .getByRole('menuitem', { name: 'Lock' })
+        .click();
+    await row(page, 'rectangle-1').click({ button: 'right' });
+
+    await expect(
+        page
+            .getByRole('menu', { name: 'rectangle-1 actions' })
+            .getByRole('menuitem', { name: 'Delete' })
+    ).toBeDisabled();
+});
+
 test('the outline is a tree with one tab stop, arrow keys, rename and a menu key', async ({
     page
 }) => {

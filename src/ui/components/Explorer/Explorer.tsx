@@ -3,9 +3,12 @@ import { screenOwners } from 'src/app/screenViews';
 import React, {
     FC,
     MouseEvent,
+    ReactNode,
     Ref,
+    createContext,
     memo,
     useCallback,
+    useContext,
     useEffect,
     useLayoutEffect,
     useMemo,
@@ -22,7 +25,7 @@ import { hideAction, lockAction, useItemCommandActions, type ItemMenuAction } fr
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
-import { Section } from './Section';
+import { Section, REVEAL_ROW, focusOutlineRow } from './Section';
 import { ComponentFocus, type Press } from './ComponentFocus';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import {
@@ -32,6 +35,7 @@ import {
     type ExplorerStatusFilter
 } from 'src/app/explorerTree';
 import { isShapeLocked } from 'src/app/utils';
+import { containerStatesOf } from 'src/app/containerState';
 import { NewLayerCommand } from 'src/commands';
 import {
     useExplorerTree,
@@ -49,7 +53,6 @@ import {
     useDocumentFilter,
     useGroup,
     useShape,
-    useShapeLocked,
     useShapesIds,
     useScopedCommands,
     useShownLayerId
@@ -87,6 +90,12 @@ const useMoveToLayerItems = (shapeIds: string[], disabled: boolean): ExplorerMen
     ];
 };
 
+/**
+ * The shapes their groups, layers and components lock, read once for the whole
+ * outline: each row asking would track every container of the document.
+ */
+const LockedShapes = createContext<ReadonlySet<string>>(new Set());
+
 /** A shape's row; memoized so a list rendering again does not render every row. */
 const ShapeItem = memo<{
     shapeId: string;
@@ -112,7 +121,8 @@ const ShapeItem = memo<{
         editComponentSource,
         events
     } = useActions();
-    const locked = useShapeLocked(shapeId);
+    const lockedByContainer = useContext(LockedShapes).has(shapeId);
+    const locked = shape.locked || documentLocked || inherited.locked || lockedByContainer;
     const commands = useItemCommandActions([shapeId], locked || !shape.visible || inherited.hidden);
     const layerItems = useMoveToLayerItems([shapeId], locked);
     // Double-clicking an instance edits its component; the variant it shows, if it has one.
@@ -252,20 +262,43 @@ const LazyShapeItem = memo<{
 }>(function LazyShapeItem(props) {
     const [near, setNear] = useState(false);
     const stop = useRef<() => void>(undefined);
-    const rowRef = useCallback((row: HTMLLIElement | null) => {
-        stop.current?.();
-        stop.current = row
-            ? watchRow(row, (isNear) =>
-                  // The row holding the keyboard focus stays, so focus is not lost on scroll.
-                  setNear(isNear || row.contains(row.ownerDocument.activeElement))
-              )
-            : undefined;
+    const currentRow = useRef<HTMLLIElement | null>(null);
+    const focusPending = useRef(false);
+    const reveal = useCallback(() => {
+        focusPending.current = true;
+        setNear(true);
     }, []);
+    useLayoutEffect(() => {
+        if (near && focusPending.current) {
+            focusPending.current = false;
+            focusOutlineRow(currentRow.current?.querySelector<HTMLElement>('[data-explorer-row]'));
+        }
+    }, [near]);
+    const rowRef = useCallback(
+        (row: HTMLLIElement | null) => {
+            stop.current?.();
+            currentRow.current?.removeEventListener(REVEAL_ROW, reveal);
+            currentRow.current = row;
+            row?.addEventListener(REVEAL_ROW, reveal);
+            stop.current = row
+                ? watchRow(row, (isNear) =>
+                      // The row holding the keyboard focus stays, so focus is not lost on scroll.
+                      setNear(isNear || row.contains(row.ownerDocument.activeElement))
+                  )
+                : undefined;
+        },
+        [reveal]
+    );
 
     return near ? (
         <ShapeItem {...props} rowRef={rowRef} />
     ) : (
-        <li ref={rowRef} aria-hidden="true">
+        <li
+            ref={rowRef}
+            aria-hidden="true"
+            data-shape-row={props.shapeId}
+            data-explorer-placeholder=""
+        >
             <div className={styles.row} />
         </li>
     );
@@ -277,6 +310,8 @@ interface GroupItemProps {
     /** Read once for the whole list: each row asking would read every group. */
     selected: boolean;
     viewId?: string;
+    /** Whether its shapes draw only near the view, as in a long list. */
+    lazy: boolean;
 }
 
 /**
@@ -284,7 +319,7 @@ interface GroupItemProps {
  * selection changes, and its shapes come sorted in a new list each time.
  */
 const GroupItem = memo<GroupItemProps>(
-    function GroupItem({ groupId, shapesIds, selected, viewId }) {
+    function GroupItem({ groupId, shapesIds, selected, viewId, lazy }) {
         const group = useGroup(groupId);
         const inherited = useShapesFrameState(group.shapesIds);
         const documentLocked = useAppState((state) => state.currentDocument.locked);
@@ -346,9 +381,19 @@ const GroupItem = memo<GroupItemProps>(
                     }
                 }}
             >
-                {shapesIds.map((shapeId) => (
-                    <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
-                ))}
+                {shapesIds.map((shapeId, index) =>
+                    lazy ? (
+                        <LazyShapeItem
+                            key={shapeId}
+                            shapeId={shapeId}
+                            viewId={viewId}
+                            position={index + 1}
+                            setSize={shapesIds.length}
+                        />
+                    ) : (
+                        <ShapeItem key={shapeId} shapeId={shapeId} viewId={viewId} />
+                    )
+                )}
             </ExplorerItem>
         );
     },
@@ -356,6 +401,7 @@ const GroupItem = memo<GroupItemProps>(
         before.groupId === after.groupId &&
         before.selected === after.selected &&
         before.viewId === after.viewId &&
+        before.lazy === after.lazy &&
         before.shapesIds.length === after.shapesIds.length &&
         before.shapesIds.every((id, index) => after.shapesIds[index] === id)
 );
@@ -386,7 +432,8 @@ const ObjectContents: FC<Contents & { viewId?: string }> = ({ groups, shapesIds,
             rank: drawOrder.get(id) ?? -1
         }))
     ].sort((a, b) => b.rank - a.rank);
-    const lazy = items.length >= LAZY_ROWS_FROM && typeof IntersectionObserver !== 'undefined';
+    const rows = items.length + groups.reduce((count, group) => count + group.shapesIds.length, 0);
+    const lazy = rows >= LAZY_ROWS_FROM && typeof IntersectionObserver !== 'undefined';
 
     return (
         <>
@@ -398,6 +445,7 @@ const ObjectContents: FC<Contents & { viewId?: string }> = ({ groups, shapesIds,
                         shapesIds={item.shapesIds}
                         selected={selectedGroups.includes(item.id)}
                         viewId={viewId}
+                        lazy={lazy}
                     />
                 ) : lazy ? (
                     <LazyShapeItem
@@ -492,6 +540,7 @@ const RevealSelection: FC<{
             ...currentDocument.selectedShapesIds
         ].join(' ')
     );
+    const shapeId = useAppState(({ currentDocument }) => currentDocument.selectedShapesIds[0]);
 
     useEffect(() => {
         // The whole outline opens nothing for selections made while a component is edited.
@@ -503,17 +552,48 @@ const RevealSelection: FC<{
     }, [revealKeys, selection, focused]);
 
     useEffect(() => {
-        const frame = requestAnimationFrame(() =>
-            outline.current
-                ?.querySelector('[aria-selected="true"]')
-                ?.scrollIntoView?.({ block: 'nearest' })
-        );
+        const frame = requestAnimationFrame(() => {
+            // A selected row not drawn yet is scrolled to by its place, which draws it.
+            const target =
+                outline.current?.querySelector('[aria-selected="true"]') ??
+                (shapeId
+                    ? outline.current?.querySelector(`[data-shape-row="${CSS.escape(shapeId)}"]`)
+                    : null);
+
+            target?.scrollIntoView?.({ block: 'nearest' });
+        });
 
         return () => cancelAnimationFrame(frame);
-    }, [outline, revealKeys, selection]);
+    }, [outline, revealKeys, selection, shapeId]);
 
     // The selected row may have changed without the outline rendering again.
     useLayoutEffect(() => placeTabStop(outline.current), [outline, selection]);
+
+    return null;
+};
+
+const noShapes: ReadonlySet<string> = new Set();
+
+/** What every row of the outline reads from the whole outline. */
+const OutlineState: FC<{
+    openRows: ReturnType<typeof useOpenRows>;
+    lockedShapes: ReadonlySet<string>;
+    children: ReactNode;
+}> = ({ openRows, lockedShapes, children }) => (
+    <OpenItems.Provider value={openRows}>
+        <LockedShapes.Provider value={lockedShapes}>{children}</LockedShapes.Provider>
+    </OpenItems.Provider>
+);
+
+/**
+ * Tells the outline which page view is being edited. A press inside a page can
+ * write where it was without changing the view, so the outline, which reads
+ * every shape, renders again only when the view itself changes.
+ */
+const EditedView: FC<{ onChange: (viewId: string | undefined) => void }> = ({ onChange }) => {
+    const viewId = useAppState((state) => state.events.pointer.screenView?.viewId);
+
+    useLayoutEffect(() => onChange(viewId), [onChange, viewId]);
 
     return null;
 };
@@ -537,7 +617,10 @@ export const Explorer = memo(function Explorer() {
     const filter = useDocumentFilter().trim().toLowerCase();
     const shownLayerId = useShownLayerId();
     const canAddLayer = useCommandEnabled(NewLayerCommand);
-    const editedViewId = useAppState((state) => state.events.pointer.screenView?.viewId);
+    const [editedViewId, setEditedViewId] = useState<string>();
+    const lockedShapes = useAppState(
+        (state) => containerStatesOf(state.currentDocument)?.locked ?? noShapes
+    );
     const filterButton = useRef<HTMLButtonElement>(null);
     const openRows = useOpenRows(document.id);
     const { explorer } = useControls();
@@ -627,7 +710,7 @@ export const Explorer = memo(function Explorer() {
             .sort((a, b) => (drawOrder.get(b) ?? -1) - (drawOrder.get(a) ?? -1));
 
         return (
-            <OpenItems.Provider value={openRows}>
+            <OutlineState openRows={openRows} lockedShapes={lockedShapes}>
                 <RevealSelection openRows={openRows} outline={outline} focused />
                 <section
                     ref={panel}
@@ -652,7 +735,7 @@ export const Explorer = memo(function Explorer() {
                         ))}
                     </ComponentFocus>
                 </section>
-            </OpenItems.Provider>
+            </OutlineState>
         );
     }
 
@@ -930,8 +1013,9 @@ export const Explorer = memo(function Explorer() {
     const empty = screenRows.length === 0 && !hasCanvasRows && sources.length === 0;
 
     return (
-        <OpenItems.Provider value={openRows}>
+        <OutlineState openRows={openRows} lockedShapes={lockedShapes}>
             <RevealSelection openRows={openRows} outline={outline} focused={false} />
+            <EditedView onChange={setEditedViewId} />
             <section
                 ref={panel}
                 className={styles.explorer}
@@ -1073,7 +1157,7 @@ export const Explorer = memo(function Explorer() {
                     />
                 </div>
             </section>
-        </OpenItems.Provider>
+        </OutlineState>
     );
 });
 

@@ -1,10 +1,13 @@
-import { expect, test } from '@playwright/test';
-import { createDocument, createShape } from 'src/app/factories';
+import { expect, test, type Page } from '@playwright/test';
+import { createDocument, createGroup, createShape } from 'src/app/factories';
 import { serializePersistedState } from 'src/app/services/documentStorage';
 
 const COUNT = 150;
+/** Shapes in each group of the grouped list. */
+const GROUP_SIZE = 5;
 
-test.beforeEach(async ({ page }) => {
+/** Opens a document of COUNT boxes, in groups of GROUP_SIZE when `grouped`. */
+async function openList(page: Page, grouped = false) {
     const shapes = Array.from({ length: COUNT }, (_, index) =>
         createShape({
             type: 'rectangle',
@@ -15,8 +18,19 @@ test.beforeEach(async ({ page }) => {
             selected: false
         })
     );
+    const groups = grouped
+        ? Array.from({ length: COUNT / GROUP_SIZE }, (_, index) =>
+              createGroup({
+                  name: `Group ${index + 1}`,
+                  shapesIds: shapes
+                      .slice(index * GROUP_SIZE, (index + 1) * GROUP_SIZE)
+                      .map((shape) => shape.id)
+              })
+          )
+        : [];
     const document = createDocument({
-        shapes: Object.fromEntries(shapes.map((shape) => [shape.id, shape]))
+        shapes: Object.fromEntries(shapes.map((shape) => [shape.id, shape])),
+        groups: Object.fromEntries(groups.map((group) => [group.id, group]))
     });
     const saved = serializePersistedState({
         currentDocumentId: document.id,
@@ -27,11 +41,12 @@ test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'More panels' }).click();
     await page.getByRole('checkbox', { name: 'Explorer', exact: true }).check();
-});
+}
 
 test('a long Explorer list draws the rows near the view and the rest as they are scrolled to', async ({
     page
 }) => {
+    await openList(page);
     const explorer = page.getByRole('region', { name: 'Explorer' });
     const boxes = explorer.getByRole('button', { name: /^Box \d+$/ });
 
@@ -71,4 +86,60 @@ test('a long Explorer list draws the rows near the view and the rest as they are
     // A row scrolled to works like any other.
     await lastBox.click();
     await expect(lastBox).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the shapes of groups in a long list are drawn as they come near the view', async ({
+    page
+}) => {
+    await openList(page, true);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const groups = explorer.getByRole('button', { name: /^Group \d+$/ });
+    const firstGroup = groups.first().locator('xpath=ancestor::li[1]');
+    const lastGroup = groups.last().locator('xpath=ancestor::li[1]');
+    const lastRows = lastGroup.locator(':scope > ul > li');
+
+    await expect(firstGroup.getByRole('button', { name: /^Box \d+$/ })).toHaveCount(GROUP_SIZE);
+    await expect(lastRows).toHaveCount(GROUP_SIZE);
+    await expect(lastRows.first()).toHaveAttribute('aria-hidden', 'true');
+
+    await lastGroup.evaluate((row) => row.scrollIntoView());
+
+    const box = lastRows.first().getByRole('button', { name: /^Box \d+$/ });
+
+    await expect(box).toBeVisible();
+    await expect(lastRows.first()).toHaveAttribute('aria-posinset', '1');
+    await expect(lastRows.first()).toHaveAttribute('aria-setsize', String(GROUP_SIZE));
+});
+
+test('a shape selected on the canvas has its row in a long list drawn and scrolled to', async ({
+    page
+}) => {
+    await openList(page);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const rows = explorer
+        .getByRole('button', { name: /^Box \d+$/ })
+        .first()
+        .locator('xpath=ancestor::ul[1]')
+        .locator(':scope > li');
+
+    // The shape drawn first is listed last, far below the rows drawn so far.
+    await expect(rows.last()).toHaveAttribute('aria-hidden', 'true');
+    await page.locator('svg#surface #shapes > g').first().click();
+
+    await expect(rows.last()).toHaveAttribute('aria-selected', 'true');
+    await expect(rows.last()).toBeInViewport();
+});
+
+test('End reaches the last grouped shape even when its row has not loaded', async ({ page }) => {
+    await openList(page, true);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const groups = explorer.getByRole('button', { name: /^Group \d+$/ });
+    const lastGroup = groups.last().locator('xpath=ancestor::li[1]');
+    const lastRow = lastGroup.locator(':scope > ul > li').last();
+    await expect(lastRow).toHaveAttribute('aria-hidden', 'true');
+    await groups.first().focus();
+    await page.keyboard.press('End');
+
+    await expect(lastRow.getByRole('button', { name: /^Box \d+$/ })).toBeFocused();
+    await expect(lastRow).toHaveAttribute('aria-selected', 'true');
 });
