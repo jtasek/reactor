@@ -78,3 +78,16 @@ test('the AI bar is not offered on Prototype without AI', async ({ page }) => {
     await expect(player(page).getByRole('img', { name: 'Home' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'AI bar' })).toHaveCount(0);
 });
+
+test('applying a start page restarts a player launched on that same page', async ({ page }) => {
+    await seed(page);
+    await page.goto('/prototype?ai=local&screen=details');
+    await expect(player(page).getByRole('img', { name: 'Details' })).toBeVisible();
+    await page.getByLabel('Preview page', { exact: true }).selectOption('home');
+    await expect(player(page).getByRole('img', { name: 'Home' })).toBeVisible();
+    await page.getByRole('button', { name: 'AI bar', exact: true }).click();
+    await ask(page, 'start on Details');
+    await bar(page).getByRole('button', { name: 'Apply and try it' }).click();
+    await expect(bar(page)).toContainText('Applied 1 change.');
+    await expect(player(page).getByRole('img', { name: 'Details' })).toBeVisible();
+});

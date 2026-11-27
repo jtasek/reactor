@@ -16,6 +16,7 @@ export function FlowList({
     machine,
     order,
     selection,
+    proposed,
     canEdit,
     onSelect,
     onLinkMenu,
@@ -27,6 +28,8 @@ export function FlowList({
     /** Screen ids as the map lays them out: by column, then down each column. */
     order: readonly string[];
     selection?: FlowSelection;
+    /** Unaccepted action and start-page changes, also marked in the narrow list. */
+    proposed?: ReadonlySet<string>;
     canEdit: boolean;
     onSelect: (selection?: FlowSelection) => void;
     onLinkMenu: (key: string, at: Point) => void;
@@ -54,6 +57,7 @@ export function FlowList({
                         key={id}
                         className={styles.group}
                         data-flow-screen={id}
+                        data-proposed={(machine.initial === id && proposed?.has(id)) || undefined}
                         data-dim={!state.available || !state.reachable}
                         role="group"
                         aria-label={`Page ${state.name}`}
@@ -77,7 +81,9 @@ export function FlowList({
                                 }
                             >
                                 {machine.initial === id && (
-                                    <span className={styles.badge}>Start</span>
+                                    <span className={styles.badge}>
+                                        {proposed?.has(id) ? 'Start · Draft' : 'Start'}
+                                    </span>
                                 )}
                                 <span className={styles.screenName}>{state.name}</span>
                                 {note && (
@@ -119,6 +125,9 @@ export function FlowList({
                                     <li key={transition.key}>
                                         <button
                                             data-flow-control={transition.key}
+                                            data-proposed={
+                                                proposed?.has(transition.instanceId) || undefined
+                                            }
                                             data-inactive={Boolean(transition.inactive)}
                                             aria-label={transition.control}
                                             aria-describedby={describedBy}
@@ -151,6 +160,8 @@ export function FlowList({
                                             )}
                                         </button>
                                         <span id={describedBy} className={styles.hidden}>
+                                            {proposed?.has(transition.instanceId) &&
+                                                'Draft. Not applied yet. '}
                                             {describeRow(transition)}
                                         </span>
                                     </li>

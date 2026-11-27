@@ -143,6 +143,7 @@ function PrototypeWorkspace() {
     const applied = useCallback(({ start }: PrototypeProposal) => {
         if (start) {
             setSession((previous) => ({ ...previous, screenId: start }));
+            setRestart((value) => value + 1);
         }
     }, []);
     const resize = (axis: 'width' | 'height', value: number) =>
