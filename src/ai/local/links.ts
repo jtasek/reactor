@@ -4,6 +4,8 @@ import type { Operation, Reading } from './interpret';
 /** The pages, their controls and what each does, as the chat shares them. */
 export interface FlowContext {
     startScreenId?: string;
+    /** The page the player shows, where a control named without a page is looked for first. */
+    currentScreenId?: string;
     screens: Record<
         string,
         { name: string; controls: Record<string, { name: string; label?: string; does?: string }> }
@@ -202,9 +204,11 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
                     screen: screen.name
                 }))
             );
-        const found = best(typed, controls, (control) =>
+        const fits = best(typed, controls, (control) =>
             control.label ? [control.name, control.label] : [control.name]
         );
+        const shown = fits.filter((control) => control.screenId === flow.currentScreenId);
+        const found = !within && shown.length === 1 ? shown : fits;
         if (found.length === 0) {
             if (loose) {
                 return undefined;

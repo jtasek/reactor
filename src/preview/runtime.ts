@@ -69,6 +69,8 @@ let currentView = 0;
 let accessibilityRules = DEFAULT_ACCESSIBILITY_RULES;
 let reportOpen = false;
 let port: MessagePort | undefined;
+/** Controls an AI proposal in the editor changes, by shape ID, drawn dashed until it applies. */
+let outlined = new Set<string>();
 
 function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const recordId =
@@ -141,6 +143,9 @@ function nodeElement(authored: PreviewNode, decorative = false): SVGElement {
     const inputKey = control.stateKey ?? node.key;
     field.dataset.key = inputKey;
     field.className = control.role;
+    if (outlined.has(authored.key.slice(authored.key.lastIndexOf('/') + 1))) {
+        field.dataset.proposed = 'true';
+    }
     // A label bound to a state reads its value; an empty value keeps the authored label.
     const label =
         (control.labelState !== undefined && formatStateValue(stateValue(control.labelState))) ||
@@ -650,6 +655,16 @@ window.addEventListener('message', (event) => {
 
             return;
         }
+        if (event.data?.type === 'outline') {
+            outlined = new Set(
+                Array.isArray(event.data.shapeIds)
+                    ? event.data.shapeIds.filter((id: unknown) => typeof id === 'string')
+                    : []
+            );
+            render();
+
+            return;
+        }
         if (event.data?.type === 'select-screen') {
             if (
                 hostControls &&
@@ -663,7 +678,12 @@ window.addEventListener('message', (event) => {
         }
         receive(event.data);
     };
-    port.postMessage({ type: 'ready', version: PREVIEW_PROTOCOL_VERSION, playerControls: true });
+    port.postMessage({
+        type: 'ready',
+        version: PREVIEW_PROTOCOL_VERSION,
+        playerControls: true,
+        outline: true
+    });
 });
 window.addEventListener('pagehide', () => port?.close());
 

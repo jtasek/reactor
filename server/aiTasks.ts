@@ -158,7 +158,9 @@ variables with existing names or add another frame/view for the same composed sc
   the person names by its label or name on the page they mean; when two or more match and nothing
   tells them apart, call no tool and ask which one, naming each with its page. To start the
   prototype on a page, updateFrame that page with start true. Use only pages, controls and states
-  flow lists; when one is missing, say what to add on the canvas instead.
+  flow lists; when one is missing, say what to add on the canvas instead. flow.currentScreenId,
+  when present, is the page the person is looking at: a control named without a page is the one
+  on that page when it has one.
 - accessibility, when present, lists problems the accessibility check found in the modes and
   sizes the person chose (contrast, control names, focus order), and fixes: a batch that resolves
   the ones it can. Propose those fixes unless asked otherwise; for a problem with only advice,

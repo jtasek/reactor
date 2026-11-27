@@ -15,7 +15,8 @@ import { usePreviewProjection, type PreviewProjection } from 'src/preview/hooks'
 import {
     PREVIEW_PROTOCOL_VERSION,
     type PreviewApplication,
-    type PreviewDrawing
+    type PreviewDrawing,
+    type PreviewNode
 } from 'src/shared/previewProtocol';
 import { createPreviewResources } from 'src/preview/resources';
 import type { PreviewInspection, PreviewSession, PreviewDiagnostic } from 'src/preview/project';
@@ -28,7 +29,9 @@ export default function InteractivePreview({
     onInspection,
     onLocate,
     toolbar,
-    toolbarTarget
+    toolbarTarget,
+    outline,
+    onScreen
 }: {
     session?: PreviewSession;
     toolbar?: ReactNode;
@@ -37,6 +40,9 @@ export default function InteractivePreview({
     onReset?: () => void;
     onInspection?: (inspection: PreviewInspection) => void;
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
+    /** Controls drawn dashed, by shape ID; the player turns to the page that has them. */
+    outline?: readonly string[];
+    onScreen?: (screenId: string | undefined) => void;
 } = {}) {
     const { assets } = useEffects();
     const document = useCurrentDocument();
@@ -57,6 +63,8 @@ export default function InteractivePreview({
     const diagnosticId = useId();
     const prepare = useMemo(() => createPreviewResources(assets), [assets]);
     const [currentScreen, setCurrentScreen] = useState<string>();
+    useEffect(() => onScreen?.(currentScreen), [currentScreen, onScreen]);
+    const [outlines, setOutlines] = useState(false);
     const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
@@ -160,6 +168,34 @@ export default function InteractivePreview({
         return () => controller.abort();
     }, [projection.serialized, prepare, attempt, origin]);
 
+    const outlineKey = JSON.stringify(outline ?? []);
+    useEffect(() => {
+        if (!outlines || !connection.current) {
+            return;
+        }
+        const shapeIds: string[] = JSON.parse(outlineKey);
+        connection.current.postMessage({ type: 'outline', shapeIds });
+        const drawn = (nodes: PreviewNode[] | undefined): boolean =>
+            nodes?.some(
+                (node) =>
+                    shapeIds.some((id) => node.key.endsWith(`/${id}`)) ||
+                    drawn(node.children) ||
+                    drawn(Object.values(node.variants ?? {})) ||
+                    drawn(Object.values(node.records ?? {}))
+            ) ?? false;
+        const screens = latest.current?.screens ?? [];
+        const shownScreen = screens.find((screen) => screen.id === currentScreen);
+        if (!shapeIds.length || drawn(shownScreen?.nodes)) {
+            return;
+        }
+        const other = screens.find((screen) => drawn(screen.nodes));
+        if (other) {
+            connection.current.postMessage({ type: 'select-screen', screenId: other.id });
+        }
+        // The screen it shows is read when the outline changes, not each time it turns.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [outlineKey, outlines]);
+
     useEffect(() => () => channelPort.current?.close(), []);
     useEffect(() => {
         if (!origin || ready) {
@@ -194,6 +230,7 @@ export default function InteractivePreview({
         channelPort.current = channel.port1;
         connection.current = null;
         setHostControls(false);
+        setOutlines(false);
         setCurrentScreen(undefined);
         setActiveRecord(undefined);
         setEditing(false);
@@ -274,6 +311,7 @@ export default function InteractivePreview({
             setAvailability('');
             const supportsHostControls = event.data.playerControls === true;
             setHostControls(supportsHostControls);
+            setOutlines(supportsHostControls && event.data.outline === true);
             if (session && supportsHostControls) {
                 // Older runtimes own their navigation and must receive only drawing payloads.
                 channel.port1.postMessage({ type: 'player-controls' });

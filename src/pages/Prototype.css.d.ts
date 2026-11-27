@@ -1,5 +1,6 @@
 declare namespace PrototypeCssNamespace {
   export interface IPrototypeCss {
+    aiBar: string;
     back: string;
     bar: string;
     barActions: string;

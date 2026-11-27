@@ -24,9 +24,8 @@
     color: var(--text-color);
     text-decoration: none;
 }
-.prototype button,
-.prototype input,
-.prototype select {
+/* The AI bar keeps the chat's own controls. */
+.prototype :is(button, input, select):where(:not(.aiBar *)) {
     font: inherit;
     padding: 8px 12px;
     min-height: 36px;
@@ -37,14 +36,14 @@
     max-width: 100%;
     box-sizing: border-box;
 }
-.prototype button:hover {
+.prototype button:where(:not(.aiBar *)):hover {
     background: var(--field-background);
 }
-.prototype :is(button, input, select, a):focus-visible {
+.prototype :is(button, input, select, a):where(:not(.aiBar *)):focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 2px;
 }
-.prototype button:disabled {
+.prototype button:where(:not(.aiBar *)):disabled {
     opacity: 0.5;
 }
 .player {
@@ -98,7 +97,8 @@
     background: transparent;
     cursor: pointer;
 }
-.prototype .roundButton {
+.prototype .roundButton,
+.prototype .barActions > .roundButton {
     width: 32px;
     padding: 0;
     background: var(--field-background);
@@ -630,4 +630,7 @@
     margin: 0;
     opacity: 0;
     cursor: pointer;
+}
+.aiBar {
+    display: contents;
 }
