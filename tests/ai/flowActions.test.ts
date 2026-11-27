@@ -355,7 +355,13 @@ describe('local test model link sentences', () => {
             '**States**\n- menuOpen: yes or no, starts false'
         );
         expect((await read('list actions on Settings', document)).text).toContain(
-            'No one page is named like `Settings`.'
+            'No page is named like `Settings`.'
+        );
+        expect((await read('what controls are on Details', document)).text).toBe(
+            '**On Details**\n- none'
+        );
+        expect(interpret('list pages', { flow: { screens: {} } } as never).text).toContain(
+            'No pages are shared.'
         );
     });
 

@@ -260,7 +260,7 @@ export function linkExample(flow: FlowContext | undefined): string | undefined {
 
 /** "list actions", "show events on Home", "what states are there" */
 const LIST =
-    /^(?:list|show(?: me)?|what(?: are)?)\s+(?:all\s+)?(?:the\s+)?(actions?|events?|pages?|screens?|controls?|links?|states?)(?:\s+(?:are\s+there|(?:on|for|of)\s+(?:the\s+)?(.+?)))?$/i;
+    /^(?:list|show(?: me)?|what(?: are)?)\s+(?:all\s+)?(?:the\s+)?(actions?|events?|pages?|screens?|controls?|links?|states?)(?:\s+(?:are\s+there|(?:are\s+)?(?:on|for|of)\s+(?:the\s+)?(.+?)))?$/i;
 
 /**
  * An answer in words to a request to list what the flow has: the actions a tap can take, the
@@ -278,10 +278,14 @@ export function readList(prompt: string, flow: FlowContext | undefined): Reading
     const says = (lines: string[]): Reading => ({ operations: [], text: lines.join('\n') });
     const what = match[1].toLowerCase().replace(/s$/, '');
     const all = Object.entries(flow.screens).map(([id, screen]) => ({ id, ...screen }));
+    // The canvas shares no pages while something is selected.
+    if (all.length === 0) {
+        return says(['No pages are shared. Clear the selection, or ask on Flow or Prototype.']);
+    }
     const named = match[2] ? best(match[2], all, (screen) => [screen.name]) : [];
     if (match[2] && named.length !== 1) {
         return says([
-            `No one page is named like ${code(match[2])}. Pages: ${all.map((screen) => code(screen.name)).join(' · ')}`
+            `${named.length ? 'Several pages are named like' : 'No page is named like'} ${code(match[2])}. Pages: ${all.map((screen) => code(screen.name)).join(' · ')}`
         ]);
     }
     // A page asked for, else the page the player shows, else every page.
