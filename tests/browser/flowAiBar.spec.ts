@@ -61,6 +61,10 @@ test('the AI bar on Flow proposes a link, drawn dashed until Accept', async ({ p
     await expect(page.getByText('Flow · 2 screens · 0 links')).toBeVisible();
 
     await ask(page, 'start on Details');
+    await expect(page.locator('[data-flow-screen="details"]')).toHaveAttribute(
+        'data-proposed',
+        'true'
+    );
     await reply.getByRole('button', { name: 'Discard' }).click();
     await expect(reply).toContainText('Discarded. Nothing changed.');
     await bar(page).getByRole('textbox', { name: 'Change to make' }).press('Escape');

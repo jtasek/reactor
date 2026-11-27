@@ -55,7 +55,7 @@ function flowProposal(onPreview: (preview?: FlowPreview) => void): ProposalView 
             <>
                 <p className={styles.barPrompt}>
                     {preview.valid
-                        ? 'Not applied yet. The change is dashed on the board.'
+                        ? 'Not applied yet. Changed links and the start page are dashed on the board.'
                         : `This no longer applies: ${preview.problem}`}
                 </p>
                 {children}

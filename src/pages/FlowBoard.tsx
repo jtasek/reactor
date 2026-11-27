@@ -820,6 +820,7 @@ export function FlowBoard({
                             data-flow-screen={state.id}
                             data-selected={selectedScreen === state.id}
                             data-start={isStart}
+                            data-proposed={(isStart && proposed?.has(state.id)) || undefined}
                             data-dim={!state.available || !state.reachable}
                             data-dragging={dragging === state.id}
                             data-drop={

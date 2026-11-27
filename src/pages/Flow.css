@@ -391,6 +391,10 @@
 .screen[data-start='true'] .thumb {
     outline: 2px solid var(--success-color);
 }
+/* A start page a proposal sets, not yet applied. */
+.screen[data-proposed='true'] .thumb {
+    outline: 2px dashed var(--selection-color);
+}
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
     box-shadow: var(--flow-card-selected);
