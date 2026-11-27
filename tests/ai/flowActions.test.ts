@@ -223,7 +223,7 @@ describe('local test model link sentences', () => {
         expect(operations).toEqual([]);
         expect(text).toBe(
             [
-                'Which `continue`? Pick one:',
+                'Which “Continue”? Pick one:',
                 '- `open Details when I click Continue button on Home`',
                 '- `open Details when I click Continue later on Home`'
             ].join('\n')
@@ -240,7 +240,7 @@ describe('local test model link sentences', () => {
 
     it('names the pages when the one asked for is missing', async () => {
         expect((await read('open Settings when I click Continue')).text).toBe(
-            'No page is named like `settings`. Pages: `Home` · `Details`'
+            'No page is named like `Settings`. Pages: `Home` · `Details`'
         );
     });
 

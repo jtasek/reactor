@@ -1,5 +1,5 @@
 import { Check, Minus, Plus, X } from 'lucide-react';
-import React, { FC, useState } from 'react';
+import React, { FC, ReactNode, useState } from 'react';
 import type { ChatTurn } from 'src/ai/chat';
 import { describeOperation } from 'src/ai/describe';
 import type { ProposedOperation } from 'src/ai/operations';
@@ -12,6 +12,14 @@ const ICON = { size: 12, strokeWidth: 2.25, 'aria-hidden': true } as const;
 
 const count = (operations: readonly unknown[]) =>
     `${operations.length} ${operations.length === 1 ? 'change' : 'changes'}`;
+
+/** How a proposal is shown before Accept: its result, its changes (`children`), Discard and Accept. */
+export type ProposalView = FC<{
+    operations: ProposedOperation[];
+    onDiscard: () => void;
+    onAccept: () => void;
+    children?: ReactNode;
+}>;
 
 /** A proposal's changes, each marked as an addition, a change or a deletion. */
 const Changes: FC<{ operations: ProposedOperation[] }> = ({ operations }) => {
@@ -89,7 +97,10 @@ export const Reply: FC<{
     onAccept: () => void;
     /** Puts an example from the answer in the prompt; without it, examples are only shown. */
     onExample?: (example: string) => void;
-}> = ({ turn, onDiscard, onAccept, onExample }) => {
+    /** Where the page draws the proposal itself, as Flow does on its board. */
+    proposal?: ProposalView;
+}> = ({ turn, onDiscard, onAccept, onExample, proposal }) => {
+    const Proposal = proposal ?? ProposalPreview;
     // An answer in words only is shown once, as the model's words.
     const failedInWords = turn.status === 'failed' && turn.problem === turn.messages.join('\n');
 
@@ -111,13 +122,13 @@ export const Reply: FC<{
             {turn.status === 'proposed' && (
                 <div className={styles.card}>
                     <p className={styles.cardTitle}>{count(turn.operations)}</p>
-                    <ProposalPreview
+                    <Proposal
                         operations={turn.operations}
                         onDiscard={onDiscard}
                         onAccept={onAccept}
                     >
                         <Changes operations={turn.operations} />
-                    </ProposalPreview>
+                    </Proposal>
                 </div>
             )}
             {turn.status === 'failed' && !failedInWords && (

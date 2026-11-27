@@ -339,6 +339,45 @@ export function documentContext(document: Document) {
     return context;
 }
 
+/**
+ * What the chat on Flow shares: the pages, their controls and states, and the variants a
+ * control may show, without the artwork the canvas chat sends.
+ */
+export function flowDocumentContext(document: Document) {
+    let records = 0;
+    const reserve = () => {
+        if (++records > MAX_CONTEXT_RECORDS) {
+            throw new ContextTooLarge();
+        }
+    };
+    const flow = flowContext(document, reserve);
+    const variants = Object.values(document.components).flatMap((component) =>
+        component.variantIds?.length
+            ? [
+                  [
+                      component.id,
+                      {
+                          name: component.name,
+                          variants: Object.fromEntries(
+                              component.variantIds.map((id) => [
+                                  id,
+                                  document.components[id]?.name ?? id
+                              ])
+                          )
+                      }
+                  ] as const
+              ]
+            : []
+    );
+    const context = { selection: [], flow, components: Object.fromEntries(variants) };
+
+    if (new TextEncoder().encode(JSON.stringify(context)).byteLength > MAX_CONTEXT_BYTES) {
+        throw new ContextTooLarge();
+    }
+
+    return context;
+}
+
 /** The words a control shows, which people name it by, when its component links a label. */
 function controlLabel(document: Document, instanceId: string) {
     const instance = document.shapes[instanceId];

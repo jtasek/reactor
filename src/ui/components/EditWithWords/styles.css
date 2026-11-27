@@ -672,6 +672,12 @@ button.example:focus-visible {
     z-index: 101;
 }
 
+/* The bar resting at the foot of a page with no tools along the bottom, as on Flow. */
+.bar.resting {
+    bottom: 24px;
+    width: 480px;
+}
+
 .bar .card {
     /* Nearly opaque: the card lies over panels, whose text must not show through its own. */
     background-color: color-mix(in srgb, var(--surface) 96%, transparent);
