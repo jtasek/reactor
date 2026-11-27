@@ -298,7 +298,9 @@ export function documentContext(document: Document) {
             ];
         })
     );
-    const flow = flowContext(document, reserve);
+    // Selection edits share only their scoped artwork and dependencies.
+    // The whole-document chat also offers navigation authoring.
+    const flow = whole ? flowContext(document, reserve) : { screens: {}, states: {} };
     const context = {
         selection,
         ...(selectedFrame ? { selectedFrameId: selectedFrame.id } : {}),

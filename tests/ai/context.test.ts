@@ -8,6 +8,22 @@ import { responsiveDocument } from '../support/responsiveModes';
 const label = (value: string) => ({ type: 'text', position: { x: 0, y: 0 }, value });
 
 describe('AI document context', () => {
+    it('keeps selected artwork editable when the document has hundreds of Flow controls', () => {
+        const document = prototypeDocument();
+        const control = document.shapes.next;
+        for (let index = 0; index < 310; index += 1) {
+            const id = `control-${index}`;
+            document.shapes[id] = { ...control, id };
+            document.shapesIds.push(id);
+        }
+        document.selectedShapesIds = ['next'];
+
+        expect(() => documentContext(document)).not.toThrow();
+        expect(documentContext(document).flow.screens).toEqual({});
+        document.selectedShapesIds = [];
+        expect(() => documentContext(document)).toThrow('context is too large');
+    });
+
     it('resolves width-selected modes independently of Theme for each selected Screen view', () => {
         const document = responsiveDocument();
         const mobile = documentContext({

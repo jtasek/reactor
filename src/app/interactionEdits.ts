@@ -335,7 +335,8 @@ function bindProperty(
 export function activationProblem(
     document: Document,
     settings: InteractionSettings,
-    owner: InstanceShape | Component
+    owner: InstanceShape | Component,
+    previousOwner: InstanceShape | Component = owner
 ): string | undefined {
     const instance = 'type' in owner && owner.type === 'instance' ? owner : undefined;
     const component = instance ? document.components[instance.componentId] : (owner as Component);
@@ -343,7 +344,14 @@ export function activationProblem(
         return 'Its component no longer exists.';
     }
     const activate = settings.activate;
-    const current = effectiveActivation(component, instance);
+    const previousInstance =
+        'type' in previousOwner && previousOwner.type === 'instance' ? previousOwner : undefined;
+    const current = effectiveActivation(
+        previousInstance
+            ? (document.components[previousInstance.componentId] ?? component)
+            : component,
+        previousInstance
+    );
     const page = instance?.parentFrameId
         ? screenOwners(document.frames).get(instance.parentFrameId)
         : undefined;

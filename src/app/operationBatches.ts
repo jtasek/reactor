@@ -871,17 +871,6 @@ function stage(
             shape.interactions = { activate: legacyActivation(changes.interaction) };
         }
         Object.assign(shape, structuredClone(changes));
-        if (current.type === 'instance' && 'interactions' in changes && changes.interactions) {
-            // Checked against the action it has now, which may keep a page that is gone.
-            const problem = activationProblem(
-                document,
-                readInteractions(changes.interactions),
-                current
-            );
-            if (problem) {
-                throw new Error(problem);
-            }
-        }
         if (shape.type === 'instance' && changes.interaction === null) {
             delete shape.interaction;
         }
@@ -1556,6 +1545,42 @@ function stage(
             );
         }
     });
+
+    // Check authored actions against the complete proposed ownership and target state.
+    const actionUpdates = operations.flatMap((operation, index) =>
+        operation.op === 'updateShape' &&
+        'interactions' in operation.changes &&
+        operation.changes.interactions
+            ? [{ operation, index, settings: readInteractions(operation.changes.interactions) }]
+            : []
+    );
+    if (actionUpdates.length > 0) {
+        const proposed: Document = {
+            ...document,
+            frames: { ...frames },
+            shapes: { ...(projected?.shapes ?? document.shapes) },
+            components: { ...document.components }
+        };
+        staged.frames.forEach((frame) => (proposed.frames[frame.id] = frame));
+        staged.deletedFrames.forEach((id) => delete proposed.frames[id]);
+        staged.shapes.forEach((shape) => (proposed.shapes[shape.id] = shape));
+        staged.updatedShapes.forEach(({ id, fields }) => {
+            proposed.shapes[id] = { ...proposed.shapes[id], ...fields } as Shape;
+        });
+        staged.deletedShapes.forEach((id) => delete proposed.shapes[id]);
+        staged.components.forEach((component) => (proposed.components[component.id] = component));
+        actionUpdates.forEach(({ operation, index, settings }) => {
+            const owner = proposed.shapes[operation.shape];
+            const previous = document.shapes[operation.shape];
+            if (owner?.type !== 'instance' || previous?.type !== 'instance') {
+                return;
+            }
+            const failure = activationProblem(proposed, settings, owner, previous);
+            if (failure) {
+                throw problem(index, failure);
+            }
+        });
+    }
 
     return { ...staged, ids: Object.fromEntries(ids) };
 }

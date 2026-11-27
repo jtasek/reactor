@@ -132,6 +132,54 @@ describe('setting what a tap does', () => {
         });
     });
 
+    it.each(['details', 'home'])(
+        'validates a moved control against its new page (%s)',
+        async (targetPage) => {
+            const document = fixture({ second: true });
+            document.shapes.skip.parentFrameId = targetPage;
+            const store = await storeWith(document);
+            const result = store.actions.checkOperations({
+                documentId: document.id,
+                operations: [
+                    {
+                        op: 'updateShape',
+                        shape: 'next',
+                        changes: {
+                            parentFrameId: 'details',
+                            interactions: {
+                                activate: { type: 'toggleVisibility', instanceId: 'skip' }
+                            }
+                        }
+                    }
+                ]
+            });
+
+            expect(result.valid).toBe(targetPage === 'details');
+            expect(store.state.currentDocument.shapes.next.parentFrameId).toBe('home');
+        }
+    );
+
+    it('validates against a target moved in the same batch', async () => {
+        const document = fixture({ second: true });
+        const store = await storeWith(document);
+        const result = store.actions.checkOperations({
+            documentId: document.id,
+            operations: [
+                {
+                    op: 'updateShape',
+                    shape: 'next',
+                    changes: {
+                        parentFrameId: 'details',
+                        interactions: { activate: { type: 'toggleVisibility', instanceId: 'skip' } }
+                    }
+                },
+                { op: 'updateShape', shape: 'skip', changes: { parentFrameId: 'details' } }
+            ]
+        });
+
+        expect(result).toEqual({ valid: true });
+    });
+
     it('links a control from a sentence with the local test model', async () => {
         const document = fixture();
         const { store, result } = await proposeLocally(
