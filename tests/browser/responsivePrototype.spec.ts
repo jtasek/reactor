@@ -212,12 +212,12 @@ test('keeps setup out of the player, restores focus and preserves input when cha
     await expect(controls.getByLabel('Preview layout')).toBeVisible();
     await expect(controls.getByRole('button', { name: 'Device', exact: true })).toBeVisible();
     await expect(controls.getByRole('button', { name: 'Restart prototype' })).toBeVisible();
-    // The bar holds the page's own actions; Settings, Flow and Download wait under More.
+    // The bar holds the page's own actions with Flow as the main one; Settings and Download wait under More.
     await expect(bar.getByRole('button', { name: 'Share prototype', exact: true })).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Prototype settings' })).toHaveCount(0);
     const more = bar.getByRole('button', { name: 'More', exact: true });
-    await more.click();
     await expect(bar.getByRole('link', { name: 'Flow', exact: true })).toBeVisible();
+    await more.click();
     await expect(bar.getByRole('button', { name: 'Download prototype' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(more).toBeFocused();
