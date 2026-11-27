@@ -7,7 +7,16 @@ import React, {
     useRef,
     useState
 } from 'react';
-import { Eye, MoreHorizontal, Plus, Replace, ToggleRight } from 'lucide-react';
+import {
+    ArrowRight,
+    CornerDownLeft,
+    Eye,
+    MoreHorizontal,
+    MousePointerClick,
+    Plus,
+    Replace,
+    ToggleRight
+} from 'lucide-react';
 import { Icon } from 'src/ui/components/Icon';
 import {
     ScreenThumbnail,
@@ -36,12 +45,19 @@ const TOOLBAR_BAND = 68;
 /** A press that moves less than this selects the screen; more drags its card. */
 const DRAG_SLIP = 3;
 
-const EFFECT_ICONS: Partial<Record<Effect['kind'], typeof Eye>> = {
+const EFFECT_ICONS: Record<Effect['kind'], typeof Eye> = {
+    go: ArrowRight,
     variant: Replace,
     toggleVisibility: Eye,
     setState: ToggleRight,
     resetState: ToggleRight,
     toggleState: ToggleRight
+};
+
+/** What sets a link off: a press, or Enter in a field. */
+const EVENT_ICONS: Record<Transition['event'], typeof Eye> = {
+    tap: MousePointerClick,
+    enter: CornerDownLeft
 };
 
 /**
@@ -52,10 +68,15 @@ export function walkScreen(event: React.KeyboardEvent<HTMLElement>, scroll = fal
     if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || event.altKey) {
         return;
     }
-    const stops = [
+    const all = [
         ...(event.currentTarget
             .closest('[data-flow-screen]')
             ?.querySelectorAll<HTMLElement>('[data-flow-stop]') ?? [])
+    ];
+    // Add link sits beside the name but comes last, after the rows it adds to.
+    const stops = [
+        ...all.filter((stop) => !stop.hasAttribute('data-flow-add')),
+        ...all.filter((stop) => stop.hasAttribute('data-flow-add'))
     ];
     const next = stops[stops.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)];
     if (next) {
@@ -118,7 +139,6 @@ const Rows = memo(function Rows({
     selectedLink,
     canConnect,
     onLinkMenu,
-    onAddMenu,
     onRemove,
     onLinkStart
 }: {
@@ -126,7 +146,6 @@ const Rows = memo(function Rows({
     /** The selected link, when it is one of this card's. */
     selectedLink?: string;
     onLinkMenu: (key: string, at: Point) => void;
-    onAddMenu: (screenId: string, at: Point) => void;
     onRemove: (key: string) => void;
     canConnect: boolean;
     /** A press on a row's dot, to drag its link to another Screen. */
@@ -135,7 +154,6 @@ const Rows = memo(function Rows({
     return (
         <ul>
             {state.transitions.map((transition) => {
-                const EffectIcon = EFFECT_ICONS[transition.effect.kind];
                 const guard = guardText(transition.guard);
                 const id = `flow-row-${state.id}-${transition.key}`.replace(/[^\w-]/g, '_');
                 const editable = canConnect && transition.editable && !transition.shared;
@@ -166,11 +184,21 @@ const Rows = memo(function Rows({
                                 });
                             }}
                         >
-                            {EffectIcon && <Icon icon={{ component: EffectIcon, size: 16 }} />}
+                            <Icon icon={{ component: EVENT_ICONS[transition.event], size: 14 }} />
                             <span className={styles.control}>{transition.control}</span>
-                            <span className={styles.effect}>
-                                {effectText(transition.effect)}
-                                {guard && ` · ${guard}`}
+                            <span className={styles.effect} data-effect={transition.effect.kind}>
+                                <Icon
+                                    icon={{
+                                        component: EFFECT_ICONS[transition.effect.kind],
+                                        size: 12
+                                    }}
+                                />
+                                <span>
+                                    {transition.effect.kind === 'go'
+                                        ? transition.effect.name || 'Missing page'
+                                        : effectText(transition.effect)}
+                                    {guard && ` · ${guard}`}
+                                </span>
                             </span>
                             {transition.broken && (
                                 <span className={styles.problem} title={transition.broken} />
@@ -195,21 +223,6 @@ const Rows = memo(function Rows({
                     </li>
                 );
             })}
-            <li>
-                <button
-                    className={styles.add}
-                    aria-haspopup="menu"
-                    aria-label={`Add link on ${state.name}`}
-                    data-flow-add={state.id}
-                    tabIndex={-1}
-                    data-flow-stop=""
-                    onKeyDown={walkScreen}
-                    onClick={(event) => onAddMenu(state.id, below(event.currentTarget))}
-                >
-                    <Icon icon={{ component: Plus, size: 14 }} />
-                    Add link
-                </button>
-            </li>
         </ul>
     );
 });
@@ -625,7 +638,6 @@ export function FlowBoard({
             state.transitions.map((transition) => [transition.key, transition] as const)
         )
     );
-    const start = cards.get(machine.initial ?? '');
 
     return (
         <div
@@ -754,15 +766,6 @@ export function FlowBoard({
                             <path d="M 0 1 L 9 5 L 0 9 z" fill="context-stroke" />
                         </marker>
                     </defs>
-                    {start && (
-                        <g className={styles.startMark} data-flow-start={start.id}>
-                            <circle cx={start.x - 44} cy={start.y + FLOW.thumbHeight - 14} r={5} />
-                            <path
-                                d={`M ${start.x - 39} ${start.y + FLOW.thumbHeight - 14} L ${start.x - 2} ${start.y + FLOW.thumbHeight - 14}`}
-                                markerEnd="url(#flow-arrow)"
-                            />
-                        </g>
-                    )}
                     {links.map((link) => {
                         const transition = transitions.get(link.key);
 
@@ -805,6 +808,7 @@ export function FlowBoard({
                             className={styles.screen}
                             data-flow-screen={state.id}
                             data-selected={selectedScreen === state.id}
+                            data-start={isStart}
                             data-dim={!state.available || !state.reachable}
                             data-dragging={dragging === state.id}
                             data-drop={
@@ -823,6 +827,11 @@ export function FlowBoard({
                             role="group"
                             aria-label={`Page ${state.name}`}
                         >
+                            {isStart && (
+                                <span className={styles.badge} data-flow-start={state.id}>
+                                    Start
+                                </span>
+                            )}
                             {/* A pointer shortcut; the name below is the keyboard's way in. */}
                             <button
                                 className={styles.thumb}
@@ -889,8 +898,22 @@ export function FlowBoard({
                                     onPointerUp={gripUp}
                                     onPointerCancel={gripCancel}
                                 >
-                                    {isStart && <span className={styles.badge}>Start</span>}
                                     <span className={styles.screenName}>{state.name}</span>
+                                </button>
+                                <button
+                                    className={styles.add}
+                                    aria-haspopup="menu"
+                                    aria-label={`Add link on ${state.name}`}
+                                    data-flow-add={state.id}
+                                    tabIndex={-1}
+                                    data-flow-stop=""
+                                    onKeyDown={walkScreen}
+                                    onClick={(event) =>
+                                        openAddMenu(state.id, below(event.currentTarget))
+                                    }
+                                >
+                                    <Icon icon={{ component: Plus, size: 14 }} />
+                                    Add link
                                 </button>
                                 <button
                                     className={styles.more}
@@ -924,7 +947,6 @@ export function FlowBoard({
                                         : undefined
                                 }
                                 onLinkMenu={openLinkMenu}
-                                onAddMenu={openAddMenu}
                                 onRemove={removeLink}
                                 canConnect={canConnect}
                                 onLinkStart={startLink}

@@ -1,4 +1,10 @@
 .flow {
+    /* Cards lift off the board as entities do on the Data page. */
+    --flow-card:
+        0 0 0 0.5px var(--hairline-color), 0 1px 2px rgb(0 0 0 / 6%),
+        0 6px 16px -8px rgb(0 0 0 / 14%);
+    --flow-card-selected: 0 8px 22px -10px rgb(26 93 219 / 35%);
+
     box-sizing: border-box;
     height: 100%;
     overflow: hidden;
@@ -50,7 +56,7 @@
     min-height: 32px;
     padding: 0 10px;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 100rem;
     background: transparent;
     text-decoration: none;
     cursor: pointer;
@@ -89,7 +95,7 @@
 }
 .history {
     display: flex;
-    border-radius: var(--radius-sm);
+    border-radius: 100rem;
     background: var(--field-background);
 }
 .history button {
@@ -323,7 +329,7 @@
 }
 .connections > path {
     fill: none;
-    stroke: var(--label-tertiary);
+    stroke: color-mix(in srgb, var(--selection-color) 65%, var(--surface));
     stroke-width: 1.5;
 }
 .connections > path[data-guarded='true'] {
@@ -340,14 +346,6 @@
     stroke: var(--selection-color);
     stroke-width: 2.5;
     stroke-dasharray: 6 5;
-}
-.startMark circle {
-    fill: var(--success-color);
-}
-.startMark path {
-    fill: none;
-    stroke: var(--success-color);
-    stroke-width: 2;
 }
 
 .screen {
@@ -380,14 +378,18 @@
     overflow: hidden;
     display: grid;
     place-items: center;
-    border-radius: var(--radius-md);
+    border-radius: 12px;
     background: color-mix(in srgb, var(--field-background) 50%, var(--surface));
-    outline: 1px solid var(--hairline-color);
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--flow-card);
     color: var(--text-secondary-color);
+}
+/* The start screen wears the Start badge's green; selection still shows in blue. */
+.screen[data-start='true'] .thumb {
+    outline: 2px solid var(--success-color);
 }
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
+    box-shadow: var(--flow-card-selected);
 }
 /* While a link is drawn: every Screen it may go to, and the one under the pointer. */
 .screen[data-drop='can'] .thumb {
@@ -440,13 +442,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* Sits over the picture's top left corner. */
 .badge {
-    flex: none;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
+    position: absolute;
+    left: -8px;
+    top: -9px;
+    z-index: 1;
+    padding: 1px 8px;
+    border-radius: 100rem;
     font-size: var(--font-size-caption);
-    color: var(--success-color);
-    background: var(--success-background);
+    font-weight: var(--font-weight-semibold);
+    color: var(--on-selection-color);
+    background: var(--success-color);
+    outline: 2px solid var(--surface);
+    pointer-events: none;
 }
 .flow .more {
     flex: none;
@@ -519,15 +528,32 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* The action, as a quiet pill at the end of the row: a link's pill is blue. */
 .effect {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 100rem;
+    color: var(--text-secondary-color);
+    background: var(--field-background);
+    font-size: var(--font-size-caption);
+}
+.effect > span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: right;
-    color: var(--text-secondary-color);
-    font-size: var(--font-size-callout);
+}
+.effect[data-effect='go'] {
+    color: var(--selection-color);
+    background: color-mix(in srgb, var(--selection-color) 10%, var(--surface));
+}
+.effect[data-effect='go'] svg {
+    color: var(--selection-color);
 }
 .screen li > button[data-inactive='true']:not([aria-pressed='true']) .control {
     color: var(--text-secondary-color);
@@ -539,6 +565,9 @@
 .screen li > button[aria-pressed='true'] .effect,
 .screen li > button[aria-pressed='true'] svg {
     color: color-mix(in srgb, var(--on-selection-color) 88%, transparent);
+}
+.screen li > button[aria-pressed='true'] .effect {
+    background: color-mix(in srgb, var(--on-selection-color) 18%, transparent);
 }
 .problem {
     flex: none;
@@ -555,7 +584,7 @@
     height: 9px;
     box-sizing: border-box;
     margin-top: -4.5px;
-    border: 1.5px solid var(--label-tertiary);
+    border: 1.5px solid color-mix(in srgb, var(--selection-color) 65%, var(--surface));
     border-radius: 50%;
     background: var(--surface);
     pointer-events: none;
@@ -578,10 +607,26 @@
 .screen li:has(> button[aria-pressed='true']) .dot {
     border-color: var(--selection-color);
 }
-.screen li > .add {
+/* Beside the page name, in the link colour, its words ending at the card's right edge. */
+.flow .add {
+    order: 1;
+    margin-right: -8px;
     flex: none;
-    color: var(--text-secondary-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 100rem;
+    background: transparent;
+    color: var(--selection-color);
     font-size: var(--font-size-callout);
+    font-weight: var(--font-weight-regular);
+    cursor: pointer;
+}
+.flow .add:hover {
+    background: color-mix(in srgb, var(--selection-color) 10%, var(--surface));
 }
 
 .flow .fit {

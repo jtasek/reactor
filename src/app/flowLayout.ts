@@ -13,7 +13,7 @@ export const FLOW = {
     /** Room above the cards for links that travel back or over a column. */
     top: 110,
     lane: 9,
-    corner: 8
+    corner: 32
 } as const;
 
 export interface FlowCard {
@@ -32,7 +32,7 @@ export interface FlowLayout {
 }
 
 export const cardHeight = (rows: number) =>
-    FLOW.thumbHeight + FLOW.nameHeight + (rows + 1) * FLOW.rowHeight;
+    FLOW.thumbHeight + FLOW.nameHeight + rows * FLOW.rowHeight;
 
 /** Where a transition row's link leaves its card: the middle of the row's trailing edge. */
 export const rowAnchor = (card: FlowCard, row: number): Point => ({
@@ -183,11 +183,19 @@ function rounded(points: Point[]): string {
     return parts.join(' ');
 }
 
+/** One smooth curve from the first point to the last, leaving and arriving level, as on the Data page. */
+function curve(points: Point[]): string {
+    const [start, end] = [points[0], points[points.length - 1]];
+    const middle = (start.x + end.x) / 2;
+
+    return `M ${start.x} ${start.y} C ${middle} ${start.y} ${middle} ${end.y} ${end.x} ${end.y}`;
+}
+
 /**
- * Links as right-angled paths that stay in the gaps between columns and above the cards, so
- * none passes under a card of the automatic layout. A link to the next column runs through
- * the gap between them; one further on, or back, climbs over the cards; one within a column
- * uses the gap to its right; one to its own Screen is a small loop.
+ * Links that stay in the gaps between columns and above the cards, so none passes under a
+ * card of the automatic layout. A link to the next column is one curve through the gap
+ * between them; one further on, or back, climbs over the cards; one within a column uses the
+ * gap to its right; one to its own Screen is a small loop.
  */
 export function routeLinks(machine: Machine, layout: FlowLayout): FlowLink[] {
     const cards = new Map(layout.cards.map((card) => [card.id, card]));
@@ -252,7 +260,10 @@ export function routeLinks(machine: Machine, layout: FlowLayout): FlowLink[] {
                 from: source.id,
                 to: target.id,
                 points,
-                path: rounded(points)
+                path:
+                    points.length === 4 && target.column === source.column + 1
+                        ? curve(points)
+                        : rounded(points)
             });
         });
     }

@@ -37,7 +37,6 @@ declare namespace FlowCssNamespace {
     screen: string;
     screenName: string;
     sentence: string;
-    startMark: string;
     summary: string;
     thumb: string;
     title: string;
