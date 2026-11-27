@@ -1,4 +1,5 @@
-import type { Document } from 'src/app/types';
+import type { ActivationAction, Document } from 'src/app/types';
+import { screenOwners } from 'src/app/screenViews';
 import { editedBindings } from 'src/app/variables';
 import type { ProposedOperation } from './operations';
 
@@ -111,6 +112,10 @@ export function describeOperation(
                 );
             }
 
+            if (fields.length === 1 && changes.start === true) {
+                return `Start the prototype on ${quoted(frame?.name ?? operation.frame)}`;
+            }
+
             return `Change ${quoted(frame?.name ?? operation.frame)}: ${fields.join('; ')}`;
         }
         case 'addVariable':
@@ -154,6 +159,13 @@ export function describeOperation(
             return `Delete ${variableLabel(document, operation.variable)}`;
         case 'updateShape': {
             const { changes } = operation;
+            if (
+                'interactions' in changes &&
+                changes.interactions &&
+                Object.keys(changes).length === 1
+            ) {
+                return actionDescription(document, operation.shape, changes.interactions.activate);
+            }
             const texted =
                 'value' in changes && typeof changes.value === 'string'
                     ? [`text ${quoted(changes.value)}`]
@@ -192,5 +204,35 @@ export function describeOperation(
 
             return `Ungroup ${quoted(group ? group.name : operation.group)}`;
         }
+    }
+}
+
+/** What tapping a control will do, in the words Flow uses: “On “Home”, “Continue” opens “Details””. */
+function actionDescription(
+    document: Document,
+    id: string,
+    action: ActivationAction | null | undefined
+) {
+    const shape = document.shapes[id];
+    const page = shape?.parentFrameId
+        ? document.frames[screenOwners(document.frames).get(shape.parentFrameId) ?? '']
+        : undefined;
+    const control = `${page ? `On ${quoted(page.name)}, ` : ''}${quoted(shape?.name ?? id)}`;
+    const named = (instanceId: string) => quoted(document.shapes[instanceId]?.name ?? instanceId);
+    const state = (stateId: string) => quoted(document.prototypeBooleans[stateId]?.name ?? stateId);
+
+    switch (action?.type) {
+        case 'navigate':
+            return `${control} opens ${quoted(document.frames[action.screenId]?.name ?? action.screenId)}`;
+        case 'toggleVisibility':
+            return `${control} shows or hides ${named(action.instanceId)}`;
+        case 'changeVariant':
+            return `${control} shows ${quoted(document.components[action.variantId]?.name ?? action.variantId)} in ${named(action.instanceId)}`;
+        case 'state':
+            return action.change === 'set'
+                ? `${control} sets ${state(action.stateId)} to ${JSON.stringify(action.value)}`
+                : `${control} ${action.change === 'toggle' ? 'switches' : 'resets'} ${state(action.stateId)}`;
+        default:
+            return `${control} does nothing`;
     }
 }

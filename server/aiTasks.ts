@@ -150,6 +150,15 @@ variables with existing names or add another frame/view for the same composed sc
 - A list shows records in Prototype: an instance whose dataList names the entity and maps the
   component's exposed props to fields. Use a component whose props suit the fields, and place it
   in the screen the person means. When no component has suitable props, say so instead.
+- flow lists each page's controls (instances by ID, with their visible label) and what a tap on
+  each does now, the start page, and the prototype's named states. To change what a tap does, call
+  setAction once per control: navigate opens a page, toggleVisibility shows or hides another
+  instance on the same page, changeVariant shows one of an instance's variants, state sets,
+  toggles or resets a named state. A null action makes the control do nothing. Match the control
+  the person names by its label or name on the page they mean; when two or more match and nothing
+  tells them apart, call no tool and ask which one, naming each with its page. To start the
+  prototype on a page, updateFrame that page with start true. Use only pages, controls and states
+  flow lists; when one is missing, say what to add on the canvas instead.
 - accessibility, when present, lists problems the accessibility check found in the modes and
   sizes the person chose (contrast, control names, focus order), and fixes: a batch that resolves
   the ones it can. Propose those fixes unless asked otherwise; for a problem with only advice,
@@ -700,7 +709,12 @@ export const TOOLS = [
                         parentFrameId: { type: ['string', 'null'] },
                         layoutId: { type: ['string', 'null'] },
                         layoutMode: { type: ['string', 'null'], enum: ['auto', null] },
-                        responsiveLayouts: { anyOf: [layoutRules, { type: 'null' }] }
+                        responsiveLayouts: { anyOf: [layoutRules, { type: 'null' }] },
+                        start: {
+                            type: 'boolean',
+                            enum: [true],
+                            description: 'On a page: the prototype starts there.'
+                        }
                     },
                     additionalProperties: false
                 }
@@ -784,6 +798,66 @@ export const TOOLS = [
                 }
             },
             required: ['shape', 'changes']
+        }
+    },
+    {
+        name: 'setAction',
+        description:
+            'Sets what tapping a control (an instance on a page) does in the prototype, replacing its action.',
+        parameters: {
+            type: 'object',
+            properties: {
+                control: { type: 'string', description: 'The instance’s ID.' },
+                action: {
+                    anyOf: [
+                        {
+                            type: 'object',
+                            properties: {
+                                type: { type: 'string', enum: ['navigate'] },
+                                screenId: { type: 'string', description: 'The page to open.' }
+                            },
+                            required: ['type', 'screenId'],
+                            additionalProperties: false
+                        },
+                        {
+                            type: 'object',
+                            properties: {
+                                type: { type: 'string', enum: ['toggleVisibility'] },
+                                instanceId: { type: 'string' }
+                            },
+                            required: ['type', 'instanceId'],
+                            additionalProperties: false
+                        },
+                        {
+                            type: 'object',
+                            properties: {
+                                type: { type: 'string', enum: ['changeVariant'] },
+                                instanceId: { type: 'string' },
+                                variantId: { type: 'string' }
+                            },
+                            required: ['type', 'instanceId', 'variantId'],
+                            additionalProperties: false
+                        },
+                        {
+                            type: 'object',
+                            properties: {
+                                type: { type: 'string', enum: ['state'] },
+                                change: { type: 'string', enum: ['set', 'toggle', 'reset'] },
+                                stateId: { type: 'string' },
+                                value: {
+                                    type: ['string', 'number', 'boolean'],
+                                    description: 'Only for set: a value of the state’s type.'
+                                }
+                            },
+                            required: ['type', 'change', 'stateId'],
+                            additionalProperties: false
+                        },
+                        { type: 'null' }
+                    ]
+                }
+            },
+            required: ['control', 'action'],
+            additionalProperties: false
         }
     },
     {

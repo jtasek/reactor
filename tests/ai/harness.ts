@@ -13,6 +13,8 @@ import { startServer, type DocumentSummary } from '../server/support';
  * them: each record under its ID, holding only what differs from a new one.
  */
 export interface Fixture {
+    /** Pages and other frames, each under its ID, visible and unlocked. */
+    frames?: Record<string, Record<string, unknown>>;
     variables?: Record<string, { name: string; type: string; value: unknown }>;
     /** In drawing order, the first at the bottom. */
     shapes?: Record<string, { type: string } & Record<string, unknown>>;
@@ -48,6 +50,7 @@ const entity = { locked: false, visible: true };
 
 /** The fixture as a document of the shared test copies, read as a saved document is. */
 export function fixtureDocument({
+    frames = {},
     variables = {},
     shapes = {},
     groups = {},
@@ -62,6 +65,9 @@ export function fixtureDocument({
 
     return hydrateDocument({
         ...createDocument({ id: DOCUMENT_ID, name: 'Fixture' }),
+        frames: Object.fromEntries(
+            Object.entries(frames).map(([id, frame]) => [id, { ...entity, ...frame, id }])
+        ),
         variables: Object.fromEntries(
             Object.entries(variables).map(([id, { name, type, value }]) => [
                 id,

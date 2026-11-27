@@ -299,6 +299,9 @@ it('includes independent mode definitions for a selected view and counts frame m
     const context = documentContext({
         ...document,
         selectedShapesIds: [],
+        groupsIds: [],
+        layersIds: [],
+        componentsIds: [],
         selectedFrameId: 'view',
         shapesIds: Object.keys(document.shapes)
     });

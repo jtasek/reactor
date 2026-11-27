@@ -13,7 +13,7 @@ import type {
     UpdateShape,
     UpdateVariable
 } from 'src/app/operations';
-import { readDataList, readEntity } from 'src/app/services/documentStorage';
+import { readDataList, readEntity, readInteractions } from 'src/app/services/documentStorage';
 import { readCopiedShape } from 'src/app/services/clipboardStorage';
 import { isVariableType } from 'src/app/variables';
 import { screenOperations } from 'src/app/screenAuthoring';
@@ -286,6 +286,12 @@ export function readOperation(value: unknown): ProposedOperation {
             // Checked against the shape it changes, which the document holds.
             return { op: 'updateShape', shape: text(operation.shape, 'Its shape'), changes };
         }
+        case 'setAction':
+            return {
+                op: 'updateShape',
+                shape: text(operation.control, 'Its control'),
+                changes: { interactions: readInteractions({ activate: operation.action ?? null }) }
+            };
         case 'deleteShapes':
             return { op: 'deleteShapes', shapes: list(operation.shapes, 'Its shapes', 'A shape') };
         case 'deleteGroup':

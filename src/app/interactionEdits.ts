@@ -1,6 +1,6 @@
 import { screenOwners } from './screenViews';
 import type { Context } from './index';
-import type { InteractionSettings, StateValue } from './types';
+import type { Component, Document, InstanceShape, InteractionSettings, StateValue } from './types';
 import { conditionOperands, type Condition } from '../shared/conditions';
 import { isReadOnly } from './documentAccess';
 import { isShapeLocked } from './utils';
@@ -118,49 +118,7 @@ export function editInteractions(
         return;
     }
     const target = instance?.type === 'instance' ? instance : component;
-    const current = effectiveActivation(
-        component,
-        instance?.type === 'instance' ? instance : undefined
-    );
-    const owner = instance?.parentFrameId
-        ? screenOwners(document.frames).get(instance.parentFrameId)
-        : undefined;
-    if (
-        settings.activate?.type === 'changeVariant' &&
-        (!owner || !validVariantAction(document, settings.activate, owner, instance?.parentFrameId))
-    ) {
-        return;
-    }
-    const visibilityTarget =
-        settings.activate?.type === 'toggleVisibility' ? settings.activate.instanceId : undefined;
-    if (
-        visibilityTarget !== undefined &&
-        (!owner ||
-            visibilityTarget === instance?.id ||
-            !prototypeTarget(document, visibilityTarget, owner, instance?.parentFrameId) ||
-            conditionDecidesVisibility(document, document.shapes[visibilityTarget] as never))
-    ) {
-        return;
-    }
-    if (
-        settings.activate?.type === 'state' &&
-        (!owner || stateActionProblem(document, settings.activate))
-    ) {
-        return;
-    }
-    // A control that toggles a state its own visibility reads would hide itself until Reset.
-    if (instance?.type === 'instance' && settings.activate) {
-        const toggled = toggledState(document, instance, settings.activate);
-        if (toggled && visibilityStates(instance).includes(toggled)) {
-            return;
-        }
-    }
-    const destination = settings.activate?.screenId;
-    if (
-        destination &&
-        destination !== current?.screenId &&
-        !screenFrames(document).some((screen) => screen.id === destination)
-    ) {
+    if (activationProblem(document, settings, target)) {
         return;
     }
     if (JSON.stringify(target.interactions) === JSON.stringify(settings)) {
@@ -366,6 +324,71 @@ function bindProperty(
         shape.stateBindings = { [prop.id]: edit.stateId };
     }
     effects.collaboration.flush();
+
+    return undefined;
+}
+
+/**
+ * Why an instance, or a component's own source, cannot take these settings, as the Flow menu
+ * and the Inspector would refuse them; a link it already has may keep a page that is gone.
+ */
+export function activationProblem(
+    document: Document,
+    settings: InteractionSettings,
+    owner: InstanceShape | Component,
+    previousOwner: InstanceShape | Component = owner
+): string | undefined {
+    const instance = 'type' in owner && owner.type === 'instance' ? owner : undefined;
+    const component = instance ? document.components[instance.componentId] : (owner as Component);
+    if (!component) {
+        return 'Its component no longer exists.';
+    }
+    const activate = settings.activate;
+    const previousInstance =
+        'type' in previousOwner && previousOwner.type === 'instance' ? previousOwner : undefined;
+    const current = effectiveActivation(
+        previousInstance
+            ? (document.components[previousInstance.componentId] ?? component)
+            : component,
+        previousInstance
+    );
+    const page = instance?.parentFrameId
+        ? screenOwners(document.frames).get(instance.parentFrameId)
+        : undefined;
+    if (
+        activate?.type === 'changeVariant' &&
+        (!page || !validVariantAction(document, activate, page, instance?.parentFrameId))
+    ) {
+        return 'It can only change a variant of an instance on its page.';
+    }
+    if (
+        activate?.type === 'toggleVisibility' &&
+        (!page ||
+            activate.instanceId === instance?.id ||
+            !prototypeTarget(document, activate.instanceId, page, instance?.parentFrameId) ||
+            conditionDecidesVisibility(document, document.shapes[activate.instanceId] as never))
+    ) {
+        return 'It can only show or hide another instance on its page that no condition shows.';
+    }
+    if (activate?.type === 'state') {
+        const problem = page ? stateActionProblem(document, activate) : 'It is not on a page.';
+        if (problem) {
+            return problem;
+        }
+    }
+    // A control that toggles a state its own visibility reads would hide itself until Reset.
+    const toggled = instance && activate && toggledState(document, instance, activate);
+    if (toggled && visibilityStates(instance).includes(toggled)) {
+        return 'It would hide itself.';
+    }
+    const destination = activate?.screenId;
+    if (
+        destination &&
+        destination !== current?.screenId &&
+        !screenFrames(document).some((screen) => screen.id === destination)
+    ) {
+        return `${destination} is not a page.`;
+    }
 
     return undefined;
 }

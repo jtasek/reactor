@@ -7,6 +7,8 @@ import { resolveModes } from 'src/app/inheritedModes';
 import { describeVariable } from 'src/app/variableDescription';
 import { componentSource, sourceMembers } from 'src/app/componentSource';
 import { dataFields, recordLabels, runnableRules } from 'src/app/data';
+import { effectText, flowMachine } from 'src/app/flowMachine';
+import { stateType } from 'src/app/prototypeState';
 
 /** A transport-size budget, not a provider-specific token count. */
 export const MAX_CONTEXT_BYTES = 32 * 1024;
@@ -296,6 +298,9 @@ export function documentContext(document: Document) {
             ];
         })
     );
+    // Selection edits share only their scoped artwork and dependencies.
+    // The whole-document chat also offers navigation authoring.
+    const flow = whole ? flowContext(document, reserve) : { screens: {}, states: {} };
     const context = {
         selection,
         ...(selectedFrame ? { selectedFrameId: selectedFrame.id } : {}),
@@ -325,7 +330,8 @@ export function documentContext(document: Document) {
             problems: resolution.problems
         },
         components: Object.fromEntries(components),
-        data
+        data,
+        flow
     };
 
     if (new TextEncoder().encode(JSON.stringify(context)).byteLength > MAX_CONTEXT_BYTES) {
@@ -333,4 +339,76 @@ export function documentContext(document: Document) {
     }
 
     return context;
+}
+
+/** The words a control shows, which people name it by, when its component links a label. */
+function controlLabel(document: Document, instanceId: string) {
+    const instance = document.shapes[instanceId];
+    const component = instance?.type === 'instance' && document.components[instance.componentId];
+    if (instance?.type !== 'instance' || !component) {
+        return undefined;
+    }
+    const propId = effectiveRoleSettings(component, instance).props.label;
+    const value = propId
+        ? (instance.overrides[propId] ??
+          describeComponentProp(component, propId, document)?.defaultValue)
+        : undefined;
+
+    return typeof value === 'string' && value !== instance.name ? value : undefined;
+}
+
+/** Each page's controls that can take an action, what a tap does now, and the named states. */
+function flowContext(document: Document, reserve: () => void) {
+    const machine = flowMachine(document);
+    const screens = machine.states
+        .filter((screen) => screen.available)
+        .map((screen) => {
+            reserve();
+            const controls = [
+                ...screen.transitions
+                    .filter((transition) => transition.editable && !transition.shared)
+                    .map((transition) => ({
+                        id: transition.instanceId,
+                        name: transition.control,
+                        does: `${transition.event === 'enter' ? 'on Enter ' : ''}${
+                            transition.effect.kind === 'go'
+                                ? `opens ${transition.effect.name}`
+                                : effectText(transition.effect)
+                        }`
+                    })),
+                ...screen.idle
+                    .filter((control) => control.editable)
+                    .map((control) => ({ id: control.instanceId, name: control.control }))
+            ];
+
+            return [
+                screen.id,
+                {
+                    name: screen.name,
+                    controls: Object.fromEntries(
+                        controls.map(({ id, ...control }) => {
+                            reserve();
+                            const label = controlLabel(document, id);
+
+                            return [id, { ...control, ...(label ? { label } : {}) }];
+                        })
+                    )
+                }
+            ];
+        });
+
+    return {
+        ...(machine.initial ? { startScreenId: machine.initial } : {}),
+        screens: Object.fromEntries(screens),
+        states: Object.fromEntries(
+            Object.values(document.prototypeBooleans).map((state) => {
+                reserve();
+
+                return [
+                    state.id,
+                    { name: state.name, type: stateType(state), initial: state.initial }
+                ];
+            })
+        )
+    };
 }
