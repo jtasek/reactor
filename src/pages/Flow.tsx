@@ -2,7 +2,18 @@ import { ArrowLeft, Play, Undo2, Redo2 } from 'lucide-react';
 import { json } from 'overmind';
 import { Icon } from 'src/ui/components/Icon';
 import { registerEditor } from './registerEditor';
-import React, { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
+import React, {
+    Suspense,
+    lazy,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useReducer,
+    useRef,
+    useState
+} from 'react';
+import { useAiAvailable } from 'src/app/aiHooks';
+import type { FlowPreview } from 'src/ui/components/EditWithWords/FlowBar';
 import {
     useActions,
     useAppState,
@@ -29,6 +40,12 @@ import styles from './Flow.css';
 import { Viewer } from './Viewer';
 
 registerEditor();
+
+const FlowBar = lazy(() =>
+    import(/* webpackChunkName: "ai" */ 'src/ui/components/EditWithWords/FlowBar').then(
+        (module) => ({ default: module.FlowBar })
+    )
+);
 
 /** How long edits pause before the pictures are drawn again. */
 const REDRAW_AFTER_MS = 150;
@@ -123,8 +140,15 @@ function FlowWorkspace() {
     const document = useAppState((state) => state.currentDocument);
     // Read once per edit, not once per render: a drag renders every frame.
     const edited = useRevision(document.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `edited` stands for the document.
-    const machine = useMemo(() => flowMachine(document), [edited, document.id]);
+    // A proposal from the AI bar, drawn on the board until it is accepted or discarded.
+    const [preview, setPreview] = useState<FlowPreview>();
+    const machine = useMemo(
+        () => flowMachine(preview?.document ?? document),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `edited` stands for the document.
+        [edited, document.id, preview]
+    );
+    const aiAvailable = useAiAvailable();
+    const editable = useAppState((state) => !isReadOnly(state) && !state.currentDocument.locked);
     const simulation = useVariableContext(document.id);
     const disabled = useAppState(
         (state) =>
@@ -520,8 +544,9 @@ function FlowWorkspace() {
                     document={pictures.document}
                     drawings={pictures.drawings}
                     selection={selection}
+                    proposed={preview?.changed}
                     canArrange
-                    canConnect={!disabled}
+                    canConnect={!disabled && !preview}
                     canTidy={canTidy}
                     onConnect={(instanceId, screenId) => {
                         editInteractions({
@@ -548,6 +573,11 @@ function FlowWorkspace() {
                         setMenu({ kind: 'screen', screenId, at });
                     }}
                 />
+            )}
+            {aiAvailable && editable && machine.states.length > 0 && (
+                <Suspense fallback={null}>
+                    <FlowBar documentId={document.id} onPreview={setPreview} />
+                </Suspense>
             )}
             {menu?.kind === 'link' && menuControl && (
                 <FlowLinkMenu

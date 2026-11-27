@@ -38,6 +38,7 @@ declare namespace StylesCssNamespace {
     pulse: string;
     records: string;
     reply: string;
+    resting: string;
     send: string;
     suggestions: string;
     toolbar: string;

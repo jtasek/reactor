@@ -338,6 +338,10 @@
 .connections > path[data-inactive='true'] {
     opacity: 0.4;
 }
+.connections > path[data-proposed='true'] {
+    stroke: var(--selection-color);
+    stroke-dasharray: 5 4;
+}
 .connections > path[data-selected='true'] {
     stroke: var(--selection-color);
     stroke-width: 2.5;
@@ -386,6 +390,10 @@
 /* The start screen wears the Start badge's green; selection still shows in blue. */
 .screen[data-start='true'] .thumb {
     outline: 2px solid var(--success-color);
+}
+/* A start page a proposal sets, not yet applied. */
+.screen[data-proposed='true'] .thumb {
+    outline: 2px dashed var(--selection-color);
 }
 .screen[data-selected='true'] .thumb {
     outline: 2px solid var(--selection-color);
@@ -557,6 +565,9 @@
 }
 .screen li > button[data-inactive='true']:not([aria-pressed='true']) .control {
     color: var(--text-secondary-color);
+}
+.screen li > button[data-proposed='true']:not([aria-pressed='true']) {
+    background: color-mix(in srgb, var(--selection-color) 10%, var(--surface));
 }
 .screen li > button[aria-pressed='true'] {
     color: var(--on-selection-color);

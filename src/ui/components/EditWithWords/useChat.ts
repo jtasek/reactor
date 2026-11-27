@@ -2,6 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { chatFor } from 'src/ai/chat';
 import type { Send } from 'src/ai/client';
 import { ContextTooLarge, documentContext } from 'src/ai/context';
+import type { Document } from 'src/app/types';
 import { useActions, useAppState, useCurrentDocument, useSelectedShapesIds } from 'src/app/hooks';
 import { useSelectedFrameId } from 'src/app/frameHooks';
 import { authoringKeys } from 'src/app/screenAuthoring';
@@ -55,14 +56,21 @@ function useScope(): ChatScope {
     };
 }
 
-/** The document's chat, shared by the chat panel and the canvas bar. */
-export function useChat(documentId: string) {
+/** What a page other than the canvas shares, and how its chip names it. */
+export interface ChatPage {
+    scope: ChatScope;
+    context: (document: Document) => object;
+}
+
+/** The document's chat, shared by the chat panel, the canvas bar and the bar on Flow. */
+export function useChat(documentId: string, page?: ChatPage) {
     const document = useCurrentDocument();
     const { applyOperations, checkOperations } = useActions();
     const local = useAppState((state) => state.ai === 'local');
     const chat = chatFor(documentId);
     const { draft, turns, problem } = useSyncExternalStore(chat.subscribe, chat.getSnapshot);
-    const scope = useScope();
+    const canvasScope = useScope();
+    const scope = page?.scope ?? canvasScope;
     const current = turns.at(-1);
     const pending = current?.status === 'proposing' || current?.status === 'proposed';
 
@@ -70,10 +78,10 @@ export function useChat(documentId: string) {
         if (pending || !draft.trim()) {
             return false;
         }
-        let context: ReturnType<typeof documentContext>;
+        let context: object;
 
         try {
-            context = documentContext(document);
+            context = (page?.context ?? documentContext)(document);
         } catch (error) {
             if (!(error instanceof ContextTooLarge)) {
                 throw error;

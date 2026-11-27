@@ -38,7 +38,8 @@ const SENTENCES: Array<{
     {
         // "open Details when I click Continue (on Home)"
         pattern: new RegExp(
-            `^${OPEN}\\s+(?:the\\s+)?(.+?)\\s+(?:when|if|after|once)\\s+${WHO}${PRESS}\\s+(?:on\\s+)?(?:the\\s+)?(.+?)${ON}$`
+            `^${OPEN}\\s+(?:the\\s+)?(.+?)\\s+(?:when|if|after|once)\\s+${WHO}${PRESS}\\s+(?:on\\s+)?(?:the\\s+)?(.+?)${ON}$`,
+            'i'
         ),
         page: 1,
         control: 2,
@@ -47,7 +48,8 @@ const SENTENCES: Array<{
     {
         // "when I click Continue (on Home), open Details"
         pattern: new RegExp(
-            `^(?:when|if|after|once)\\s+${WHO}${PRESS}\\s+(?:on\\s+)?(?:the\\s+)?(.+?)${ON},?\\s+(?:then\\s+)?${OPEN}\\s+(?:the\\s+)?(.+)$`
+            `^(?:when|if|after|once)\\s+${WHO}${PRESS}\\s+(?:on\\s+)?(?:the\\s+)?(.+?)${ON},?\\s+(?:then\\s+)?${OPEN}\\s+(?:the\\s+)?(.+)$`,
+            'i'
         ),
         control: 1,
         on: 2,
@@ -56,7 +58,8 @@ const SENTENCES: Array<{
     {
         // "link Continue to Details"
         pattern: new RegExp(
-            `^(?:link|connect)\\s+(?:the\\s+)?(.+?)${ON}\\s+(?:to|${OPEN})\\s+(?:the\\s+)?(.+)$`
+            `^(?:link|connect)\\s+(?:the\\s+)?(.+?)${ON}\\s+(?:to|${OPEN})\\s+(?:the\\s+)?(.+)$`,
+            'i'
         ),
         control: 1,
         on: 2,
@@ -65,7 +68,8 @@ const SENTENCES: Array<{
     {
         // "make Continue open Details"
         pattern: new RegExp(
-            `^(?:make|let)\\s+(?:the\\s+)?(.+?)${ON}\\s+${OPEN}\\s+(?:the\\s+)?(.+)$`
+            `^(?:make|let)\\s+(?:the\\s+)?(.+?)${ON}\\s+${OPEN}\\s+(?:the\\s+)?(.+)$`,
+            'i'
         ),
         control: 1,
         on: 2,
@@ -75,7 +79,8 @@ const SENTENCES: Array<{
     {
         // "Continue opens Details"
         pattern: new RegExp(
-            `^(?:the\\s+)?(.+?)${ON}\\s+(?:should\\s+)?${OPEN}\\s+(?:the\\s+)?(.+)$`
+            `^(?:the\\s+)?(.+?)${ON}\\s+(?:should\\s+)?${OPEN}\\s+(?:the\\s+)?(.+)$`,
+            'i'
         ),
         control: 1,
         on: 2,
@@ -85,7 +90,8 @@ const SENTENCES: Array<{
     {
         // "unlink Continue", "remove the link from Continue"
         pattern: new RegExp(
-            `^(?:unlink|remove the (?:link|action) (?:from|on))\\s+(?:the\\s+)?(.+?)${ON}$`
+            `^(?:unlink|remove the (?:link|action) (?:from|on))\\s+(?:the\\s+)?(.+?)${ON}$`,
+            'i'
         ),
         control: 1,
         on: 2
@@ -94,8 +100,8 @@ const SENTENCES: Array<{
 
 /** "start on Login", "start the prototype at Login", "make Login the start page" */
 const START = [
-    /^start(?:\s+the\s+prototype)?\s+(?:on|at|from|with)\s+(?:the\s+)?(.+)$/,
-    /^make\s+(?:the\s+)?(.+?)\s+the\s+(?:start|first)(?:\s+(?:page|screen))?$/
+    /^start(?:\s+the\s+prototype)?\s+(?:on|at|from|with)\s+(?:the\s+)?(.+)$/i,
+    /^make\s+(?:the\s+)?(.+?)\s+the\s+(?:start|first)(?:\s+(?:page|screen))?$/i
 ];
 
 const normal = (text: string) =>
@@ -108,12 +114,15 @@ const normal = (text: string) =>
 
 /** How well a typed name fits a name the document has, from 0 to 1. */
 function likeness(typed: string, name: string) {
+    if (typed.trim().toLowerCase() === name.trim().toLowerCase()) {
+        return 1;
+    }
     const [a, b] = [normal(typed), normal(name)];
     if (!a || !b) {
         return 0;
     }
     if (a === b) {
-        return 1;
+        return MATCHING.sameName;
     }
     if (b.split(' ').includes(a) || a.split(' ').includes(b)) {
         return MATCHING.abbreviation;
@@ -146,7 +155,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
         return undefined;
     }
     const sentence = prompt.trim().replace(/\s+/g, ' ');
-    const lower = sentence.toLowerCase().replace(/[.!]+$/, '');
+    const asked = sentence.replace(/[.!]+$/, '');
     const screens = Object.entries(flow.screens).map(([id, screen]) => ({ id, ...screen }));
     const says = (text: string): Reading => ({ operations: [], text });
     const pageNamed = (typed: string) => {
@@ -160,7 +169,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
     };
 
     for (const pattern of START) {
-        const match = lower.match(pattern);
+        const match = asked.match(pattern);
         if (match) {
             const page = pageNamed(match[1]);
 
@@ -173,7 +182,7 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
         }
     }
     for (const { pattern, control: at, on, page: to, loose } of SENTENCES) {
-        const match = lower.match(pattern);
+        const match = asked.match(pattern);
         if (!match) {
             continue;
         }
@@ -210,17 +219,12 @@ export function readLink(prompt: string, flow: FlowContext | undefined): Reading
             return loose ? undefined : target;
         }
         if (found.length > 1) {
-            const asked = sentence.replace(
-                new RegExp(typed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
-                '%'
-            );
-
             return says(
                 [
-                    `Which ${code(typed)}? Pick one:`,
+                    `Which “${typed}”? Pick one:`,
                     ...found.map(
                         (control) =>
-                            `- ${code(asked.replace('%', `${control.name} on ${control.screen}`))}`
+                            `- ${code(asked.replace(typed, where ? control.name : `${control.name} on ${control.screen}`))}`
                     )
                 ].join('\n')
             );

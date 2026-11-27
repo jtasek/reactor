@@ -39,7 +39,8 @@ export const Composer: FC<{
     /** Controls drawn in the field, before its text and before the send button. */
     leading?: ReactNode;
     trailing?: ReactNode;
-}> = ({ chat: state, field, onSent, compact, leading, trailing }) => {
+    placeholder?: string;
+}> = ({ chat: state, field, onSent, compact, leading, trailing, placeholder }) => {
     const { chat, draft, problem, current, pending, scope } = state;
     const ask = () => {
         if (state.ask()) {
@@ -82,7 +83,7 @@ export const Composer: FC<{
                         placeholder={
                             current?.status === 'proposed'
                                 ? 'Accept or discard to continue'
-                                : 'Describe a change…'
+                                : (placeholder ?? 'Describe a change…')
                         }
                         rows={1}
                         value={draft}

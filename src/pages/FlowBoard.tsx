@@ -137,6 +137,7 @@ function below(element: Element): Point {
 const Rows = memo(function Rows({
     state,
     selectedLink,
+    proposed,
     canConnect,
     onLinkMenu,
     onRemove,
@@ -145,6 +146,8 @@ const Rows = memo(function Rows({
     state: FlowState;
     /** The selected link, when it is one of this card's. */
     selectedLink?: string;
+    /** Controls whose action a proposal sets, not yet applied. */
+    proposed?: ReadonlySet<string>;
     onLinkMenu: (key: string, at: Point) => void;
     onRemove: (key: string) => void;
     canConnect: boolean;
@@ -163,6 +166,7 @@ const Rows = memo(function Rows({
                         <button
                             data-flow-control={transition.key}
                             data-inactive={Boolean(transition.inactive)}
+                            data-proposed={proposed?.has(transition.instanceId) || undefined}
                             aria-label={transition.control}
                             aria-describedby={id}
                             aria-pressed={selectedLink === transition.key}
@@ -238,6 +242,7 @@ export function FlowBoard({
     document,
     drawings,
     selection,
+    proposed,
     canArrange,
     canConnect,
     canTidy,
@@ -258,6 +263,8 @@ export function FlowBoard({
     document: Document;
     drawings: Map<string, ScreenDrawing>;
     selection?: FlowSelection;
+    /** Controls whose action a proposal sets: their rows and links are drawn as drafts. */
+    proposed?: ReadonlySet<string>;
     canArrange: boolean;
     /** Whether links can be drawn by dragging: not while read-only, locked or mid-gesture. */
     canConnect: boolean;
@@ -781,6 +788,10 @@ export function FlowBoard({
                                 }
                                 data-guarded={Boolean(transition?.guard)}
                                 data-inactive={Boolean(transition?.inactive)}
+                                data-proposed={
+                                    (transition && proposed?.has(transition.instanceId)) ||
+                                    undefined
+                                }
                                 markerEnd="url(#flow-arrow)"
                             />
                         );
@@ -809,6 +820,7 @@ export function FlowBoard({
                             data-flow-screen={state.id}
                             data-selected={selectedScreen === state.id}
                             data-start={isStart}
+                            data-proposed={(isStart && proposed?.has(state.id)) || undefined}
                             data-dim={!state.available || !state.reachable}
                             data-dragging={dragging === state.id}
                             data-drop={
@@ -946,6 +958,7 @@ export function FlowBoard({
                                         ? selectedLink
                                         : undefined
                                 }
+                                proposed={proposed}
                                 onLinkMenu={openLinkMenu}
                                 onRemove={removeLink}
                                 canConnect={canConnect}

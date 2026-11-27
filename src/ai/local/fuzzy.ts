@@ -10,6 +10,8 @@ export const MATCHING = {
     abbreviation: 0.9,
     /** The likeness of a plural to its term. */
     plural: 0.97,
+    /** The likeness of two names that differ only in a word like "button" or "page". */
+    sameName: 0.97,
     /** How many "did you mean" terms an answer offers. */
     suggestions: 3
 };
