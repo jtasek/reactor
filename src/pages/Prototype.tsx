@@ -14,7 +14,8 @@ import {
 import { Icon } from 'src/ui/components/Icon';
 import { Button, Field, Select } from 'src/ui/components/Controls';
 import { Dialog } from 'src/ui/components/Dialog';
-import { DeviceMenu } from './DeviceMenu';
+import { DeviceMenu, framed } from './DeviceMenu';
+import { DEVICE_SIZES, deviceOfSize } from 'src/app/services/deviceSizes';
 import { SharePrototype } from './SharePrototype';
 import { DownloadPrototype } from './DownloadPrototype';
 import { AccessibilityCheck } from './AccessibilityCheck';
@@ -133,6 +134,7 @@ function PrototypeWorkspace() {
     const aiAvailable = useAiAvailable();
     const editable = useAppState((state) => !isReadOnly(state) && !state.currentDocument.locked);
     const [aiBar, setAiBar] = useState(false);
+    const [frame, setFrame] = useState(true);
     const [proposal, setProposal] = useState<PrototypeProposal>();
     const [shownScreen, setShownScreen] = useState<string>();
     const shown = screens.find((screen) => screen.id === shownScreen);
@@ -403,6 +405,8 @@ function PrototypeWorkspace() {
                             <>
                                 <DeviceMenu
                                     size={session.viewport!}
+                                    frame={frame}
+                                    onFrame={setFrame}
                                     onSize={(viewport) =>
                                         setSession((previous) => ({ ...previous, viewport }))
                                     }
@@ -439,6 +443,9 @@ function PrototypeWorkspace() {
                             </>
                         }
                         outline={aiBar ? proposal?.controls : undefined}
+                        deviceFrame={
+                            frame ? framed(deviceOfSize(DEVICE_SIZES, session.viewport)) : undefined
+                        }
                         onScreen={setShownScreen}
                         onWidth={(value) => resize('width', value)}
                         onReset={reset}

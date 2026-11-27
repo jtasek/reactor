@@ -32,6 +32,7 @@ export default function InteractivePreview({
     toolbar,
     toolbarTarget,
     outline,
+    deviceFrame,
     onScreen
 }: {
     session?: PreviewSession;
@@ -43,6 +44,8 @@ export default function InteractivePreview({
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
     /** Controls drawn dashed, by shape ID; the player turns to the page that has them. */
     outline?: readonly string[];
+    /** Draws the screen in this device's frame. */
+    deviceFrame?: 'phone' | 'tablet';
     onScreen?: (screenId: string | undefined) => void;
 } = {}) {
     const { assets } = useEffects();
@@ -66,6 +69,7 @@ export default function InteractivePreview({
     const [currentScreen, setCurrentScreen] = useState<string>();
     useEffect(() => onScreen?.(currentScreen), [currentScreen, onScreen]);
     const [outlines, setOutlines] = useState(false);
+    const [deviceFrames, setDeviceFrames] = useState(false);
     const [hostControls, setHostControls] = useState(false);
     const [inspection, setInspection] = useState<PreviewInspection>({});
     useEffect(() => onInspection?.(inspection), [inspection, onInspection]);
@@ -197,6 +201,12 @@ export default function InteractivePreview({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [outlineKey, outlines]);
 
+    useEffect(() => {
+        if (deviceFrames) {
+            connection.current?.postMessage({ type: 'device-frame', kind: deviceFrame ?? null });
+        }
+    }, [deviceFrame, deviceFrames]);
+
     useEffect(() => () => channelPort.current?.close(), []);
     useEffect(() => {
         if (!origin || ready) {
@@ -232,6 +242,7 @@ export default function InteractivePreview({
         connection.current = null;
         setHostControls(false);
         setOutlines(false);
+        setDeviceFrames(false);
         setCurrentScreen(undefined);
         setActiveRecord(undefined);
         setEditing(false);
@@ -313,6 +324,7 @@ export default function InteractivePreview({
             const supportsHostControls = event.data.playerControls === true;
             setHostControls(supportsHostControls);
             setOutlines(supportsHostControls && event.data.outline === true);
+            setDeviceFrames(supportsHostControls && event.data.deviceFrame === true);
             if (session && supportsHostControls) {
                 // Older runtimes own their navigation and must receive only drawing payloads.
                 channel.port1.postMessage({ type: 'player-controls' });

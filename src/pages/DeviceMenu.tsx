@@ -45,15 +45,23 @@ function Outline({ size }: { size: Size }) {
 const isLandscape = (device: DeviceSize | undefined, size: Size) =>
     device?.kind !== 'desktop' && size.width > size.height;
 
+/** Phones and tablets are drawn in a frame; desktops and custom sizes are not. */
+export const framed = (device: DeviceSize | undefined) =>
+    device?.kind === 'phone' || device?.kind === 'tablet' ? device.kind : undefined;
+
 /** The open menu; its search starts empty each time it opens. */
 function DeviceList({
     size,
     onSize,
+    frame,
+    onFrame,
     close,
     children
 }: {
     size: Size;
     onSize: (size: Size) => void;
+    frame: boolean;
+    onFrame: (frame: boolean) => void;
     close: () => void;
     children: ReactNode;
 }) {
@@ -118,6 +126,15 @@ function DeviceList({
                 <span className={styles.deviceGroup}>Custom size</span>
                 <span className={styles.customFields}>{children}</span>
             </div>
+            <label className={styles.frameSwitch}>
+                <input
+                    type="checkbox"
+                    checked={frame}
+                    disabled={!framed(current)}
+                    onChange={(event) => onFrame(event.target.checked)}
+                />
+                Show device frame
+            </label>
         </div>
     );
 }
@@ -129,10 +146,15 @@ function DeviceList({
 export function DeviceMenu({
     size,
     onSize,
+    frame,
+    onFrame,
     children
 }: {
     size: Size;
     onSize: (size: Size) => void;
+    /** Whether phones and tablets are shown in a device frame. */
+    frame: boolean;
+    onFrame: (frame: boolean) => void;
     /** The width and height fields for a custom size. */
     children: ReactNode;
 }) {
@@ -157,7 +179,13 @@ export function DeviceMenu({
                 }
             >
                 {(close) => (
-                    <DeviceList size={size} onSize={onSize} close={close}>
+                    <DeviceList
+                        size={size}
+                        onSize={onSize}
+                        frame={frame}
+                        onFrame={onFrame}
+                        close={close}
+                    >
                         {children}
                     </DeviceList>
                 )}

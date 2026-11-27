@@ -240,12 +240,22 @@ test('keeps setup out of the player, restores focus and preserves input when cha
     await devices.getByRole('button', { name: 'Laptop 1280 × 800' }).click();
     await expect(devices).toBeHidden();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '1280');
+    // Desktops are shown without a device frame, phones and tablets in one unless it is off.
+    const frame = runtime.locator('html');
+    await expect(frame).toHaveAttribute('data-frame', 'none');
     await expect(input).toHaveValue('Ada');
     await expect(device).toContainText('Laptop');
     devices = await openDeviceMenu(page);
     await devices.getByRole('button', { name: 'iPhone 15 393 × 852' }).click();
     await expect(input).toHaveValue('Ada');
     await expect(device).toContainText('iPhone 15');
+    await expect(frame).toHaveAttribute('data-frame', 'phone');
+    devices = await openDeviceMenu(page);
+    await devices.getByLabel('Show device frame').uncheck();
+    await expect(frame).toHaveAttribute('data-frame', 'none');
+    await devices.getByLabel('Show device frame').check();
+    await page.keyboard.press('Escape');
+    await expect(frame).toHaveAttribute('data-frame', 'phone');
     await expect(page.getByRole('region', { name: 'Prototype settings' })).toHaveCount(0);
     await page.setViewportSize({ width: 320, height: 740 });
     await expect(page.getByLabel('Preview page')).toBeInViewport({ ratio: 1 });
@@ -358,4 +368,42 @@ test('picks the prototype size from phones, tablets and desktops, upright or tur
     await menu.getByRole('button', { name: 'Desktop 1440 × 900' }).click();
     await expect(landscape).toBeDisabled();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '1440');
+});
+
+test('does not send device-frame commands to an outline-only runtime', async ({ page }) => {
+    await seed(page);
+    await page.route('http://127.0.0.1:4194/?player=prototype', (route) =>
+        route.fulfill({
+            contentType: 'text/html',
+            body: `<html><body data-unsupported="none" data-draws="0"><p></p><script>
+                window.addEventListener('message', (event) => {
+                    const port = event.ports[0];
+                    port.onmessage = (message) => {
+                        const type = message.data.type;
+                        if (type && !['player-controls', 'outline', 'select-screen'].includes(type)) {
+                            document.body.dataset.unsupported = type;
+                            return;
+                        }
+                        if (!type) {
+                            document.querySelector('p').textContent = 'Drawing received';
+                            document.body.dataset.draws = String(Number(document.body.dataset.draws) + 1);
+                        }
+                    };
+                    port.postMessage({type: 'ready', version: 3, playerControls: true, outline: true});
+                });
+            </script></body></html>`
+        })
+    );
+    await page.goto('/prototype');
+    const runtime = player(page);
+    await expect(runtime.getByText('Drawing received')).toBeVisible();
+    await expect(runtime.locator('body')).toHaveAttribute('data-unsupported', 'none');
+    const devices = await openDeviceMenu(page);
+    await devices.getByRole('button', { name: 'iPhone 15 393 × 852' }).click();
+    await expect(page.getByRole('button', { name: 'Device', exact: true })).toContainText(
+        'iPhone 15'
+    );
+    // The updated drawing has arrived, including commands sent on device changes.
+    await expect(runtime.locator('body')).toHaveAttribute('data-unsupported', 'none');
+    await expect(page.getByText('Preview needs attention')).toHaveCount(0);
 });

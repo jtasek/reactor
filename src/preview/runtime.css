@@ -19,6 +19,9 @@
 
 /* The isolated runtime bundles the shared tokens; it never reads the editor's DOM. */
 :root {
+    --device-frame:
+        0 0 0 9px #f3f4f6, 0 0 0 10px #d6d9de, 0 0 0 11px #fff,
+        0 24px 48px -20px rgb(0 0 0 / 22%), 0 2px 6px rgb(0 0 0 / 6%);
     color-scheme: light;
     font:
         14px system-ui,
@@ -113,6 +116,20 @@ html[data-player='true'] #preview > svg {
     background: var(--surface);
     border-radius: var(--radius-md);
     box-shadow: var(--box-shadow);
+}
+/* A phone or tablet in a thin light frame; narrow players show the screen alone. */
+@media (min-width: 600px) {
+    html[data-player='true']:is([data-frame='phone'], [data-frame='tablet']) #preview {
+        padding: 32px 16px;
+    }
+    html[data-player='true']:is([data-frame='phone'], [data-frame='tablet']) #preview > svg {
+        max-height: calc(100vh - 64px);
+        border-radius: 36px;
+        box-shadow: var(--device-frame);
+    }
+    html[data-player='true'][data-frame='tablet'] #preview > svg {
+        border-radius: 22px;
+    }
 }
 
 #accessibility-report {
