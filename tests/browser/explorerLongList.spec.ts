@@ -129,3 +129,17 @@ test('a shape selected on the canvas has its row in a long list drawn and scroll
     await expect(rows.last()).toHaveAttribute('aria-selected', 'true');
     await expect(rows.last()).toBeInViewport();
 });
+
+test('End reaches the last grouped shape even when its row has not loaded', async ({ page }) => {
+    await openList(page, true);
+    const explorer = page.getByRole('region', { name: 'Explorer' });
+    const groups = explorer.getByRole('button', { name: /^Group \d+$/ });
+    const lastGroup = groups.last().locator('xpath=ancestor::li[1]');
+    const lastRow = lastGroup.locator(':scope > ul > li').last();
+    await expect(lastRow).toHaveAttribute('aria-hidden', 'true');
+    await groups.first().focus();
+    await page.keyboard.press('End');
+
+    await expect(lastRow.getByRole('button', { name: /^Box \d+$/ })).toBeFocused();
+    await expect(lastRow).toHaveAttribute('aria-selected', 'true');
+});

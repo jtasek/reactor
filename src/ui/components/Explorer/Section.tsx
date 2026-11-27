@@ -2,6 +2,22 @@ import React, { FC, KeyboardEvent, useId, useState } from 'react';
 import styles from './styles.css';
 import { Dragged, acceptsDragged, readDragged } from './ExplorerItem';
 
+/** A lazy row loads itself before moving keyboard focus and selection onto its button. */
+export const REVEAL_ROW = 'reactor:reveal-explorer-row';
+const OUTLINE_ROWS = '[data-explorer-row], [data-explorer-placeholder]';
+
+export function focusOutlineRow(row: HTMLElement | null | undefined) {
+    if (!row) {
+        return;
+    }
+    row.focus();
+    row.scrollIntoView?.({ block: 'nearest' });
+    // Moving the focus selects; a row that acts waits for Return.
+    if (!row.hasAttribute('data-explorer-action')) {
+        row.click();
+    }
+}
+
 /** Moves the keyboard through the outline's rows, across its sections, as in a Finder sidebar. */
 export function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
     const target = event.target as HTMLElement;
@@ -11,19 +27,20 @@ export function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
         return;
     }
 
-    const rows = [...outline.querySelectorAll<HTMLElement>('[data-explorer-row]')];
+    const rows = [...outline.querySelectorAll<HTMLElement>(OUTLINE_ROWS)];
     const at = rows.indexOf(target);
     const item = target.closest<HTMLElement>('[role="treeitem"]');
     const go = (row: HTMLElement | null | undefined) => {
-        if (row) {
-            event.preventDefault();
-            row.focus();
-            row.scrollIntoView?.({ block: 'nearest' });
-            // Moving the focus selects, as in Finder; a row that acts waits for Return.
-            if (!row.hasAttribute('data-explorer-action')) {
-                row.click();
-            }
+        if (!row) {
+            return;
         }
+        event.preventDefault();
+        if (row.hasAttribute('data-explorer-placeholder')) {
+            row.dispatchEvent(new Event(REVEAL_ROW));
+
+            return;
+        }
+        focusOutlineRow(row);
     };
     const toggle = () =>
         item?.querySelector<HTMLButtonElement>(':scope > div > button[data-open]')?.click();
@@ -46,7 +63,11 @@ export function handleOutlineKeys(event: KeyboardEvent<HTMLElement>) {
                 event.preventDefault();
                 toggle();
             } else if (item?.getAttribute('aria-expanded') === 'true') {
-                go(item.querySelector<HTMLElement>(':scope > ul [data-explorer-row]'));
+                go(
+                    item.querySelector<HTMLElement>(
+                        ':scope > ul [data-explorer-row], :scope > ul [data-explorer-placeholder]'
+                    )
+                );
             }
             break;
         case 'ArrowLeft':

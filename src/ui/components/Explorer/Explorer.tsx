@@ -25,7 +25,7 @@ import { hideAction, lockAction, useItemCommandActions, type ItemMenuAction } fr
 import { Icon } from '../Icon';
 import { ObjectTypeSymbol } from '../ObjectTypeSymbol';
 import { SourceItem } from './SourceItem';
-import { Section } from './Section';
+import { Section, REVEAL_ROW, focusOutlineRow } from './Section';
 import { ComponentFocus, type Press } from './ComponentFocus';
 import { byDrawingOrder } from 'src/app/drawOrder';
 import {
@@ -262,20 +262,43 @@ const LazyShapeItem = memo<{
 }>(function LazyShapeItem(props) {
     const [near, setNear] = useState(false);
     const stop = useRef<() => void>(undefined);
-    const rowRef = useCallback((row: HTMLLIElement | null) => {
-        stop.current?.();
-        stop.current = row
-            ? watchRow(row, (isNear) =>
-                  // The row holding the keyboard focus stays, so focus is not lost on scroll.
-                  setNear(isNear || row.contains(row.ownerDocument.activeElement))
-              )
-            : undefined;
+    const currentRow = useRef<HTMLLIElement | null>(null);
+    const focusPending = useRef(false);
+    const reveal = useCallback(() => {
+        focusPending.current = true;
+        setNear(true);
     }, []);
+    useLayoutEffect(() => {
+        if (near && focusPending.current) {
+            focusPending.current = false;
+            focusOutlineRow(currentRow.current?.querySelector<HTMLElement>('[data-explorer-row]'));
+        }
+    }, [near]);
+    const rowRef = useCallback(
+        (row: HTMLLIElement | null) => {
+            stop.current?.();
+            currentRow.current?.removeEventListener(REVEAL_ROW, reveal);
+            currentRow.current = row;
+            row?.addEventListener(REVEAL_ROW, reveal);
+            stop.current = row
+                ? watchRow(row, (isNear) =>
+                      // The row holding the keyboard focus stays, so focus is not lost on scroll.
+                      setNear(isNear || row.contains(row.ownerDocument.activeElement))
+                  )
+                : undefined;
+        },
+        [reveal]
+    );
 
     return near ? (
         <ShapeItem {...props} rowRef={rowRef} />
     ) : (
-        <li ref={rowRef} aria-hidden="true" data-shape-row={props.shapeId}>
+        <li
+            ref={rowRef}
+            aria-hidden="true"
+            data-shape-row={props.shapeId}
+            data-explorer-placeholder=""
+        >
             <div className={styles.row} />
         </li>
     );
