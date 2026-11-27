@@ -665,6 +665,13 @@ window.addEventListener('message', (event) => {
 
             return;
         }
+        if (event.data?.type === 'device-frame') {
+            const kind = event.data.kind;
+            document.documentElement.dataset.frame =
+                kind === 'phone' || kind === 'tablet' ? kind : 'none';
+
+            return;
+        }
         if (event.data?.type === 'select-screen') {
             if (
                 hostControls &&

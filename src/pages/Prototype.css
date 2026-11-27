@@ -299,6 +299,24 @@
     margin-top: 4px;
     border-top: 1px solid var(--hairline-color);
 }
+.prototype .frameSwitch {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+    padding: 8px 10px 4px;
+    border-top: 1px solid var(--hairline-color);
+    cursor: pointer;
+}
+.prototype .frameSwitch input {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+.frameSwitch:has(input:disabled) {
+    color: var(--text-secondary-color);
+    cursor: default;
+}
 .customFields {
     display: flex;
     gap: 6px;

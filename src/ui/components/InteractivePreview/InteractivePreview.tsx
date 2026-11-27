@@ -32,6 +32,7 @@ export default function InteractivePreview({
     toolbar,
     toolbarTarget,
     outline,
+    deviceFrame,
     onScreen
 }: {
     session?: PreviewSession;
@@ -43,6 +44,8 @@ export default function InteractivePreview({
     onLocate?: (diagnostic: PreviewDiagnostic) => void;
     /** Controls drawn dashed, by shape ID; the player turns to the page that has them. */
     outline?: readonly string[];
+    /** Draws the screen in this device's frame. */
+    deviceFrame?: 'phone' | 'tablet';
     onScreen?: (screenId: string | undefined) => void;
 } = {}) {
     const { assets } = useEffects();
@@ -196,6 +199,12 @@ export default function InteractivePreview({
         // The screen it shows is read when the outline changes, not each time it turns.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [outlineKey, outlines]);
+
+    useEffect(() => {
+        if (outlines) {
+            connection.current?.postMessage({ type: 'device-frame', kind: deviceFrame ?? null });
+        }
+    }, [deviceFrame, outlines]);
 
     useEffect(() => () => channelPort.current?.close(), []);
     useEffect(() => {

@@ -237,12 +237,22 @@ test('keeps setup out of the player, restores focus and preserves input when cha
     await devices.getByRole('button', { name: 'Laptop 1280 × 800' }).click();
     await expect(devices).toBeHidden();
     await expect(runtime.locator('svg')).toHaveAttribute('width', '1280');
+    // Desktops are shown without a device frame, phones and tablets in one unless it is off.
+    const frame = runtime.locator('html');
+    await expect(frame).toHaveAttribute('data-frame', 'none');
     await expect(input).toHaveValue('Ada');
     await expect(device).toContainText('Laptop');
     devices = await openDeviceMenu(page);
     await devices.getByRole('button', { name: 'iPhone 15 393 × 852' }).click();
     await expect(input).toHaveValue('Ada');
     await expect(device).toContainText('iPhone 15');
+    await expect(frame).toHaveAttribute('data-frame', 'phone');
+    devices = await openDeviceMenu(page);
+    await devices.getByLabel('Show device frame').uncheck();
+    await expect(frame).toHaveAttribute('data-frame', 'none');
+    await devices.getByLabel('Show device frame').check();
+    await page.keyboard.press('Escape');
+    await expect(frame).toHaveAttribute('data-frame', 'phone');
     await expect(page.getByRole('region', { name: 'Prototype settings' })).toHaveCount(0);
     await page.setViewportSize({ width: 320, height: 740 });
     await expect(page.getByLabel('Preview page')).toBeInViewport({ ratio: 1 });
