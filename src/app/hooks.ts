@@ -11,11 +11,12 @@ import { commandsFor, commandsIn, getCommands } from './actions';
 import { Context } from '.';
 import { useCallback, useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
 import { isShapeLocked } from './utils';
+import { type ContainerStates, containerStatesOf } from './containerState';
 import type { CommandPlace, CommandScope } from './types';
 import { takesEditorInput } from '../events/input';
 import { editorLoaded, subscribeToEditorHelpers } from './editorHelpers';
 import { componentSource } from './componentSource';
-import { groupFrame, hoveredGroupsIds, selectionScope } from './membership';
+import { groupFrame, selectionScope } from './membership';
 import { useCommandEnabled, useCommandsEnabled } from './commandAvailability';
 
 export { useCommandEnabled, useCommandsEnabled };
@@ -285,42 +286,41 @@ export const useEqualGaps = () =>
 export const useGestureInProgress = () =>
     useAppState((state) => state.events.pointer.gesture.kind !== 'idle');
 
-/** The groups the pointer highlights: see `hoveredGroupsIds`. */
-export const useHoveredGroupsIds = () => {
-    return useAppState((state) => {
-        const document = state.currentDocument;
-        const { componentMembersIds } = document;
-
-        return hoveredGroupsIds(document, state.enteredGroupId, state.events.pointer).filter(
-            (id) =>
-                !document.groups[id].shapesIds.every((shapeId) => componentMembersIds.has(shapeId))
-        );
-    });
-};
-
 /** Whether the group is selected as one. */
 export const useGroupSelected = (id: string) => {
     return useAppState((state) => state.currentDocument.selectedGroupsIds.includes(id));
 };
 
-/** Where a group is drawn: its box and rotation, none when no shape of it is shown. */
-export const useGroupFrame = (id: string) => {
+/**
+ * Where a group is drawn: its box and rotation, none when no shape of it is shown.
+ * `states`: see `isShapeLockedExternally`.
+ */
+export const useGroupFrame = (id: string, states?: ContainerStates) => {
     return useAppState((state) => {
         const group = state.currentDocument.groups[id];
 
-        return group ? groupFrame(state.currentDocument, group) : null;
+        return group ? groupFrame(state.currentDocument, group, states) : null;
     });
 };
 
-/** Whether a group, or any of its shapes, is locked, so it cannot be resized or rotated. */
-export const useGroupLocked = (id: string) => {
+/**
+ * Whether a group, or any of its shapes, is locked, so it cannot be resized or
+ * rotated. `states`: see `isShapeLockedExternally`.
+ */
+export const useGroupLocked = (id: string, states?: ContainerStates) => {
     return useAppState((state) => {
         const document = state.currentDocument;
         const group = document.groups[id];
 
-        return !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId));
+        return (
+            !group || group.shapesIds.some((shapeId) => isShapeLocked(document, shapeId, states))
+        );
     });
 };
+
+/** What the document's groups, layers and components hide and lock: see `ContainerStates`. */
+export const useContainerStates = () =>
+    useAppState((state) => containerStatesOf(state.currentDocument));
 
 /** The one layer this screen shows, if it shows only one. */
 export const useShownLayerId = () => {

@@ -2,6 +2,8 @@
 import { useRef } from 'react';
 import { useAppState } from './hooks';
 import { localComponents } from './componentSelection';
+import { hoveredGroupsIds } from './membership';
+import type { GroupFrame } from './membership';
 import { editorHelpers, editorLoaded } from './editorHelpers';
 import { sharedProperties, type PropertyRow } from './properties';
 import { useStoreAnswer } from './storeAnswer';
@@ -33,6 +35,44 @@ export const useMeasuredBoxes = (overlay: SelectionOverlay | null) =>
     useAppState((state) => measuredBoxes(state, overlay));
 
 export const useSnappedBox = () => useAppState(snappedBox);
+
+/**
+ * Each group's box and rotation, for finding the group under the pointer: see
+ * `groupFrames`. They are read through every grouped shape, so through
+ * `useStoreAnswer`, and worked out again when a shape's geometry changes, not
+ * as the pointer moves. None once a gesture moves beyond a click, as a drag
+ * highlights no group, so moving shapes does not work out every group's box on
+ * each step.
+ */
+export const useGroupFrames = () => {
+    const moving = useAppState((state) => {
+        const { gesture } = state.events.pointer;
+
+        return 'moved' in gesture && gesture.moved;
+    });
+
+    return useStoreAnswer((state) => (moving ? null : state.currentDocument.groupFrames), [moving]);
+};
+
+/** The groups the pointer highlights, in `frames`: see `hoveredGroupsIds`. */
+export const useHoveredGroupsIds = (frames: Record<string, GroupFrame | undefined> | null) =>
+    useAppState((state) => {
+        if (!frames) {
+            return [];
+        }
+        const document = state.currentDocument;
+        const { componentMembersIds } = document;
+
+        return hoveredGroupsIds(
+            document,
+            state.enteredGroupId,
+            state.events.pointer,
+            frames
+        ).filter(
+            (id) =>
+                !document.groups[id].shapesIds.every((shapeId) => componentMembersIds.has(shapeId))
+        );
+    });
 
 /**
  * The properties the selected shapes share, as the inspector lists them. During a

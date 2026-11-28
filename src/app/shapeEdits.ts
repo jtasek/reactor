@@ -6,7 +6,7 @@ import { initializeStackOrder } from './stackEdits';
 import { measureContextualText } from './textMeasurement';
 import { frameLayout, renderedShape, hasLayoutOffset } from './frameLayout';
 import { frameState, lockedFrameForShapes } from './frameState';
-import { deleteIfPresent, untracked } from './untracked';
+import { deleteIfPresent, setIfChanged, untracked } from './untracked';
 import {
     Action,
     ActionGuard,
@@ -803,8 +803,8 @@ export const selectShapes: Action = ({ state }) => {
 
     // A click leaves the group double-clicked into; a box leaves it once it reaches a shape outside it.
     if (isClick) {
-        state.enteredGroupId = null;
-        state.enteredComponentId = null;
+        setIfChanged(state, 'enteredGroupId', null);
+        setIfChanged(state, 'enteredComponentId', null);
     }
 
     leaveGroupWithout(state, hits);
@@ -887,8 +887,8 @@ export const setShapeBounds: ActionWithParam<{ id: string; bounds: Box }> = (
 ) => actions.setShapesBounds([measurement]);
 
 export const unselectShapes: Action = ({ state, actions }) => {
-    state.selectedComponent = null;
-    state.enteredComponentId = null;
+    setIfChanged(state, 'selectedComponent', null);
+    setIfChanged(state, 'enteredComponentId', null);
     deleteIfPresent(state.currentDocument, 'selectedFrameId');
     deleteIfPresent(state.currentDocument, 'surfaceSelected');
     actions.unselectGuides();
