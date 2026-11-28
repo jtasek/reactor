@@ -3,6 +3,7 @@ import { frameStatesOf } from './frameState';
 import type { Box, CommandScope, Document, Group, Layer, Point, Shape } from './types';
 import { boxCenter, getShapeBounds, isShapeLocked, isShapeVisible, rotatePoint } from './utils';
 import { untracked } from './untracked';
+import type { ContainerStates } from './containerState';
 
 /** A group has two shapes at least; one left alone is no longer grouped. */
 export const GROUP_MINIMUM = 2;
@@ -65,9 +66,13 @@ export function shapeGroup(document: Document, shapeId: string): Group | undefin
     return containersHolding(document.groups, [shapeId])[0];
 }
 
-/** A group's shapes that are shown. */
-export function shownGroupShapesIds(document: Document, group: Group): string[] {
-    return group.shapesIds.filter((id) => isShapeVisible(document, id));
+/** A group's shapes that are shown. `states`: see `isShapeLockedExternally`. */
+export function shownGroupShapesIds(
+    document: Document,
+    group: Group,
+    states?: ContainerStates
+): string[] {
+    return group.shapesIds.filter((id) => isShapeVisible(document, id, states));
 }
 
 /** Where a group is drawn: an upright box around its center, turned by `rotation`. */
@@ -80,10 +85,14 @@ export interface GroupFrame {
  * The box around a group's shown shapes as drawn, each turned by its own
  * rotation, in the group's turned frame; none when no shape is shown.
  */
-export function groupFrame(document: Document, group: Group): GroupFrame | null {
+export function groupFrame(
+    document: Document,
+    group: Group,
+    states?: ContainerStates
+): GroupFrame | null {
     const rotation = group.rotation ?? 0;
     const origin = { x: 0, y: 0 };
-    const corners = shownGroupShapesIds(document, group).flatMap((id) => {
+    const corners = shownGroupShapesIds(document, group, states).flatMap((id) => {
         const shape = renderedShape(document, id);
         const bounds = getShapeBounds(shape);
         const center = boxCenter(bounds);
@@ -172,12 +181,11 @@ export function selectedGroupsIdsOf(document: Document, enteredGroupId: string |
 export function groupAtPoint(
     document: Document,
     point: Point,
-    enteredGroupId: string | null
-): Group | undefined {
+    enteredGroupId: string | null,
     // Read the derived table once: each read in a tracked render adds every path
     // it depends on again, which made a hover cost groups × shapes.
-    const frames = document.groupFrames;
-
+    frames = document.groupFrames
+): Group | undefined {
     return Object.values(document.groups).findLast((group) => {
         const frame = group.id === enteredGroupId ? undefined : frames[group.id];
 
@@ -206,11 +214,12 @@ export function groupAtPoint(
 export function hoveredGroupsIds(
     document: Document,
     enteredGroupId: string | null,
-    pointer: { current: Point; dragging: boolean; inside: boolean }
+    pointer: { current: Point; dragging: boolean; inside: boolean },
+    frames = document.groupFrames
 ): string[] {
     const group =
         pointer.inside && !pointer.dragging
-            ? groupAtPoint(document, pointer.current, enteredGroupId)
+            ? groupAtPoint(document, pointer.current, enteredGroupId, frames)
             : undefined;
 
     if (!group || selectedGroupsIdsOf(document, enteredGroupId).includes(group.id)) {

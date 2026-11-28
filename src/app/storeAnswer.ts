@@ -99,7 +99,9 @@ export function useStoreAnswer<T>(read: (state: State) => T, deps: readonly unkn
             }),
         [answer]
     );
-    const seen = useSyncExternalStore(subscribe, () => version.current);
+    const snapshot = () => version.current;
+    // The canvas is also drawn to a string for export, which asks the server snapshot.
+    const seen = useSyncExternalStore(subscribe, snapshot, snapshot);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return useMemo(() => answer.read(), [answer, seen]);

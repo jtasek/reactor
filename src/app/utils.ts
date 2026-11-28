@@ -1,4 +1,4 @@
-import { containerStatesOf } from './containerState';
+import { type ContainerStates, containerStatesOf } from './containerState';
 import { TEXT_ASCENT_RATIO, TEXT_CHAR_WIDTH_RATIO } from '../shared/textMetrics';
 import { frameState } from './frameState';
 import { mapPathPoints, pathOutline } from './pathGeometry';
@@ -492,17 +492,28 @@ function inContainer(
  * when it belongs to any locked group or layer. Used to block moves, resizes,
  * rotations, deletions and selection of locked shapes.
  */
-export function isShapeLocked(document: Document | undefined, shapeId: string): boolean {
+export function isShapeLocked(
+    document: Document | undefined,
+    shapeId: string,
+    states?: ContainerStates
+): boolean {
     return (
-        Boolean(document?.shapes?.[shapeId]?.locked) || isShapeLockedExternally(document, shapeId)
+        Boolean(document?.shapes?.[shapeId]?.locked) ||
+        isShapeLockedExternally(document, shapeId, states)
     );
 }
 
 /**
  * Whether a shape is locked by its document or by a group or layer containing it,
  * rather than by its own flag, so unlocking the shape itself would not help.
+ * `states` are the document's container states read once by a caller asking
+ * about many shapes: each read in a tracked render adds every path they depend on.
  */
-export function isShapeLockedExternally(document: Document | undefined, shapeId: string): boolean {
+export function isShapeLockedExternally(
+    document: Document | undefined,
+    shapeId: string,
+    states = document && containerStatesOf(document)
+): boolean {
     if (!document?.shapes?.[shapeId]) {
         return false;
     }
@@ -510,7 +521,7 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
     return (
         document.locked ||
         frameState(document, document.shapes[shapeId].parentFrameId)?.lockedBy !== undefined ||
-        (containerStatesOf(document)?.locked.has(shapeId) ??
+        (states?.locked.has(shapeId) ??
             inContainer(document, shapeId, (container) => container.locked))
     );
 }
@@ -522,13 +533,16 @@ export function isShapeLockedExternally(document: Document | undefined, shapeId:
  * selected, edited or part of the selection that commands act on.
  */
 /** Whether this screen shows one layer only and the shape is on another. */
-function hiddenByShownLayer(document: Document, shapeId: string): boolean {
+function hiddenByShownLayer(
+    document: Document,
+    shapeId: string,
+    states: ContainerStates | undefined
+): boolean {
     const shown = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
 
     if (shown === undefined) {
         return false;
     }
-    const states = containerStatesOf(document);
 
     if (states) {
         const on = states.layers.get(shapeId);
@@ -542,7 +556,12 @@ function hiddenByShownLayer(document: Document, shapeId: string): boolean {
     );
 }
 
-export function isShapeVisible(document: Document | undefined, shapeId: string): boolean {
+/** `states`: see `isShapeLockedExternally`. */
+export function isShapeVisible(
+    document: Document | undefined,
+    shapeId: string,
+    states = document && containerStatesOf(document)
+): boolean {
     const shape = document?.shapes?.[shapeId];
 
     if (!document || !shape?.visible) {
@@ -561,14 +580,13 @@ export function isShapeVisible(document: Document | undefined, shapeId: string):
 
     if (
         frameState(document, shape.parentFrameId)?.hiddenBy !== undefined ||
-        hiddenByShownLayer(document, shapeId)
+        hiddenByShownLayer(document, shapeId, states)
     ) {
         return false;
     }
 
     // The one layer this screen shows is shown even when hidden by its own setting.
     const shownLayer = document.shownLayerId ? document.layers[document.shownLayerId] : undefined;
-    const states = containerStatesOf(document);
 
     if (states) {
         return (

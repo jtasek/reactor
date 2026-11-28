@@ -2,14 +2,8 @@ import React, { FC } from 'react';
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Guide } from './Guide';
 import { useGuideDrag } from './useGuideDrag';
-import {
-    useActions,
-    useAppState,
-    useActiveToolsIds,
-    useCamera,
-    useGuides,
-    useHoveredGroupsIds
-} from 'src/app/hooks';
+import { useActions, useAppState, useActiveToolsIds, useCamera, useGuides } from 'src/app/hooks';
+import { useGroupFrames, useHoveredGroupsIds } from 'src/app/selectionHooks';
 import { Camera, Guide as GuideType } from 'src/app/types';
 import { beyondClickSlip } from 'src/events/gestures';
 
@@ -91,7 +85,7 @@ export const GuideGrips: FC = () => {
     const { selectGuide } = useActions();
     const guides = useGuides();
     const camera = useCamera();
-    const hoveredGroups = useHoveredGroupsIds();
+    const hoveredGroups = useHoveredGroupsIds(useGroupFrames());
     const activeTools = useActiveToolsIds();
     const { begin } = useGuideDrag();
     const inputBlocked = useAppState(
