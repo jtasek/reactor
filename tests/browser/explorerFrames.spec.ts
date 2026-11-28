@@ -98,19 +98,24 @@ test('nests frame artwork once under its screen, and sorts shapes by drawing ord
     await expect(name(page, 'Artwork')).toBeVisible();
 });
 
-test('each screen is listed once, with its views as chips', async ({ page }) => {
+test('page names keep their space and size-only views stay available in the menu', async ({
+    page
+}) => {
     for (const text of ['Home', 'Settings']) {
         await expect(name(page, text).locator('svg.lucide-app-window')).toHaveCount(1);
         await expect(name(page, text).locator('svg.lucide-frame')).toHaveCount(0);
-        await expect(name(page, viewName(text))).toHaveText('500 px');
+        await expect(name(page, viewName(text))).toHaveCount(0);
     }
 
     await expect(explorer(page).getByRole('region', { name: 'Pages' })).toBeVisible();
     await expect(explorer(page).getByText('Page size', { exact: true })).toHaveCount(0);
 
-    await name(page, viewName('Home')).click();
-    await expect(name(page, viewName('Home'))).toHaveAttribute('aria-pressed', 'true');
-    await expect(name(page, 'Home')).toHaveAttribute('aria-pressed', 'false');
+    await name(page, 'Home').click({ button: 'right' });
+    await page
+        .getByRole('menu', { name: 'Home actions' })
+        .getByRole('menuitemradio', { name: viewName('Home'), exact: true })
+        .click();
+    await expect(name(page, 'Home')).toHaveAttribute('aria-pressed', 'true');
 
     // Choosing a view opens its screen.
     await expect(name(page, 'Card').locator('svg.lucide-frame')).toHaveCount(1);

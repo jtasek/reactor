@@ -1410,3 +1410,42 @@
     stroke-linecap: round;
     stroke-width: 1.6;
 }
+
+/* Section actions share the card inset with fields, without an extra button margin. */
+.inspector .actionRow td button {
+    margin-left: 0;
+}
+
+.layoutRule {
+    align-items: end;
+    display: grid;
+    gap: var(--column-gap);
+    grid-template-columns: var(--label-width) minmax(0, 1fr) var(--field-height);
+    min-width: 0;
+}
+
+.layoutRule label {
+    color: var(--label-secondary);
+    display: grid;
+    gap: var(--row-padding);
+    min-width: 0;
+}
+
+.inspector .layoutRule button {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    width: var(--field-height);
+}
+
+.inspectorHelp p {
+    font-weight: var(--font-weight-regular);
+}
+
+/* Heading cells already supply the card inset. */
+.inspector th[scope='colgroup'] .inspectorHelp p {
+    margin-left: 0;
+    margin-right: 0;
+}
