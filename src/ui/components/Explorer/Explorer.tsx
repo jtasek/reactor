@@ -840,6 +840,9 @@ export const Explorer = memo(function Explorer() {
 
     const screenItem = (screen: (typeof frames)[number]) => {
         const screenViews = views.filter((view) => view.screenId === screen.id);
+        const labelledViews = screenViews.filter(
+            (view) => !/^\d+(?:\.\d+)?\s*px$/i.test(document.frames[view.id]?.name ?? view.name)
+        );
         const shownView =
             screenViews.find((view) => view.id === editedViewId) ??
             screenViews.find((view) => view.id === chosenViews[screen.id]) ??
@@ -878,7 +881,7 @@ export const Explorer = memo(function Explorer() {
                         {screenViews.length === 0 ? (
                             <span className={`${styles.chip} ${styles.muted}`}>Not on canvas</span>
                         ) : (
-                            screenViews.map((view) => (
+                            labelledViews.map((view) => (
                                 <ViewChip
                                     key={view.id}
                                     view={view}
@@ -892,7 +895,12 @@ export const Explorer = memo(function Explorer() {
                         )}
                     </span>
                 }
-                selected={selectedFrameId === screen.id}
+                selected={
+                    selectedFrameId === screen.id ||
+                    screenViews.some(
+                        (view) => view.id === selectedFrameId && !labelledViews.includes(view)
+                    )
+                }
                 visible={screen.shown}
                 collapseId={
                     nested.length > 0 || hasContents(contents)

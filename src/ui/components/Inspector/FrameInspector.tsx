@@ -95,15 +95,23 @@ const ScreenViewStatus = memo(function ScreenViewStatus({ id }: { id: string }) 
         return (
             problem ??
             (source?.kind === 'screen'
-                ? 'Every size that shows the same design shares its artwork.'
+                ? undefined
                 : 'Its page is missing. Remove this from the canvas or restore the page.')
         );
     });
 
+    if (!message) {
+        return null;
+    }
+
     return (
-        <small className={styles.frameHint} role="status">
-            {message}
-        </small>
+        <tr>
+            <td colSpan={2}>
+                <small className={styles.frameHint} role="status">
+                    {message}
+                </small>
+            </td>
+        </tr>
     );
 });
 
@@ -203,11 +211,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                     <ScreenLayouts key={id} viewId={id} disabled={disabled} />
                     <ModeFields target={{ frameId: id }} />
                     <PropertyGroup name="On canvas">
-                        <tr>
-                            <td colSpan={2}>
-                                <ScreenViewStatus id={id} />
-                            </td>
-                        </tr>
+                        <ScreenViewStatus id={id} />
                         <Field
                             prefix="Shown"
                             label="Name"
@@ -252,7 +256,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 }
                             />
                         ))}
-                        <tr>
+                        <tr className={styles.actionRow}>
                             <td colSpan={2}>
                                 {source?.kind === 'screen' && (
                                     <button
@@ -264,7 +268,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 )}
                             </td>
                         </tr>
-                        <tr>
+                        <tr className={styles.actionRow}>
                             <td colSpan={2}>
                                 {source?.kind === 'screen' && (
                                     <button
@@ -288,7 +292,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                             </td>
                         </tr>
                         {source?.kind === 'screen' && (
-                            <tr>
+                            <tr className={styles.actionRow}>
                                 <td colSpan={2}>
                                     <CreateViewAtSize
                                         screenId={source.id}
@@ -298,7 +302,7 @@ export const FrameInspector: FC<{ id: string }> = ({ id }) => {
                                 </td>
                             </tr>
                         )}
-                        <tr>
+                        <tr className={styles.actionRow}>
                             <td colSpan={2}>
                                 <button
                                     type="button"

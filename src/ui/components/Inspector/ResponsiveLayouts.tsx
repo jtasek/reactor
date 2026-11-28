@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { Icon } from '../Icon';
 import { useActions, useAppState, useEffects } from 'src/app/hooks';
 import { screenLayouts, screenLayoutProblems, screenLayoutRules } from 'src/app/screenLayouts';
 import type { ResponsiveLayoutRule } from 'src/app/types';
@@ -81,62 +83,59 @@ export function ResponsiveLayouts({ screenId, disabled }: { screenId: string; di
         });
 
     return (
-        <PropertyGroup name="Automatic design">
-            <tr className={styles.footnote}>
-                <td colSpan={2}>
-                    <small className={styles.frameHint}>
-                        Used by every size of this page set to Auto. The greatest minimum width
-                        wins; below all rules, the main design shows. Manual choices stay unchanged.
-                    </small>
-                </td>
-            </tr>
+        <PropertyGroup
+            name="Automatic design"
+            help="Used by every size of this page set to Auto. The greatest minimum width wins; below all rules, the main design shows. Manual choices stay unchanged."
+        >
             {rules.map((rule, index) => (
                 <tr key={rule.id}>
-                    <th scope="row">
-                        <label htmlFor={`layout-width-${index}`}>From width</label>
-                        <RuleWidth
-                            index={index}
-                            value={rule.minWidth}
-                            disabled={disabled}
-                            onCommit={(minWidth) =>
-                                update(rule.id, { minWidth, layoutId: rule.layoutId })
-                            }
-                        />
-                    </th>
-                    <td>
-                        <select
-                            className={styles.layoutChoice}
-                            aria-label={`Design rule ${index + 1} design`}
-                            value={rule.layoutId}
-                            disabled={disabled}
-                            onChange={(event) =>
-                                update(rule.id, {
-                                    minWidth: rule.minWidth,
-                                    layoutId: event.target.value
-                                })
-                            }
-                        >
-                            {!choices.some(({ id }) => id === rule.layoutId) && (
-                                <option value={rule.layoutId}>Missing design</option>
-                            )}
-                            {choices.map(({ id, name }) => (
-                                <option key={id} value={id}>
-                                    {name}
-                                </option>
-                            ))}
-                        </select>
-                        <button
-                            type="button"
-                            disabled={disabled}
-                            aria-label={`Remove design rule ${index + 1}`}
-                            onClick={() => update(rule.id, undefined)}
-                        >
-                            Remove rule
-                        </button>
+                    <td colSpan={2}>
+                        <div className={styles.layoutRule}>
+                            <label htmlFor={`layout-width-${index}`}>
+                                <span>From width</span>
+                                <RuleWidth
+                                    index={index}
+                                    value={rule.minWidth}
+                                    disabled={disabled}
+                                    onCommit={(minWidth) =>
+                                        update(rule.id, { minWidth, layoutId: rule.layoutId })
+                                    }
+                                />
+                            </label>
+                            <select
+                                className={styles.layoutChoice}
+                                aria-label={`Design rule ${index + 1} design`}
+                                value={rule.layoutId}
+                                disabled={disabled}
+                                onChange={(event) =>
+                                    update(rule.id, {
+                                        minWidth: rule.minWidth,
+                                        layoutId: event.target.value
+                                    })
+                                }
+                            >
+                                {!choices.some(({ id }) => id === rule.layoutId) && (
+                                    <option value={rule.layoutId}>Missing design</option>
+                                )}
+                                {choices.map(({ id, name }) => (
+                                    <option key={id} value={id}>
+                                        {name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                aria-label={`Remove design rule ${index + 1}`}
+                                onClick={() => update(rule.id, undefined)}
+                            >
+                                <Icon icon={{ component: X, size: 14 }} />
+                            </button>
+                        </div>
                     </td>
                 </tr>
             ))}
-            <tr>
+            <tr className={styles.actionRow}>
                 <td colSpan={2}>
                     <button
                         type="button"

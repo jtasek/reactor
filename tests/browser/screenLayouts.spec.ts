@@ -33,7 +33,25 @@ test('chooses separate artwork, previews the same destination and retains choice
     await selectView(page, 'mobile');
     const choice = inspector.getByLabel('Design at this size', { exact: true });
     await expect(choice).toHaveValue('compact');
-    await expect(inspector).toContainText('Edits belong to the separate design “Compact”');
+    const designHelp = inspector.locator('summary').filter({ hasText: 'About design' });
+    const explanation = inspector.getByText('Edits belong to the separate design “Compact”', {
+        exact: false
+    });
+    await expect(explanation).toBeHidden();
+    await expect(
+        inspector.getByText('Every size that shows the same design shares its artwork.', {
+            exact: true
+        })
+    ).toHaveCount(0);
+    await inspector.screenshot({
+        path: 'test-results/reactor-inspector-clean.png'
+    });
+    await designHelp.click();
+    await expect(explanation).toBeVisible();
+    await inspector.screenshot({
+        path: 'test-results/reactor-inspector-help.png'
+    });
+    await designHelp.click();
     await page.getByRole('button', { name: 'Preview', exact: true }).click();
     const runtime = page.frameLocator('iframe[title="Application preview"]');
     await expect(runtime.locator('rect[width="200"]')).toHaveCount(1);
@@ -68,7 +86,11 @@ test('creates a separate design as a copy and draws into it without modifying th
     await inspector.getByLabel('Separate design name').fill('Tablet');
     await inspector.getByRole('button', { name: 'Create separate design', exact: true }).click();
     await expect(inspector.getByLabel('Design at this size')).not.toHaveValue('compact');
-    await expect(inspector).toContainText('Edits belong to the separate design “Tablet”');
+    await inspector.locator('summary').filter({ hasText: 'About design' }).click();
+    await expect(
+        inspector.getByText('Edits belong to the separate design “Tablet”', { exact: false })
+    ).toBeVisible();
+    await inspector.locator('summary').filter({ hasText: 'About design' }).click();
     await expect(mobile.locator('[data-cy="Compact body"]')).toHaveCount(1);
     await expect(mobile.locator('g[data-shape-id]')).toHaveCount(1);
     await selectTool(page, 'Draws a rectangle or square');

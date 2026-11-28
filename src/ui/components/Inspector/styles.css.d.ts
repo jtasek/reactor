@@ -1,5 +1,6 @@
 declare namespace StylesCssNamespace {
   export interface IStylesCss {
+    actionRow: string;
     align: string;
     alignRow: string;
     bound: string;
@@ -45,6 +46,7 @@ declare namespace StylesCssNamespace {
     interactions: string;
     labelColumn: string;
     layoutChoice: string;
+    layoutRule: string;
     limit: string;
     note: string;
     pair: string;

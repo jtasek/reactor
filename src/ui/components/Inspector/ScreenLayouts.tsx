@@ -31,7 +31,17 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
 
     return (
         <>
-            <PropertyGroup name="Design">
+            <PropertyGroup
+                name="Design"
+                help={
+                    <>
+                        {root?.screenLayout
+                            ? `Edits belong to the separate design “${root.name}” and don’t reach other sizes.`
+                            : 'Edits belong to the main design, shared by every size that shows it.'}{' '}
+                        Every design is the same page for navigation.
+                    </>
+                }
+            >
                 <tr>
                     <th scope="row">
                         <label htmlFor="screen-view-layout">Shows</label>
@@ -72,17 +82,7 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                         </select>
                     </td>
                 </tr>
-                <tr className={styles.footnote}>
-                    <td colSpan={2}>
-                        <small className={styles.frameHint}>
-                            {root?.screenLayout
-                                ? `Edits belong to the separate design “${root.name}” and don’t reach other sizes.`
-                                : 'Edits belong to the main design, shared by every size that shows it.'}{' '}
-                            Every design is the same page for navigation.
-                        </small>
-                    </td>
-                </tr>
-                <tr>
+                <tr className={styles.actionRow}>
                     <td colSpan={2}>
                         <button
                             type="button"
@@ -95,7 +95,7 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label htmlFor="screen-layout-name">Separate design</label>
+                        <label htmlFor="screen-layout-name">New design</label>
                     </th>
                     <td>
                         <input
@@ -109,7 +109,7 @@ export function ScreenLayouts({ viewId, disabled }: { viewId: string; disabled: 
                         />
                     </td>
                 </tr>
-                <tr>
+                <tr className={styles.actionRow}>
                     <td colSpan={2}>
                         <button
                             type="button"
